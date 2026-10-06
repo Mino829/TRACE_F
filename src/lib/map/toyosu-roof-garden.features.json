@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "buildingId": "toyosu-roof-garden",
+  "coordinateSpace": "master-rect-px",
+  "rectFormat": "x0,y0,x1,y1",
+  "footprints": {
+    "default": [
+      [
+        893,
+        37
+      ],
+      [
+        224,
+        37
+      ],
+      [
+        223,
+        262
+      ],
+      [
+        29,
+        288
+      ],
+      [
+        26,
+        1544
+      ],
+      [
+        473,
+        1554
+      ],
+      [
+        476,
+        483
+      ],
+      [
+        633,
+        483
+      ],
+      [
+        633,
+        725
+      ],
+      [
+        892,
+        725
+      ]
+    ]
+  },
+  "elevators": [],
+  "floors": {
+    "7": {
+      "voids": [
+        {
+          "kind": "atrium",
+          "rect": [
+            378,
+            508,
+            470,
+            928
+          ]
+        },
+        {
+          "kind": "atrium",
+          "rect": [
+            312,
+            615,
+            378,
+            928
+          ]
+        }
+      ],
+      "stairs": [
+        {
+          "id": "st-roof-core",
+          "rect": [
+            740,
+            465,
+            820,
+            550
+          ],
+          "wallMask": [
+            730,
+            455,
+            830,
+            560
+          ],
+          "up": "-z"
+        }
+      ],
+      "escalators": [
+        {
+          "id": "es-roof-garden",
+          "rect": [
+            95,
+            1477,
+            250,
+            1518
+          ],
+          "up": "+x",
+          "lanes": 2
+        }
+      ],
+      "wallMasks": [
+        {
+          "rect": [
+            305,
+            456,
+            383,
+            638
+          ],
+          "note": "屋上庭園北の縦動線記号（種別未確認）"
+        }
+      ]
+    }
+  }
+}
