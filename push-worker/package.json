@@ -1,0 +1,20 @@
+{
+  "name": "trace-push-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "wrangler": "node scripts/wrangler.mjs",
+    "dev": "node scripts/wrangler.mjs dev --test-scheduled",
+    "deploy": "node scripts/wrangler.mjs deploy",
+    "vapid": "node scripts/generate-vapid.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "deploy:site": "node scripts/wrangler.mjs deploy --config site.wrangler.jsonc"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5",
+    "http_ece": "^1",
+    "typescript": "^5",
+    "wrangler": "^4"
+  }
+}

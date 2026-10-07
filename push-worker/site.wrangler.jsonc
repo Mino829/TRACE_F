@@ -1,0 +1,14 @@
+// Serves the static export of the web app (../out, from `NEXT_STATIC_EXPORT=1 next build`).
+// Static assets only: no code and no cron here, unlike wrangler.jsonc.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "trace-log",
+  "compatibility_date": "2026-09-01",
+  // Explicitly none: an earlier mistaken deploy left this name with a cron.
+  "triggers": { "crons": [] },
+  "assets": {
+    "directory": "../out",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

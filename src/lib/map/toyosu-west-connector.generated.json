@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "buildingId": "toyosu-west-connector",
+  "generated": {
+    "generator": "scripts/floorplan/build.py",
+    "date": "2026-08-28",
+    "sourcePdf": "tmp/pdfs/campus-diary-2026-2.pdf",
+    "sourcePdfSha256": "dd7db3837c01ab0eeb0fa3a1667e82841f5d78d53b7b043f4f82fea4ada03318",
+    "dpi": 600,
+    "pages": {
+      "2": 60,
+      "4": 62,
+      "6": 64
+    },
+    "referenceFloor": "4",
+    "masterRect": {
+      "x": 690,
+      "y": 2687,
+      "w": 460,
+      "h": 265
+    },
+    "shifts": {
+      "2": [
+        -180,
+        -8
+      ],
+      "4": [
+        -10,
+        -7
+      ],
+      "6": [
+        8,
+        -8
+      ]
+    },
+    "wallParams": {
+      "minComponentSide": 60,
+      "minComponentArea": 900,
+      "closeGapPx": 12,
+      "minRunPx": 35,
+      "mergeParallelPx": 4,
+      "minSegmentFrac": 0.08
+    },
+    "textureParams": {
+      "alphaGain": 1.6,
+      "hueGain": 1.2,
+      "inkValue": 0.68,
+      "texelsPerMasterPx": 0.5
+    }
+  },
+  "plan": {
+    "widthPx": 460,
+    "heightPx": 265
+  },
+  "floors": [
+    {
+      "id": "2",
+      "level": 2,
+      "texture": "/floorplans/west-connector/floor-2.png",
+      "walls": [
+        [
+          0.0761,
+          -0.3302,
+          0.0761,
+          0.4547
+        ],
+        [
+          0.2217,
+          -0.334,
+          0.2217,
+          0.3604
+        ]
+      ]
+    },
+    {
+      "id": "4",
+      "level": 4,
+      "texture": "/floorplans/west-connector/floor-4.png",
+      "walls": [
+        [
+          0.2435,
+          -0.4472,
+          0.2435,
+          0.2547
+        ],
+        [
+          0.0957,
+          -0.4019,
+          0.0957,
+          0.3755
+        ]
+      ]
+    },
+    {
+      "id": "6",
+      "level": 6,
+      "texture": "/floorplans/west-connector/floor-6.png",
+      "walls": [
+        [
+          0.0717,
+          -0.383,
+          0.0717,
+          0.3943
+        ],
+        [
+          0.213,
+          -0.383,
+          0.213,
+          0.2698
+        ]
+      ]
+    }
+  ]
+}
