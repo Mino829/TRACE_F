@@ -1,0 +1,641 @@
+/*
+ * /log の見た目。第54回芝浦祭（テーマ：ピクセルゲーム）のサイト https://shibaurasai.jp に合わせる。
+ * 色、フォント、段になった角の枠とボタン、またたくドットは、すべてそのサイトの値を写したもの。
+ * 独自に足したのは、ボタンの奥行き（押せることを示す）と、選択中を示すカーソルだけ。
+ *
+ * 文字の色は背景で決める。ベージュの地には濃い文字（--px-text）、
+ * 濃いパネルには明るい文字（--px-ink）。ピンクとシアンは、ベージュの上では小さい文字に使わない
+ * （コントラストが足りない）。
+ */
+
+/* ---------- tokens ---------- */
+
+.px-root {
+  --px-bg: #edd8ad;
+  --px-stage: #07070c;
+  --px-panel: #111018;
+  --px-panel-2: #15141d;
+  --px-bar: #333333;
+  --px-ink: #f4f2ec;
+  --px-muted: #a9b6b8;
+  --px-text: #333333;
+  --px-text-soft: #5c5346;
+  --px-pink: #ec1e8f;
+  --px-pink-soft: #ff7ac0;
+  --px-pink-deep: #8f0f55;
+  --px-teal: #6fe3d9;
+  --px-teal-deep: #123b39;
+  --px-teal-dim: #2a5a56;
+  --px-focus: #111018;
+
+  position: relative;
+  min-height: 100dvh;
+  background: var(--px-bg);
+  color: var(--px-text);
+  font-family: var(--font-jp), "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html:has(.px-root),
+html:has(.px-root) body {
+  background: #edd8ad;
+}
+
+/* Anything drawn on a dark ground: light text, teal focus ring. */
+.px-dark {
+  --px-focus: var(--px-teal);
+  color: var(--px-ink);
+}
+
+.px-pixel {
+  font-family: var(--font-pixel), ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+}
+
+/* ---------- stepped corners (the site's clip-path, one rule for every shape) ---------- */
+
+.px-frame,
+.px-panel,
+.px-btn::before,
+.px-btn__face,
+.px-chip {
+  clip-path: polygon(
+    0 var(--n), var(--n) var(--n), var(--n) 0,
+    calc(100% - var(--n)) 0, calc(100% - var(--n)) var(--n), 100% var(--n),
+    100% calc(100% - var(--n)), calc(100% - var(--n)) calc(100% - var(--n)), calc(100% - var(--n)) 100%,
+    var(--n) 100%, var(--n) calc(100% - var(--n)), 0 calc(100% - var(--n))
+  );
+}
+
+/* ---------- frame + panel ---------- */
+
+.px-frame {
+  --n: 8px;
+  padding: 6px;
+  background: var(--px-teal);
+}
+
+.px-frame--pink {
+  background: var(--px-pink);
+}
+
+.px-frame--dim {
+  background: var(--px-teal-dim);
+}
+
+.px-panel {
+  --n: 8px;
+  --px-focus: var(--px-teal);
+  padding: 20px 18px;
+  background: var(--px-panel);
+  color: var(--px-ink);
+}
+
+.px-frame > .px-panel {
+  height: 100%;
+}
+
+/* ---------- buttons ---------- */
+/*
+ * The face carries the stepped corners; the button itself stays a plain box so
+ * its focus ring is not clipped away. The darker layer under the face is the
+ * depth a pressed key sinks into.
+ */
+
+.px-btn {
+  --n: 6px;
+  --face: var(--px-pink);
+  --face-hover: var(--px-pink-soft);
+  --depth: var(--px-pink-deep);
+  --fg: #0a0a0a;
+
+  position: relative;
+  display: inline-flex;
+  padding: 0 0 4px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.px-btn::before {
+  content: "";
+  position: absolute;
+  inset: 4px 0 0;
+  background: var(--depth);
+}
+
+.px-btn__face {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 18px;
+  background: var(--face);
+  text-align: center;
+  white-space: nowrap;
+  transition: transform 80ms steps(2), background-color 120ms;
+}
+
+/* A button beside a block button keeps its own width. */
+.px-actionbar > .px-btn:not(.px-btn--block) {
+  flex: none;
+}
+
+@media (hover: hover) {
+  .px-btn:hover:not(:disabled) .px-btn__face {
+    background: var(--face-hover);
+  }
+}
+
+.px-btn:active:not(:disabled) .px-btn__face {
+  transform: translateY(4px);
+}
+
+.px-btn:focus-visible {
+  outline: 3px solid var(--px-focus);
+  outline-offset: 3px;
+}
+
+.px-btn:disabled {
+  --face: #4a4954;
+  --face-hover: #4a4954;
+  --depth: #2b2a31;
+  --fg: #c4c1b9;
+  cursor: not-allowed;
+}
+
+.px-btn--block {
+  display: flex;
+  width: 100%;
+}
+
+/* Supporting action on a dark ground. */
+.px-btn--secondary {
+  --face: var(--px-teal-deep);
+  --face-hover: #1a4c49;
+  --depth: #050508;
+  --fg: var(--px-teal);
+}
+
+/* Supporting action on the beige ground. */
+.px-btn--dark {
+  --face: var(--px-bar);
+  --face-hover: #444444;
+  --depth: var(--px-panel);
+  --fg: var(--px-ink);
+}
+
+.px-btn--sm .px-btn__face {
+  min-height: 40px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* A quieter action: underlined, with the site's ">" prompt. */
+.px-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+  cursor: pointer;
+}
+
+.px-link::before {
+  content: ">";
+  font-family: var(--font-pixel), monospace;
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.px-link:focus-visible {
+  outline: 3px solid var(--px-focus);
+  outline-offset: 2px;
+}
+
+.px-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- labels ---------- */
+
+.px-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--px-pink);
+  font-family: var(--font-pixel), monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  line-height: 1.6;
+  text-transform: uppercase;
+}
+
+/* The lighter pink, for labels on the #333 bar where the deep pink is too dark to read. */
+.px-eyebrow--soft {
+  color: var(--px-pink-soft);
+}
+
+.px-star {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.px-title {
+  color: var(--px-teal);
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  text-shadow: 3px 3px 0 rgba(236, 30, 143, 0.6);
+}
+
+.px-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px dashed var(--px-pink-soft);
+  color: var(--px-pink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.px-chip {
+  --n: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 3px;
+  background: var(--px-teal);
+  color: #0a0a0a;
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+.px-chip--off {
+  background: #4a4954;
+  color: var(--px-ink);
+}
+
+.px-chip--pink {
+  background: var(--px-pink-soft);
+}
+
+.px-digits {
+  color: var(--px-teal);
+  font-family: var(--font-pixel), monospace;
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  line-height: 1.3;
+}
+
+/* ---------- choices ---------- */
+/*
+ * Square tiles, so focus rings are not clipped. The selected one is filled and
+ * carries the blinking menu cursor of a game's command window.
+ */
+
+.px-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 2px solid var(--px-teal-dim);
+  background: var(--px-panel-2);
+  color: var(--px-ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.3;
+  cursor: pointer;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.4);
+  touch-action: manipulation;
+}
+
+.px-tile:active {
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.px-tile[aria-pressed="true"],
+.px-tile[aria-checked="true"] {
+  border-color: var(--px-teal);
+  background: var(--px-teal);
+  color: #0a0a0a;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+}
+
+.px-tile[aria-pressed="true"]::before,
+.px-tile[aria-checked="true"]::before {
+  content: "\25B6";
+  position: absolute;
+  left: 8px;
+  font-size: 10px;
+  animation: px-blink 1s steps(1) infinite;
+}
+
+.px-tile:focus-visible {
+  outline: 3px solid var(--px-focus);
+  outline-offset: 2px;
+}
+
+.px-floor {
+  font-family: var(--font-pixel), monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+/* ---------- progress ---------- */
+
+.px-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.px-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 4px;
+  border-bottom: 4px solid var(--px-teal-dim);
+  background: var(--px-panel-2);
+  color: var(--px-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.px-step__no {
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+}
+
+.px-step[data-state="current"] {
+  border-bottom-color: var(--px-pink);
+  color: var(--px-ink);
+}
+
+.px-step[data-state="done"] {
+  border-bottom-color: var(--px-teal);
+  color: var(--px-teal);
+}
+
+/* Records today, one block each. */
+.px-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.px-blocks i {
+  width: 12px;
+  height: 12px;
+  background: var(--px-teal);
+  box-shadow: inset -3px -3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.px-blocks i.is-unsent {
+  background: var(--px-pink-soft);
+}
+
+/* ---------- bars, dialogs, notes ---------- */
+
+.px-actionbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  border-top: 4px solid var(--px-panel-2);
+  background: var(--px-stage);
+}
+
+.px-dialog {
+  width: min(100% - 24px, 28rem);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--px-ink);
+  overflow: visible;
+}
+
+.px-dialog::backdrop {
+  background: rgba(7, 7, 12, 0.74);
+}
+
+.px-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-left: 6px solid var(--px-teal);
+  background: var(--px-panel);
+  color: var(--px-ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.px-note[data-tone="warn"] {
+  border-left-color: var(--px-pink-soft);
+}
+
+/* Inside a dark panel the note needs its own ground to stand out. */
+.px-panel .px-note {
+  background: var(--px-panel-2);
+}
+
+/* The practice run's hints. */
+.px-note[data-tone="coach"] {
+  border-left-color: var(--px-pink);
+  background: var(--px-panel-2);
+}
+
+.px-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--px-panel);
+  color: var(--px-ink);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 4px 4px 0 rgba(7, 7, 12, 0.5);
+}
+
+/* ---------- motion ---------- */
+
+.px-twinkles {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.px-twinkle {
+  position: absolute;
+  display: block;
+  background: var(--px-teal);
+  box-shadow: 0 0 0 2px rgba(111, 227, 217, 0.15);
+  opacity: 0.15;
+  animation: px-twinkle var(--d, 3s) ease-in-out var(--delay, 0s) infinite;
+}
+
+.px-twinkle--pink {
+  background: var(--px-pink-soft);
+  box-shadow: 0 0 0 2px rgba(236, 30, 143, 0.15);
+}
+
+.px-loader {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.px-loader i {
+  width: 8px;
+  height: 8px;
+  background: var(--px-teal);
+  animation: px-load 1.2s steps(1) infinite;
+}
+
+.px-loader i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.px-loader i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.px-blink {
+  animation: px-blink 1s steps(1) infinite;
+}
+
+.px-clear {
+  color: var(--px-pink);
+  font-family: var(--font-pixel), monospace;
+  font-size: 40px;
+  letter-spacing: 3px;
+  line-height: 1.3;
+  text-shadow: 4px 4px 0 var(--px-teal-dim), 0 0 32px rgba(236, 30, 143, 0.35);
+  animation: px-pop 480ms steps(4) both;
+}
+
+@keyframes px-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.6); }
+}
+
+@keyframes px-blink {
+  50% { opacity: 0; }
+}
+
+@keyframes px-load {
+  0%, 60%, 100% { opacity: 0.2; }
+  20%, 40% { opacity: 1; }
+}
+
+@keyframes px-pop {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-twinkle { animation: none; opacity: 0.5; }
+  .px-loader i, .px-blink, .px-clear,
+  .px-tile[aria-pressed="true"]::before,
+  .px-tile[aria-checked="true"]::before { animation: none; }
+  .px-btn__face { transition: none; }
+}
+
+/* ---------- Leaflet, restyled to the frame ---------- */
+
+.px-root .leaflet-container {
+  background: var(--px-bg);
+  font-family: var(--font-jp), sans-serif;
+}
+
+.px-root .leaflet-bar,
+.px-root .leaflet-control-layers {
+  border: 2px solid var(--px-teal) !important;
+  border-radius: 0 !important;
+  background: var(--px-panel);
+  box-shadow: 3px 3px 0 rgba(7, 7, 12, 0.5) !important;
+  color: var(--px-ink);
+}
+
+.px-root .leaflet-bar a {
+  width: 40px;
+  height: 40px;
+  border-radius: 0 !important;
+  border-bottom-color: var(--px-teal-dim);
+  background: var(--px-panel);
+  color: var(--px-teal);
+  font-family: var(--font-pixel), monospace;
+  font-size: 14px;
+  line-height: 40px;
+}
+
+.px-root .leaflet-bar a:hover {
+  background: var(--px-panel-2);
+  color: var(--px-teal);
+}
+
+.px-root .leaflet-control-layers-expanded {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.px-root .leaflet-control-layers label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+
+.px-root .leaflet-control-layers-selector {
+  accent-color: var(--px-pink);
+}
+
+.px-root .leaflet-control-attribution {
+  background: rgba(17, 16, 24, 0.82);
+  color: var(--px-muted);
+}
+
+.px-root .leaflet-control-attribution a {
+  color: var(--px-teal);
+}

@@ -112,6 +112,8 @@ export type LogRecord = {
   schema: typeof RECORD_SCHEMA;
   id: string;
   kind: "ping" | "manual";
+  /** The practice run in the setup. Real data all the same, flagged so an analysis can set it apart. */
+  tutorial: boolean;
   deviceId: string;
   consentVersion: string;
   consentedAt: string;
@@ -122,6 +124,8 @@ export type LogRecord = {
   coordinateVersion: string;
   /** Near the Toyosu campus, where the drawings were offered for marking. */
   insideCampus: boolean;
+  /** The floor the person picked, kept even when they could not point at the spot. */
+  reportedLevel: number | null;
   truth: Truth | null;
   /** The person was asked for the truth and said they did not know. */
   truthSkipped: boolean;

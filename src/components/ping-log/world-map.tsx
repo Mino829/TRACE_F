@@ -30,11 +30,13 @@ const PIN_ICON = L.divIcon({
   className: "",
   iconSize: [46, 46],
   iconAnchor: [23, 23],
-  // Black lines on a white halo, so the cross reads on dark roofs and pale roads alike.
-  html: '<svg width="46" height="46" viewBox="-23 -23 46 46" style="overflow:visible"><g stroke="#fff" stroke-width="4.5" fill="none"><line x1="0" y1="-21" x2="0" y2="21"/><line x1="-21" y1="0" x2="21" y2="0"/><circle r="6"/></g><g stroke="#171717" stroke-width="1.6" fill="none"><line x1="0" y1="-21" x2="0" y2="21"/><line x1="-21" y1="0" x2="21" y2="0"/><circle r="6"/></g></svg>',
+  // Pink on a white halo, so the cross reads on dark roofs and pale roads alike.
+  html: '<svg width="46" height="46" viewBox="-23 -23 46 46" style="overflow:visible"><g stroke="#fff" stroke-width="4.5" fill="none"><line x1="0" y1="-21" x2="0" y2="21"/><line x1="-21" y1="0" x2="21" y2="0"/><circle r="6"/></g><g stroke="#ec1e8f" stroke-width="2" fill="none"><line x1="0" y1="-21" x2="0" y2="21"/><line x1="-21" y1="0" x2="21" y2="0"/><circle r="6"/></g></svg>',
 });
 
 type Props = {
+  /** Sizes the map; the parent decides how much of the screen it gets. */
+  className?: string;
   /** Where the map opens; the phone's first fix. */
   centre: Wgs84 | null;
   pin: Wgs84 | null;
@@ -43,7 +45,7 @@ type Props = {
   me: (Wgs84 & { accuracy: number }) | null;
 };
 
-export function WorldMap({ centre, pin, onPin, me }: Props) {
+export function WorldMap({ className, centre, pin, onPin, me }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const layer = useRef<MapLayer>("gsi-photo");
@@ -74,7 +76,11 @@ export function WorldMap({ centre, pin, onPin, me }: Props) {
     });
     created.on("click", (event) => onPinRef.current({ lat: event.latlng.lat, lon: event.latlng.lng }, created.getZoom(), layer.current));
     map.current = created;
+    // Leaflet measures its box once; the flow resizes it as panels come and go.
+    const observer = new ResizeObserver(() => created.invalidateSize());
+    observer.observe(element.current);
     return () => {
+      observer.disconnect();
       created.remove();
       map.current = null;
       pinMarker.current = null;
@@ -100,19 +106,11 @@ export function WorldMap({ centre, pin, onPin, me }: Props) {
     meLayer.current?.remove();
     meLayer.current = me
       ? L.layerGroup([
-          L.circle([me.lat, me.lon], { radius: me.accuracy, color: "#525252", weight: 1, fillOpacity: 0.08, interactive: false }),
-          L.circleMarker([me.lat, me.lon], { radius: 6, color: "#fff", weight: 2, fillColor: "#737373", fillOpacity: 1, interactive: false }),
+          L.circle([me.lat, me.lon], { radius: me.accuracy, color: "#2a5a56", weight: 1.5, fillColor: "#6fe3d9", fillOpacity: 0.2, interactive: false }),
+          L.circleMarker([me.lat, me.lon], { radius: 6, color: "#111018", weight: 2, fillColor: "#6fe3d9", fillOpacity: 1, interactive: false }),
         ]).addTo(current)
       : null;
   }, [me]);
 
-  return (
-    <div className="space-y-2">
-      <div ref={element} className="h-[min(56vh,480px)] overflow-hidden rounded-md border border-neutral-300 dark:border-neutral-700" />
-      <p className="text-xs text-neutral-500">
-        地図を動かして拡大し、いまいる場所をタップしてください。航空写真に切り替えると、建物や道の形で場所を探しやすくなります。
-        {me && "灰色の点はスマホが測った位置、円はその誤差の目安です。"}
-      </p>
-    </div>
-  );
+  return <div ref={element} className={`overflow-hidden border-2 border-(--px-teal) ${className ?? "h-[min(56vh,480px)]"}`} />;
 }

@@ -9,7 +9,7 @@ import type { Consent } from "@/lib/ping-log/consent";
 import { SOURCE_LABEL, haversineMetres, type Truth } from "@/lib/ping-log/record";
 import type { LogEntry } from "@/lib/ping-log/store";
 
-import { CARD, LINK, SECONDARY, clock } from "./ui";
+import { Eyebrow, Frame, PxButton, PxLink, clock } from "./ui";
 
 type Props = {
   apiUrl: string;
@@ -17,6 +17,7 @@ type Props = {
   consent: Consent | null;
   notificationPermission: string;
   geolocationPermission: string | null;
+  pushSupport: string;
   subscription: PushSubscription | null;
   expiresAt: string | null;
   nextPingAt: number;
@@ -26,6 +27,7 @@ type Props = {
   onRecordNow: () => void;
   onResend: () => void;
   onClearLocal: () => void;
+  onResetSetup: () => void;
 };
 
 function fullTime(value: number | string): string {
@@ -60,6 +62,7 @@ export function DeveloperView(props: Props) {
     ["通知サーバー", props.apiUrl || "未設定（NEXT_PUBLIC_PUSH_API_URL）"],
     ["匿名ID", props.deviceId],
     ["同意", props.consent ? `${props.consent.version}（${fullTime(props.consent.at)}）` : "未同意"],
+    ["通知の対応", props.pushSupport],
     ["通知の許可", props.notificationPermission],
     ["位置情報の許可", props.geolocationPermission ?? "不明"],
     ["購読", props.subscription ? new URL(props.subscription.endpoint).host : "なし"],
@@ -69,47 +72,48 @@ export function DeveloperView(props: Props) {
 
   return (
     <>
-      <section className={CARD}>
-        <h2 className="font-bold">状態</h2>
+      <Frame tone="dim">
+        <Eyebrow soft className="mb-3">Status</Eyebrow>
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
           {state.map(([label, value]) => (
             <div key={label} className="contents">
-              <dt className="text-neutral-500">{label}</dt>
+              <dt className="text-(--px-muted)">{label}</dt>
               <dd className="font-mono break-all">{value}</dd>
             </div>
           ))}
         </dl>
-      </section>
+      </Frame>
 
-      <section className={CARD}>
-        <h2 className="font-bold">操作</h2>
-        {!props.consent && <p className="text-sm text-neutral-500">記録と通知は、参加者向け画面で同意すると使えます。</p>}
+      <Frame tone="dim" panelClassName="space-y-3">
+        <Eyebrow soft>Debug</Eyebrow>
+        {!props.consent && <p className="text-sm text-(--px-muted)">記録と通知は、参加者向け画面で同意すると使えます。</p>}
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" className={SECONDARY} onClick={props.onRecordNow} disabled={!canRecord}>今すぐ記録する</button>
-          <button type="button" className={SECONDARY} onClick={props.onTest} disabled={!props.subscription || props.busy}>テスト通知を送る</button>
-          <button type="button" className={`${SECONDARY} col-span-2`} onClick={props.onResend} disabled={!unsent || props.busy}>未送信を再送（{unsent}件）</button>
+          <PxButton variant="secondary" size="sm" onClick={props.onRecordNow} disabled={!canRecord}>今すぐ記録する</PxButton>
+          <PxButton variant="secondary" size="sm" onClick={props.onTest} disabled={!props.subscription || props.busy}>テスト通知を送る</PxButton>
+          <PxButton variant="secondary" size="sm" onClick={props.onResend} disabled={!unsent || props.busy}>未送信を再送（{unsent}件）</PxButton>
+          <PxButton variant="secondary" size="sm" onClick={props.onResetSetup} disabled={props.busy}>準備の画面を見る</PxButton>
         </div>
-        <p className="text-xs text-neutral-500">記録は送信したときに自動でサーバーへ保存されます。送れなかった記録は、次にページを開いたときに送り直します。サーバーのデータの取り出し方は push-worker/README.md にあります。</p>
-      </section>
+        <p className="text-xs leading-relaxed text-(--px-muted)">記録は送信したときに自動でサーバーへ保存されます。送れなかった記録は、次にページを開いたときに送り直します。サーバーのデータの取り出し方は push-worker/README.md にあります。「準備の画面を見る」は、はじめの準備の表示を確かめるためのものです（同意も記録も消しません）。</p>
+      </Frame>
 
       <section className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold">この端末の記録（{entries.length}件）</h2>
-          {entries.length > 0 && <button type="button" className={LINK} onClick={props.onClearLocal}>端末から削除</button>}
+          <h2 className="font-black">この端末の記録（{entries.length}件）</h2>
+          {entries.length > 0 && <PxLink onClick={props.onClearLocal}>端末から削除</PxLink>}
         </div>
         {entries.length === 0 ? (
-          <p className="text-sm text-neutral-500">まだ記録はありません。</p>
+          <p className="text-sm text-(--px-text-soft)">まだ記録はありません。</p>
         ) : (
-          <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
+          <ul className="space-y-2">
             {entries.map((entry) => {
               const { record } = entry;
               const { last, error } = summary(entry);
               return (
-                <li key={entry.id} className="flex gap-3 py-3">
-                  {thumbs[entry.id] && <img src={thumbs[entry.id]} alt="" className="size-16 shrink-0 rounded object-cover" />}
+                <li key={entry.id} className="px-panel flex gap-3 p-3!">
+                  {thumbs[entry.id] && <img src={thumbs[entry.id]} alt="" className="size-16 shrink-0 object-cover" />}
                   <div className="min-w-0 space-y-0.5 text-xs">
                     <p className="text-sm font-bold">
-                      {fullTime(record.takenAt)}・{record.kind === "ping" ? "通知から" : "手動"}・{entry.sentAt ? "送信済み" : "未送信"}
+                      {fullTime(record.takenAt)}・{record.tutorial ? "練習" : record.kind === "ping" ? "通知から" : "手動"}・{entry.sentAt ? "送信済み" : "未送信"}
                     </p>
                     {last ? (
                       <p className="font-mono">
@@ -119,7 +123,7 @@ export function DeveloperView(props: Props) {
                     ) : (
                       <p>測位なし</p>
                     )}
-                    <p className="text-neutral-500">
+                    <p className="text-(--px-muted)">
                       測位{record.capture.fixes.length}回
                       {record.sourceGuess && `・${SOURCE_LABEL[record.sourceGuess]}（推定）`}
                       {record.capture.coarse && `・低精度 ±${record.capture.coarse.accuracy.toFixed(0)}m`}
@@ -129,10 +133,10 @@ export function DeveloperView(props: Props) {
                     {record.truth ? (
                       <p>
                         指した場所 {record.truth.levelLabel}・{describeTruth(record.truth)}
-                        {error !== null && `・ずれ ${error.toFixed(1)}m`}
+                        {error !== null && <span className="text-(--px-teal)">{`・ずれ ${error.toFixed(1)}m`}</span>}
                       </p>
                     ) : (
-                      <p className="text-neutral-500">{record.truthSkipped ? "場所はわからないと回答" : "場所の入力なし"}</p>
+                      <p className="text-(--px-muted)">{record.truthSkipped ? "場所はわからないと回答" : "場所の入力なし"}</p>
                     )}
                   </div>
                 </li>

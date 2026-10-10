@@ -3,5 +3,8 @@
   "short_name": "TRACE",
   "start_url": "./log",
   "scope": "./",
-  "display": "standalone"
+  "display": "standalone",
+  "background_color": "#edd8ad",
+  "theme_color": "#111018",
+  "icons": [{ "src": "/log/apple-icon", "sizes": "180x180", "type": "image/png" }]
 }
