@@ -16,7 +16,7 @@ import {
 } from "@/lib/ping-log/push";
 import { clearEntries, listEntries, putEntry, type LogEntry } from "@/lib/ping-log/store";
 
-import { ConsentView } from "./consent-view";
+import { ConsentDialog } from "./consent-view";
 import { DeveloperView } from "./developer-view";
 import { RecordCard } from "./record-card";
 import { CARD, LINK, PRIMARY, SECONDARY, clock } from "./ui";
@@ -24,7 +24,6 @@ import { CARD, LINK, PRIMARY, SECONDARY, clock } from "./ui";
 const PING_INTERVAL_MINUTES = 10;
 const PENDING_KEY = "trace-ping-pending";
 const VIEW_KEY = "trace-log-view";
-const OUTSIDE_KEY = "trace-allow-outside";
 const PROMPT_MESSAGE = "trace-ping";
 
 type View = "participant" | "developer";
@@ -78,7 +77,8 @@ export function PingLogScreen() {
   // The participant screen is what opens by default; the developer screen lasts for this tab only.
   const [view, setView] = useState<View>(() => (read(window.sessionStorage, VIEW_KEY) === "developer" ? "developer" : "participant"));
   const [consent, setConsent] = useState<Consent | null>(loadConsent);
-  const [readingConsent, setReadingConsent] = useState(false);
+  // Opens by itself on a first visit, over the page it is asking about.
+  const [consentOpen, setConsentOpen] = useState(() => loadConsent() === null);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(subscriptionExpiresAt);
   const [pendingAt, setPendingAt] = useState<string | null>(initialPending);
@@ -87,7 +87,6 @@ export function PingLogScreen() {
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [permission, setPermission] = useState(notificationState);
   const [geolocation, setGeolocation] = useState<PermissionState | "unknown" | null>(null);
-  const [allowOutside, setAllowOutside] = useState(() => read(window.localStorage, OUTSIDE_KEY) === "1");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
@@ -180,6 +179,7 @@ export function PingLogScreen() {
 
   const agree = () => {
     setConsent(saveConsent());
+    setConsentOpen(false);
     setMessage("");
   };
 
@@ -243,25 +243,11 @@ export function PingLogScreen() {
     setMessage(failed ? `${failed}件を送信できませんでした。` : "未送信の記録を送りました。");
   });
 
-  const exportLocal = () => {
-    const blob = new Blob([JSON.stringify(entries.map(({ record, sentAt }) => ({ ...record, sentAt })), null, 2)], { type: "application/json" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `trace-log-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-  };
-
   const clearLocal = () => run(async () => {
     if (!window.confirm("この端末に残っている記録を削除します。送信済みのデータはサーバーに残ります。よろしいですか？")) return;
     await clearEntries();
     setEntries([]);
   });
-
-  const changeAllowOutside = (value: boolean) => {
-    write(window.localStorage, OUTSIDE_KEY, value ? "1" : null);
-    setAllowOutside(value);
-  };
 
   const active = consent && (manual || pendingAt) ? { kind: manual ? ("manual" as const) : ("ping" as const), promptedAt: manual ? null : pendingAt } : null;
   const recordCard = active && consent && geolocation !== null && (
@@ -271,7 +257,6 @@ export function PingLogScreen() {
       promptedAt={active.promptedAt}
       consent={consent}
       developer={view === "developer"}
-      allowOutside={view === "developer" && allowOutside}
       autoStart={active.kind === "manual" || geolocation === "granted"}
       onSave={save}
       onClose={closeRecord}
@@ -312,29 +297,27 @@ export function PingLogScreen() {
             subscription={subscribed ? subscription : null}
             expiresAt={expiresAt}
             nextPingAt={nextPingAt(now)}
-            allowOutside={allowOutside}
             entries={entries}
             busy={busy}
-            onAllowOutside={changeAllowOutside}
             onTest={() => void test()}
             onRecordNow={() => setManual(true)}
             onResend={() => void resend()}
-            onExport={exportLocal}
             onClearLocal={() => void clearLocal()}
           />
         </>
-      ) : !consent ? (
+      ) : (
         <>
           <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
             {PING_INTERVAL_MINUTES}分ごとにスマホに通知が届きます。通知が届いたら、いまいる場所を記録してください。写真を添えることもできます。
           </p>
-          <ConsentView onAgree={agree} />
-          {status}
-        </>
-      ) : readingConsent ? (
-        <ConsentView onClose={() => setReadingConsent(false)} />
-      ) : (
-        <>
+
+          {!consent && (
+            <section className={CARD}>
+              <p className="text-sm">参加するには、内容を確認して同意してください。</p>
+              <button type="button" className={`${PRIMARY} w-full`} onClick={() => setConsentOpen(true)}>内容を確認する</button>
+            </section>
+          )}
+
           {recordCard}
 
           <section className={CARD}>
@@ -352,9 +335,9 @@ export function PingLogScreen() {
               {subscribed ? (
                 <button type="button" className={SECONDARY} onClick={() => void stop()} disabled={busy}>通知を停止する</button>
               ) : (
-                <button type="button" className={PRIMARY} onClick={() => void start()} disabled={busy || !PUSH_API_URL}>通知を開始する</button>
+                <button type="button" className={PRIMARY} onClick={() => void start()} disabled={busy || !PUSH_API_URL || !consent}>通知を開始する</button>
               )}
-              <button type="button" className={SECONDARY} onClick={() => setManual(true)} disabled={busy || active !== null}>今すぐ記録する</button>
+              <button type="button" className={SECONDARY} onClick={() => setManual(true)} disabled={busy || active !== null || !consent}>今すぐ記録する</button>
             </div>
             {permission === "denied" && <p className="text-xs text-neutral-500">通知がオフになっています。端末の設定で許可してください。</p>}
             {permission === "unsupported" && (
@@ -374,12 +357,16 @@ export function PingLogScreen() {
             )}
           </section>
 
-          <footer className="flex gap-4 border-t border-neutral-200 pt-4 dark:border-neutral-800">
-            <button type="button" className={LINK} onClick={() => setReadingConsent(true)}>同意した内容を見る</button>
-            <button type="button" className={LINK} onClick={() => void withdraw()} disabled={busy}>参加をやめる</button>
-          </footer>
+          {consent && (
+            <footer className="flex gap-4 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+              <button type="button" className={LINK} onClick={() => setConsentOpen(true)}>同意した内容を見る</button>
+              <button type="button" className={LINK} onClick={() => void withdraw()} disabled={busy}>参加をやめる</button>
+            </footer>
+          )}
         </>
       )}
+
+      <ConsentDialog open={consentOpen && view === "participant"} onAgree={consent ? undefined : agree} onClose={() => setConsentOpen(false)} />
     </main>
   );
 }

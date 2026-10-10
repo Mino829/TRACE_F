@@ -34,7 +34,7 @@ type IncomingRecord = {
   takenAt: string;
   capture?: { fixes?: Fix[]; coarse?: Fix | null };
   sourceGuess?: string | null;
-  truth?: { wgs84?: { lat: number; lon: number }; level?: number; buildingIds?: string[]; confidence?: string } | null;
+  truth?: { method?: string; wgs84?: { lat: number; lon: number }; level?: number; buildingIds?: string[] } | null;
   network?: { type?: string } | null;
 };
 
@@ -145,7 +145,7 @@ async function handleRecord(request: Request, env: Env, cors: Record<string, str
   await env.DB.prepare(
     `INSERT OR IGNORE INTO records (id, device_id, kind, consent_version, prompted_at, taken_at, received_at, fix_count,
        latitude, longitude, accuracy, altitude, altitude_accuracy, source_guess,
-       truth_latitude, truth_longitude, truth_level, truth_buildings, truth_confidence, error_m,
+       truth_latitude, truth_longitude, truth_level, truth_buildings, truth_method, error_m,
        photo_key, connection_type, asn, as_organization, payload)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
@@ -167,7 +167,7 @@ async function handleRecord(request: Request, env: Env, cors: Record<string, str
     truth?.wgs84?.lon ?? null,
     finite(truth?.level),
     Array.isArray(truth?.buildingIds) ? truth.buildingIds.join(",").slice(0, 256) : null,
-    text(truth?.confidence, 16) || null,
+    text(truth?.method, 16) || null,
     errorM,
     photoKey,
     text(record.network?.type, 16) || null,

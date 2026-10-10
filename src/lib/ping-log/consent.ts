@@ -8,7 +8,7 @@
  * carries the version it was given under.
  */
 
-export const CONSENT_VERSION = "2026-10-07-draft";
+export const CONSENT_VERSION = "2026-10-10-draft";
 
 export const CONSENT_LEAD = "参加は任意です。同意しなくても、不利益になることはありません。";
 
@@ -24,7 +24,7 @@ export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
     title: "取得する情報",
     items: [
       "位置情報（緯度、経度、高さ、誤差の目安、速さ、向き）と、それを測った時刻",
-      "地図で指した、いまいる場所と階（豊洲キャンパスで記録したとき）",
+      "地図で指した、いまいる場所と階",
       "写真（添えたときだけ）と、写真に含まれる撮影日時、撮影位置、カメラの機種",
       "端末の種類（機種、OS、ブラウザ）、通信の種類（Wi-Fi かモバイル回線か、通信事業者名）、電池残量",
       "この端末で作る匿名の ID",
@@ -36,7 +36,7 @@ export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
       "氏名、学籍番号、メールアドレス、電話番号",
       "端末の製造番号や広告 ID",
       "IP アドレス（記録には残しません）",
-      "記録するとき以外の位置情報と、キャンパスから離れた場所の位置情報",
+      "記録するとき以外の位置情報",
     ],
   },
   {
@@ -45,6 +45,7 @@ export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
       "位置情報の誤差を分析し、作品の位置表示の改善に使います。",
       "この記録そのものは、展示には使いません。",
       "写真は記録した場所の様子の確認に使い、外部には公開しません。",
+      "地図は国土地理院の地理院タイルで表示します。表示している範囲の地図を、国土地理院のサーバーから読み込みます。",
     ],
   },
   {

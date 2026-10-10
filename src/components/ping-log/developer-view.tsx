@@ -4,10 +4,9 @@
 
 import { useEffect, useMemo } from "react";
 
-import { distanceMetres, wgs84ToLocal } from "@/lib/geo/campus-georeference";
 import { buildingById } from "@/lib/map/buildings";
 import type { Consent } from "@/lib/ping-log/consent";
-import { SOURCE_LABEL, TRUTH_CONFIDENCE } from "@/lib/ping-log/record";
+import { SOURCE_LABEL, haversineMetres, type Truth } from "@/lib/ping-log/record";
 import type { LogEntry } from "@/lib/ping-log/store";
 
 import { CARD, LINK, SECONDARY, clock } from "./ui";
@@ -21,14 +20,11 @@ type Props = {
   subscription: PushSubscription | null;
   expiresAt: string | null;
   nextPingAt: number;
-  allowOutside: boolean;
   entries: LogEntry[];
   busy: boolean;
-  onAllowOutside: (value: boolean) => void;
   onTest: () => void;
   onRecordNow: () => void;
   onResend: () => void;
-  onExport: () => void;
   onClearLocal: () => void;
 };
 
@@ -36,14 +32,18 @@ function fullTime(value: number | string): string {
   return new Date(value).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-/** The errors this record would contribute to an analysis, worked out on the phone for a quick look. */
+/** The error this record would contribute to an analysis, worked out on the phone for a quick look. */
 function summary(entry: LogEntry) {
   const { record } = entry;
   const last = record.capture.fixes.at(-1) ?? record.capture.coarse;
-  const error = last && record.truth
-    ? distanceMetres(wgs84ToLocal({ lat: last.latitude, lon: last.longitude }), record.truth.local)
-    : null;
+  const error = last && record.truth ? haversineMetres({ lat: last.latitude, lon: last.longitude }, record.truth.wgs84) : null;
   return { last, error };
+}
+
+function describeTruth(truth: Truth): string {
+  if (truth.method === "map") return `地図（ズーム${truth.zoom}、${truth.layer === "gsi-photo" ? "航空写真" : "地図"}）`;
+  const names = truth.buildingIds.map((id) => buildingById(id)?.name ?? id).join("、");
+  return `図面${names ? `（${names}）` : "（屋外）"}`;
 }
 
 export function DeveloperView(props: Props) {
@@ -87,14 +87,9 @@ export function DeveloperView(props: Props) {
         <div className="grid grid-cols-2 gap-2">
           <button type="button" className={SECONDARY} onClick={props.onRecordNow} disabled={!canRecord}>今すぐ記録する</button>
           <button type="button" className={SECONDARY} onClick={props.onTest} disabled={!props.subscription || props.busy}>テスト通知を送る</button>
-          <button type="button" className={SECONDARY} onClick={props.onResend} disabled={!unsent || props.busy}>未送信を再送（{unsent}件）</button>
-          <button type="button" className={SECONDARY} onClick={props.onExport} disabled={!entries.length}>記録を書き出す</button>
+          <button type="button" className={`${SECONDARY} col-span-2`} onClick={props.onResend} disabled={!unsent || props.busy}>未送信を再送（{unsent}件）</button>
         </div>
-        <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" className="mt-1" checked={props.allowOutside} onChange={(event) => props.onAllowOutside(event.target.checked)} />
-          <span>キャンパスの外でも記録する（動作確認用。参加者には使わせないでください）</span>
-        </label>
-        <p className="text-xs text-neutral-500">書き出しは、この端末に残っている記録の JSON です（写真は含みません）。サーバーの全データは push-worker/README.md の手順で取り出します。</p>
+        <p className="text-xs text-neutral-500">記録は送信したときに自動でサーバーへ保存されます。送れなかった記録は、次にページを開いたときに送り直します。サーバーのデータの取り出し方は push-worker/README.md にあります。</p>
       </section>
 
       <section className="space-y-2">
@@ -133,15 +128,12 @@ export function DeveloperView(props: Props) {
                     </p>
                     {record.truth ? (
                       <p>
-                        指した場所 {record.truth.levelLabel}
-                        {record.truth.buildingIds.length > 0 && `（${record.truth.buildingIds.map((id) => buildingById(id)?.name ?? id).join("、")}）`}
-                        ・{TRUTH_CONFIDENCE[record.truth.confidence].label}
+                        指した場所 {record.truth.levelLabel}・{describeTruth(record.truth)}
                         {error !== null && `・ずれ ${error.toFixed(1)}m`}
                       </p>
                     ) : (
                       <p className="text-neutral-500">{record.truthSkipped ? "場所はわからないと回答" : "場所の入力なし"}</p>
                     )}
-                    {record.forcedOutside && <p className="text-neutral-500">キャンパスの外で記録（動作確認）</p>}
                   </div>
                 </li>
               );

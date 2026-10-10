@@ -4,8 +4,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { localToCampusPx, wgs84ToLocal, type CampusPx } from "@/lib/geo/campus-georeference";
-import { campusLevels } from "@/lib/map/buildings";
+import { localToCampusPx, wgs84ToLocal, type CampusPx, type Wgs84 } from "@/lib/geo/campus-georeference";
+import { campusLevels, levelLabel } from "@/lib/map/buildings";
 import { geolocationMessage, startCapture, type CaptureHandle } from "@/lib/ping-log/capture";
 import type { Consent } from "@/lib/ping-log/consent";
 import { deviceContext, networkInfo, watchOrientation, type NetworkInfo, type OrientationSample } from "@/lib/ping-log/context";
@@ -15,21 +15,24 @@ import {
   COORDINATE_VERSION,
   RECORD_SCHEMA,
   SOURCE_LABEL,
-  TRUTH_CONFIDENCE,
-  buildTruth,
+  campusTruth,
   guessSource,
+  mapTruth,
   nearCampus,
   type Capture,
   type Fix,
+  type MapLayer,
   type PhotoMeta,
-  type TruthConfidence,
 } from "@/lib/ping-log/record";
 import type { LogEntry } from "@/lib/ping-log/store";
 
 import { CampusPlan } from "./campus-plan";
 import { PRIMARY, SECONDARY, choice, clock } from "./ui";
+import { WorldMap } from "./world-map";
 
 const WIFI_KEY = "trace-wifi";
+/** Floors offered on the street map, where there are no drawings to list them: B2F to 40F. */
+const MAP_LEVELS = Array.from({ length: 42 }, (_, index) => index - 1);
 
 function loadWifi(): "on" | "off" | null {
   try {
@@ -56,22 +59,23 @@ type Props = {
   kind: "ping" | "manual";
   promptedAt: string | null;
   consent: Consent;
-  /** Shows the raw fixes and the phone's own position on the plan. */
+  /** Shows the raw fixes and the phone's own position on the plan and map. */
   developer: boolean;
-  /** Developer override: record even when the phone is away from campus. */
-  allowOutside: boolean;
   /** Start measuring without waiting for a tap (the person already asked, or already allowed location). */
   autoStart: boolean;
   onSave: (entry: LogEntry) => Promise<void>;
   onClose: () => void;
 };
 
-export function RecordCard({ kind, promptedAt, consent, developer, allowOutside, autoStart, onSave, onClose }: Props) {
+type Where = "plan" | "map";
+
+export function RecordCard({ kind, promptedAt, consent, developer, autoStart, onSave, onClose }: Props) {
   const [capture, setCapture] = useState<Capture | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [level, setLevel] = useState<number | null>(null);
-  const [mark, setMark] = useState<{ px: CampusPx; at: number } | null>(null);
-  const [confidence, setConfidence] = useState<TruthConfidence | null>(null);
+  const [mark, setMark] = useState<{ px: CampusPx; at: number; viewScale: number } | null>(null);
+  const [pin, setPin] = useState<{ point: Wgs84; at: number; zoom: number; layer: MapLayer } | null>(null);
+  const [chosen, setChosen] = useState<Where | null>(null);
   const [wifi, setWifi] = useState<"on" | "off" | null>(loadWifi);
   const [photo, setPhoto] = useState<{ blob: Blob; meta: PhotoMeta } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -114,11 +118,21 @@ export function RecordCard({ kind, promptedAt, consent, developer, allowOutside,
 
   const latest: Fix | null = capture?.fixes.at(-1) ?? capture?.coarse ?? null;
   const inside = latest ? nearCampus(latest) : null;
+  // Decided once, from the first fix, so the screen does not swap under the person as fixes come in.
+  const first = [capture?.coarse, capture?.fixes[0]].filter((fix): fix is Fix => Boolean(fix)).sort((a, b) => a.receivedAt - b.receivedAt)[0] ?? null;
+  const startedNearCampus = first ? nearCampus(first) : false;
+  const where: Where = chosen ?? (startedNearCampus ? "plan" : "map");
   const denied = capture?.errors.some((item) => item.code === 1) ?? false;
   const lastError = capture?.errors.at(-1) ?? null;
-  const recordable = latest !== null && (inside === true || allowOutside);
   const me = latest ? localToCampusPx(wgs84ToLocal({ lat: latest.latitude, lon: latest.longitude })) : null;
-  const truthReady = mark !== null && level !== null && confidence !== null;
+  const latestKey = latest?.receivedAt;
+  const meOnMap = useMemo(
+    () => (latest ? { lat: latest.latitude, lon: latest.longitude, accuracy: latest.accuracy } : null),
+    // The fix object is rebuilt on every update; its arrival time identifies it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [latestKey],
+  );
+  const truthReady = level !== null && (where === "plan" ? mark !== null : pin !== null);
   const elapsed = capture ? Math.max(0, Math.round((now - capture.startedAt) / 1000)) : 0;
 
   const onPhoto = async (file: File | undefined) => {
@@ -160,9 +174,14 @@ export function RecordCard({ kind, promptedAt, consent, developer, allowOutside,
           capture: final,
           sourceGuess: last ? guessSource(last) : null,
           coordinateVersion: COORDINATE_VERSION,
-          insideCampus: last ? nearCampus(last) : false,
-          forcedOutside: last ? !nearCampus(last) : false,
-          truth: withTruth && truthReady ? buildTruth(mark.px, level, confidence, mark.at) : null,
+          insideCampus: startedNearCampus,
+          truth: !withTruth || level === null
+            ? null
+            : where === "plan" && mark
+              ? campusTruth(mark.px, level, mark.at, mark.viewScale)
+              : where === "map" && pin
+                ? mapTruth(pin.point, level, pin.at, pin.zoom, pin.layer)
+                : null,
           truthSkipped: !withTruth,
           selfReport: { wifi },
           device: await deviceContext(),
@@ -209,50 +228,60 @@ export function RecordCard({ kind, promptedAt, consent, developer, allowOutside,
             </>
           )}
         </div>
-      ) : !recordable ? (
-        <div className="space-y-3 text-sm">
-          <p>豊洲キャンパスから離れた場所にいるため、今回は記録しません。</p>
-          <p className="text-neutral-500">キャンパスの外の位置情報は送らない決まりです。キャンパス内で、もう一度開いてください。</p>
-          <button type="button" className={SECONDARY} onClick={onClose}>閉じる</button>
-        </div>
       ) : (
         <>
           <p className="text-sm text-neutral-500">
             スマホの位置を測りながら、いまいる場所を地図で教えてください。測った回数 {capture.fixes.length}回、誤差の目安 約{metres(latest.accuracy)}
           </p>
 
+          {startedNearCampus && (
+            <div className="grid grid-cols-2 gap-1.5">
+              <button type="button" className={choice(where === "plan")} onClick={() => setChosen("plan")}>キャンパスの図面で指す</button>
+              <button type="button" className={choice(where === "map")} onClick={() => setChosen("map")}>地図で指す</button>
+            </div>
+          )}
+
           <div className="space-y-2">
             <p className="text-sm font-bold">いまいる階</p>
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
-              {campusLevels.map((item) => (
-                <button key={item.level} type="button" className={`${choice(level === item.level)} shrink-0`} onClick={() => setLevel(item.level)}>
-                  {item.label}
-                </button>
-              ))}
-            </div>
+            {where === "plan" ? (
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
+                {campusLevels.map((item) => (
+                  <button key={item.level} type="button" className={`${choice(level === item.level)} shrink-0`} onClick={() => setLevel(item.level)}>
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <select
+                className="w-full rounded-md border border-neutral-300 bg-background px-3 py-2 text-sm dark:border-neutral-700"
+                value={level ?? ""}
+                onChange={(event) => setLevel(event.target.value === "" ? null : Number(event.target.value))}
+              >
+                <option value="">選んでください</option>
+                {MAP_LEVELS.map((value) => <option key={value} value={value}>{levelLabel(value)}</option>)}
+              </select>
+            )}
             <p className="text-xs text-neutral-500">屋外の地面にいるときは 1F を選んでください。</p>
           </div>
 
           <div className="space-y-2">
             <p className="text-sm font-bold">いまいる場所</p>
-            <CampusPlan
-              level={level ?? 1}
-              mark={mark?.px ?? null}
-              onMarkChange={(px) => setMark({ px, at: Date.now() })}
-              me={developer ? me : null}
-              meAccuracyMetres={developer ? latest.accuracy : null}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm font-bold">指した場所の確かさ</p>
-            <div className="grid gap-1.5">
-              {(Object.keys(TRUTH_CONFIDENCE) as TruthConfidence[]).map((key) => (
-                <button key={key} type="button" className={`${choice(confidence === key)} text-left`} onClick={() => setConfidence(key)}>
-                  {TRUTH_CONFIDENCE[key].label}
-                </button>
-              ))}
-            </div>
+            {where === "plan" ? (
+              <CampusPlan
+                level={level ?? 1}
+                mark={mark?.px ?? null}
+                onMarkChange={(px, viewScale) => setMark({ px, at: Date.now(), viewScale })}
+                me={developer ? me : null}
+                meAccuracyMetres={developer ? latest.accuracy : null}
+              />
+            ) : (
+              <WorldMap
+                centre={{ lat: latest.latitude, lon: latest.longitude }}
+                pin={pin?.point ?? null}
+                onPin={(point, zoom, layer) => setPin({ point, at: Date.now(), zoom, layer })}
+                me={developer ? meOnMap : null}
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-sm">
@@ -279,7 +308,7 @@ export function RecordCard({ kind, promptedAt, consent, developer, allowOutside,
             <button type="button" className={PRIMARY} onClick={() => void send(true)} disabled={busy || !truthReady}>
               {busy ? "送信しています…" : "送信する"}
             </button>
-            {!truthReady && <p className="text-xs text-neutral-500">階、場所、確かさを選ぶと送信できます。</p>}
+            {!truthReady && <p className="text-xs text-neutral-500">階と場所を選ぶと送信できます。</p>}
             <button type="button" className={SECONDARY} onClick={() => void send(false)} disabled={busy}>
               いまいる場所がわからない（測った位置だけ送る）
             </button>

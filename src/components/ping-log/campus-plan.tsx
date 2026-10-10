@@ -66,7 +66,8 @@ function turn(dx: number, dy: number, degrees: number) {
 interface Props {
   level: number;
   mark: CampusPx | null;
-  onMarkChange: (px: CampusPx) => void;
+  /** Also gets the zoom the mark was placed at, as a measure of how fine the claim is. */
+  onMarkChange: (px: CampusPx, viewScale: number) => void;
   /** The phone's own fix. Left out on the participant screen, where it would pull the mark towards itself. */
   me: CampusPx | null;
   meAccuracyMetres: number | null;
@@ -311,10 +312,13 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
     if (!candidate || candidate.moved || pointers.current.size > 0) return;
     if (Date.now() - candidate.at > TAP_MS || distance(point, candidate) > TAP_SLOP_PX) return;
     const sheet = sheetOf(point);
-    onMarkChange({
-      x: Math.min(CAMPUS_SHEET.x + CAMPUS_SHEET.width, Math.max(CAMPUS_SHEET.x, sheet.x)),
-      y: Math.min(CAMPUS_SHEET.y + CAMPUS_SHEET.height, Math.max(CAMPUS_SHEET.y, sheet.y)),
-    });
+    onMarkChange(
+      {
+        x: Math.min(CAMPUS_SHEET.x + CAMPUS_SHEET.width, Math.max(CAMPUS_SHEET.x, sheet.x)),
+        y: Math.min(CAMPUS_SHEET.y + CAMPUS_SHEET.height, Math.max(CAMPUS_SHEET.y, sheet.y)),
+      },
+      view.scale,
+    );
   };
 
   /** A marker off the viewport is pinned to the edge it left by, with how far away it is. */
