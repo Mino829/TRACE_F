@@ -8,6 +8,8 @@ import { useEffect, useRef } from "react";
 import type { Wgs84 } from "@/lib/geo/campus-georeference";
 import type { MapLayer } from "@/lib/ping-log/record";
 
+import { spriteMarkup, spriteSize } from "./pixel-sprite";
+
 /**
  * A street map for pinning where you stand, anywhere the campus drawings do
  * not reach. Tiles are the Geospatial Information Authority of Japan's
@@ -26,12 +28,15 @@ const MAX_ZOOM = 20;
 /** Toyosu campus, for when there is no fix to start from. */
 const FALLBACK_CENTRE: Wgs84 = { lat: 35.6605, lon: 139.7955 };
 
+const PIN_SCALE = 3;
+const PIN_SIZE = spriteSize("pin");
+/** The pixel pin, its tip on the point; it drops in each time it is placed. */
 const PIN_ICON = L.divIcon({
+  // Leaflet places the marker by its transform, so the drop runs on an inner box.
   className: "",
-  iconSize: [46, 46],
-  iconAnchor: [23, 23],
-  // Pink on a white halo, so the cross reads on dark roofs and pale roads alike.
-  html: '<svg width="46" height="46" viewBox="-23 -23 46 46" style="overflow:visible"><g stroke="#fff" stroke-width="4.5" fill="none"><line x1="0" y1="-21" x2="0" y2="21"/><line x1="-21" y1="0" x2="21" y2="0"/><circle r="6"/></g><g stroke="#ec1e8f" stroke-width="2" fill="none"><line x1="0" y1="-21" x2="0" y2="21"/><line x1="-21" y1="0" x2="21" y2="0"/><circle r="6"/></g></svg>',
+  iconSize: [PIN_SIZE.width * PIN_SCALE, PIN_SIZE.height * PIN_SCALE],
+  iconAnchor: [(PIN_SIZE.width * PIN_SCALE) / 2, PIN_SIZE.height * PIN_SCALE],
+  html: `<div class="px-drop">${spriteMarkup("pin", PIN_SCALE)}</div>`,
 });
 
 type Props = {
@@ -96,8 +101,9 @@ export function WorldMap({ className, centre, pin, onPin, me }: Props) {
       pinMarker.current = null;
       return;
     }
-    if (pinMarker.current) pinMarker.current.setLatLng([pin.lat, pin.lon]);
-    else pinMarker.current = L.marker([pin.lat, pin.lon], { icon: PIN_ICON, interactive: false, keyboard: false }).addTo(current);
+    // A fresh marker each time, so the drop plays again where the finger landed.
+    pinMarker.current?.remove();
+    pinMarker.current = L.marker([pin.lat, pin.lon], { icon: PIN_ICON, interactive: false, keyboard: false }).addTo(current);
   }, [pin]);
 
   useEffect(() => {
@@ -106,11 +112,11 @@ export function WorldMap({ className, centre, pin, onPin, me }: Props) {
     meLayer.current?.remove();
     meLayer.current = me
       ? L.layerGroup([
-          L.circle([me.lat, me.lon], { radius: me.accuracy, color: "#2a5a56", weight: 1.5, fillColor: "#6fe3d9", fillOpacity: 0.2, interactive: false }),
-          L.circleMarker([me.lat, me.lon], { radius: 6, color: "#111018", weight: 2, fillColor: "#6fe3d9", fillOpacity: 1, interactive: false }),
+          L.circle([me.lat, me.lon], { radius: me.accuracy, color: "#1b2150", weight: 1.5, fillColor: "#67e8f9", fillOpacity: 0.22, interactive: false }),
+          L.circleMarker([me.lat, me.lon], { radius: 6, color: "#0b0d1f", weight: 2, fillColor: "#67e8f9", fillOpacity: 1, interactive: false }),
         ]).addTo(current)
       : null;
   }, [me]);
 
-  return <div ref={element} className={`overflow-hidden border-2 border-(--px-teal) ${className ?? "h-[min(56vh,480px)]"}`} />;
+  return <div ref={element} className={`overflow-hidden ${className ?? "h-[min(56vh,480px)]"}`} />;
 }

@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- the preview is a local blob: URL */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { localToCampusPx, wgs84ToLocal, type CampusPx, type Wgs84 } from "@/lib/geo/campus-georeference";
 import { buildingById, levelLabel } from "@/lib/map/buildings";
@@ -28,7 +28,8 @@ import type { LogEntry } from "@/lib/ping-log/store";
 
 import { CampusPlan } from "./campus-plan";
 import { PixelIcon } from "./pixel-icon";
-import { Eyebrow, PxButton, PxLink, clock } from "./ui";
+import { PixelSprite } from "./pixel-sprite";
+import { PxButton, PxLink, Window, clock } from "./ui";
 import { WorldMap } from "./world-map";
 
 /**
@@ -42,16 +43,17 @@ export type SaveOutcome = "sent" | "queued" | "local";
 type Step = "floor" | "place" | "review" | "done";
 type Where = "plan" | "map";
 
-const STEPS: { key: Exclude<Step, "done">; label: string }[] = [
-  { key: "floor", label: "階" },
-  { key: "place", label: "場所" },
-  { key: "review", label: "送信" },
+const STEPS: { key: Exclude<Step, "done">; label: string; question: string }[] = [
+  { key: "floor", label: "階", question: "いまいる階は？" },
+  { key: "place", label: "場所", question: "いまいる場所は？" },
+  { key: "review", label: "送信", question: "この内容で送ります" },
 ];
-const UPPER_FLOORS = Array.from({ length: 19 }, (_, index) => index + 2);
+/** The lift panel, top row first: 2F to 20F in fives, the low floors nearest the thumb. */
+const LIFT_ROWS = [[17, 18, 19, 20], [12, 13, 14, 15, 16], [7, 8, 9, 10, 11], [2, 3, 4, 5, 6]];
 const BASEMENT_FLOORS = [0, -1];
 const WIFI_KEY = "trace-wifi";
-/** Lets the chosen floor show as chosen before the next step slides in. */
-const ADVANCE_MS = 220;
+/** Lets the lit button and the display show the choice before the next step slides in. */
+const ADVANCE_MS = 320;
 const RECORD_HASH = "#record";
 
 function loadWifi(): "on" | "off" | null {
@@ -73,12 +75,15 @@ type Props = {
   developer: boolean;
   subscribed: boolean;
   nextPingAt: number;
+  /** Records made today before this one, for the count on the clear screen. */
+  todayCount: number;
   onSave: (entry: LogEntry) => Promise<SaveOutcome>;
   onClose: () => void;
 };
 
-export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, subscribed, nextPingAt, onSave, onClose }: Props) {
+export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, subscribed, nextPingAt, todayCount, onSave, onClose }: Props) {
   const [step, setStep] = useState<Step>("floor");
+  const [intro, setIntro] = useState(kind === "ping");
   const [capture, setCapture] = useState<Capture | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [level, setLevel] = useState<number | null>(null);
@@ -96,6 +101,7 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
   const networkAtStart = useRef<NetworkInfo | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const floorScroll = useRef<HTMLDivElement>(null);
   const advance = useRef<number | undefined>(undefined);
   const stepRef = useRef<Step>(step);
   const onCloseRef = useRef(onClose);
@@ -145,6 +151,11 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  // On a short screen the panel scrolls; start at its foot, where 1F and the low floors are.
+  useEffect(() => {
+    if (step === "floor" && floorScroll.current) floorScroll.current.scrollTop = floorScroll.current.scrollHeight;
+  }, [step]);
 
   const preview = useMemo(() => (photo ? URL.createObjectURL(photo.blob) : null), [photo]);
   useEffect(() => () => {
@@ -261,6 +272,7 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
       };
       setOutcome(await onSave(entry));
       setStep("done");
+      navigator.vibrate?.(40);
     } catch (problem) {
       setError(problem instanceof Error ? problem.message : "記録できませんでした。");
     } finally {
@@ -277,86 +289,77 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
       : where === "map" && pin
         ? "地図で指しました"
         : "まだ指していません";
+  const current = STEPS.find((item) => item.key === step);
 
   return (
-    <div className="px-dark fixed inset-0 z-40 flex flex-col bg-(--px-stage)" role="dialog" aria-modal="true" aria-labelledby="flow-title">
-      <header className="flex items-center gap-2 px-3 pt-[max(8px,env(safe-area-inset-top))]">
-        <button type="button" onClick={close} className="flex min-h-11 min-w-11 items-center gap-1.5 px-1 text-sm text-(--px-muted) focus-visible:outline-3 focus-visible:outline-(--px-teal)">
+    <div className="px-stage fixed inset-0 z-40 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="flow-title">
+      <header className="flex items-center gap-2 px-2 pt-[max(6px,env(safe-area-inset-top))]">
+        <button type="button" onClick={close} className="flex min-h-11 min-w-11 items-center gap-2 px-2 text-[15px] text-(--px-ink-2) focus-visible:outline-3 focus-visible:outline-(--px-focus)">
           <PixelIcon name="cross" size={14} />
           {step === "done" ? "閉じる" : kind === "ping" ? "スキップ" : "やめる"}
         </button>
-        <Eyebrow className="mx-auto">{tutorial ? "Practice" : "Quest"}</Eyebrow>
+        <p className="px-label mx-auto">{tutorial ? "Practice" : kind === "ping" ? "Ping" : "Record"}</p>
         <SignalMeter fix={latest} measuring={capture !== null && !denied} denied={denied} />
       </header>
 
-      {step !== "done" && (
+      {current && (
         <div className="space-y-3 px-4 pt-1 pb-3">
-          <div>
-            <h2 id="flow-title" ref={titleRef} tabIndex={-1} className="text-lg font-black outline-none">
-              {tutorial ? "練習：いまいる場所を記録します" : "いまいる場所を記録します"}
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="flow-title" ref={titleRef} tabIndex={-1} className="text-[26px] leading-tight outline-none">
+              {current.question}
             </h2>
-            {promptedAt && <p className="text-xs text-(--px-muted)">{clock(promptedAt)} の通知</p>}
+            {promptedAt && <p className="shrink-0 text-[13px] text-(--px-ink-2)">{clock(promptedAt)} の通知</p>}
           </div>
           <StepBar step={step} />
+          {tutorial && step === "floor" && <Coach>いまいる階のボタンを押すと、次の手順に進みます。屋外の地面にいるときは「1F 地上・屋外」です。</Coach>}
+          {tutorial && step === "place" && latest && !denied && <Coach>地図は指で動かしたり、広げたりできます。いまいる場所をタップすると、ピンが立ちます。</Coach>}
+          {tutorial && step === "review" && <Coach>内容を確かめて「送信する」を押してください。練習の記録も、本番と同じように保存されます。</Coach>}
         </div>
       )}
 
       {step === "floor" && (
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-          {tutorial && <Coach>いまいる階をタップすると、次の手順に進みます。屋外の地面にいるときは 1F です。</Coach>}
-          <p className="mb-3 font-bold">いまいる階を選んでください</p>
-          <button type="button" className="px-tile w-full" aria-pressed={level === 1} onClick={() => chooseFloor(1)}>
-            <span className="px-floor">1F</span>
-            <span className="text-sm">地上・屋外</span>
-          </button>
-          <div className="mt-2 grid grid-cols-4 gap-2">
-            {UPPER_FLOORS.map((value) => (
-              <button key={value} type="button" className="px-tile px-floor" aria-pressed={level === value} onClick={() => chooseFloor(value)}>
-                {levelLabel(value)}
-              </button>
-            ))}
-          </div>
-          <p className="mt-4 mb-2 text-xs text-(--px-muted)">地下</p>
-          <div className="grid grid-cols-4 gap-2">
-            {BASEMENT_FLOORS.map((value) => (
-              <button key={value} type="button" className="px-tile px-floor" aria-pressed={level === value} onClick={() => chooseFloor(value)}>
-                {levelLabel(value)}
-              </button>
-            ))}
+        <div ref={floorScroll} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pt-2 pb-3">
+          <div className="mt-auto">
+            <Window>
+              <LiftPanel level={level} onChoose={chooseFloor} />
+            </Window>
           </div>
         </div>
       )}
 
       {step === "place" && (
-        <div className="flex min-h-0 flex-1 flex-col gap-2 px-4 pb-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-1">
           {denied ? (
             <div className="grid flex-1 place-items-center">
-              <p className="px-note" data-tone="warn">位置情報が許可されていないため、記録できません。スマホの設定で、このサイト（またはブラウザ）の位置情報を許可してから、もう一度開いてください。</p>
+              <Window tone="alert">
+                <p className="text-[16px]">位置情報が許可されていないため、記録できません。スマホの設定で、このサイト（またはブラウザ）の位置情報を許可してから、もう一度開いてください。</p>
+              </Window>
             </div>
           ) : !latest ? (
             <div className="grid flex-1 place-items-center text-center">
-              <div className="space-y-3">
-                <div className="px-loader" aria-hidden="true"><i /><i /><i /></div>
-                <p className="font-bold" role="status">位置を測っています（{elapsed}秒）</p>
-                {elapsed >= 15 && <p className="text-sm text-(--px-muted)">時間がかかっています。屋外や窓の近くだと測りやすくなります。</p>}
-                {lastError && lastError.code !== 1 && <p className="text-sm text-(--px-muted)">{geolocationMessage(lastError.code)}</p>}
-                <PxLink onClick={skipPlace}>場所がわからないまま進む</PxLink>
-              </div>
+              <Window className="w-full">
+                <div className="space-y-3 py-2">
+                  <div className="px-loader" aria-hidden="true"><i /><i /><i /></div>
+                  <p className="text-[17px]" role="status">位置を測っています（{elapsed}秒）</p>
+                  {elapsed >= 15 && <p className="text-[14px] text-(--px-ink-2)">時間がかかっています。屋外や窓の近くだと測りやすくなります。</p>}
+                  {lastError && lastError.code !== 1 && <p className="text-[14px] text-(--px-ink-2)">{geolocationMessage(lastError.code)}</p>}
+                  <PxLink onClick={skipPlace}>場所がわからないまま進む</PxLink>
+                </div>
+              </Window>
             </div>
           ) : (
             <>
-              {tutorial && <Coach>地図は指で動かしたり、広げたりできます。いまいる場所をタップすると印が付きます。</Coach>}
               {startedNearCampus && (
                 <div role="radiogroup" aria-label="指す地図" className="grid grid-cols-2 gap-2">
-                  <button type="button" role="radio" aria-checked={where === "plan"} className="px-tile min-h-11! py-1! text-sm" onClick={() => setChosen("plan")}>キャンパスの図面</button>
-                  <button type="button" role="radio" aria-checked={where === "map"} className="px-tile min-h-11! py-1! text-sm" onClick={() => setChosen("map")}>地図・航空写真</button>
+                  <button type="button" role="radio" aria-checked={where === "plan"} className="px-tile min-h-11! py-1! text-[15px]" onClick={() => setChosen("plan")}>キャンパスの図面</button>
+                  <button type="button" role="radio" aria-checked={where === "map"} className="px-tile min-h-11! py-1! text-[15px]" onClick={() => setChosen("map")}>地図・航空写真</button>
                 </div>
               )}
-              <p className="flex items-center gap-2 text-sm font-bold" role="status">
-                <span className="px-blink text-(--px-pink-soft)" aria-hidden="true">&#9654;</span>
-                {placed ? "合っていれば「ここで決定」。ずれていたら、もう一度タップ" : "いまいる場所をタップしてください"}
+              <p className="flex items-center gap-2 text-[15px]" role="status">
+                <span className="px-blink text-(--px-yellow)" aria-hidden="true">&#9654;</span>
+                {placed ? "合っていれば「ここで決定」。ずれていたら、もう一度タップ" : "地図で、いまいる場所をタップしてください"}
               </p>
-              <div className="relative min-h-[240px] flex-1">
+              <div className="px-mapframe relative min-h-[240px] flex-1">
                 {where === "plan" ? (
                   <CampusPlan
                     className="h-full"
@@ -383,62 +386,68 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
       )}
 
       {step === "review" && (
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
-          {tutorial && <Coach>内容を確かめて「送信する」を押してください。練習の記録も、本番と同じように保存されます。</Coach>}
-          <dl className="divide-y-2 divide-(--px-stage) bg-(--px-panel)">
-            <SummaryRow label="階" value={level !== null ? levelLabel(level) : "選んでいません"} onEdit={() => setStep("floor")} />
-            <SummaryRow label="場所" value={placeSummary} onEdit={() => setStep("place")} />
-          </dl>
-          <section className="space-y-2">
-            <p className="text-sm font-bold">写真（なくても送れます）</p>
+        <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-4 pt-4 pb-4">
+          <Window title="記録の内容">
+            <dl className="divide-y-3 divide-(--px-navy-3)">
+              <SummaryRow label="階" value={level !== null ? levelLabel(level) : "選んでいません"} onEdit={() => setStep("floor")} />
+              <SummaryRow label="場所" value={placeSummary} onEdit={() => setStep("place")} />
+            </dl>
+          </Window>
+          <Window tone="dim" title="写真（なくても送れます）">
             {photo && preview ? (
               <div className="flex items-center gap-3">
-                <img src={preview} alt="添える写真" className="size-16 object-cover" />
+                <img src={preview} alt="添える写真" className="size-16 border-3 border-(--px-ink) object-cover" />
                 <PxLink onClick={() => setPhoto(null)} disabled={busy}>写真を外す</PxLink>
               </div>
             ) : (
               <PxButton variant="secondary" icon="camera" onClick={() => inputRef.current?.click()} disabled={busy}>写真を撮る</PxButton>
             )}
-          </section>
-          <section className="space-y-2">
-            <p className="text-sm font-bold">この端末の Wi-Fi</p>
+          </Window>
+          <Window tone="dim" title="この端末の Wi-Fi">
             <div role="radiogroup" aria-label="この端末の Wi-Fi" className="grid grid-cols-2 gap-2">
               <button type="button" role="radio" aria-checked={wifi === "on"} className="px-tile" onClick={() => chooseWifi("on")}>オン</button>
               <button type="button" role="radio" aria-checked={wifi === "off"} className="px-tile" onClick={() => chooseWifi("off")}>オフ</button>
             </div>
-            <p className="text-xs text-(--px-muted)">前回の答えを覚えています。変わったときだけ押し直してください。</p>
-          </section>
+            <p className="mt-2 text-[14px] text-(--px-ink-2)">前回の答えを覚えています。変わったときだけ押し直してください。</p>
+          </Window>
           {developer && latest && capture && <FixDetails capture={capture} latest={latest} inside={nearCampus(latest)} elapsed={elapsed} />}
           {error && <p className="px-note" data-tone="warn" role="alert">{error}</p>}
         </div>
       )}
 
       {step === "done" && (
-        <div className="grid min-h-0 flex-1 place-items-center px-6 text-center">
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-4" aria-hidden="true">
-              <span className="px-star size-3! text-(--px-teal)" />
-              <span className="px-star size-4! text-(--px-pink-soft)" />
-              <span className="px-star size-3! text-(--px-teal)" />
-            </div>
+        <div className="relative grid min-h-0 flex-1 place-items-center overflow-hidden px-4 text-center">
+          <Confetti />
+          <div className="relative w-full space-y-6">
             <p className="px-clear" aria-hidden="true">CLEAR!</p>
-            <div role="status" className="space-y-2">
-              <p className="text-lg font-black">{outcome === "sent" ? "記録を送信しました" : "この端末に保存しました"}</p>
-              {outcome === "queued" && <p className="text-sm text-(--px-muted)">電波のよい場所でページを開くと、自動で送られます。</p>}
-              {outcome === "local" && <p className="text-sm text-(--px-muted)">通知サーバーが設定されていないため、送信はしていません。</p>}
-              {tutorial ? (
-                <p className="text-sm text-(--px-muted)">準備はこれで終わりです。通知が届いたら、同じ手順で記録してください。</p>
-              ) : (
-                subscribed && <p className="text-sm text-(--px-muted)">次の通知は {clock(nextPingAt)} ごろです。</p>
-              )}
+            <div className="relative mx-auto w-fit" aria-hidden="true">
+              <PixelSprite name="coin" scale={6} className="px-coin-spin" />
+              <span className="px-rise px-pixel px-outlined absolute top-5 -right-12 text-[16px] text-(--px-yellow)!">+1</span>
             </div>
+            <Window className="text-left">
+              <div role="status" className="space-y-2">
+                <p className="text-[19px]">{outcome === "sent" ? "記録を送信しました" : "この端末に保存しました"}</p>
+                <p className="text-[15px] text-(--px-ink-2)">
+                  {tutorial ? "練習の記録です。" : `きょう${todayCount + 1}回目の記録です。`}
+                  {outcome === "queued" && "電波のよい場所でページを開くと、自動で送られます。"}
+                  {outcome === "local" && "通知サーバーが設定されていないため、送信はしていません。"}
+                </p>
+                {tutorial ? (
+                  <p className="text-[15px] text-(--px-ink-2)">準備はこれで終わりです。通知が届いたら、同じ手順で記録してください。</p>
+                ) : (
+                  subscribed && <p className="text-[15px] text-(--px-ink-2)">次の通知は {clock(nextPingAt)} ごろです。</p>
+                )}
+              </div>
+            </Window>
           </div>
         </div>
       )}
 
       <div className="px-actionbar">
         {step === "floor" && (
-          <PxButton block icon="arrow" onClick={() => setStep("place")} disabled={level === null}>つぎへ</PxButton>
+          <PxButton block icon="arrow" onClick={() => setStep("place")} disabled={level === null}>
+            {level === null ? "階を選んでください" : "つぎへ"}
+          </PxButton>
         )}
         {step === "place" && (
           denied ? (
@@ -446,7 +455,9 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
           ) : (
             <>
               <PxButton variant="secondary" onClick={() => setStep("floor")}>もどる</PxButton>
-              <PxButton block icon="check" onClick={confirmPlace} disabled={!placed}>ここで決定</PxButton>
+              <PxButton block icon="check" onClick={confirmPlace} disabled={!placed}>
+                {placed ? "ここで決定" : "場所をタップ"}
+              </PxButton>
             </>
           )
         )}
@@ -459,7 +470,61 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
         {step === "done" && <PxButton block onClick={close}>ホームへもどる</PxButton>}
       </div>
 
+      {intro && (
+        <div className="px-encounter" aria-hidden="true" onAnimationEnd={(event) => event.target === event.currentTarget && setIntro(false)}>
+          <div className="px-encounter__box">
+            <Window tone="alert" className="px-4 text-center">
+              <p className="px-pixel text-[32px] text-(--px-yellow)">!</p>
+              <p className="mt-1 text-[20px]">記録の時間です</p>
+            </Window>
+          </div>
+        </div>
+      )}
+
       <input ref={inputRef} type="file" accept="image/*" capture="environment" hidden onChange={(event) => void onPhoto(event.target.files?.[0])} />
+    </div>
+  );
+}
+
+/**
+ * Choosing the floor as you would in a lift: a panel of floor buttons read
+ * from the bottom up, the ground floor wide on the ground line, the
+ * basements below it, and a display that lights with the choice.
+ */
+function LiftPanel({ level, onChoose }: { level: number | null; onChoose: (value: number) => void }) {
+  const note = level === null ? "押してください" : level === 1 ? "地上・屋外" : level <= 0 ? "地下" : "";
+  return (
+    <div className="px-lift" role="group" aria-label="いまいる階">
+      <div className="px-lift__display" aria-hidden="true">
+        <span className={level === null ? "px-blink" : undefined}>{level === null ? "--" : levelLabel(level)}</span>
+        <small>{note}</small>
+      </div>
+      <div className="px-lift__grid">
+        {LIFT_ROWS.map((row) => (
+          <Fragment key={row[0]}>
+            {row.map((value) => (
+              <button key={value} type="button" className="px-lift__btn" aria-pressed={level === value} onClick={() => onChoose(value)}>
+                {levelLabel(value)}
+              </button>
+            ))}
+            {Array.from({ length: 5 - row.length }, (_, index) => <span key={`gap-${index}`} aria-hidden="true" />)}
+          </Fragment>
+        ))}
+      </div>
+      <button type="button" className="px-lift__btn px-lift__btn--ground" aria-pressed={level === 1} onClick={() => onChoose(1)}>
+        <span>1F</span>
+        <small>地上・屋外</small>
+      </button>
+      <div className="px-lift__ground" aria-hidden="true">
+        <span>地下</span>
+      </div>
+      <div className="px-lift__grid">
+        {BASEMENT_FLOORS.map((value) => (
+          <button key={value} type="button" className="px-lift__btn" aria-pressed={level === value} onClick={() => onChoose(value)}>
+            {levelLabel(value)}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -470,7 +535,7 @@ function StepBar({ step }: { step: Step }) {
     <ol className="px-steps" aria-label="記録の手順">
       {STEPS.map((item, position) => (
         <li key={item.key} className="px-step" data-state={position < index ? "done" : position === index ? "current" : "todo"} aria-current={position === index ? "step" : undefined}>
-          <span className="px-step__no" aria-hidden="true">{position < index ? "OK" : position + 1}</span>
+          <span className="px-step__no" aria-hidden="true">{position < index ? <PixelIcon name="check" size={12} /> : position + 1}</span>
           {item.label}
         </li>
       ))}
@@ -483,21 +548,21 @@ function SignalMeter({ fix, measuring, denied }: { fix: Fix | null; measuring: b
   const level = fix ? (fix.accuracy <= 10 ? 4 : fix.accuracy <= 30 ? 3 : fix.accuracy <= 100 ? 2 : 1) : 0;
   const label = denied ? "位置情報が使えません" : fix ? `測位できています（誤差の目安 約${Math.round(fix.accuracy)}m）` : "位置を測っています";
   return (
-    <div className="flex min-w-11 items-center justify-end gap-1.5" role="img" aria-label={label}>
-      <svg viewBox="0 0 15 12" width={22} height={18} shapeRendering="crispEdges" aria-hidden="true" className={!fix && measuring ? "px-blink" : undefined}>
+    <div className="flex min-w-11 items-center justify-end gap-1.5 pr-2" role="img" aria-label={label}>
+      <svg viewBox="0 0 15 12" width={25} height={20} shapeRendering="crispEdges" aria-hidden="true" className={!fix && measuring ? "px-blink" : undefined}>
         {[0, 1, 2, 3].map((bar) => (
-          <rect key={bar} x={bar * 4} y={9 - bar * 3} width={3} height={3 + bar * 3} fill={denied ? "#4a4954" : bar < level ? "var(--px-teal)" : "var(--px-teal-dim)"} />
+          <rect key={bar} x={bar * 4} y={9 - bar * 3} width={3} height={3 + bar * 3} style={{ fill: denied ? "#4b5180" : bar < level ? "var(--px-green)" : "var(--px-navy-3)" }} />
         ))}
       </svg>
-      <span className="text-[11px] text-(--px-muted)" aria-hidden="true">{denied ? "測位不可" : fix ? "測位OK" : "測位中"}</span>
+      <span className="text-[12px] text-(--px-ink-2)" aria-hidden="true">{denied ? "測位不可" : fix ? "測位OK" : "測位中"}</span>
     </div>
   );
 }
 
 function Coach({ children }: { children: ReactNode }) {
   return (
-    <p className="px-note mb-3" data-tone="coach">
-      <span className="px-chip px-chip--pink">TIP</span>
+    <p className="px-note px-note--float" data-tone="coach">
+      <span className="px-chip px-chip--tip mt-1">TIP</span>
       <span>{children}</span>
     </p>
   );
@@ -505,12 +570,50 @@ function Coach({ children }: { children: ReactNode }) {
 
 function SummaryRow({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-1">
-      <dt className="shrink-0 text-sm text-(--px-muted)">{label}</dt>
-      <dd className="flex min-w-0 items-center gap-2 text-right font-bold">
-        <span className="min-w-0">{value}</span>
-        <PxLink onClick={onEdit} className="min-h-10! shrink-0 text-xs!">変更</PxLink>
+    <div className="grid grid-cols-[3em_1fr_auto] items-center gap-3 py-1">
+      <dt className="text-[15px] text-(--px-ink-2)">{label}</dt>
+      <dd className="min-w-0 text-[17px] leading-snug">{value}</dd>
+      <dd>
+        <PxLink onClick={onEdit} className="text-[14px]!" aria-label={`${label}を変更`}>変更</PxLink>
       </dd>
+    </div>
+  );
+}
+
+const CONFETTI = (() => {
+  const colours = ["var(--px-yellow)", "var(--px-cyan)", "var(--px-green)", "var(--px-red)", "var(--px-ink)"];
+  let seed = 7;
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  return Array.from({ length: 30 }, (_, index) => ({
+    left: `${random() * 100}%`,
+    colour: colours[index % colours.length],
+    dx: `${Math.round(random() * 80 - 40)}px`,
+    dy: `${Math.round(55 + random() * 35)}vh`,
+    duration: `${(1.4 + random() * 1).toFixed(2)}s`,
+    delay: `${(random() * 0.5).toFixed(2)}s`,
+  }));
+})();
+
+/** A burst of pixel squares, once, when the record is in. */
+function Confetti() {
+  return (
+    <div className="px-confetti" aria-hidden="true">
+      {CONFETTI.map((piece, index) => (
+        <i
+          key={index}
+          style={{
+            left: piece.left,
+            ["--c" as string]: piece.colour,
+            ["--dx" as string]: piece.dx,
+            ["--dy" as string]: piece.dy,
+            ["--d" as string]: piece.duration,
+            ["--delay" as string]: piece.delay,
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -529,10 +632,10 @@ function FixDetails({ capture, latest, inside, elapsed }: { capture: Capture; la
     ["エラー", capture.errors.length ? capture.errors.map((item) => item.code).join(", ") : "なし"],
   ];
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 bg-(--px-panel) p-3 font-mono text-xs">
+    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 bg-(--px-navy) p-3 font-mono text-xs">
       {rows.map(([label, value]) => (
         <div key={label} className="contents">
-          <dt className="text-(--px-muted)">{label}</dt>
+          <dt className="text-(--px-ink-2)">{label}</dt>
           <dd className="break-all">{value}</dd>
         </div>
       ))}

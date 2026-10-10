@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 
 import type { PushSupport } from "@/lib/ping-log/environment";
 
-import { HowToSteps } from "./how-to-play";
 import { InstallGuide } from "./install-guide";
 import { PixelIcon } from "./pixel-icon";
-import { Eyebrow, Frame, PxButton, PxLink, clock, remaining } from "./ui";
+import { PixelSprite } from "./pixel-sprite";
+import { PxButton, PxLink, Window, clock, remaining } from "./ui";
 
 export type SetupStatus = {
   consent: boolean;
@@ -20,12 +20,18 @@ export function setupComplete(setup: SetupStatus): boolean {
   return setup.consent && setup.notify !== "todo" && setup.notify !== "denied" && setup.location === "done" && setup.practice !== "todo";
 }
 
+const PING_MINUTES = 10;
+/** Coins shown before the rest are counted as "+N". */
+const MAX_COINS = 20;
+
 type Props = {
   setup: SetupStatus;
   /** Show the setup even when it is done (the developer screen's preview). */
   forceSetup: boolean;
   support: PushSupport;
   subscribed: boolean;
+  /** A ping is waiting: its banner holds the yellow button, so ours steps back. */
+  pending: boolean;
   nextPingAt: number;
   now: number;
   todayCount: number;
@@ -51,27 +57,22 @@ export function HomeView(props: Props) {
   return setupComplete(props.setup) && !props.forceSetup ? <Playing {...props} /> : <Setup {...props} />;
 }
 
-type RowState = "done" | "current" | "todo";
+type StageState = "done" | "current" | "todo";
 
-/** One line of the setup quest: a check once done, the blinking cursor while it is the one to do. */
-function QuestRow({ index, state, title, summary, children }: { index: number; state: RowState; title: string; summary: string; children?: ReactNode }) {
+/** One stage of the setup quest: a check once cleared, the blinking cursor while it is the one to do, a lock after. */
+function Stage({ state, title, summary, children }: { state: StageState; title: string; summary: string; children?: ReactNode }) {
   return (
-    <li className={`flex gap-3 border-t-2 border-(--px-panel-2) py-3 first:border-t-0 first:pt-0 ${state === "todo" ? "opacity-55" : ""}`} aria-current={state === "current" ? "step" : undefined}>
-      <span
-        className={`grid size-8 shrink-0 place-items-center ${state === "done" ? "bg-(--px-teal) text-[#0a0a0a]" : state === "current" ? "bg-(--px-pink) text-[#0a0a0a]" : "bg-(--px-panel-2) text-(--px-muted)"}`}
-        aria-hidden="true"
-      >
-        {state === "done" ? <PixelIcon name="check" size={16} /> : state === "current" ? <span className="px-blink text-xs">&#9654;</span> : <span className="px-pixel text-[9px]">{index}</span>}
+    <li className="px-quest__stage" data-state={state} aria-current={state === "current" ? "step" : undefined}>
+      <span className="px-quest__node" aria-hidden="true">
+        {state === "done" ? <PixelIcon name="check" size={20} /> : state === "current" ? <span className="px-blink text-[14px]">&#9654;</span> : <PixelIcon name="lock" size={18} />}
       </span>
-      <div className="min-w-0 flex-1 space-y-2">
-        <div>
-          <p className={`font-bold ${state === "done" ? "text-(--px-teal)" : "text-(--px-ink)"}`}>
-            {title}
-            <span className="sr-only">{state === "done" ? "（完了）" : state === "current" ? "（いまの手順）" : "（これから）"}</span>
-          </p>
-          <p className="text-sm leading-relaxed text-(--px-muted)">{summary}</p>
-        </div>
-        {state === "current" && children}
+      <div className="px-quest__body min-w-0 flex-1 pt-1">
+        <p className={`text-[17px] leading-snug ${state === "done" ? "text-(--px-green)" : ""}`}>
+          {title}
+          <span className="px-sr">{state === "done" ? "（完了）" : state === "current" ? "（いまの手順）" : "（これから）"}</span>
+        </p>
+        <p className="mt-0.5 text-[14px] leading-relaxed text-(--px-ink-2)">{summary}</p>
+        {state === "current" && children && <div className="mt-3 space-y-1">{children}</div>}
       </div>
     </li>
   );
@@ -83,123 +84,114 @@ function Setup(props: Props) {
   const isDone = (key: keyof SetupStatus) =>
     key === "consent" ? setup.consent : key === "notify" ? setup.notify === "done" || setup.notify === "skipped" : key === "location" ? setup.location === "done" : setup.practice !== "todo";
   const current = order.find((key) => !isDone(key));
-  const state = (key: keyof SetupStatus): RowState => (isDone(key) ? "done" : key === current ? "current" : "todo");
+  const state = (key: keyof SetupStatus): StageState => (isDone(key) ? "done" : key === current ? "current" : "todo");
   const doneCount = order.filter(isDone).length;
 
   return (
     <>
-      <Frame>
-        <div className="mb-4 flex items-end justify-between gap-3">
-          <div className="space-y-1">
-            <Eyebrow>Quest</Eyebrow>
-            <h2 className="text-xl font-black text-(--px-teal)">はじめの準備</h2>
+      <Window title="はじめの準備">
+        <div className="flex items-center gap-3" aria-label={`4つのうち${doneCount}つ完了`}>
+          <div className="px-charge flex-1" style={{ gridTemplateColumns: "repeat(4, 1fr)" }} aria-hidden="true">
+            {order.map((key) => <i key={key} className={isDone(key) ? "is-full" : key === current ? "is-filling" : undefined} />)}
           </div>
-          <p className="px-pixel text-[11px] text-(--px-ink)" aria-label={`4つのうち${doneCount}つ完了`}>
-            {doneCount}/4
-          </p>
+          <span className="px-pixel text-[12px]" aria-hidden="true">{doneCount}/4</span>
         </div>
-        <div className="mb-4 grid grid-cols-4 gap-1" aria-hidden="true">
-          {order.map((key) => <span key={key} className={`h-2 ${isDone(key) ? "bg-(--px-teal)" : key === current ? "bg-(--px-pink)" : "bg-(--px-panel-2)"}`} />)}
-        </div>
-        <ol>
-          <QuestRow index={1} state={state("consent")} title="参加の同意" summary={setup.consent ? "同意しました。" : "記録する情報と、その使い方を確認します。"}>
+        <ol className="px-quest mt-5">
+          <Stage state={state("consent")} title="参加の同意" summary={setup.consent ? "同意しました。" : "記録する情報と、その使い方を確認します。"}>
             <PxButton block onClick={props.onOpenConsent}>内容を確認する</PxButton>
-          </QuestRow>
-          <QuestRow
-            index={2}
+          </Stage>
+          <Stage
             state={state("notify")}
             title="通知をオンにする"
-            summary={setup.notify === "done" ? "通知はオンです。" : setup.notify === "skipped" ? "通知なしで進めています。あとからオンにできます。" : "10分ごとの通知を受け取れるようにします。"}
+            summary={setup.notify === "done" ? "通知はオンです。" : setup.notify === "skipped" ? "通知なしで進めています。あとからオンにできます。" : "10分ごとに、記録の時間を知らせます。"}
           >
-            <div className="space-y-2">
-              {props.support === "supported" ? (
-                <>
-                  {setup.notify === "denied" && (
-                    <p className="px-note" data-tone="warn">通知がブロックされています。ブラウザやスマホの設定で、このサイトの通知を許可してから、もう一度押してください。</p>
-                  )}
-                  <PxButton block icon="bell" onClick={props.onEnableNotifications} disabled={props.busy}>
-                    {setup.notify === "denied" ? "もう一度試す" : "通知をオンにする"}
-                  </PxButton>
-                </>
-              ) : (
-                <InstallGuide support={props.support} />
-              )}
-              <PxLink onClick={props.onSkipNotifications}>通知なしで進む</PxLink>
-            </div>
-          </QuestRow>
-          <QuestRow index={3} state={state("location")} title="位置情報を許可する" summary={setup.location === "done" ? "許可されています。" : "記録するときに、スマホの位置を測ります。"}>
-            <div className="space-y-2">
-              {setup.location === "denied" && (
-                <p className="px-note" data-tone="warn">位置情報がブロックされています。スマホの設定で、このサイト（またはブラウザ）の位置情報を許可してから、もう一度押してください。</p>
-              )}
-              <PxButton block icon="pin" onClick={props.onRequestLocation} disabled={props.busy}>
-                {setup.location === "denied" ? "もう一度試す" : "位置情報を許可する"}
-              </PxButton>
-            </div>
-          </QuestRow>
-          <QuestRow
-            index={4}
+            {props.support === "supported" ? (
+              <>
+                {setup.notify === "denied" && (
+                  <p className="px-note mb-2" data-tone="warn">通知がブロックされています。スマホやブラウザの設定で、このサイトの通知を許可してから、もう一度押してください。</p>
+                )}
+                <PxButton block icon="bell" onClick={props.onEnableNotifications} disabled={props.busy}>
+                  {setup.notify === "denied" ? "もう一度試す" : "通知をオンにする"}
+                </PxButton>
+              </>
+            ) : (
+              <InstallGuide support={props.support} />
+            )}
+            <PxLink onClick={props.onSkipNotifications}>通知なしで進む</PxLink>
+          </Stage>
+          <Stage state={state("location")} title="位置情報を許可する" summary={setup.location === "done" ? "許可されています。" : "記録するときだけ、スマホの位置を測ります。"}>
+            {setup.location === "denied" && (
+              <p className="px-note mb-2" data-tone="warn">位置情報がブロックされています。スマホの設定で、このサイト（またはブラウザ）の位置情報を許可してから、もう一度押してください。</p>
+            )}
+            <PxButton block icon="pin" onClick={props.onRequestLocation} disabled={props.busy}>
+              {setup.location === "denied" ? "もう一度試す" : "位置情報を許可する"}
+            </PxButton>
+          </Stage>
+          <Stage
             state={state("practice")}
             title="ためしに1回記録する"
-            summary={setup.practice === "done" ? "練習しました。" : setup.practice === "skipped" ? "あとで練習できます。" : "本番と同じ手順を、いまいる場所で1回やってみます。1分ほどです。"}
+            summary={setup.practice === "done" ? "練習しました。" : setup.practice === "skipped" ? "あとで練習できます。" : "本番と同じ手順を、いまいる場所で1回やってみます。"}
           >
-            <div className="space-y-2">
-              <PxButton block icon="arrow" onClick={props.onStartPractice}>練習をはじめる</PxButton>
-              <PxLink onClick={props.onSkipPractice}>あとでやる</PxLink>
-            </div>
-          </QuestRow>
+            <PxButton block icon="arrow" onClick={props.onStartPractice}>練習をはじめる</PxButton>
+            <PxLink onClick={props.onSkipPractice}>あとでやる</PxLink>
+          </Stage>
         </ol>
-        {props.forceSetup && setupComplete(setup) && (
-          <div className="mt-2 border-t-2 border-(--px-panel-2) pt-2">
-            <PxLink onClick={props.onCloseSetup}>準備の表示を閉じる</PxLink>
-          </div>
-        )}
-      </Frame>
-
-      <Frame tone="dim">
-        <div className="mb-4 space-y-1">
-          <Eyebrow soft>How to play</Eyebrow>
-          <h2 className="text-lg font-black text-(--px-ink)">記録のしかた</h2>
+        <div className="mt-4 flex flex-wrap gap-x-4 border-t-3 border-(--px-navy-3) pt-2">
+          <PxLink onClick={props.onShowHowTo}>遊び方を見る</PxLink>
+          {props.forceSetup && setupComplete(setup) && <PxLink onClick={props.onCloseSetup}>準備の表示を閉じる</PxLink>}
         </div>
-        <HowToSteps />
-      </Frame>
+      </Window>
     </>
+  );
+}
+
+/** Ten cells for the ten minutes between pings; the one filling now blinks. */
+function Charge({ nextPingAt, now }: { nextPingAt: number; now: number }) {
+  const elapsed = Math.floor((now - (nextPingAt - PING_MINUTES * 60_000)) / 60_000);
+  return (
+    <div className="px-charge" aria-hidden="true">
+      {Array.from({ length: PING_MINUTES }, (_, index) => (
+        <i key={index} className={index < elapsed ? "is-full" : index === elapsed ? "is-filling" : undefined} />
+      ))}
+    </div>
   );
 }
 
 function Playing(props: Props) {
   const left = remaining(props.nextPingAt - props.now);
-  const blocks = Math.min(props.todayCount, 36);
+  const coins = Math.min(props.todayCount, MAX_COINS);
+  const sentCoins = Math.max(0, coins - props.todayUnsent);
 
   return (
     <>
       {props.geolocationDenied && (
-        <p className="px-note" data-tone="warn">位置情報がオフになっています。スマホの設定で、このサイト（またはブラウザ）の位置情報を許可してください。</p>
+        <p className="px-note px-note--float" data-tone="warn">位置情報がオフになっています。スマホの設定で、このサイト（またはブラウザ）の位置情報を許可してください。</p>
       )}
 
-      <Frame>
+      <Window title={props.subscribed ? "つぎの通知" : "通知"} as="section" aria-label="通知と、きょうの記録">
         {props.subscribed ? (
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-3">
-              <Eyebrow>Next ping</Eyebrow>
-              <span className="px-chip">ON</span>
+          <>
+            <div className="flex items-end justify-between gap-3">
+              <p className="px-digits" aria-label={`次の通知は${clock(props.nextPingAt)}ごろ`}>{clock(props.nextPingAt)}</p>
+              <div className="flex flex-col items-end gap-1 pb-1">
+                <span className="px-chip">ON</span>
+                <p className="text-[14px] text-(--px-ink-2)">
+                  あと<span className="px-pixel ml-1.5 text-[12px] text-(--px-yellow)">{left.minutes}:{String(left.seconds).padStart(2, "0")}</span>
+                </p>
+              </div>
             </div>
-            <p className="px-digits" aria-label={`次の通知は${clock(props.nextPingAt)}ごろ`}>{clock(props.nextPingAt)}</p>
-            <p className="text-sm">
-              あと<span className="px-pixel mx-1 text-[12px] text-(--px-teal)">{left.minutes}:{String(left.seconds).padStart(2, "0")}</span>で次の通知が届きます。
-            </p>
-            <div className="flex items-center justify-between gap-3 pt-3">
-              <p className="text-xs leading-relaxed text-(--px-muted)">画面が消えていても届きます。通知はその日の24時に止まります。</p>
-              <PxButton variant="secondary" size="sm" onClick={props.onStopNotifications} disabled={props.busy}>止める</PxButton>
+            <div className="mt-3">
+              <Charge nextPingAt={props.nextPingAt} now={props.now} />
             </div>
-          </div>
+            <p className="mt-2 text-[14px] leading-relaxed text-(--px-ink-2)">画面を消していても届きます。通知はきょうの24時に止まります。</p>
+          </>
         ) : (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <Eyebrow>Notify off</Eyebrow>
+              <p className="text-[17px]">通知はオフです</p>
               <span className="px-chip px-chip--off">OFF</span>
             </div>
-            <p className="text-sm">通知はオフです。オンにすると、10分ごとに記録の時間を知らせます。</p>
+            <p className="text-[14px] leading-relaxed text-(--px-ink-2)">オンにすると、10分ごとに記録の時間を知らせます。</p>
             {props.support === "supported" ? (
               <PxButton block variant="secondary" icon="bell" onClick={props.onEnableNotifications} disabled={props.busy}>通知をオンにする</PxButton>
             ) : (
@@ -207,40 +199,47 @@ function Playing(props: Props) {
             )}
           </div>
         )}
-      </Frame>
 
-      <div className="space-y-2">
-        <PxButton block icon="pin" onClick={props.onRecordNow} className="text-lg!">いま記録する</PxButton>
-        <p className="text-center text-xs text-(--px-text-soft)">通知を待たずに、いつでも記録できます。</p>
+        <div className="mt-4 border-t-3 border-(--px-navy-3) pt-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-[15px]">きょうの記録</p>
+            <p className="px-pixel text-[14px] text-(--px-yellow)" aria-label={`${props.todayCount}回`}>
+              &times;{props.todayCount}
+            </p>
+          </div>
+          {coins > 0 ? (
+            <div className="px-coins mt-2" aria-hidden="true">
+              {Array.from({ length: coins }, (_, index) => (
+                <PixelSprite key={index} name="coin" scale={2} className={index >= sentCoins ? "is-unsent" : undefined} />
+              ))}
+              {props.todayCount > MAX_COINS && <span className="px-pixel self-center text-[10px] text-(--px-ink-2)">+{props.todayCount - MAX_COINS}</span>}
+            </div>
+          ) : (
+            <p className="mt-1 text-[14px] text-(--px-ink-2)">まだありません。1回記録すると、コインが1枚増えます。</p>
+          )}
+          {props.unsent > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[14px] text-(--px-ink-2)">未送信 {props.unsent}件（うすいコイン）。電波のよい場所で送れます。</p>
+              <PxButton variant="secondary" size="sm" onClick={props.onResend} disabled={props.busy}>いま送る</PxButton>
+            </div>
+          )}
+        </div>
+      </Window>
+
+      <div className="px-on-scene">
+        <PxButton block size="lg" icon="pin" variant={props.pending ? "secondary" : "primary"} onClick={props.onRecordNow}>いま記録する</PxButton>
       </div>
 
-      <section className="px-panel px-dark space-y-3" aria-label="きょうの記録">
-        <div className="flex items-baseline justify-between gap-3">
-          <Eyebrow soft>Today</Eyebrow>
-          <p className="text-sm">
-            きょうの記録<span className="px-pixel ml-2 text-[14px] text-(--px-teal)">{props.todayCount}</span>
-          </p>
-        </div>
-        {blocks > 0 ? (
-          <div className="px-blocks" aria-hidden="true">
-            {Array.from({ length: blocks }, (_, index) => <i key={index} className={index < props.todayUnsent ? "is-unsent" : undefined} />)}
-          </div>
-        ) : (
-          <p className="text-sm text-(--px-muted)">まだ記録はありません。通知が届いたら記録しましょう。</p>
-        )}
-        {props.unsent > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-(--px-muted)">
-            <span>未送信 {props.unsent}件。電波のよい場所で開くと送られます。</span>
-            <PxButton variant="secondary" size="sm" onClick={props.onResend} disabled={props.busy}>いま送る</PxButton>
-          </div>
-        )}
-      </section>
-
-      <nav className="flex flex-col items-start text-(--px-text)" aria-label="そのほかの操作">
-        <PxLink onClick={props.onShowHowTo}>遊び方を見る</PxLink>
-        <PxLink onClick={props.onOpenConsent}>同意した内容を見る</PxLink>
-        <PxLink onClick={props.onWithdraw} disabled={props.busy}>参加をやめる（送ったデータを削除）</PxLink>
-      </nav>
+      <Window tone="dim" title="メニュー" as="section">
+        <ul className="px-menu grid grid-cols-2">
+          <li><button type="button" className="px-menu__item" onClick={props.onShowHowTo}>遊び方</button></li>
+          <li><button type="button" className="px-menu__item" onClick={props.onOpenConsent}>同意した内容</button></li>
+          {props.subscribed && (
+            <li><button type="button" className="px-menu__item" onClick={props.onStopNotifications} disabled={props.busy}>通知を止める</button></li>
+          )}
+          <li><button type="button" className="px-menu__item" data-tone="danger" onClick={props.onWithdraw} disabled={props.busy}>参加をやめる</button></li>
+        </ul>
+      </Window>
     </>
   );
 }

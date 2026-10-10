@@ -21,20 +21,24 @@ import { ConsentDialog } from "./consent-view";
 import { DeveloperView } from "./developer-view";
 import { HomeView, type SetupStatus } from "./home-view";
 import { HowToDialog } from "./how-to-play";
+import { PixelScene, phaseAt } from "./pixel-scene";
+import { PixelSprite } from "./pixel-sprite";
 import { RecordFlow, type SaveOutcome } from "./record-flow";
-import { TwinkleField } from "./twinkle-field";
-import { Eyebrow, PxButton, clock } from "./ui";
+import { TitleView } from "./title-view";
+import { PxButton, Window, clock } from "./ui";
 
 /**
  * /log: the participant screen by default, the developer screen behind the
  * button at the top right.
  *
  * Structure, in the order a newcomer meets it:
- *   1. consent, as a panel over the page;
- *   2. the setup quest: notifications (or how to get them on this phone),
- *      location, one practice record with hints at each step;
- *   3. the waiting screen: when the next ping comes, today's records;
- *   4. the record flow, full screen, opened by a ping or by hand.
+ *   1. the title screen: what this is and one button (or, where no ping can
+ *      reach, how to move to where it can);
+ *   2. consent, as a window over the dimmed page;
+ *   3. the setup quest: notifications, location, one practice record with
+ *      hints at each step;
+ *   4. the waiting screen: when the next ping comes, today's records;
+ *   5. the record flow, full screen, opened by a ping or by hand.
  */
 
 const PING_INTERVAL_MINUTES = 10;
@@ -93,8 +97,8 @@ export function PingLogScreen() {
   // The participant screen is what opens by default; the developer screen lasts for this tab only.
   const [view, setView] = useState<View>(() => (read(window.sessionStorage, VIEW_KEY) === "developer" ? "developer" : "participant"));
   const [consent, setConsent] = useState<Consent | null>(loadConsent);
-  // Opens by itself on a first visit, over the page it is asking about.
-  const [consentOpen, setConsentOpen] = useState(() => loadConsent() === null);
+  // Opened from the title screen's button, once the person has seen what this is.
+  const [consentOpen, setConsentOpen] = useState(false);
   const [howToOpen, setHowToOpen] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [support] = useState<PushSupport>(pushSupport);
@@ -234,6 +238,11 @@ export function PingLogScreen() {
     setSkipNotify(true);
   };
 
+  const startWithoutNotifications = () => {
+    skipNotifications();
+    setConsentOpen(true);
+  };
+
   const requestLocation = () => {
     if (!("geolocation" in navigator)) {
       setMessage("この端末では位置情報を使えません。");
@@ -326,71 +335,74 @@ export function PingLogScreen() {
 
   return (
     <>
-      <TwinkleField />
-      <main className="relative z-[1] mx-auto w-full max-w-md space-y-5 px-4 pt-[max(16px,env(safe-area-inset-top))] pb-[calc(40px+env(safe-area-inset-bottom))]">
-        <header className="px-panel px-dark bg-(--px-bar)!">
-          <div className="flex items-start justify-between gap-3">
-            <Eyebrow soft>Trace log</Eyebrow>
-            <PxButton variant="secondary" size="sm" onClick={() => switchView(view === "developer" ? "participant" : "developer")}>
-              {view === "developer" ? "参加者向け" : "開発者向け"}
-            </PxButton>
-          </div>
-          <h1 className="px-title mt-1">定期ログ</h1>
-          <p className="mt-1 text-sm text-(--px-muted)">
-            {view === "developer" ? "開発者向けの画面です。" : "スマホの位置情報が、実際の場所からどれくらいずれるかを調べています。"}
-          </p>
+      <PixelScene phase={phaseAt(now)} />
+      <main className="relative z-[1] mx-auto w-full max-w-md space-y-7 px-4 pt-[max(10px,env(safe-area-inset-top))] pb-[calc(56px+env(safe-area-inset-bottom))]">
+        <header className="px-on-scene flex min-h-11 items-center justify-between gap-3">
+          {consent || view === "developer" ? (
+            <p className="flex items-center gap-2" aria-label="TRACE">
+              <PixelSprite name="pin" scale={2} />
+              <span className="px-pixel px-outlined text-[14px]" aria-hidden="true">TRACE</span>
+            </p>
+          ) : (
+            <span />
+          )}
+          <button
+            type="button"
+            className="min-h-11 bg-(--px-navy) px-3 text-[13px] text-(--px-ink-2) shadow-[0_0_0_2px_var(--px-k)] focus-visible:outline-3 focus-visible:outline-(--px-focus)"
+            onClick={() => switchView(view === "developer" ? "participant" : "developer")}
+          >
+            {view === "developer" ? "参加者向けにもどる" : "開発者向け"}
+          </button>
         </header>
 
-        {!PUSH_API_URL && (
-          <p className="px-note" data-tone="warn">通知サーバーの URL が設定されていません。NEXT_PUBLIC_PUSH_API_URL を設定してください。</p>
-        )}
+        {(busy || message) && <p className="px-note px-note--float" role="status">{busy ? "処理しています…" : message}</p>}
 
-        {(busy || message) && <p className="px-note" role="status">{busy ? "処理しています…" : message}</p>}
-
-        {pendingAt && !flow && consent && (
-          <div className="px-frame px-frame--pink">
-            <div className="px-panel space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <Eyebrow soft>Ping</Eyebrow>
-                <span className="text-xs text-(--px-muted)">{clock(pendingAt)} の通知</span>
-              </div>
-              <p className="font-bold">記録の時間です。いまいる場所を記録してください。</p>
-              <div className="flex gap-2">
-                <PxButton variant="secondary" onClick={() => prompt(null)}>スキップ</PxButton>
-                <PxButton block icon="pin" onClick={() => setFlow({ kind: "ping", promptedAt: pendingAt, tutorial: false })}>記録する</PxButton>
-              </div>
+        {pendingAt && !flow && consent && view === "participant" && (
+          <Window tone="alert" title={<><span className="px-blink">!</span> 記録の時間です</>} as="section">
+            <p className="text-[16px]">{clock(pendingAt)} の通知です。いまいる場所を記録してください。</p>
+            <div className="mt-3 flex gap-1">
+              <PxButton variant="secondary" onClick={() => prompt(null)}>スキップ</PxButton>
+              <PxButton block icon="pin" onClick={() => setFlow({ kind: "ping", promptedAt: pendingAt, tutorial: false })}>記録する</PxButton>
             </div>
-          </div>
+          </Window>
         )}
 
         {view === "developer" ? (
-          <DeveloperView
-            apiUrl={PUSH_API_URL}
-            deviceId={deviceId()}
-            consent={consent}
-            notificationPermission={permission}
-            geolocationPermission={geolocation}
-            pushSupport={support}
-            subscription={subscribed ? subscription : null}
-            expiresAt={expiresAt}
-            nextPingAt={nextPingAt(now)}
-            entries={entries}
-            busy={busy}
-            onTest={() => void test()}
-            onRecordNow={() => setFlow({ kind: "manual", promptedAt: null, tutorial: false })}
-            onResend={() => void resend()}
-            onClearLocal={() => void clearLocal()}
-            onResetSetup={() => {
-              setShowSetup(true);
-              switchView("participant");
-            }}
-          />
+          <>
+            {!PUSH_API_URL && (
+              <p className="px-note px-note--float" data-tone="warn">通知サーバーの URL が設定されていません。NEXT_PUBLIC_PUSH_API_URL を設定してください。</p>
+            )}
+            <DeveloperView
+              apiUrl={PUSH_API_URL}
+              deviceId={deviceId()}
+              consent={consent}
+              notificationPermission={permission}
+              geolocationPermission={geolocation}
+              pushSupport={support}
+              subscription={subscribed ? subscription : null}
+              expiresAt={expiresAt}
+              nextPingAt={nextPingAt(now)}
+              entries={entries}
+              busy={busy}
+              onTest={() => void test()}
+              onRecordNow={() => setFlow({ kind: "manual", promptedAt: null, tutorial: false })}
+              onResend={() => void resend()}
+              onClearLocal={() => void clearLocal()}
+              onResetSetup={() => {
+                setShowSetup(true);
+                switchView("participant");
+              }}
+            />
+          </>
+        ) : !consent ? (
+          <TitleView support={support} onStart={() => setConsentOpen(true)} onStartWithoutNotifications={startWithoutNotifications} />
         ) : (
           <HomeView
             setup={setup}
             forceSetup={showSetup}
             support={support}
             subscribed={subscribed}
+            pending={pendingAt !== null}
             nextPingAt={nextPingAt(now)}
             now={now}
             todayCount={today.length}
@@ -424,6 +436,7 @@ export function PingLogScreen() {
           developer={view === "developer"}
           subscribed={subscribed}
           nextPingAt={nextPingAt(now)}
+          todayCount={today.length}
           onSave={save}
           onClose={closeFlow}
         />

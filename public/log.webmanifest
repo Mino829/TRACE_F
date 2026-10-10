@@ -4,7 +4,7 @@
   "start_url": "./log",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#edd8ad",
-  "theme_color": "#111018",
+  "background_color": "#1b2150",
+  "theme_color": "#1b2150",
   "icons": [{ "src": "/log/apple-icon", "sizes": "180x180", "type": "image/png" }]
 }

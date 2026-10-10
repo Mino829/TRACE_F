@@ -1,230 +1,264 @@
 /*
- * /log の見た目。第54回芝浦祭（テーマ：ピクセルゲーム）のサイト https://shibaurasai.jp に合わせる。
- * 色、フォント、段になった角の枠とボタン、またたくドットは、すべてそのサイトの値を写したもの。
- * 独自に足したのは、ボタンの奥行き（押せることを示す）と、選択中を示すカーソルだけ。
+ * /log の見た目。ピクセルゲームの画面として組み立てる。
  *
- * 文字の色は背景で決める。ベージュの地には濃い文字（--px-text）、
- * 濃いパネルには明るい文字（--px-ink）。ピンクとシアンは、ベージュの上では小さい文字に使わない
- * （コントラストが足りない）。
+ * - 背景：時刻で変わる空と、水辺の街並み（pixel-scene.tsx）。文字は背景に直接置かず、
+ *   枠の中に置くか、縁取りを付ける。
+ * - 枠：RPG のメッセージ枠。濃紺の地に白い縁、角は段にする（border-image の9分割）。
+ * - 文字：日本語は DotGothic16、英字と数字は Press Start 2P。どちらも太字を持たないので、
+ *   疑似ボールドは切り、大きさと色で強弱を付ける。
+ * - 色：下の16色ほどに絞る。文字と背景の組み合わせは、すべて WCAG AA（4.5:1）以上。
+ * - 次にやる操作は、どの画面でも黄色のボタン1つ。選んだ項目は白く反転し、▶ が点滅する。
  */
 
 /* ---------- tokens ---------- */
 
 .px-root {
-  --px-bg: #edd8ad;
-  --px-stage: #07070c;
-  --px-panel: #111018;
-  --px-panel-2: #15141d;
-  --px-bar: #333333;
-  --px-ink: #f4f2ec;
-  --px-muted: #a9b6b8;
-  --px-text: #333333;
-  --px-text-soft: #5c5346;
-  --px-pink: #ec1e8f;
-  --px-pink-soft: #ff7ac0;
-  --px-pink-deep: #8f0f55;
-  --px-teal: #6fe3d9;
-  --px-teal-deep: #123b39;
-  --px-teal-dim: #2a5a56;
-  --px-focus: #111018;
+  --px-k: #0b0d1f;
+  --px-navy: #1b2150;
+  --px-navy-2: #262e6b;
+  --px-navy-3: #38418f;
+  --px-ink: #fff7e6;
+  --px-ink-2: #c3c8ec;
+  --px-yellow: #ffd23f;
+  --px-yellow-hi: #fff1a8;
+  --px-yellow-lo: #e8a317;
+  --px-yellow-depth: #8a4f00;
+  --px-amber: #ffb627;
+  --px-green: #4ade80;
+  --px-red: #ff7a8a;
+  --px-red-deep: #c0263f;
+  --px-cyan: #67e8f9;
+  --px-focus: var(--px-yellow);
 
   position: relative;
   min-height: 100dvh;
-  background: var(--px-bg);
-  color: var(--px-text);
-  font-family: var(--font-jp), "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
-  font-size: 15px;
+  color: var(--px-ink);
+  font-family: var(--font-dot), "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  font-size: 16px;
   line-height: 1.75;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
 
 html:has(.px-root),
 html:has(.px-root) body {
-  background: #edd8ad;
-}
-
-/* Anything drawn on a dark ground: light text, teal focus ring. */
-.px-dark {
-  --px-focus: var(--px-teal);
-  color: var(--px-ink);
+  background: var(--scene-top, #1b2150);
 }
 
 .px-pixel {
   font-family: var(--font-pixel), ui-monospace, monospace;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   line-height: 1.6;
 }
 
-/* ---------- stepped corners (the site's clip-path, one rule for every shape) ---------- */
-
-.px-frame,
-.px-panel,
-.px-btn::before,
-.px-btn__face,
-.px-chip {
-  clip-path: polygon(
-    0 var(--n), var(--n) var(--n), var(--n) 0,
-    calc(100% - var(--n)) 0, calc(100% - var(--n)) var(--n), 100% var(--n),
-    100% calc(100% - var(--n)), calc(100% - var(--n)) calc(100% - var(--n)), calc(100% - var(--n)) 100%,
-    var(--n) 100%, var(--n) calc(100% - var(--n)), 0 calc(100% - var(--n))
-  );
-}
-
-/* ---------- frame + panel ---------- */
-
-.px-frame {
-  --n: 8px;
-  padding: 6px;
-  background: var(--px-teal);
-}
-
-.px-frame--pink {
-  background: var(--px-pink);
-}
-
-.px-frame--dim {
-  background: var(--px-teal-dim);
-}
-
-.px-panel {
-  --n: 8px;
-  --px-focus: var(--px-teal);
-  padding: 20px 18px;
-  background: var(--px-panel);
+/* White text with a dark pixel outline, for the little that sits straight on the sky. */
+.px-outlined {
   color: var(--px-ink);
+  text-shadow:
+    -2px 0 0 var(--px-k), 2px 0 0 var(--px-k), 0 -2px 0 var(--px-k), 0 2px 0 var(--px-k),
+    -2px -2px 0 var(--px-k), 2px -2px 0 var(--px-k), -2px 2px 0 var(--px-k), 2px 2px 0 var(--px-k);
 }
 
-.px-frame > .px-panel {
-  height: 100%;
+/* Controls standing on the sky get a dark focus ring; inside windows it stays yellow. */
+.px-on-scene {
+  --px-focus: var(--px-k);
+}
+
+.px-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- windows ---------- */
+/*
+ * A 12x12 picture cut in nine: dark outline, a light ring, and the fill, with
+ * corners stepped one pixel. Drawn at 3 screen pixels per picture pixel.
+ */
+
+.px-window {
+  --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath fill='%230b0d1f' d='M2 0h8v1H2zM2 11h8v1H2zM0 2h1v8H0zM11 2h1v8h-1zM1 1h1v1H1zM10 1h1v1h-1zM1 10h1v1H1zM10 10h1v1h-1z'/%3E%3Cpath fill='%23fff7e6' d='M2 1h8v1H2zM2 10h8v1H2zM1 2h1v8H1zM10 2h1v8h-1z'/%3E%3Cpath fill='%231b2150' d='M2 2h8v8H2z'/%3E%3C/svg%3E");
+
+  position: relative;
+  border: 12px solid transparent;
+  border-image: var(--win) 4 fill / 12px / 0 stretch;
+  padding: 10px 10px 8px;
+  color: var(--px-ink);
+  filter: drop-shadow(0 4px 0 rgb(11 13 31 / 0.4));
+}
+
+/* The one thing asking for attention right now. */
+.px-window--alert {
+  --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath fill='%230b0d1f' d='M2 0h8v1H2zM2 11h8v1H2zM0 2h1v8H0zM11 2h1v8h-1zM1 1h1v1H1zM10 1h1v1h-1zM1 10h1v1H1zM10 10h1v1h-1z'/%3E%3Cpath fill='%23ffd23f' d='M2 1h8v1H2zM2 10h8v1H2zM1 2h1v8H1zM10 2h1v8h-1z'/%3E%3Cpath fill='%231b2150' d='M2 2h8v8H2z'/%3E%3C/svg%3E");
+}
+
+/* Quieter: a window inside a window, or one that only informs. */
+.px-window--dim {
+  --win: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Cpath fill='%230b0d1f' d='M2 0h8v1H2zM2 11h8v1H2zM0 2h1v8H0zM11 2h1v8h-1zM1 1h1v1H1zM10 1h1v1h-1zM1 10h1v1H1zM10 10h1v1h-1z'/%3E%3Cpath fill='%2338418f' d='M2 1h8v1H2zM2 10h8v1H2zM1 2h1v8H1zM10 2h1v8h-1z'/%3E%3Cpath fill='%231b2150' d='M2 2h8v8H2z'/%3E%3C/svg%3E");
+}
+
+/* The window's name, set into its top edge like a game's status window. */
+.px-window__title {
+  position: absolute;
+  top: -21px;
+  left: 6px;
+  max-width: calc(100% - 12px);
+  padding: 0 8px;
+  background: var(--px-navy);
+  color: var(--px-yellow);
+  font-size: 15px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.px-window--dim .px-window__title {
+  color: var(--px-ink-2);
+}
+
+.px-window__title + * {
+  margin-top: 6px;
+}
+
+/* A plain dark box, for rows inside a window. */
+.px-panel {
+  padding: 12px;
+  background: var(--px-navy-2);
+  color: var(--px-ink);
 }
 
 /* ---------- buttons ---------- */
 /*
- * The face carries the stepped corners; the button itself stays a plain box so
- * its focus ring is not clipped away. The darker layer under the face is the
- * depth a pressed key sinks into.
+ * One element. The outline, the bevel and the depth are all box-shadows, so
+ * the corners stay notched without clipping and the focus ring is never cut.
+ * The shadows reach 3px out at the sides and top and 9px below: the margin
+ * keeps that clear of neighbours. Pressed, the face sinks into the depth.
  */
 
 .px-btn {
-  --n: 6px;
-  --face: var(--px-pink);
-  --face-hover: var(--px-pink-soft);
-  --depth: var(--px-pink-deep);
-  --fg: #0a0a0a;
+  --face: var(--px-yellow);
+  --hi: var(--px-yellow-hi);
+  --lo: var(--px-yellow-lo);
+  --depth: var(--px-yellow-depth);
+  --fg: var(--px-k);
+  --edge: var(--px-k);
 
   position: relative;
   display: inline-flex;
-  padding: 0 0 4px;
-  border: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  font-weight: 700;
-  line-height: 1.4;
-  cursor: pointer;
-  user-select: none;
-  touch-action: manipulation;
-}
-
-.px-btn::before {
-  content: "";
-  position: absolute;
-  inset: 4px 0 0;
-  background: var(--depth);
-}
-
-.px-btn__face {
-  position: relative;
-  display: flex;
-  flex: 1;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 48px;
-  padding: 10px 18px;
+  min-height: 52px;
+  margin: 3px 3px 9px;
+  padding: 10px 20px;
+  border: 0;
   background: var(--face);
+  color: var(--fg);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1.3;
   text-align: center;
   white-space: nowrap;
-  transition: transform 80ms steps(2), background-color 120ms;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  box-shadow:
+    inset 0 3px 0 var(--hi),
+    inset 0 -3px 0 var(--lo),
+    0 6px 0 0 var(--depth),
+    0 -3px 0 0 var(--edge),
+    -3px 0 0 0 var(--edge),
+    3px 0 0 0 var(--edge),
+    -3px 6px 0 0 var(--edge),
+    3px 6px 0 0 var(--edge),
+    0 9px 0 0 var(--edge);
+  transition: transform 60ms steps(2);
 }
 
-/* A button beside a block button keeps its own width. */
-.px-actionbar > .px-btn:not(.px-btn--block) {
-  flex: none;
+.px-btn:active:not(:disabled) {
+  transform: translateY(6px);
+  box-shadow:
+    inset 0 3px 0 var(--lo),
+    0 -3px 0 0 var(--edge),
+    -3px 0 0 0 var(--edge),
+    3px 0 0 0 var(--edge),
+    0 3px 0 0 var(--edge);
 }
 
 @media (hover: hover) {
-  .px-btn:hover:not(:disabled) .px-btn__face {
-    background: var(--face-hover);
+  .px-btn:hover:not(:disabled) {
+    --face: var(--hi);
   }
-}
-
-.px-btn:active:not(:disabled) .px-btn__face {
-  transform: translateY(4px);
 }
 
 .px-btn:focus-visible {
   outline: 3px solid var(--px-focus);
-  outline-offset: 3px;
+  outline-offset: 9px;
 }
 
 .px-btn:disabled {
-  --face: #4a4954;
-  --face-hover: #4a4954;
-  --depth: #2b2a31;
-  --fg: #c4c1b9;
+  --face: #4b5180;
+  --hi: #5a6091;
+  --lo: #40456e;
+  --depth: #2a2e52;
+  --fg: #d0d3ea;
   cursor: not-allowed;
 }
 
 .px-btn--block {
   display: flex;
-  width: 100%;
+  width: calc(100% - 6px);
 }
 
-/* Supporting action on a dark ground. */
+/* Beside the one yellow button: the same shape, quieter. */
 .px-btn--secondary {
-  --face: var(--px-teal-deep);
-  --face-hover: #1a4c49;
-  --depth: #050508;
-  --fg: var(--px-teal);
-}
-
-/* Supporting action on the beige ground. */
-.px-btn--dark {
-  --face: var(--px-bar);
-  --face-hover: #444444;
-  --depth: var(--px-panel);
+  --face: #343c85;
+  --hi: #4c56ad;
+  --lo: #262c66;
+  --depth: #141838;
   --fg: var(--px-ink);
 }
 
-.px-btn--sm .px-btn__face {
-  min-height: 40px;
-  padding: 6px 12px;
-  font-size: 13px;
+.px-btn--sm {
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 15px;
 }
 
-/* A quieter action: underlined, with the site's ">" prompt. */
+.px-btn--lg {
+  min-height: 64px;
+  font-size: 22px;
+}
+
+.px-btn > svg {
+  flex: none;
+}
+
+/* A quieter action: underlined, behind the menu cursor. */
 .px-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  padding: 0 2px;
+  padding: 0 4px;
   border: 0;
   background: none;
   color: inherit;
   font: inherit;
-  font-size: 14px;
+  font-size: 15px;
+  text-align: left;
   text-decoration: underline;
   text-decoration-thickness: 2px;
-  text-underline-offset: 5px;
+  text-underline-offset: 6px;
   cursor: pointer;
 }
 
 .px-link::before {
-  content: ">";
-  font-family: var(--font-pixel), monospace;
+  content: "\25B6";
+  display: inline-block;
   font-size: 10px;
   text-decoration: none;
 }
@@ -235,94 +269,145 @@ html:has(.px-root) body {
 }
 
 .px-link:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ---------- the command menu ---------- */
+
+.px-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.px-menu__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 4px 8px 4px 30px;
+  border: 0;
+  background: none;
+  color: var(--px-ink);
+  font: inherit;
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.px-menu__item::before {
+  content: "\25B6";
+  position: absolute;
+  left: 8px;
+  color: var(--px-yellow);
+  font-size: 12px;
+  opacity: 0;
+}
+
+.px-menu__item:hover::before,
+.px-menu__item:focus-visible::before,
+.px-menu__item:active::before {
+  opacity: 1;
+  animation: px-blink 1s steps(1) infinite;
+}
+
+.px-menu__item:focus-visible {
+  outline: 3px solid var(--px-focus);
+  outline-offset: -3px;
+}
+
+.px-menu__item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.px-menu__item[data-tone="danger"] {
+  color: var(--px-red);
 }
 
 /* ---------- labels ---------- */
 
-.px-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--px-pink);
+.px-label {
+  color: var(--px-yellow);
   font-family: var(--font-pixel), monospace;
   font-size: 10px;
-  letter-spacing: 2px;
+  letter-spacing: 0.1em;
   line-height: 1.6;
   text-transform: uppercase;
 }
 
-/* The lighter pink, for labels on the #333 bar where the deep pink is too dark to read. */
-.px-eyebrow--soft {
-  color: var(--px-pink-soft);
-}
-
-.px-star {
-  display: inline-block;
-  flex: none;
-  width: 10px;
-  height: 10px;
-  background: currentColor;
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-}
-
-.px-title {
-  color: var(--px-teal);
-  font-size: 32px;
-  font-weight: 900;
-  line-height: 1.25;
-  letter-spacing: 0.02em;
-  text-shadow: 3px 3px 0 rgba(236, 30, 143, 0.6);
-}
-
-.px-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border: 1px dashed var(--px-pink-soft);
-  color: var(--px-pink-soft);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
 .px-chip {
-  --n: 3px;
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 6px;
-  padding: 4px 9px 3px;
-  background: var(--px-teal);
-  color: #0a0a0a;
+  margin: 2px;
+  padding: 3px 7px 2px;
+  background: var(--px-green);
+  color: var(--px-k);
   font-family: var(--font-pixel), monospace;
-  font-size: 9px;
-  letter-spacing: 1px;
+  font-size: 8px;
+  letter-spacing: 0.1em;
   line-height: 1.6;
+  box-shadow: 0 -2px 0 0 var(--px-k), 0 2px 0 0 var(--px-k), -2px 0 0 0 var(--px-k), 2px 0 0 0 var(--px-k);
 }
 
 .px-chip--off {
-  background: #4a4954;
-  color: var(--px-ink);
+  background: var(--px-ink-2);
 }
 
-.px-chip--pink {
-  background: var(--px-pink-soft);
+.px-chip--tip {
+  background: var(--px-cyan);
+}
+
+.px-chip--alert {
+  background: var(--px-yellow);
 }
 
 .px-digits {
-  color: var(--px-teal);
+  color: var(--px-yellow);
   font-family: var(--font-pixel), monospace;
-  font-size: 34px;
+  font-size: 40px;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 2px;
-  line-height: 1.3;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-shadow: 4px 4px 0 var(--px-k);
+}
+
+/* ---------- notes ---------- */
+
+.px-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-left: 6px solid var(--px-cyan);
+  background: var(--px-navy-2);
+  color: var(--px-ink);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.px-note[data-tone="warn"] {
+  border-left-color: var(--px-red);
+}
+
+.px-note[data-tone="coach"] {
+  border-left-color: var(--px-cyan);
+}
+
+/* A note standing on the sky needs its own outline. */
+.px-note--float {
+  background: var(--px-navy);
+  box-shadow: 0 0 0 3px var(--px-k);
 }
 
 /* ---------- choices ---------- */
 /*
- * Square tiles, so focus rings are not clipped. The selected one is filled and
- * carries the blinking menu cursor of a game's command window.
+ * Square tiles. The chosen one turns white with dark text, the way a game's
+ * menu inverts the line under its cursor, and the cursor blinks beside it.
  */
 
 .px-tile {
@@ -332,32 +417,34 @@ html:has(.px-root) body {
   justify-content: center;
   gap: 8px;
   min-height: 52px;
-  padding: 8px 10px;
-  border: 2px solid var(--px-teal-dim);
-  background: var(--px-panel-2);
+  padding: 8px 12px;
+  border: 3px solid var(--px-navy-3);
+  background: var(--px-navy-2);
   color: var(--px-ink);
   font: inherit;
-  font-weight: 700;
+  font-size: 16px;
   line-height: 1.3;
   cursor: pointer;
-  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 -4px 0 rgb(11 13 31 / 0.45);
   touch-action: manipulation;
 }
 
 .px-tile:active {
-  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 3px 0 rgb(11 13 31 / 0.45);
 }
 
 .px-tile[aria-pressed="true"],
-.px-tile[aria-checked="true"] {
-  border-color: var(--px-teal);
-  background: var(--px-teal);
-  color: #0a0a0a;
-  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+.px-tile[aria-checked="true"],
+.px-tile[aria-selected="true"] {
+  border-color: var(--px-ink);
+  background: var(--px-ink);
+  color: var(--px-navy);
+  box-shadow: inset 0 -4px 0 rgb(11 13 31 / 0.15);
 }
 
 .px-tile[aria-pressed="true"]::before,
-.px-tile[aria-checked="true"]::before {
+.px-tile[aria-checked="true"]::before,
+.px-tile[aria-selected="true"]::before {
   content: "\25B6";
   position: absolute;
   left: 8px;
@@ -370,10 +457,113 @@ html:has(.px-root) body {
   outline-offset: 2px;
 }
 
-.px-floor {
+/* ---------- the lift panel (choosing the floor) ---------- */
+
+.px-lift {
+  display: grid;
+  gap: 7px;
+}
+
+.px-lift__display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 50px;
+  padding: 6px 14px;
+  border: 3px solid var(--px-navy-3);
+  background: var(--px-k);
+  color: var(--px-amber);
   font-family: var(--font-pixel), monospace;
-  font-size: 13px;
-  letter-spacing: 1px;
+  font-size: 24px;
+  line-height: 1;
+  text-shadow: 0 0 10px rgb(255 182 39 / 0.55);
+}
+
+.px-lift__display small {
+  color: var(--px-ink-2);
+  font-family: var(--font-dot), sans-serif;
+  font-size: 14px;
+  text-shadow: none;
+}
+
+.px-lift__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.px-lift__btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  padding: 4px 2px;
+  border: 3px solid #4c56ad;
+  background: var(--px-navy-2);
+  color: var(--px-ink);
+  font-family: var(--font-pixel), monospace;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: inset -3px -3px 0 rgb(11 13 31 / 0.5), inset 3px 3px 0 rgb(255 255 255 / 0.08);
+  touch-action: manipulation;
+}
+
+.px-lift__btn:active {
+  box-shadow: inset 3px 3px 0 rgb(11 13 31 / 0.5);
+}
+
+.px-lift__btn[aria-pressed="true"] {
+  border-color: var(--px-k);
+  background: var(--px-amber);
+  color: var(--px-k);
+  box-shadow: 0 0 0 3px var(--px-amber), 0 0 18px 4px rgb(255 182 39 / 0.55), inset -3px -3px 0 rgb(138 79 0 / 0.5);
+}
+
+.px-lift__btn:focus-visible {
+  outline: 3px solid var(--px-focus);
+  outline-offset: 3px;
+}
+
+.px-lift__btn--ground {
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  justify-items: start;
+  min-height: 52px;
+  padding: 6px 14px;
+  font-size: 16px;
+}
+
+.px-lift__btn--ground small {
+  font-family: var(--font-dot), sans-serif;
+  font-size: 16px;
+}
+
+/* The ground line between 1F and the basements: grass on soil. */
+.px-lift__ground {
+  position: relative;
+  height: 18px;
+  margin: 2px -10px;
+  background:
+    linear-gradient(var(--px-green) 0 6px, #2f9e5a 6px 9px, #7a4a2a 9px 100%);
+}
+
+.px-lift__ground::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  margin-top: -3px;
+  background: repeating-linear-gradient(90deg, var(--px-green) 0 3px, transparent 3px 9px);
+}
+
+.px-lift__ground span {
+  position: absolute;
+  right: 10px;
+  bottom: 0;
+  color: var(--px-ink);
+  font-size: 12px;
+  line-height: 9px;
 }
 
 /* ---------- progress ---------- */
@@ -391,59 +581,166 @@ html:has(.px-root) body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px 4px;
-  border-bottom: 4px solid var(--px-teal-dim);
-  background: var(--px-panel-2);
-  color: var(--px-muted);
-  font-size: 12px;
-  font-weight: 700;
+  min-width: 0;
+  padding: 4px 6px;
+  border-bottom: 4px solid var(--px-navy-3);
+  color: var(--px-ink-2);
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .px-step__no {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  background: var(--px-navy-3);
+  color: var(--px-ink);
   font-family: var(--font-pixel), monospace;
-  font-size: 9px;
+  font-size: 8px;
 }
 
 .px-step[data-state="current"] {
-  border-bottom-color: var(--px-pink);
+  border-bottom-color: var(--px-yellow);
   color: var(--px-ink);
 }
 
-.px-step[data-state="done"] {
-  border-bottom-color: var(--px-teal);
-  color: var(--px-teal);
+.px-step[data-state="current"] .px-step__no {
+  background: var(--px-yellow);
+  color: var(--px-k);
 }
 
-/* Records today, one block each. */
-.px-blocks {
+.px-step[data-state="done"] {
+  border-bottom-color: var(--px-green);
+  color: var(--px-green);
+}
+
+.px-step[data-state="done"] .px-step__no {
+  background: var(--px-green);
+  color: var(--px-k);
+}
+
+/* Ten cells for the ten minutes between pings, filling as the next one nears. */
+.px-charge {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  padding: 3px;
+  background: var(--px-k);
+}
+
+.px-charge i {
+  height: 12px;
+  background: var(--px-navy-2);
+}
+
+.px-charge i.is-full {
+  background: var(--px-yellow);
+  box-shadow: inset 0 -3px 0 var(--px-yellow-lo);
+}
+
+.px-charge i.is-filling {
+  background: var(--px-yellow);
+  animation: px-blink 1s steps(1) infinite;
+}
+
+/* The setup quest: stages along a dotted path. */
+.px-quest {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.px-quest__stage {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding-bottom: 18px;
+}
+
+.px-quest__stage:last-child {
+  padding-bottom: 0;
+}
+
+.px-quest__stage:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 40px;
+  bottom: 4px;
+  left: 17px;
+  width: 3px;
+  background: repeating-linear-gradient(var(--px-navy-3) 0 6px, transparent 6px 12px);
+}
+
+.px-quest__stage[data-state="done"]:not(:last-child)::after {
+  background: repeating-linear-gradient(var(--px-green) 0 6px, transparent 6px 12px);
+}
+
+.px-quest__node {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--px-k);
+  background: var(--px-navy-2);
+  color: var(--px-ink-2);
+}
+
+.px-quest__stage[data-state="done"] .px-quest__node {
+  background: var(--px-green);
+  color: var(--px-k);
+}
+
+.px-quest__stage[data-state="current"] .px-quest__node {
+  background: var(--px-yellow);
+  color: var(--px-k);
+  box-shadow: 0 0 0 3px var(--px-yellow-hi);
+}
+
+.px-quest__stage[data-state="todo"] .px-quest__body {
+  opacity: 0.6;
+}
+
+/* ---------- coins (records today) ---------- */
+
+.px-coins {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.px-blocks i {
-  width: 12px;
-  height: 12px;
-  background: var(--px-teal);
-  box-shadow: inset -3px -3px 0 rgba(0, 0, 0, 0.25);
+.px-coins > * {
+  flex: none;
 }
 
-.px-blocks i.is-unsent {
-  background: var(--px-pink-soft);
+.px-coins .is-unsent {
+  opacity: 0.45;
 }
 
-/* ---------- bars, dialogs, notes ---------- */
+/* ---------- bars and dialogs ---------- */
 
 .px-actionbar {
   display: flex;
-  gap: 10px;
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  border-top: 4px solid var(--px-panel-2);
-  background: var(--px-stage);
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 13px calc(4px + env(safe-area-inset-bottom));
+  border-top: 3px solid var(--px-navy-3);
+  background: var(--px-k);
+}
+
+.px-actionbar > .px-btn:not(.px-btn--block) {
+  flex: none;
+}
+
+.px-actionbar > .px-btn--block {
+  flex: 1;
+  width: auto;
 }
 
 .px-dialog {
-  width: min(100% - 24px, 28rem);
+  width: min(100% - 16px, 30rem);
   max-width: none;
   max-height: none;
   margin: auto;
@@ -455,81 +752,165 @@ html:has(.px-root) body {
 }
 
 .px-dialog::backdrop {
-  background: rgba(7, 7, 12, 0.74);
+  background: rgb(11 13 31 / 0.8);
 }
 
-.px-note {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 10px 12px;
-  border-left: 6px solid var(--px-teal);
-  background: var(--px-panel);
-  color: var(--px-ink);
-  font-size: 14px;
-  line-height: 1.6;
+/* The record flow's ground: the dark of a game's event screen, with a faint pixel grid. */
+.px-stage {
+  background-color: var(--px-k);
+  background-image: radial-gradient(rgb(56 65 143 / 0.55) 1.5px, transparent 1.5px);
+  background-size: 18px 18px;
 }
 
-.px-note[data-tone="warn"] {
-  border-left-color: var(--px-pink-soft);
+/* The map and the plan sit in a light ring, like a picture inside the game. */
+.px-mapframe {
+  border: 3px solid var(--px-ink);
+  box-shadow: 0 0 0 3px var(--px-k);
 }
 
-/* Inside a dark panel the note needs its own ground to stand out. */
-.px-panel .px-note {
-  background: var(--px-panel-2);
-}
+/* ---------- the scene behind everything ---------- */
 
-/* The practice run's hints. */
-.px-note[data-tone="coach"] {
-  border-left-color: var(--px-pink);
-  background: var(--px-panel-2);
-}
-
-.px-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: var(--px-panel);
-  color: var(--px-ink);
-  font-size: 13px;
-  font-weight: 700;
-  box-shadow: 4px 4px 0 rgba(7, 7, 12, 0.5);
-}
-
-/* ---------- motion ---------- */
-
-.px-twinkles {
+.px-scene {
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  background: var(--scene-sky);
 }
 
-.px-twinkle {
+.px-scene[data-phase="morning"] {
+  --scene-top: #6aa8ff;
+  --scene-sky: linear-gradient(#6aa8ff 0 22%, #84b8ff 22% 40%, #a6caff 40% 55%, #cbdcf6 55% 68%, #f4d9c0 68% 80%, #ffd0a6 80% 100%);
+  --city-back: #a7bde6;
+  --city-front: #6f86c2;
+  --city-window: #9fb9ee;
+  --city-lit: #c9dcff;
+  --city-quay: #3b4f8f;
+  --water: #4d7fd6;
+  --water-glint: #cfe4ff;
+  --cloud: #ffffff;
+  --cloud-shade: #e2e9fb;
+}
+
+.px-scene[data-phase="day"] {
+  --scene-top: #3d8bff;
+  --scene-sky: linear-gradient(#3d8bff 0 22%, #57a0ff 22% 40%, #74b4ff 40% 55%, #93c8ff 55% 68%, #b6dcff 68% 80%, #d4ebff 80% 100%);
+  --city-back: #8fb0e6;
+  --city-front: #4f6fb3;
+  --city-window: #3b5694;
+  --city-lit: #a8d4ff;
+  --city-quay: #2a3f7a;
+  --water: #2f6fd6;
+  --water-glint: #b8deff;
+  --cloud: #ffffff;
+  --cloud-shade: #d6e6ff;
+}
+
+.px-scene[data-phase="dusk"] {
+  --scene-top: #2b2f77;
+  --scene-sky: linear-gradient(#2b2f77 0 20%, #4f3a8f 20% 36%, #7b3fa0 36% 50%, #c04f8a 50% 62%, #ec6f6f 62% 74%, #ff9a5a 74% 86%, #ffc46e 86% 100%);
+  --city-back: #6a4a9a;
+  --city-front: #3a2f6e;
+  --city-window: #2a2458;
+  --city-lit: #ffd23f;
+  --city-quay: #231c4f;
+  --water: #3b3a8a;
+  --water-glint: #ff9a5a;
+  --cloud: #ffb8a8;
+  --cloud-shade: #d0709a;
+}
+
+.px-scene[data-phase="night"] {
+  --scene-top: #070a1f;
+  --scene-sky: linear-gradient(#070a1f 0 25%, #0b1030 25% 45%, #10163f 45% 62%, #151d4f 62% 78%, #1b2560 78% 100%);
+  --city-back: #1c2456;
+  --city-front: #0f1538;
+  --city-window: #1a2150;
+  --city-lit: #ffd23f;
+  --city-quay: #070a1f;
+  --water: #0b1030;
+  --water-glint: #3b4aa0;
+  --cloud: #2a3270;
+  --cloud-shade: #1c2456;
+}
+
+.px-scene .c-back { fill: var(--city-back); }
+.px-scene .c-front { fill: var(--city-front); }
+.px-scene .c-window { fill: var(--city-window); }
+.px-scene .c-lit { fill: var(--city-lit); }
+.px-scene .c-quay { fill: var(--city-quay); }
+.px-scene .c-water { fill: var(--water); }
+.px-scene .c-glint { fill: var(--water-glint); }
+.px-scene .c-cloud { fill: var(--cloud); }
+.px-scene .c-cloud-shade { fill: var(--cloud-shade); }
+
+.px-scene__city,
+.px-scene__glints {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+}
+
+.px-scene__glints {
+  animation: px-glint 1.6s steps(1) infinite;
+}
+
+.px-scene__glints--b {
+  animation-delay: -0.8s;
+}
+
+.px-scene__cloud {
+  position: absolute;
+  left: 0;
+  animation: px-drift var(--drift, 120s) linear var(--delay, 0s) infinite;
+}
+
+.px-scene__orb {
+  position: absolute;
+}
+
+.px-scene__orb--sun {
+  filter: drop-shadow(0 0 18px rgb(255 241 168 / 0.8));
+}
+
+.px-scene__star {
   position: absolute;
   display: block;
-  background: var(--px-teal);
-  box-shadow: 0 0 0 2px rgba(111, 227, 217, 0.15);
-  opacity: 0.15;
-  animation: px-twinkle var(--d, 3s) ease-in-out var(--delay, 0s) infinite;
+  background: #fff7e6;
+  animation: px-twinkle var(--d, 3s) steps(3) var(--delay, 0s) infinite;
 }
 
-.px-twinkle--pink {
-  background: var(--px-pink-soft);
-  box-shadow: 0 0 0 2px rgba(236, 30, 143, 0.15);
+.px-scene__star--gold {
+  background: var(--px-yellow);
+}
+
+/* ---------- motion ---------- */
+
+.px-blink {
+  animation: px-blink 1s steps(1) infinite;
+}
+
+.px-bob {
+  animation: px-bob 1.4s steps(2) infinite;
+}
+
+.px-drop {
+  animation: px-drop 280ms steps(4) both;
 }
 
 .px-loader {
   display: inline-flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .px-loader i {
-  width: 8px;
-  height: 8px;
-  background: var(--px-teal);
+  width: 12px;
+  height: 12px;
+  background: var(--px-yellow);
+  box-shadow: 0 0 0 3px var(--px-k);
   animation: px-load 1.2s steps(1) infinite;
 }
 
@@ -541,60 +922,168 @@ html:has(.px-root) body {
   animation-delay: 0.4s;
 }
 
-.px-blink {
-  animation: px-blink 1s steps(1) infinite;
+/* The logo on the title screen. */
+.px-logo {
+  color: var(--px-yellow);
+  font-family: var(--font-pixel), monospace;
+  font-size: 44px;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-shadow:
+    -4px 0 0 var(--px-k), 4px 0 0 var(--px-k), 0 -4px 0 var(--px-k), 0 4px 0 var(--px-k),
+    -4px -4px 0 var(--px-k), 4px -4px 0 var(--px-k), -4px 4px 0 var(--px-k), 4px 4px 0 var(--px-k),
+    0 10px 0 var(--px-yellow-depth), 4px 10px 0 var(--px-k), -4px 10px 0 var(--px-k), 0 14px 0 var(--px-k);
 }
 
 .px-clear {
-  color: var(--px-pink);
+  color: var(--px-yellow);
   font-family: var(--font-pixel), monospace;
   font-size: 40px;
-  letter-spacing: 3px;
-  line-height: 1.3;
-  text-shadow: 4px 4px 0 var(--px-teal-dim), 0 0 32px rgba(236, 30, 143, 0.35);
-  animation: px-pop 480ms steps(4) both;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-shadow:
+    -4px 0 0 var(--px-k), 4px 0 0 var(--px-k), 0 -4px 0 var(--px-k), 0 4px 0 var(--px-k),
+    -4px -4px 0 var(--px-k), 4px -4px 0 var(--px-k), -4px 4px 0 var(--px-k), 4px 4px 0 var(--px-k),
+    0 10px 0 var(--px-yellow-depth);
+  animation: px-pop 520ms steps(5) both;
 }
 
-@keyframes px-twinkle {
-  0%, 100% { opacity: 0.15; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.6); }
+.px-coin-spin {
+  animation: px-spin 0.9s steps(4) infinite;
+}
+
+.px-rise {
+  animation: px-rise 900ms steps(6) 200ms both;
+}
+
+.px-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.px-confetti i {
+  position: absolute;
+  top: -12px;
+  width: 9px;
+  height: 9px;
+  background: var(--c, var(--px-yellow));
+  animation: px-fall var(--d, 1.8s) steps(12) var(--delay, 0s) both;
+}
+
+/*
+ * The "encounter" when a ping opens the page: two white flashes and the alarm
+ * box, gone within a second. It never takes taps.
+ */
+.px-encounter {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  animation: px-flash 1100ms steps(1) both;
+}
+
+.px-encounter__box {
+  animation: px-encounter 1100ms steps(4) both;
 }
 
 @keyframes px-blink {
   50% { opacity: 0; }
 }
 
+@keyframes px-bob {
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes px-drop {
+  from { transform: translateY(-18px); }
+  to { transform: translateY(0); }
+}
+
 @keyframes px-load {
-  0%, 60%, 100% { opacity: 0.2; }
+  0%, 60%, 100% { opacity: 0.25; }
   20%, 40% { opacity: 1; }
 }
 
+@keyframes px-twinkle {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@keyframes px-glint {
+  50% { opacity: 0; }
+}
+
+@keyframes px-drift {
+  from { transform: translateX(-160px); }
+  to { transform: translateX(calc(100vw + 40px)); }
+}
+
 @keyframes px-pop {
-  from { opacity: 0; transform: scale(0.4); }
-  to { opacity: 1; transform: scale(1); }
+  0% { opacity: 0; transform: scale(0.3); }
+  60% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes px-spin {
+  0%, 100% { transform: scaleX(1); }
+  25% { transform: scaleX(0.5); }
+  50% { transform: scaleX(0.15); }
+  75% { transform: scaleX(0.5); }
+}
+
+@keyframes px-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  30% { opacity: 1; }
+  to { opacity: 1; transform: translateY(-18px); }
+}
+
+@keyframes px-fall {
+  from { opacity: 1; transform: translate(0, 0); }
+  80% { opacity: 1; }
+  to { opacity: 0; transform: translate(var(--dx, 0), var(--dy, 70vh)); }
+}
+
+@keyframes px-flash {
+  0%, 18% { background: #fff7e6; }
+  9%, 27% { background: transparent; }
+  36%, 100% { background: transparent; }
+}
+
+@keyframes px-encounter {
+  0%, 30% { opacity: 0; transform: scale(0.6); }
+  40%, 85% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .px-twinkle { animation: none; opacity: 0.5; }
-  .px-loader i, .px-blink, .px-clear,
-  .px-tile[aria-pressed="true"]::before,
-  .px-tile[aria-checked="true"]::before { animation: none; }
-  .px-btn__face { transition: none; }
+  .px-blink, .px-bob, .px-drop, .px-loader i, .px-clear, .px-coin-spin, .px-rise,
+  .px-scene__glints, .px-scene__cloud, .px-scene__star,
+  .px-charge i.is-filling,
+  .px-menu__item::before,
+  .px-tile::before {
+    animation: none !important;
+  }
+  .px-scene__glints--b, .px-confetti, .px-encounter { display: none; }
+  .px-btn { transition: none; }
 }
 
-/* ---------- Leaflet, restyled to the frame ---------- */
+/* ---------- Leaflet, in the game's frame ---------- */
 
 .px-root .leaflet-container {
-  background: var(--px-bg);
-  font-family: var(--font-jp), sans-serif;
+  background: #cfd8ee;
+  font-family: var(--font-dot), sans-serif;
 }
 
 .px-root .leaflet-bar,
 .px-root .leaflet-control-layers {
-  border: 2px solid var(--px-teal) !important;
+  border: 3px solid var(--px-ink) !important;
   border-radius: 0 !important;
-  background: var(--px-panel);
-  box-shadow: 3px 3px 0 rgba(7, 7, 12, 0.5) !important;
+  background: var(--px-navy);
+  box-shadow: 0 0 0 3px var(--px-k) !important;
   color: var(--px-ink);
 }
 
@@ -602,40 +1091,40 @@ html:has(.px-root) body {
   width: 40px;
   height: 40px;
   border-radius: 0 !important;
-  border-bottom-color: var(--px-teal-dim);
-  background: var(--px-panel);
-  color: var(--px-teal);
+  border-bottom: 3px solid var(--px-navy-3);
+  background: var(--px-navy);
+  color: var(--px-ink);
   font-family: var(--font-pixel), monospace;
   font-size: 14px;
   line-height: 40px;
 }
 
 .px-root .leaflet-bar a:hover {
-  background: var(--px-panel-2);
-  color: var(--px-teal);
+  background: var(--px-navy-2);
+  color: var(--px-yellow);
 }
 
 .px-root .leaflet-control-layers-expanded {
-  padding: 6px 10px;
-  font-size: 13px;
+  padding: 4px 10px;
+  font-size: 14px;
 }
 
 .px-root .leaflet-control-layers label {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 32px;
+  min-height: 34px;
 }
 
 .px-root .leaflet-control-layers-selector {
-  accent-color: var(--px-pink);
+  accent-color: var(--px-yellow);
 }
 
 .px-root .leaflet-control-attribution {
-  background: rgba(17, 16, 24, 0.82);
-  color: var(--px-muted);
+  background: rgb(11 13 31 / 0.82);
+  color: var(--px-ink-2);
 }
 
 .px-root .leaflet-control-attribution a {
-  color: var(--px-teal);
+  color: var(--px-cyan);
 }

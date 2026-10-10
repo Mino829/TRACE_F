@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Press_Start_2P, Zen_Kaku_Gothic_New } from "next/font/google";
+import { DotGothic16, Press_Start_2P } from "next/font/google";
 
 import { PingLogClient } from "@/components/ping-log/ping-log-client";
 
 import "./log.css";
 
-/** The 54th Shibaura Festival's own type: a pixel face for Latin labels and digits, Zen Kaku Gothic New for Japanese. */
+/** Pixel type throughout: DotGothic16 for Japanese, Press Start 2P for Latin labels and digits. */
 const pixel = Press_Start_2P({ weight: "400", subsets: ["latin"], variable: "--font-pixel", display: "swap" });
-const japanese = Zen_Kaku_Gothic_New({ weight: ["400", "700", "900"], subsets: ["latin"], variable: "--font-jp", display: "swap" });
+const dot = DotGothic16({ weight: "400", subsets: ["latin"], variable: "--font-dot", display: "swap" });
 
 /** Prototype: a ping every ten minutes, answered with where you are standing. */
 export const metadata: Metadata = {
@@ -19,13 +19,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111018",
+  themeColor: "#1b2150",
   viewportFit: "cover",
 };
 
 export default function LogPage() {
   return (
-    <div className={`px-root ${pixel.variable} ${japanese.variable}`}>
+    <div className={`px-root ${pixel.variable} ${dot.variable}`}>
       <PingLogClient />
     </div>
   );

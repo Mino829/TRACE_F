@@ -9,8 +9,8 @@ import dynamic from "next/dynamic";
 const PingLogScreen = dynamic(() => import("./ping-log-screen").then((module) => module.PingLogScreen), {
   ssr: false,
   loading: () => (
-    <main className="grid min-h-dvh place-items-center">
-      <p className="px-pixel text-[11px] text-(--px-text)">
+    <main className="grid min-h-dvh place-items-center bg-(--px-navy)">
+      <p className="px-pixel px-outlined text-[12px]">
         LOADING<span className="px-blink">_</span>
       </p>
     </main>

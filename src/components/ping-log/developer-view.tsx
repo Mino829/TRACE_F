@@ -73,11 +73,11 @@ export function DeveloperView(props: Props) {
   return (
     <>
       <Frame tone="dim">
-        <Eyebrow soft className="mb-3">Status</Eyebrow>
+        <Eyebrow className="mb-3">Status</Eyebrow>
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
           {state.map(([label, value]) => (
             <div key={label} className="contents">
-              <dt className="text-(--px-muted)">{label}</dt>
+              <dt className="text-(--px-ink-2)">{label}</dt>
               <dd className="font-mono break-all">{value}</dd>
             </div>
           ))}
@@ -85,24 +85,24 @@ export function DeveloperView(props: Props) {
       </Frame>
 
       <Frame tone="dim" panelClassName="space-y-3">
-        <Eyebrow soft>Debug</Eyebrow>
-        {!props.consent && <p className="text-sm text-(--px-muted)">記録と通知は、参加者向け画面で同意すると使えます。</p>}
+        <Eyebrow>Debug</Eyebrow>
+        {!props.consent && <p className="text-sm text-(--px-ink-2)">記録と通知は、参加者向け画面で同意すると使えます。</p>}
         <div className="grid grid-cols-2 gap-2">
           <PxButton variant="secondary" size="sm" onClick={props.onRecordNow} disabled={!canRecord}>今すぐ記録する</PxButton>
           <PxButton variant="secondary" size="sm" onClick={props.onTest} disabled={!props.subscription || props.busy}>テスト通知を送る</PxButton>
           <PxButton variant="secondary" size="sm" onClick={props.onResend} disabled={!unsent || props.busy}>未送信を再送（{unsent}件）</PxButton>
           <PxButton variant="secondary" size="sm" onClick={props.onResetSetup} disabled={props.busy}>準備の画面を見る</PxButton>
         </div>
-        <p className="text-xs leading-relaxed text-(--px-muted)">記録は送信したときに自動でサーバーへ保存されます。送れなかった記録は、次にページを開いたときに送り直します。サーバーのデータの取り出し方は push-worker/README.md にあります。「準備の画面を見る」は、はじめの準備の表示を確かめるためのものです（同意も記録も消しません）。</p>
+        <p className="text-xs leading-relaxed text-(--px-ink-2)">記録は送信したときに自動でサーバーへ保存されます。送れなかった記録は、次にページを開いたときに送り直します。サーバーのデータの取り出し方は push-worker/README.md にあります。「準備の画面を見る」は、はじめの準備の表示を確かめるためのものです（同意も記録も消しません）。</p>
       </Frame>
 
-      <section className="space-y-2">
+      <section className="px-window space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="font-black">この端末の記録（{entries.length}件）</h2>
           {entries.length > 0 && <PxLink onClick={props.onClearLocal}>端末から削除</PxLink>}
         </div>
         {entries.length === 0 ? (
-          <p className="text-sm text-(--px-text-soft)">まだ記録はありません。</p>
+          <p className="text-sm text-(--px-ink-2)">まだ記録はありません。</p>
         ) : (
           <ul className="space-y-2">
             {entries.map((entry) => {
@@ -123,7 +123,7 @@ export function DeveloperView(props: Props) {
                     ) : (
                       <p>測位なし</p>
                     )}
-                    <p className="text-(--px-muted)">
+                    <p className="text-(--px-ink-2)">
                       測位{record.capture.fixes.length}回
                       {record.sourceGuess && `・${SOURCE_LABEL[record.sourceGuess]}（推定）`}
                       {record.capture.coarse && `・低精度 ±${record.capture.coarse.accuracy.toFixed(0)}m`}
@@ -133,10 +133,10 @@ export function DeveloperView(props: Props) {
                     {record.truth ? (
                       <p>
                         指した場所 {record.truth.levelLabel}・{describeTruth(record.truth)}
-                        {error !== null && <span className="text-(--px-teal)">{`・ずれ ${error.toFixed(1)}m`}</span>}
+                        {error !== null && <span className="text-(--px-cyan)">{`・ずれ ${error.toFixed(1)}m`}</span>}
                       </p>
                     ) : (
-                      <p className="text-(--px-muted)">{record.truthSkipped ? "場所はわからないと回答" : "場所の入力なし"}</p>
+                      <p className="text-(--px-ink-2)">{record.truthSkipped ? "場所はわからないと回答" : "場所の入力なし"}</p>
                     )}
                   </div>
                 </li>
