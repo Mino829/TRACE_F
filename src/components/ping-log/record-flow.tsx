@@ -2,12 +2,12 @@
 
 /* eslint-disable @next/next/no-img-element -- the preview is a local blob: URL */
 
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { localToCampusPx, wgs84ToLocal, type CampusPx, type Wgs84 } from "@/lib/geo/campus-georeference";
 import { buildingById, levelLabel } from "@/lib/map/buildings";
 import { geolocationMessage, startCapture, type CaptureHandle } from "@/lib/ping-log/capture";
-import type { Consent } from "@/lib/ping-log/consent";
+import { DEVELOPER_CONSENT_VERSION } from "@/lib/ping-log/consent";
 import { deviceContext, networkInfo, watchOrientation, type NetworkInfo, type OrientationSample } from "@/lib/ping-log/context";
 import { preparePhoto } from "@/lib/ping-log/photo";
 import { deviceId } from "@/lib/ping-log/push";
@@ -24,21 +24,21 @@ import {
   type MapLayer,
   type PhotoMeta,
 } from "@/lib/ping-log/record";
-import type { LogEntry } from "@/lib/ping-log/store";
+import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
 
 import { CampusPlan } from "./campus-plan";
+import { ClearTitle, CoinGain, Confetti } from "./clear-screen";
 import { PixelIcon } from "./pixel-icon";
-import { PixelSprite } from "./pixel-sprite";
 import { PxButton, PxLink, Window, clock } from "./ui";
 import { WorldMap } from "./world-map";
 
 /**
- * Answering a ping, full screen, one decision per step: the floor, then the
- * spot on the map, then a look before sending. The phone measures its own
- * position the whole time, so the steps cost no waiting.
+ * The developer screen's accuracy test, full screen, one decision per step:
+ * the floor, then the spot on the map, then a look before sending. The phone
+ * measures its own position the whole time, so the steps cost no waiting, and
+ * shows it on the map and in the raw readings. Visitors never see this; it
+ * needs no participant's consent.
  */
-
-export type SaveOutcome = "sent" | "queued" | "local";
 
 type Step = "floor" | "place" | "review" | "done";
 type Where = "plan" | "map";
@@ -68,20 +68,16 @@ function loadWifi(): "on" | "off" | null {
 type Props = {
   kind: "ping" | "manual";
   promptedAt: string | null;
-  /** The practice run in the setup: same steps, with a hint at each. */
-  tutorial: boolean;
-  consent: Consent;
-  /** Shows the raw fixes and the phone's own position on the plan and map. */
-  developer: boolean;
+  /** While the accuracy ping is on. */
   subscribed: boolean;
-  nextPingAt: number;
+  nextPingAt: number | null;
   /** Records made today before this one, for the count on the clear screen. */
   todayCount: number;
   onSave: (entry: LogEntry) => Promise<SaveOutcome>;
   onClose: () => void;
 };
 
-export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, subscribed, nextPingAt, todayCount, onSave, onClose }: Props) {
+export function RecordFlow({ kind, promptedAt, subscribed, nextPingAt, todayCount, onSave, onClose }: Props) {
   const [step, setStep] = useState<Step>("floor");
   const [intro, setIntro] = useState(kind === "ping");
   const [capture, setCapture] = useState<Capture | null>(null);
@@ -233,6 +229,7 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
       const final = handle.current.stop();
       const orientation = stopOrientation.current?.() ?? null;
       const id = crypto.randomUUID();
+      const takenAt = new Date().toISOString();
       const last = final.fixes.at(-1) ?? final.coarse;
       const truth = unknown || level === null
         ? null
@@ -247,14 +244,16 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
         sentAt: null,
         record: {
           schema: RECORD_SCHEMA,
+          purpose: "accuracy",
           id,
           kind,
-          tutorial,
+          tutorial: false,
           deviceId: deviceId(),
-          consentVersion: consent.version,
-          consentedAt: consent.at,
+          // The team's own test: no participant's consent stands behind it.
+          consentVersion: DEVELOPER_CONSENT_VERSION,
+          consentedAt: takenAt,
           promptedAt,
-          takenAt: new Date().toISOString(),
+          takenAt,
           capture: final,
           sourceGuess: last ? guessSource(last) : null,
           coordinateVersion: COORDINATE_VERSION,
@@ -298,7 +297,7 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
           <PixelIcon name="cross" size={14} />
           {step === "done" ? "閉じる" : kind === "ping" ? "スキップ" : "やめる"}
         </button>
-        <p className="px-label mx-auto">{tutorial ? "Practice" : kind === "ping" ? "Ping" : "Record"}</p>
+        <p className="px-label mx-auto">{kind === "ping" ? "Ping" : "Record"}</p>
         <SignalMeter fix={latest} measuring={capture !== null && !denied} denied={denied} />
       </header>
 
@@ -311,9 +310,6 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
             {promptedAt && <p className="shrink-0 text-[13px] text-(--px-ink-2)">{clock(promptedAt)} の通知</p>}
           </div>
           <StepBar step={step} />
-          {tutorial && step === "floor" && <Coach>いまいる階のボタンを押すと、次の手順に進みます。屋外の地面にいるときは「1F 地上・屋外」です。</Coach>}
-          {tutorial && step === "place" && latest && !denied && <Coach>地図は指で動かしたり、広げたりできます。いまいる場所をタップすると、ピンが立ちます。</Coach>}
-          {tutorial && step === "review" && <Coach>内容を確かめて「送信する」を押してください。練習の記録も、本番と同じように保存されます。</Coach>}
         </div>
       )}
 
@@ -366,8 +362,8 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
                     level={level ?? 1}
                     mark={mark?.px ?? null}
                     onMarkChange={(px, viewScale) => setMark({ px, at: Date.now(), viewScale })}
-                    me={developer ? me : null}
-                    meAccuracyMetres={developer ? latest.accuracy : null}
+                    me={me}
+                    meAccuracyMetres={latest.accuracy}
                   />
                 ) : (
                   <WorldMap
@@ -375,7 +371,7 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
                     centre={{ lat: latest.latitude, lon: latest.longitude }}
                     pin={pin?.point ?? null}
                     onPin={(point, zoom, layer) => setPin({ point, at: Date.now(), zoom, layer })}
-                    me={developer ? meOnMap : null}
+                    me={meOnMap}
                   />
                 )}
               </div>
@@ -410,7 +406,7 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
             </div>
             <p className="mt-2 text-[14px] text-(--px-ink-2)">前回の答えを覚えています。変わったときだけ押し直してください。</p>
           </Window>
-          {developer && latest && capture && <FixDetails capture={capture} latest={latest} inside={nearCampus(latest)} elapsed={elapsed} />}
+          {latest && capture && <FixDetails capture={capture} latest={latest} inside={nearCampus(latest)} elapsed={elapsed} />}
           {error && <p className="px-note" data-tone="warn" role="alert">{error}</p>}
         </div>
       )}
@@ -419,24 +415,17 @@ export function RecordFlow({ kind, promptedAt, tutorial, consent, developer, sub
         <div className="relative grid min-h-0 flex-1 place-items-center overflow-hidden px-4 text-center">
           <Confetti />
           <div className="relative w-full space-y-6">
-            <p className="px-clear" aria-hidden="true">CLEAR!</p>
-            <div className="relative mx-auto w-fit" aria-hidden="true">
-              <PixelSprite name="coin" scale={6} className="px-coin-spin" />
-              <span className="px-rise px-pixel px-outlined absolute top-5 -right-12 text-[16px] text-(--px-yellow)!">+1</span>
-            </div>
+            <ClearTitle />
+            <CoinGain />
             <Window className="text-left">
               <div role="status" className="space-y-2">
                 <p className="text-[19px]">{outcome === "sent" ? "記録を送信しました" : "この端末に保存しました"}</p>
                 <p className="text-[15px] text-(--px-ink-2)">
-                  {tutorial ? "練習の記録です。" : `きょう${todayCount + 1}回目の記録です。`}
+                  {`きょう${todayCount + 1}回目の記録です。`}
                   {outcome === "queued" && "電波のよい場所でページを開くと、自動で送られます。"}
                   {outcome === "local" && "通知サーバーが設定されていないため、送信はしていません。"}
                 </p>
-                {tutorial ? (
-                  <p className="text-[15px] text-(--px-ink-2)">準備はこれで終わりです。通知が届いたら、同じ手順で記録してください。</p>
-                ) : (
-                  subscribed && <p className="text-[15px] text-(--px-ink-2)">次の通知は {clock(nextPingAt)} ごろです。</p>
-                )}
+                {subscribed && nextPingAt !== null && <p className="text-[15px] text-(--px-ink-2)">次の通知は {clock(nextPingAt)} ごろです。</p>}
               </div>
             </Window>
           </div>
@@ -559,15 +548,6 @@ function SignalMeter({ fix, measuring, denied }: { fix: Fix | null; measuring: b
   );
 }
 
-function Coach({ children }: { children: ReactNode }) {
-  return (
-    <p className="px-note px-note--float" data-tone="coach">
-      <span className="px-chip px-chip--tip mt-1">TIP</span>
-      <span>{children}</span>
-    </p>
-  );
-}
-
 function SummaryRow({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
   return (
     <div className="grid grid-cols-[3em_1fr_auto] items-center gap-3 py-1">
@@ -576,44 +556,6 @@ function SummaryRow({ label, value, onEdit }: { label: string; value: string; on
       <dd>
         <PxLink onClick={onEdit} className="text-[14px]!" aria-label={`${label}を変更`}>変更</PxLink>
       </dd>
-    </div>
-  );
-}
-
-const CONFETTI = (() => {
-  const colours = ["var(--px-yellow)", "var(--px-cyan)", "var(--px-green)", "var(--px-red)", "var(--px-ink)"];
-  let seed = 7;
-  const random = () => {
-    seed = (seed * 16807) % 2147483647;
-    return seed / 2147483647;
-  };
-  return Array.from({ length: 30 }, (_, index) => ({
-    left: `${random() * 100}%`,
-    colour: colours[index % colours.length],
-    dx: `${Math.round(random() * 80 - 40)}px`,
-    dy: `${Math.round(55 + random() * 35)}vh`,
-    duration: `${(1.4 + random() * 1).toFixed(2)}s`,
-    delay: `${(random() * 0.5).toFixed(2)}s`,
-  }));
-})();
-
-/** A burst of pixel squares, once, when the record is in. */
-function Confetti() {
-  return (
-    <div className="px-confetti" aria-hidden="true">
-      {CONFETTI.map((piece, index) => (
-        <i
-          key={index}
-          style={{
-            left: piece.left,
-            ["--c" as string]: piece.colour,
-            ["--dx" as string]: piece.dx,
-            ["--dy" as string]: piece.dy,
-            ["--d" as string]: piece.duration,
-            ["--delay" as string]: piece.delay,
-          }}
-        />
-      ))}
     </div>
   );
 }

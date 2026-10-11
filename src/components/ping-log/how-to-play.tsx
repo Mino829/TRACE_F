@@ -3,18 +3,40 @@
 import { Fragment, useEffect, useRef } from "react";
 
 import { PixelIcon, type PixelIconName } from "./pixel-icon";
-import { PxButton, Window } from "./ui";
+import { Phrases, PxButton, Sentences, Window, useScrollHint } from "./ui";
 
 const STEPS: { icon: PixelIconName; title: string; short: string; text: string }[] = [
-  { icon: "bell", title: "通知が届く", short: "通知が届く", text: "10分ごとに、スマホに通知が届きます。画面が消えていても届きます。" },
-  { icon: "pin", title: "階と場所を指す", short: "場所を指す", text: "通知を開いて、いまいる階を選び、地図でいまいる場所をタップします。" },
-  { icon: "arrow", title: "送信する", short: "送信する", text: "「送信する」を押せば完了です。写真は添えても添えなくても構いません。" },
+  {
+    icon: "camera",
+    title: "写真を撮る",
+    short: "写真を撮る",
+    text: "残したい瞬間を見つけたら、「写真を撮る」を押して撮影します。",
+  },
+  {
+    icon: "walk",
+    title: "学祭をめぐる",
+    short: "学祭をめぐる",
+    text: "撮影と撮影のあいだは、自由に学祭をめぐってください。",
+  },
+  {
+    icon: "qr",
+    title: "ShibaLab で QR を読む",
+    short: "ShibaLab\u00a0へ",
+    text: "ShibaLab（教室棟301）の入口で、QR\u00a0コードを読み取ってください。続きは会場で見られます。",
+  },
+];
+
+const NOTES = [
+  "撮った写真は、展示に出しません。写真ストーリーは、あなたのスマホでだけ見られます。",
+  "撮影は1日12枚までです。",
+  "撮影のリマインダーは任意です。オンにすると、15分か30分ごとに通知が届きます。",
+  "撮りたいものがないときは、リマインダーをスキップして構いません。",
 ];
 
 /** The loop in one line of three pictures, for the title screen. */
 export function HowToStrip() {
   return (
-    <ol className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-start gap-1 text-center" aria-label="記録の流れ">
+    <ol className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-start gap-1 text-center" aria-label="参加の流れ">
       {STEPS.map((step, index) => (
         <Fragment key={step.title}>
           {index > 0 && <li aria-hidden="true" className="px-pixel pt-4 text-[10px] text-(--px-ink-2)">&#9654;</li>}
@@ -22,7 +44,9 @@ export function HowToStrip() {
             <span className="grid size-12 place-items-center border-3 border-(--px-k) bg-(--px-navy-2) text-(--px-yellow)">
               <PixelIcon name={step.icon} size={24} />
             </span>
-            <span className="text-[14px] leading-snug">{step.short}</span>
+            <span className="text-[14px] leading-snug">
+              <Phrases text={step.short} />
+            </span>
           </li>
         </Fragment>
       ))}
@@ -44,7 +68,9 @@ export function HowToSteps() {
               <span className="px-pixel text-[10px] text-(--px-yellow)">{index + 1}</span>
               {step.title}
             </span>
-            <span className="block text-[15px] leading-relaxed text-(--px-ink-2)">{step.text}</span>
+            <span className="block text-[15px] leading-relaxed text-(--px-ink-2)">
+              <Sentences text={step.text} />
+            </span>
           </span>
         </li>
       ))}
@@ -55,26 +81,41 @@ export function HowToSteps() {
 /** The instructions, reopened from the menu, with the details people ask about. */
 export function HowToDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const title = useRef<HTMLParagraphElement>(null);
+  const scroll = useScrollHint<HTMLDivElement>();
 
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
-    if (open && !element.open) element.showModal();
+    if (open && !element.open) {
+      element.showModal();
+      // The title takes the focus, so the button at the foot does not open already ringed.
+      title.current?.focus();
+    }
     if (!open && element.open) element.close();
   }, [open]);
 
   return (
     <dialog ref={dialog} onClose={onClose} aria-labelledby="howto-title" className="px-dialog">
       <Window className="mt-4">
-        <p id="howto-title" className="px-window__title">遊び方</p>
-        <div className="max-h-[min(78dvh,640px)] space-y-5 overflow-y-auto">
-          <HowToSteps />
-          <ul className="space-y-1.5 border-t-3 border-(--px-navy-3) pt-4 text-[15px] text-(--px-ink-2)">
-            <li className="ml-4 list-['-_']">通知はその日の24時に自動で止まります。</li>
-            <li className="ml-4 list-['-_']">場所がわからないときは「場所がわからない」を選べば、そのまま送信できます。</li>
-            <li className="ml-4 list-['-_']">通知を開けなかった回は、気にせず次の通知から続けてください。</li>
-          </ul>
-          <PxButton variant="secondary" block onClick={onClose}>閉じる</PxButton>
+        <p id="howto-title" ref={title} tabIndex={-1} className="px-window__title outline-none">
+          遊び方
+        </p>
+        {/* The text scrolls; the button to close stays in view below it. */}
+        <div className="flex max-h-[min(86dvh,700px)] flex-col">
+          <div ref={scroll} className="px-scroll min-h-0 flex-1 space-y-5 overflow-y-auto pt-2 pr-1 pb-4">
+            <HowToSteps />
+            <ul className="space-y-1.5 border-t-3 border-(--px-navy-3) pt-4 text-[15px] text-(--px-ink-2)">
+              {NOTES.map((note) => (
+                <li key={note} className="ml-4 list-['-_']">
+                  <Sentences text={note} />
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="border-t-3 border-(--px-navy-3) pt-3">
+            <PxButton variant="secondary" block onClick={onClose}>閉じる</PxButton>
+          </div>
         </div>
       </Window>
     </dialog>

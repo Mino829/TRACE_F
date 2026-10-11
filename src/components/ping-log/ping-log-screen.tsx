@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
+import { captureOnce } from "@/lib/ping-log/capture";
+import { DEVELOPER_CONSENT_VERSION, clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
+import { networkInfo } from "@/lib/ping-log/context";
 import { pushSupport, type PushSupport } from "@/lib/ping-log/environment";
 import {
+  ACCURACY_PLAN,
   PUSH_API_URL,
   deviceId,
   dropExpired,
@@ -12,45 +15,56 @@ import {
   sendTestPing,
   subscribe,
   subscriptionExpiresAt,
+  subscriptionPlan,
   unsubscribe,
   uploadEntry,
+  type PushPlan,
+  type ReminderInterval,
 } from "@/lib/ping-log/push";
-import { clearEntries, listEntries, putEntry, type LogEntry } from "@/lib/ping-log/store";
+import { MAX_PHOTOS_PER_DAY, purposeOf } from "@/lib/ping-log/record";
+import { clearEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
 
+import { SkipClear } from "./clear-screen";
+import { ConfirmDialog } from "./confirm-dialog";
 import { ConsentDialog } from "./consent-view";
 import { DeveloperView } from "./developer-view";
-import { HomeView, type SetupStatus } from "./home-view";
+import { HomeView } from "./home-view";
 import { HowToDialog } from "./how-to-play";
+import { MenuDialog, type MenuItem } from "./menu-dialog";
+import { PhotoFlow, type Shot } from "./photo-flow";
+import { PixelIcon } from "./pixel-icon";
 import { PixelScene, phaseAt } from "./pixel-scene";
 import { PixelSprite } from "./pixel-sprite";
-import { RecordFlow, type SaveOutcome } from "./record-flow";
+import { RecordFlow } from "./record-flow";
+import { StoryDemo } from "./story-demo";
 import { TitleView } from "./title-view";
-import { PxButton, Window, clock } from "./ui";
+import { Sentences } from "./ui";
 
 /**
- * /log: the participant screen by default, the developer screen behind the
- * button at the top right.
+ * /log has two faces.
  *
- * Structure, in the order a newcomer meets it:
- *   1. the title screen: what this is and one button (or, where no ping can
- *      reach, how to move to where it can);
+ * The participant screen (the default) shows the team what the finished
+ * photo memory would be like, following the work's documents:
+ *   1. the title screen: what the work is and one button;
  *   2. consent, as a window over the dimmed page;
- *   3. the setup quest: notifications, location, one practice record with
- *      hints at each step;
- *   4. the waiting screen: when the next ping comes, today's records;
- *   5. the record flow, full screen, opened by a ping or by hand.
+ *   3. home: today's photos and the camera button, and the optional reminder;
+ *   4. the photo flow, full screen: a look at the photo, then the clear screen.
+ * A reminder that arrives shows on home with "写真を撮る" and "スキップ"; both
+ * end on the clear screen.
+ *
+ * The developer screen, behind the menu at the top right, is the team's
+ * accuracy test: the ten-minute ping answered by pointing at where one
+ * stands, the phone's records, and the demo of arriving at the venue.
+ * Visitors never use it.
  */
 
-const PING_INTERVAL_MINUTES = 10;
 const PENDING_KEY = "trace-ping-pending";
 const VIEW_KEY = "trace-log-view";
-const GEO_OK_KEY = "trace-geo-ok";
-const SKIP_NOTIFY_KEY = "trace-setup-skip-notify";
-const SKIP_PRACTICE_KEY = "trace-setup-skip-practice";
+const SKIPS_KEY = "trace-reminder-skips";
 const PROMPT_MESSAGE = "trace-ping";
 
 type View = "participant" | "developer";
-type Flow = { kind: "ping" | "manual"; promptedAt: string | null; tutorial: boolean };
+type AccuracyFlow = { kind: "ping" | "manual"; promptedAt: string | null };
 
 function read(storage: Storage, key: string): string | null {
   try {
@@ -69,57 +83,83 @@ function write(storage: Storage, key: string, value: string | null): void {
   }
 }
 
-/** The ping waiting for an answer: from the notification that opened the page, or one left over from before. */
+function isToday(value: string): boolean {
+  return new Date(value).toDateString() === new Date().toDateString();
+}
+
+/** The notification waiting for an answer: from the one that opened the page, or one left from earlier today. */
 function initialPending(): string | null {
   const fromUrl = new URLSearchParams(window.location.search).get("prompt");
   if (fromUrl && !Number.isNaN(Date.parse(fromUrl))) {
     write(window.localStorage, PENDING_KEY, fromUrl);
     return fromUrl;
   }
-  return read(window.localStorage, PENDING_KEY);
+  const stored = read(window.localStorage, PENDING_KEY);
+  return stored && isToday(stored) ? stored : null;
+}
+
+function initialView(): View {
+  return read(window.localStorage, VIEW_KEY) === "developer" ? "developer" : "participant";
+}
+
+/** Reminders answered with "スキップ" today; each is worth a coin, as a photo is. */
+function loadSkips(): string[] {
+  try {
+    const stored = JSON.parse(read(window.localStorage, SKIPS_KEY) ?? "[]") as unknown;
+    return Array.isArray(stored) ? stored.filter((value): value is string => typeof value === "string" && isToday(value)) : [];
+  } catch {
+    return [];
+  }
 }
 
 function notificationState(): NotificationPermission | "unsupported" {
   return typeof Notification === "undefined" || !("PushManager" in window) ? "unsupported" : Notification.permission;
 }
 
-/** The worker's cron fires on every tenth minute of the hour. */
-function nextPingAt(now: number): number {
-  const step = PING_INTERVAL_MINUTES * 60 * 1000;
+/** The worker pings on whole multiples of the interval, counted in minutes since the epoch. */
+function nextMark(now: number, intervalMinutes: number): number {
+  const step = intervalMinutes * 60 * 1000;
   return Math.floor(now / step) * step + step;
 }
 
-function isToday(value: string): boolean {
-  return new Date(value).toDateString() === new Date().toDateString();
-}
-
 export function PingLogScreen() {
-  // The participant screen is what opens by default; the developer screen lasts for this tab only.
-  const [view, setView] = useState<View>(() => (read(window.sessionStorage, VIEW_KEY) === "developer" ? "developer" : "participant"));
+  // The developer screen stays until it is switched back, through reloads and notification launches.
+  const [view, setView] = useState<View>(initialView);
   const [consent, setConsent] = useState<Consent | null>(loadConsent);
   // Opened from the title screen's button, once the person has seen what this is.
   const [consentOpen, setConsentOpen] = useState(false);
   const [howToOpen, setHowToOpen] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [support] = useState<PushSupport>(pushSupport);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(subscriptionExpiresAt);
+  const [plan, setPlan] = useState<PushPlan>(subscriptionPlan);
   const [pendingAt, setPendingAt] = useState<string | null>(initialPending);
-  // A tapped notification opens straight into the record flow.
-  const [flow, setFlow] = useState<Flow | null>(() => {
+  // On the developer screen a tapped notification opens the accuracy record straight away.
+  const [accuracyFlow, setAccuracyFlow] = useState<AccuracyFlow | null>(() => {
     const pending = initialPending();
-    return pending && loadConsent() ? { kind: "ping", promptedAt: pending, tutorial: false } : null;
+    return pending && initialView() === "developer" ? { kind: "ping", promptedAt: pending } : null;
   });
+  const [shot, setShot] = useState<Shot | null>(null);
+  const [skipCleared, setSkipCleared] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const [skips, setSkips] = useState<string[]>(loadSkips);
   const [now, setNow] = useState(() => Date.now());
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [permission, setPermission] = useState(notificationState);
   const [geolocation, setGeolocation] = useState<PermissionState | "unknown" | null>(null);
-  const [geoOk, setGeoOk] = useState(() => read(window.localStorage, GEO_OK_KEY) === "1");
-  const [skipNotify, setSkipNotify] = useState(() => read(window.localStorage, SKIP_NOTIFY_KEY) === "1");
-  const [skipPractice, setSkipPractice] = useState(() => read(window.localStorage, SKIP_PRACTICE_KEY) === "1");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  // The reminder the camera was opened for, read when the photo comes back.
+  const cameraPromptRef = useRef<string | null>(null);
+  const viewRef = useRef(view);
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
 
   const prompt = useCallback((value: string | null) => {
     write(window.localStorage, PENDING_KEY, value);
@@ -178,7 +218,7 @@ export function PingLogScreen() {
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type !== PROMPT_MESSAGE) return;
       prompt(event.data.promptedAt);
-      setFlow((current) => current ?? { kind: "ping", promptedAt: event.data.promptedAt, tutorial: false });
+      if (viewRef.current === "developer") setAccuracyFlow((current) => current ?? { kind: "ping", promptedAt: event.data.promptedAt });
     };
     navigator.serviceWorker.addEventListener("message", onMessage);
     return () => navigator.serviceWorker.removeEventListener("message", onMessage);
@@ -190,27 +230,43 @@ export function PingLogScreen() {
   }, []);
 
   const subscribed = subscription !== null && (!expiresAt || Date.parse(expiresAt) > now);
-  const setup: SetupStatus = {
-    consent: consent !== null,
-    notify: subscribed ? "done" : skipNotify ? "skipped" : permission === "denied" ? "denied" : "todo",
-    location: geolocation === "denied" ? "denied" : geolocation === "granted" || geoOk ? "done" : "todo",
-    practice: entries.length > 0 ? "done" : skipPractice ? "skipped" : "todo",
-  };
+  const activePlan = subscribed ? plan : null;
+  const upcoming = activePlan ? nextMark(now, activePlan.intervalMinutes) : null;
+  // The subscription ends at midnight: after the day's last ping there is no next one.
+  const nextPingAt = upcoming !== null && (!expiresAt || upcoming < Date.parse(expiresAt)) ? upcoming : null;
+  const nextReminderAt = activePlan?.purpose === "photo" ? nextPingAt : null;
 
-  const run = async (task: () => Promise<void>) => {
+  // Kept stable through the clock's ticks, so the photos' object URLs are not remade every second.
+  const day = new Date(now).toDateString();
+  const todayPhotos = useMemo(
+    () => entries.filter((entry) => purposeOf(entry.record) === "photo-memory" && new Date(entry.record.takenAt).toDateString() === day).reverse(),
+    [entries, day],
+  );
+  const todayAccuracy = entries.filter((entry) => purposeOf(entry.record) === "accuracy" && isToday(entry.record.takenAt)).length;
+  const todaySkips = skips.filter(isToday).length;
+
+  /**
+   * Runs a task behind the busy note; resolves to its error message, or null
+   * when it worked. A silent task leaves the error to its caller, to show next
+   * to the button that was pressed.
+   */
+  const run = async (task: () => Promise<void>, { silent = false } = {}): Promise<string | null> => {
     setBusy(true);
     setMessage("");
     try {
       await task();
+      return null;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "うまくいきませんでした。");
+      const text = error instanceof Error ? error.message : "うまくいきませんでした。";
+      if (!silent) setMessage(text);
+      return text;
     } finally {
       setBusy(false);
     }
   };
 
   const switchView = (next: View) => {
-    write(window.sessionStorage, VIEW_KEY, next === "developer" ? next : null);
+    write(window.localStorage, VIEW_KEY, next === "developer" ? next : null);
     setView(next);
     setMessage("");
   };
@@ -221,74 +277,71 @@ export function PingLogScreen() {
     setMessage("");
   };
 
-  const enableNotifications = () => run(async () => {
-    if (!consent) return;
+  /** One subscription per phone: the photo reminder and the accuracy ping replace each other. */
+  const subscribeTo = (next: PushPlan, consentVersion: string, done: string, silent = false) => run(async () => {
     if (notificationState() === "unsupported") throw new Error("このブラウザでは通知を受け取れません。");
     const result = await Notification.requestPermission();
     setPermission(result);
-    if (result !== "granted") return;
+    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、このサイトの通知を許可してください。");
     const registration = registrationRef.current ?? (await navigator.serviceWorker.ready);
-    setSubscription(await subscribe(registration, consent.version));
+    setSubscription(await subscribe(registration, consentVersion, next));
     setExpiresAt(subscriptionExpiresAt());
-    setMessage(`通知をオンにしました。${PING_INTERVAL_MINUTES}分ごとに届きます。`);
-  });
+    setPlan(next);
+    setMessage(done);
+  }, { silent });
 
-  const skipNotifications = () => {
-    write(window.localStorage, SKIP_NOTIFY_KEY, "1");
-    setSkipNotify(true);
-  };
+  // The participant's buttons sit far down the page; the error goes beside them, not up in the note.
+  const enableReminders = (interval: ReminderInterval) =>
+    consent
+      ? subscribeTo({ purpose: "photo", intervalMinutes: interval }, consent.version, `リマインダーをオンにしました。${interval}分ごとに届きます。`, true)
+      : Promise.resolve("参加の同意がまだです。");
 
-  const startWithoutNotifications = () => {
-    skipNotifications();
-    setConsentOpen(true);
-  };
+  const enableAccuracyPings = () =>
+    void subscribeTo(ACCURACY_PLAN, DEVELOPER_CONSENT_VERSION, `精度テストの通知をオンにしました。${ACCURACY_PLAN.intervalMinutes}分ごとに届きます。`);
 
-  const requestLocation = () => {
-    if (!("geolocation" in navigator)) {
-      setMessage("この端末では位置情報を使えません。");
-      return;
-    }
-    setBusy(true);
-    setMessage("");
-    const allowed = () => {
-      write(window.localStorage, GEO_OK_KEY, "1");
-      setGeoOk(true);
-      setBusy(false);
-    };
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        setGeolocation("granted");
-        allowed();
-      },
-      (error) => {
-        // Only a refusal matters here; a slow or failed first fix still means permission was given.
-        if (error.code === error.PERMISSION_DENIED) {
-          setGeolocation("denied");
-          setBusy(false);
-        } else allowed();
-      },
-      { enableHighAccuracy: false, maximumAge: 60000, timeout: 20000 },
-    );
-  };
-
-  const skipPracticeRun = () => {
-    write(window.localStorage, SKIP_PRACTICE_KEY, "1");
-    setSkipPractice(true);
-  };
-
-  const stop = () => run(async () => {
+  const stopNotifications = (done: string) => void run(async () => {
     if (!subscription) return;
     await unsubscribe(subscription);
     setSubscription(null);
     setExpiresAt(null);
-    setMessage("通知を止めました。");
+    setMessage(done);
   });
 
-  const test = () => run(async () => {
+  const test = () => void run(async () => {
     if (!subscription) return;
     await sendTestPing(subscription);
     setMessage("テスト通知を送りました。数秒で届きます。");
   });
+
+  /** Opens the phone's camera. It has to happen inside the tap, or the browser refuses. */
+  const openCamera = (promptedAt: string | null) => {
+    cameraPromptRef.current = promptedAt;
+    cameraRef.current?.click();
+  };
+
+  const onCameraFile = (input: HTMLInputElement) => {
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file || !consent || todayPhotos.length >= MAX_PHOTOS_PER_DAY) return;
+    // The photo's moment is when the camera hands it over; its one fix is asked for now.
+    setShot({
+      id: crypto.randomUUID(),
+      file,
+      receivedAt: Date.now(),
+      promptedAt: cameraPromptRef.current,
+      location: captureOnce(),
+      network: networkInfo(),
+      number: todayPhotos.length + 1,
+    });
+  };
+
+  const skipReminder = () => {
+    const next = [...skips.filter(isToday), new Date().toISOString()];
+    write(window.localStorage, SKIPS_KEY, JSON.stringify(next));
+    setSkips(next);
+    prompt(null);
+    setSkipCleared(true);
+  };
 
   const save = async (entry: LogEntry): Promise<SaveOutcome> => {
     await putEntry(entry);
@@ -297,153 +350,176 @@ export function PingLogScreen() {
     return !PUSH_API_URL ? "local" : failed ? "queued" : "sent";
   };
 
-  const closeFlow = () => {
-    if (flow?.kind === "ping") prompt(null);
-    setFlow(null);
+  const closeAccuracyFlow = () => {
+    if (accuracyFlow?.kind === "ping") prompt(null);
+    setAccuracyFlow(null);
   };
 
-  const withdraw = () => run(async () => {
-    if (!window.confirm("通知を止め、この端末から送ったデータをすべて削除します。よろしいですか？")) return;
+  const withdraw = () => void run(async () => {
     if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
     const deleted = PUSH_API_URL ? await forgetMe() : 0;
     await clearEntries();
     clearConsent();
     prompt(null);
-    for (const key of [SKIP_NOTIFY_KEY, SKIP_PRACTICE_KEY]) write(window.localStorage, key, null);
-    setSkipNotify(false);
-    setSkipPractice(false);
+    write(window.localStorage, SKIPS_KEY, null);
+    setSkips([]);
     setSubscription(null);
     setExpiresAt(null);
     setEntries([]);
     setConsent(null);
     setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。`);
+    // The menu was at the foot of a longer page; the note and the title screen are at the top.
+    window.scrollTo(0, 0);
   });
 
-  const resend = () => run(async () => {
+  const resend = () => void run(async () => {
     const failed = await sendUnsent();
     setMessage(failed ? `${failed}件を送信できませんでした。` : "未送信の記録を送りました。");
   });
 
-  const clearLocal = () => run(async () => {
+  const clearLocal = () => void run(async () => {
     if (!window.confirm("この端末に残っている記録を削除します。送信済みのデータはサーバーに残ります。よろしいですか？")) return;
     await clearEntries();
     setEntries([]);
   });
 
-  const today = entries.filter((entry) => isToday(entry.record.takenAt));
-  const unsent = entries.filter((entry) => !entry.sentAt).length;
+  const menuItems: MenuItem[] = [
+    { label: "遊び方", onSelect: () => setHowToOpen(true) },
+    ...(consent ? [{ label: "同意した内容", onSelect: () => setConsentOpen(true) }] : []),
+    ...(activePlan?.purpose === "photo" ? [{ label: "リマインダーを止める", onSelect: () => stopNotifications("リマインダーを止めました。"), disabled: busy }] : []),
+    ...(consent ? [{ label: "参加をやめる", onSelect: () => setWithdrawOpen(true), tone: "danger" as const, disabled: busy }] : []),
+    { label: "開発者向けの画面", onSelect: () => switchView("developer"), tone: "quiet" },
+  ];
 
   return (
     <>
       <PixelScene phase={phaseAt(now)} />
-      <main className="relative z-[1] mx-auto w-full max-w-md space-y-7 px-4 pt-[max(10px,env(safe-area-inset-top))] pb-[calc(56px+env(safe-area-inset-bottom))]">
-        <header className="px-on-scene flex min-h-11 items-center justify-between gap-3">
-          {consent || view === "developer" ? (
-            <p className="flex items-center gap-2" aria-label="TRACE">
-              <PixelSprite name="pin" scale={2} />
-              <span className="px-pixel px-outlined text-[14px]" aria-hidden="true">TRACE</span>
-            </p>
-          ) : (
-            <span />
-          )}
-          <button
-            type="button"
-            className="min-h-11 bg-(--px-navy) px-3 text-[13px] text-(--px-ink-2) shadow-[0_0_0_2px_var(--px-k)] focus-visible:outline-3 focus-visible:outline-(--px-focus)"
-            onClick={() => switchView(view === "developer" ? "participant" : "developer")}
-          >
-            {view === "developer" ? "参加者向けにもどる" : "開発者向け"}
-          </button>
-        </header>
-
-        {(busy || message) && <p className="px-note px-note--float" role="status">{busy ? "処理しています…" : message}</p>}
-
-        {pendingAt && !flow && consent && view === "participant" && (
-          <Window tone="alert" title={<><span className="px-blink">!</span> 記録の時間です</>} as="section">
-            <p className="text-[16px]">{clock(pendingAt)} の通知です。いまいる場所を記録してください。</p>
-            <div className="mt-3 flex gap-1">
-              <PxButton variant="secondary" onClick={() => prompt(null)}>スキップ</PxButton>
-              <PxButton block icon="pin" onClick={() => setFlow({ kind: "ping", promptedAt: pendingAt, tutorial: false })}>記録する</PxButton>
-            </div>
-          </Window>
-        )}
-
-        {view === "developer" ? (
-          <>
-            {!PUSH_API_URL && (
-              <p className="px-note px-note--float" data-tone="warn">通知サーバーの URL が設定されていません。NEXT_PUBLIC_PUSH_API_URL を設定してください。</p>
+      {demoOpen ? (
+        <StoryDemo onClose={() => setDemoOpen(false)} />
+      ) : (
+        <main className="relative z-[1] mx-auto w-full max-w-md space-y-7 px-4 pt-[max(10px,env(safe-area-inset-top))] pb-[calc(56px+env(safe-area-inset-bottom))]">
+          <header className="px-on-scene flex min-h-11 items-center justify-between gap-3">
+            {consent || view === "developer" ? (
+              <p className="flex items-center gap-2" aria-label="TRACE">
+                <PixelSprite name="pin" scale={2} />
+                <span className="px-pixel px-outlined text-[14px]" aria-hidden="true">TRACE</span>
+              </p>
+            ) : (
+              <span />
             )}
-            <DeveloperView
-              apiUrl={PUSH_API_URL}
-              deviceId={deviceId()}
-              consent={consent}
-              notificationPermission={permission}
-              geolocationPermission={geolocation}
-              pushSupport={support}
-              subscription={subscribed ? subscription : null}
-              expiresAt={expiresAt}
-              nextPingAt={nextPingAt(now)}
-              entries={entries}
-              busy={busy}
-              onTest={() => void test()}
-              onRecordNow={() => setFlow({ kind: "manual", promptedAt: null, tutorial: false })}
-              onResend={() => void resend()}
-              onClearLocal={() => void clearLocal()}
-              onResetSetup={() => {
-                setShowSetup(true);
-                switchView("participant");
-              }}
-            />
-          </>
-        ) : !consent ? (
-          <TitleView support={support} onStart={() => setConsentOpen(true)} onStartWithoutNotifications={startWithoutNotifications} />
-        ) : (
-          <HomeView
-            setup={setup}
-            forceSetup={showSetup}
-            support={support}
-            subscribed={subscribed}
-            pending={pendingAt !== null}
-            nextPingAt={nextPingAt(now)}
-            now={now}
-            todayCount={today.length}
-            todayUnsent={today.filter((entry) => !entry.sentAt).length}
-            unsent={unsent}
-            busy={busy}
-            geolocationDenied={geolocation === "denied"}
-            onOpenConsent={() => setConsentOpen(true)}
-            onEnableNotifications={() => void enableNotifications()}
-            onSkipNotifications={skipNotifications}
-            onRequestLocation={requestLocation}
-            onStartPractice={() => setFlow({ kind: "manual", promptedAt: null, tutorial: true })}
-            onSkipPractice={skipPracticeRun}
-            onCloseSetup={() => setShowSetup(false)}
-            onRecordNow={() => setFlow({ kind: "manual", promptedAt: null, tutorial: false })}
-            onStopNotifications={() => void stop()}
-            onResend={() => void resend()}
-            onShowHowTo={() => setHowToOpen(true)}
-            onWithdraw={() => void withdraw()}
-          />
-        )}
-      </main>
+            {view === "developer" ? (
+              <button
+                type="button"
+                className="min-h-11 bg-(--px-navy) px-3 text-[13px] text-(--px-ink-2) shadow-[0_0_0_2px_var(--px-k)] focus-visible:outline-3 focus-visible:outline-(--px-focus)"
+                onClick={() => switchView("participant")}
+              >
+                参加者向けにもどる
+              </button>
+            ) : (
+              <button type="button" className="px-menu-button" aria-label="メニュー" aria-haspopup="dialog" onClick={() => setMenuOpen(true)}>
+                <PixelIcon name="menu" size={22} />
+              </button>
+            )}
+          </header>
 
-      {flow && consent && (
+          {(busy || message) && (
+            <p className="px-note px-note--float" role="status">
+              <Sentences text={busy ? "処理しています…" : message} />
+            </p>
+          )}
+
+          {view === "developer" ? (
+            <>
+              {!PUSH_API_URL && (
+                <p className="px-note px-note--float" data-tone="warn">通知サーバーの URL が設定されていません。NEXT_PUBLIC_PUSH_API_URL を設定してください。</p>
+              )}
+              <DeveloperView
+                apiUrl={PUSH_API_URL}
+                deviceId={deviceId()}
+                consent={consent}
+                notificationPermission={permission}
+                geolocationPermission={geolocation}
+                pushSupport={support}
+                subscription={subscribed ? subscription : null}
+                plan={activePlan}
+                expiresAt={expiresAt}
+                nextPingAt={nextPingAt}
+                entries={entries}
+                busy={busy}
+                onEnableAccuracy={enableAccuracyPings}
+                onStopNotifications={() => stopNotifications("通知を止めました。")}
+                onTest={test}
+                onRecordNow={() => setAccuracyFlow({ kind: "manual", promptedAt: null })}
+                onResend={resend}
+                onClearLocal={clearLocal}
+                onOpenDemo={() => setDemoOpen(true)}
+              />
+            </>
+          ) : !consent ? (
+            <TitleView support={support} onStart={() => setConsentOpen(true)} />
+          ) : (
+            <HomeView
+              support={support}
+              plan={activePlan}
+              nextPingAt={nextPingAt}
+              pendingAt={pendingAt}
+              now={now}
+              photos={todayPhotos}
+              coins={todayPhotos.length + todaySkips}
+              unsentCoins={todayPhotos.filter((entry) => !entry.sentAt).length}
+              busy={busy}
+              onTakePhoto={() => openCamera(pendingAt)}
+              onSkipReminder={skipReminder}
+              onEnableReminders={enableReminders}
+              onResend={resend}
+            />
+          )}
+        </main>
+      )}
+
+      {view === "developer" && accuracyFlow && (
         <RecordFlow
-          key={`${flow.kind}-${flow.promptedAt}-${flow.tutorial}`}
-          kind={flow.kind}
-          promptedAt={flow.promptedAt}
-          tutorial={flow.tutorial}
-          consent={consent}
-          developer={view === "developer"}
-          subscribed={subscribed}
-          nextPingAt={nextPingAt(now)}
-          todayCount={today.length}
+          key={`${accuracyFlow.kind}-${accuracyFlow.promptedAt}`}
+          kind={accuracyFlow.kind}
+          promptedAt={accuracyFlow.promptedAt}
+          subscribed={activePlan?.purpose === "accuracy"}
+          nextPingAt={nextPingAt}
+          todayCount={todayAccuracy}
           onSave={save}
-          onClose={closeFlow}
+          onClose={closeAccuracyFlow}
         />
       )}
 
-      <ConsentDialog open={consentOpen && !flow} onAgree={consent ? undefined : agree} onClose={() => setConsentOpen(false)} />
+      {shot && consent && (
+        <PhotoFlow
+          key={shot.id}
+          shot={shot}
+          consent={consent}
+          offerReminder={shot.number === 1 && support === "supported" && activePlan?.purpose !== "photo"}
+          nextReminderAt={nextReminderAt}
+          onRetake={() => openCamera(shot.promptedAt)}
+          onSave={save}
+          onEnableReminders={enableReminders}
+          onClose={() => setShot(null)}
+        />
+      )}
+
+      {skipCleared && <SkipClear nextReminderAt={nextReminderAt} onClose={() => setSkipCleared(false)} />}
+
+      {/* The camera, opened from a tap on "写真を撮る" or "撮り直す". */}
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(event) => onCameraFile(event.currentTarget)} />
+
+      <ConsentDialog open={consentOpen && !shot} onAgree={consent ? undefined : agree} onClose={() => setConsentOpen(false)} />
       <HowToDialog open={howToOpen} onClose={() => setHowToOpen(false)} />
+      <MenuDialog open={menuOpen} items={menuItems} onClose={() => setMenuOpen(false)} />
+      <ConfirmDialog
+        open={withdrawOpen}
+        title="参加をやめますか？"
+        text="リマインダーを止め、この端末から送った写真と記録をすべて削除します。削除したものは元に戻せません。"
+        confirmLabel="やめて削除する"
+        onConfirm={withdraw}
+        onClose={() => setWithdrawOpen(false)}
+      />
     </>
   );
 }

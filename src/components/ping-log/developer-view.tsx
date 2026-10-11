@@ -1,37 +1,44 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- thumbnails are local blob: URLs */
-
-import { useEffect, useMemo } from "react";
-
 import { buildingById } from "@/lib/map/buildings";
 import type { Consent } from "@/lib/ping-log/consent";
-import { SOURCE_LABEL, haversineMetres, type Truth } from "@/lib/ping-log/record";
+import { ACCURACY_PLAN, type PushPlan } from "@/lib/ping-log/push";
+import { PURPOSE_LABEL, SOURCE_LABEL, haversineMetres, purposeOf, type Truth } from "@/lib/ping-log/record";
 import type { LogEntry } from "@/lib/ping-log/store";
 
+import { BlobImage } from "./blob-image";
 import { Eyebrow, Frame, PxButton, PxLink, clock } from "./ui";
 
 type Props = {
   apiUrl: string;
   deviceId: string;
+  /** The participant screen's consent; the accuracy test does not need it. */
   consent: Consent | null;
   notificationPermission: string;
   geolocationPermission: string | null;
   pushSupport: string;
   subscription: PushSubscription | null;
+  /** What the phone's one subscription is for while it lasts. */
+  plan: PushPlan | null;
   expiresAt: string | null;
-  nextPingAt: number;
+  nextPingAt: number | null;
   entries: LogEntry[];
   busy: boolean;
+  onEnableAccuracy: () => void;
+  onStopNotifications: () => void;
   onTest: () => void;
   onRecordNow: () => void;
   onResend: () => void;
   onClearLocal: () => void;
-  onResetSetup: () => void;
+  onOpenDemo: () => void;
 };
 
 function fullTime(value: number | string): string {
   return new Date(value).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function planLabel(plan: PushPlan): string {
+  return `${plan.purpose === "accuracy" ? "精度テスト" : "撮影のリマインダー"}（${plan.intervalMinutes}分ごと）`;
 }
 
 /** The error this record would contribute to an analysis, worked out on the phone for a quick look. */
@@ -49,25 +56,22 @@ function describeTruth(truth: Truth): string {
 }
 
 export function DeveloperView(props: Props) {
-  const { entries } = props;
-  const thumbs = useMemo<Record<string, string>>(
-    () => Object.fromEntries(entries.filter((entry) => entry.photo).map((entry) => [entry.id, URL.createObjectURL(entry.photo as Blob)])),
-    [entries],
-  );
-  useEffect(() => () => Object.values(thumbs).forEach((url) => URL.revokeObjectURL(url)), [thumbs]);
+  const { entries, plan } = props;
   const unsent = entries.filter((entry) => !entry.sentAt).length;
-  const canRecord = props.consent !== null && !props.busy;
+  const accuracyOn = plan?.purpose === "accuracy";
+  const canSubscribe = props.pushSupport === "supported";
 
   const state: [string, string][] = [
     ["通知サーバー", props.apiUrl || "未設定（NEXT_PUBLIC_PUSH_API_URL）"],
     ["匿名ID", props.deviceId],
-    ["同意", props.consent ? `${props.consent.version}（${fullTime(props.consent.at)}）` : "未同意"],
+    ["参加者の同意", props.consent ? `${props.consent.version}（${fullTime(props.consent.at)}）` : "未同意"],
     ["通知の対応", props.pushSupport],
     ["通知の許可", props.notificationPermission],
     ["位置情報の許可", props.geolocationPermission ?? "不明"],
     ["購読", props.subscription ? new URL(props.subscription.endpoint).host : "なし"],
+    ["通知の目的", plan ? planLabel(plan) : "—"],
     ["購読の期限", props.expiresAt ? fullTime(props.expiresAt) : "—"],
-    ["次の通知", props.subscription ? clock(props.nextPingAt) : "—"],
+    ["次の通知", props.nextPingAt !== null ? clock(props.nextPingAt) : "—"],
   ];
 
   return (
@@ -85,15 +89,42 @@ export function DeveloperView(props: Props) {
       </Frame>
 
       <Frame tone="dim" panelClassName="space-y-3">
-        <Eyebrow>Debug</Eyebrow>
-        {!props.consent && <p className="text-sm text-(--px-ink-2)">記録と通知は、参加者向け画面で同意すると使えます。</p>}
-        <div className="grid grid-cols-2 gap-2">
-          <PxButton variant="secondary" size="sm" onClick={props.onRecordNow} disabled={!canRecord}>今すぐ記録する</PxButton>
+        <Eyebrow>Accuracy test</Eyebrow>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[17px]">精度テストの通知</h2>
+          <span className={accuracyOn ? "px-chip" : "px-chip px-chip--off"}>{accuracyOn ? "ON" : "OFF"}</span>
+        </div>
+        <p className="text-sm leading-relaxed text-(--px-ink-2)">
+          {!canSubscribe
+            ? "このブラウザでは通知を受け取れません。"
+            : accuracyOn
+              ? `${ACCURACY_PLAN.intervalMinutes}分ごとに通知が届きます。通知を押すと、精度テストの記録が開きます。`
+              : plan?.purpose === "photo"
+                ? `いまは参加者向けの${planLabel(plan)}がオンです。精度テストの通知をオンにすると、リマインダーは止まります。`
+                : `オンにすると、${ACCURACY_PLAN.intervalMinutes}分ごとに通知が届きます。通知を押すと、精度テストの記録が開きます。`}
+        </p>
+        {accuracyOn ? (
+          <PxButton variant="secondary" size="sm" onClick={props.onStopNotifications} disabled={props.busy}>通知を止める</PxButton>
+        ) : (
+          <PxButton size="sm" icon="bell" onClick={props.onEnableAccuracy} disabled={!canSubscribe || props.busy}>精度テストの通知をオンにする</PxButton>
+        )}
+        <div className="grid grid-cols-2 gap-2 border-t-3 border-(--px-navy-3) pt-3">
+          <PxButton variant="secondary" size="sm" onClick={props.onRecordNow} disabled={props.busy}>精度テストを行う</PxButton>
           <PxButton variant="secondary" size="sm" onClick={props.onTest} disabled={!props.subscription || props.busy}>テスト通知を送る</PxButton>
           <PxButton variant="secondary" size="sm" onClick={props.onResend} disabled={!unsent || props.busy}>未送信を再送（{unsent}件）</PxButton>
-          <PxButton variant="secondary" size="sm" onClick={props.onResetSetup} disabled={props.busy}>準備の画面を見る</PxButton>
         </div>
-        <p className="text-xs leading-relaxed text-(--px-ink-2)">記録は送信したときに自動でサーバーへ保存されます。送れなかった記録は、次にページを開いたときに送り直します。サーバーのデータの取り出し方は push-worker/README.md にあります。「準備の画面を見る」は、はじめの準備の表示を確かめるためのものです（同意も記録も消しません）。</p>
+        <p className="text-xs leading-relaxed text-(--px-ink-2)">
+          精度テストの記録には、参加者向けの同意は要りません。記録は送信したときに自動でサーバーへ保存されます。送れなかった記録は、次にページを開いたときに送り直します。サーバーのデータの取り出し方は push-worker/README.md にあります。
+        </p>
+      </Frame>
+
+      <Frame tone="dim" panelClassName="space-y-3">
+        <Eyebrow>Demo</Eyebrow>
+        <h2 className="text-[17px]">会場到着のデモ</h2>
+        <p className="text-sm leading-relaxed text-(--px-ink-2)">
+          写真を4枚撮ったあと、ShibaLab（教室棟301）に着いたときの画面の流れを6画面で見られます。デモは記録を保存せず、サーバーにも送りません。
+        </p>
+        <PxButton size="sm" icon="arrow" onClick={props.onOpenDemo}>デモを見る</PxButton>
       </Frame>
 
       <section className="px-window space-y-2">
@@ -108,12 +139,13 @@ export function DeveloperView(props: Props) {
             {entries.map((entry) => {
               const { record } = entry;
               const { last, error } = summary(entry);
+              const purpose = purposeOf(record);
               return (
                 <li key={entry.id} className="px-panel flex gap-3 p-3!">
-                  {thumbs[entry.id] && <img src={thumbs[entry.id]} alt="" className="size-16 shrink-0 object-cover" />}
+                  {entry.photo && <BlobImage blob={entry.photo} alt="" className="size-16 shrink-0 object-cover" />}
                   <div className="min-w-0 space-y-0.5 text-xs">
                     <p className="text-sm font-bold">
-                      {fullTime(record.takenAt)}・{record.tutorial ? "練習" : record.kind === "ping" ? "通知から" : "手動"}・{entry.sentAt ? "送信済み" : "未送信"}
+                      {fullTime(record.takenAt)}・{PURPOSE_LABEL[purpose]}・{record.tutorial ? "練習" : record.kind === "ping" ? "通知から" : "手動"}・{entry.sentAt ? "送信済み" : "未送信"}
                     </p>
                     {last ? (
                       <p className="font-mono">
@@ -130,7 +162,7 @@ export function DeveloperView(props: Props) {
                       {record.network?.type && `・回線 ${record.network.type}`}
                       {record.selfReport.wifi && `・Wi-Fi ${record.selfReport.wifi === "on" ? "オン" : "オフ"}`}
                     </p>
-                    {record.truth ? (
+                    {purpose === "photo-memory" ? null : record.truth ? (
                       <p>
                         指した場所 {record.truth.levelLabel}・{describeTruth(record.truth)}
                         {error !== null && <span className="text-(--px-cyan)">{`・ずれ ${error.toFixed(1)}m`}</span>}
