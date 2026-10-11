@@ -3,13 +3,13 @@
 import { useEffect, useRef } from "react";
 
 import { useLayer } from "./layer";
-import { PixelSprite } from "./pixel-sprite";
 import { Phrases, PxButton, Sentences, Window, clock } from "./ui";
 
 /**
  * The end of every answer: "CLEAR!". A photo, a skipped reminder and an
  * accuracy record all end on it, so leaving the camera closed is never the
- * losing choice. A photo also earns a coin.
+ * losing choice. Nothing is handed out as a reward, so the number of photos
+ * never reads as a score.
  */
 
 export function ClearTitle() {
@@ -17,20 +17,6 @@ export function ClearTitle() {
     <p className="px-clear" aria-hidden="true">
       CLEAR!
     </p>
-  );
-}
-
-/** The coin an answer earns, spinning, with its +1 beside it or, where the side has no room, above it. */
-export function CoinGain({ scale = 6, plus = "beside" }: { scale?: number; plus?: "beside" | "above" }) {
-  return (
-    <div className="relative mx-auto w-fit" aria-hidden="true">
-      <PixelSprite name="coin" scale={scale} className="px-coin-spin" />
-      <span
-        className={`px-rise px-pixel px-outlined absolute text-[16px] text-(--px-yellow)! ${plus === "beside" ? "top-3 -right-11" : "bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2"}`}
-      >
-        +1
-      </span>
-    </div>
   );
 }
 

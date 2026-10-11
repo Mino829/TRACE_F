@@ -3,11 +3,10 @@
 import type { ReactNode } from "react";
 
 import { PixelIcon } from "./pixel-icon";
-import { PixelSprite } from "./pixel-sprite";
 import { InfoButton, InfoNote, PxButton, Sentences, Window, useInfo } from "./ui";
 
 /**
- * きょうのメモリー: the day's photos, large, with a coin for each. The home
+ * きょうのメモリー: the day's photos, large, and how many are left. The home
  * screen fills it from the phone's own photos and the arrival demo from its
  * drawings, so both show the same window.
  */
@@ -40,7 +39,7 @@ export function MemoryWindow({ photos, max, busy = false, onResend }: Props) {
       }
     >
       <InfoNote info={info}>
-        <Sentences text={`写真を撮ることで、コインを入手することができます。電波の良い場所で送信してください。撮影は${max}枚までです。`} />
+        <Sentences text={`撮影は${max}枚までです。送信できていない写真は、電波の良い場所で送信してください。`} />
       </InfoNote>
 
       {photos.length === 0 ? (
@@ -64,29 +63,22 @@ export function MemoryWindow({ photos, max, busy = false, onResend }: Props) {
         </ul>
       )}
 
-      <div className="mt-1 flex items-center justify-between gap-3 border-t-3 border-(--px-navy-3) pt-3">
-        <div className="px-coins min-w-0" role="img" aria-label={unsent ? `コイン${photos.length}枚。うち${unsent}枚は未送信` : `コイン${photos.length}枚`}>
-          {/* Oldest first, so the faded coins of photos still waiting come last. */}
-          {[...photos].reverse().map((photo) => (
-            <PixelSprite key={photo.id} name="coin" scale={2} className={photo.unsent ? "is-unsent" : undefined} />
-          ))}
-        </div>
+      <div className="mt-1 flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t-3 border-(--px-navy-3) pt-3">
         <p className="shrink-0 text-[15px] text-(--px-yellow)" aria-label={`${max}枚のうち${photos.length}枚`}>
           <span className="px-pixel mr-1 text-[13px]">
             {photos.length} / {max}
           </span>
           枚
         </p>
+        {unsent > 0 && onResend && (
+          <div className="flex items-center gap-2">
+            <p className="text-[14px] text-(--px-ink-2)">未送信 {unsent}枚</p>
+            <PxButton variant="secondary" size="sm" onClick={onResend} disabled={busy}>
+              いま送る
+            </PxButton>
+          </div>
+        )}
       </div>
-
-      {unsent > 0 && onResend && (
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[14px] text-(--px-ink-2)">未送信の写真 {unsent}枚</p>
-          <PxButton variant="secondary" size="sm" onClick={onResend} disabled={busy}>
-            いま送る
-          </PxButton>
-        </div>
-      )}
     </Window>
   );
 }

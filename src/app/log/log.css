@@ -832,22 +832,6 @@ html:has(.px-root) body {
   box-shadow: inset 0 -3px 0 var(--px-yellow-lo);
 }
 
-/* ---------- coins (one for each photo) ---------- */
-
-.px-coins {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.px-coins > * {
-  flex: none;
-}
-
-.px-coins .is-unsent {
-  opacity: 0.45;
-}
-
 /* ---------- photos ---------- */
 
 /* A photo in a light frame with the time on its foot, like an instant print. */
@@ -1356,14 +1340,6 @@ html:has(.px-root) body {
   animation: px-pop 520ms steps(5) both;
 }
 
-.px-coin-spin {
-  animation: px-spin 0.9s steps(4) infinite;
-}
-
-.px-rise {
-  animation: px-rise 900ms steps(6) 200ms both;
-}
-
 .px-confetti {
   position: absolute;
   inset: 0;
@@ -1436,19 +1412,6 @@ html:has(.px-root) body {
   100% { opacity: 1; transform: scale(1); }
 }
 
-@keyframes px-spin {
-  0%, 100% { transform: scaleX(1); }
-  25% { transform: scaleX(0.5); }
-  50% { transform: scaleX(0.15); }
-  75% { transform: scaleX(0.5); }
-}
-
-@keyframes px-rise {
-  from { opacity: 0; transform: translateY(12px); }
-  30% { opacity: 1; }
-  to { opacity: 1; transform: translateY(-18px); }
-}
-
 @keyframes px-fall {
   from { opacity: 1; transform: translate(0, 0); }
   80% { opacity: 1; }
@@ -1479,7 +1442,7 @@ html:has(.px-root) body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .px-blink, .px-bob, .px-drop, .px-loader i, .px-clear, .px-coin-spin, .px-rise,
+  .px-blink, .px-bob, .px-drop, .px-loader i, .px-clear,
   .px-scene__glints, .px-scene__cloud, .px-scene__star,
   .px-menu__item::before,
   .px-tile::before {

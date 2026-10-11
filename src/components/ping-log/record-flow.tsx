@@ -27,7 +27,7 @@ import {
 import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
 
 import { CampusPlan } from "./campus-plan";
-import { ClearTitle, CoinGain, Confetti } from "./clear-screen";
+import { ClearTitle, Confetti } from "./clear-screen";
 import { PixelIcon } from "./pixel-icon";
 import { PxButton, PxLink, Window, clock } from "./ui";
 import { WorldMap } from "./world-map";
@@ -416,7 +416,6 @@ export function RecordFlow({ kind, promptedAt, subscribed, nextPingAt, todayCoun
           <Confetti />
           <div className="relative w-full space-y-6">
             <ClearTitle />
-            <CoinGain />
             <Window className="text-left">
               <div role="status" className="space-y-2">
                 <p className="text-[19px]">{outcome === "sent" ? "記録を送信しました" : "この端末に保存しました"}</p>

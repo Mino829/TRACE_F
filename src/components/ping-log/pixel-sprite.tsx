@@ -1,5 +1,5 @@
 /**
- * Multi-colour pixel art: the map pin, the coin, clouds and the sun and moon.
+ * Multi-colour pixel art: the map pin, clouds and the sun and moon.
  * Each letter is a colour from the theme; "." is clear. Runs of one colour in
  * a row are merged, and each colour becomes a single path.
  */
@@ -33,20 +33,6 @@ const SPRITES = {
     "...KOYYOK...",
     "....KOOK....",
     ".....KK.....",
-  ],
-  coin: [
-    "....KKKK....",
-    "..KKYYYYKK..",
-    ".KYHHYYYYYK.",
-    ".KHYYOOYYOK.",
-    "KYHYYOYYYYOK",
-    "KYHYYOYYYYOK",
-    "KYYYYOYYYYOK",
-    "KYYYYOYYYYOK",
-    ".KYYYOOYYOK.",
-    ".KYYYYYYOOK.",
-    "..KKOOOOKK..",
-    "....KKKK....",
   ],
   cloud: [
     "..........WWWW..............",

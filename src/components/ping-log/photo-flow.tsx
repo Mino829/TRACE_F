@@ -12,7 +12,7 @@ import { deviceId } from "@/lib/ping-log/push";
 import { COORDINATE_VERSION, RECORD_SCHEMA, guessSource, nearCampus, type Capture, type PhotoMeta } from "@/lib/ping-log/record";
 import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
 
-import { ClearTitle, CoinGain } from "./clear-screen";
+import { ClearTitle } from "./clear-screen";
 import { useLayer } from "./layer";
 import { PixelIcon } from "./pixel-icon";
 import { ReminderSwitch } from "./reminder-switch";
@@ -193,7 +193,7 @@ export function PhotoFlow({ shot, consent, offerReminder, support, reminderOn, b
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4">
           <div className="space-y-6 pt-1 text-center">
             <ClearTitle />
-            {/* The rings spread behind the photo; the coin stands beside it, clear of the frame. */}
+            {/* The rings spread behind the photo. */}
             <div className="relative isolate mx-auto mt-8 w-fit">
               <div className="px-ripple" aria-hidden="true">
                 <i />
@@ -204,9 +204,6 @@ export function PhotoFlow({ shot, consent, offerReminder, support, reminderOn, b
                 {url && <img src={url} alt="残した写真" className="px-polaroid__photo" />}
                 <figcaption className="px-polaroid__caption">{clock(shot.receivedAt)}</figcaption>
               </figure>
-              <div className="absolute bottom-0 left-[calc(100%+14px)]">
-                <CoinGain scale={4} plus="above" />
-              </div>
             </div>
             <Window className="text-left">
               <div role="status" className="space-y-2">
