@@ -1,18 +1,37 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "trace-push",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-09-01",
-  // Every phone that subscribed is pinged at :00, :10, :20 ... (UTC minutes, so the same marks in JST).
-  "triggers": { "crons": ["*/10 * * * *"] },
-  // Subscriptions and records. Schema: migrations/ (`npm run wrangler -- d1 migrations apply DB --remote`).
-  "d1_databases": [{ "binding": "DB", "database_name": "trace-log", "migrations_dir": "migrations" }],
-  // Photos only.
-  "kv_namespaces": [{ "binding": "LOG_KV", "id": "cfe82ae96bd34adf8ac28c65468fb26f" }],
-  "vars": {
-    // Origins the web app is opened from; add the deployed one here.
-    "ALLOWED_ORIGINS": "http://localhost:3000,https://trace-log.uni11260609.workers.dev"
-  },
-  // VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK and VAPID_SUBJECT are secrets: `npm run wrangler -- secret put <NAME>`.
-  "observability": { "enabled": true }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "trace-push",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-09-01",
+	// Runs every 5 minutes; each subscription is pinged on the runs that fall on its own interval
+	// (accuracy every 10 minutes, photo reminders every 15 or 30), the same marks in UTC and JST.
+	"triggers": {
+		"crons": [
+			"*/5 * * * *"
+		]
+	},
+	// Subscriptions and records. Schema: migrations/ (`npm run wrangler -- d1 migrations apply DB --remote`).
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "trace-log",
+			"migrations_dir": "migrations",
+			"database_id": "05af7ee1-5901-44df-9a0b-98e13ae3639a"
+		}
+	],
+	// Photos only.
+	"kv_namespaces": [
+		{
+			"binding": "LOG_KV",
+			"id": "cfe82ae96bd34adf8ac28c65468fb26f"
+		}
+	],
+	"vars": {
+		// Origins the web app is opened from; add the deployed one here.
+		"ALLOWED_ORIGINS": "http://localhost:3000,https://trace-log.uni11260609.workers.dev"
+	},
+	// VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK and VAPID_SUBJECT are secrets: `npm run wrangler -- secret put <NAME>`.
+	"observability": {
+		"enabled": true
+	}
 }
