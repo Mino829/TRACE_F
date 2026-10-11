@@ -382,6 +382,97 @@ html:has(.px-root) body {
   outline-offset: 2px;
 }
 
+/* The way to the developer screen, left of the menu button: the same height, quieter. */
+.px-dev-button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: var(--px-navy);
+  box-shadow: 0 0 0 2px var(--px-k);
+  color: var(--px-ink-2);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.px-dev-button:focus-visible {
+  outline: 3px solid var(--px-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- the switch ---------- */
+/* A pixel slider: OFF grey with the knob left, ON green with the knob right. A 44px square to tap. */
+
+.px-switch {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.px-switch__track {
+  position: relative;
+  display: block;
+  width: 72px;
+  height: 32px;
+  background: var(--px-navy-3);
+  box-shadow: 0 0 0 3px var(--px-k), inset 0 3px 0 rgb(11 13 31 / 0.45);
+}
+
+.px-switch[aria-checked="true"] .px-switch__track {
+  background: var(--px-green);
+}
+
+.px-switch__knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  background: var(--px-ink);
+  box-shadow: inset 0 -4px 0 var(--px-ink-2), 0 0 0 3px var(--px-k);
+  transition: transform 120ms steps(3);
+}
+
+.px-switch[aria-checked="true"] .px-switch__knob {
+  transform: translateX(40px);
+}
+
+.px-switch__text {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  color: var(--px-ink);
+  font-family: var(--font-pixel), monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.px-switch[aria-checked="true"] .px-switch__text {
+  right: auto;
+  left: 9px;
+  color: var(--px-k);
+}
+
+.px-switch:focus-visible {
+  outline: 3px solid var(--px-focus);
+  outline-offset: 0;
+}
+
+.px-switch:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
 /* ---------- the "i" and its note ---------- */
 
 /* A 20px square to see, a 44px square to tap. */
@@ -727,31 +818,21 @@ html:has(.px-root) body {
   color: var(--px-k);
 }
 
-/* One cell per minute (or two) until the next ping, filling as it nears. */
-.px-charge {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 3px;
+/* A gauge that fills in blocks, for the replay on the room's screen. */
+.px-progress {
+  height: 18px;
   padding: 3px;
   background: var(--px-k);
 }
 
-.px-charge i {
-  height: 12px;
-  background: var(--px-navy-2);
-}
-
-.px-charge i.is-full {
+.px-progress i {
+  display: block;
+  height: 100%;
   background: var(--px-yellow);
   box-shadow: inset 0 -3px 0 var(--px-yellow-lo);
 }
 
-.px-charge i.is-filling {
-  background: var(--px-yellow);
-  animation: px-blink 1s steps(1) infinite;
-}
-
-/* ---------- coins (a photo or a skipped reminder each) ---------- */
+/* ---------- coins (one for each photo) ---------- */
 
 .px-coins {
   display: flex;
@@ -829,28 +910,72 @@ html:has(.px-root) body {
   animation-delay: 0.6s;
 }
 
-/* Today's photos as small squares. */
-.px-thumbs {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 6px;
-  padding: 3px;
+/*
+ * Today's photos, large, newest first, each in its own print at its own
+ * shape: a portrait photo stands 240px tall, a landscape one nearly fills the
+ * width. Several scroll sideways, with the next one showing at the edge.
+ */
+.px-strip {
+  --tall: 240px;
+
+  display: flex;
+  gap: 14px;
+  margin: 2px -6px 0;
+  padding: 6px 12px 16px 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 6px;
   list-style: none;
+  /* The next photo showing at the edge says there is more; a scrollbar would only add a line. */
+  scrollbar-width: none;
 }
 
-.px-thumbs li {
-  aspect-ratio: 1;
-  overflow: hidden;
-  background: var(--px-navy-2);
-  box-shadow: 0 0 0 3px var(--px-k);
+.px-strip::-webkit-scrollbar {
+  display: none;
 }
 
-.px-thumbs img,
-.px-thumbs svg {
-  display: block;
+.px-strip:focus-visible {
+  outline: 3px solid var(--px-focus);
+  outline-offset: -3px;
+}
+
+.px-strip:has(> li:only-child) {
+  justify-content: center;
+}
+
+/* A wide photo leaves room for the next one to show, unless it is the only one. */
+.px-strip > li {
+  flex: none;
+  width: min(calc(var(--tall) * var(--ratio) + 16px), 86%);
+  scroll-snap-align: start;
+}
+
+.px-strip > li:only-child {
+  width: min(calc(var(--tall) * var(--ratio) + 16px), 100%);
+}
+
+.px-strip .px-polaroid {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+}
+
+.px-strip .px-polaroid__photo {
+  aspect-ratio: var(--ratio);
+}
+
+/* Before the first photo: an empty print, dashed, with the hint inside. */
+.px-strip-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 168px;
+  margin: 8px 0 14px;
+  padding: 16px;
+  border: 3px dashed var(--px-navy-3);
+  color: var(--px-ink-2);
+  text-align: center;
 }
 
 /* ---------- the venue demo (developer screen) ---------- */
@@ -934,38 +1059,7 @@ html:has(.px-root) body {
     drop-shadow(0 3px 0 var(--px-k)) drop-shadow(0 -3px 0 var(--px-k));
 }
 
-/* The queue for the screen, in symbols: the one playing first, the participant's own framed in yellow. */
-.px-queue {
-  display: flex;
-  gap: 10px;
-  padding: 0;
-  list-style: none;
-}
-
-.px-queue li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1 1 0;
-  gap: 6px;
-  min-width: 0;
-  padding: 10px 6px 6px;
-  background: var(--px-navy-2);
-  color: var(--px-ink-2);
-}
-
-.px-queue li:first-child {
-  color: var(--px-ink);
-  box-shadow: inset 0 -4px 0 var(--px-cyan);
-}
-
-.px-queue li[data-you] {
-  outline: 3px solid var(--px-yellow);
-  outline-offset: -3px;
-  color: var(--px-yellow);
-}
-
-/* The story's timeline: photos on the left, the walks between them as lines drawn by certainty. */
+/* The story's timeline: photos on the left, the minutes between them on a line. */
 .px-timeline {
   margin: 0;
   padding: 0;
@@ -989,11 +1083,11 @@ html:has(.px-root) body {
 }
 
 .px-timeline__leg {
-  --leg: var(--px-yellow);
-
   position: relative;
-  min-height: 56px;
-  padding: 8px 0 8px 84px;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 0 6px 84px;
 }
 
 .px-timeline__leg::before {
@@ -1003,30 +1097,7 @@ html:has(.px-root) body {
   bottom: 3px;
   left: 34px;
   width: 4px;
-  background: var(--leg);
-}
-
-.px-timeline__leg[data-certainty="mid"] {
-  --leg: repeating-linear-gradient(var(--px-yellow) 0 10px, transparent 10px 16px);
-}
-
-.px-timeline__leg[data-certainty="low"] {
-  --leg: repeating-linear-gradient(var(--px-yellow) 0 4px, transparent 4px 10px);
-}
-
-.px-timeline__leg[data-certainty="unknown"] {
-  --leg: repeating-linear-gradient(#9aa0c4 0 3px, transparent 3px 12px);
-}
-
-/* A ring of light where the replay reaches a photo spot. */
-.px-map-ripple {
-  fill: none;
-  stroke: var(--px-yellow-hi);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: px-map-ring 900ms steps(6) 2 both;
+  background: var(--px-yellow);
 }
 
 /* ---------- bars and dialogs ---------- */
@@ -1400,10 +1471,6 @@ html:has(.px-root) body {
   to { top: calc(100% - 18px); }
 }
 
-@keyframes px-map-ring {
-  from { opacity: 1; transform: scale(0.6); }
-  to { opacity: 0; transform: scale(3.4); }
-}
 
 @keyframes px-encounter {
   0%, 30% { opacity: 0; transform: scale(0.6); }
@@ -1414,14 +1481,13 @@ html:has(.px-root) body {
 @media (prefers-reduced-motion: reduce) {
   .px-blink, .px-bob, .px-drop, .px-loader i, .px-clear, .px-coin-spin, .px-rise,
   .px-scene__glints, .px-scene__cloud, .px-scene__star,
-  .px-charge i.is-filling,
   .px-menu__item::before,
   .px-tile::before {
     animation: none !important;
   }
   .px-scan__line { animation: none; top: 50%; }
-  .px-scene__glints--b, .px-confetti, .px-encounter, .px-ripple, .px-map-ripple { display: none; }
-  .px-btn { transition: none; }
+  .px-scene__glints--b, .px-confetti, .px-encounter, .px-ripple { display: none; }
+  .px-btn, .px-switch__knob { transition: none; }
 }
 
 /* ---------- Leaflet, in the game's frame ---------- */

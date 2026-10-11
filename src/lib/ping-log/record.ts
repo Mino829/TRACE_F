@@ -40,8 +40,12 @@ export const PURPOSE_LABEL: Record<RecordPurpose, string> = {
   accuracy: "精度テスト",
 };
 
-/** The work's photo memory takes at most twelve photos a day. */
-export const MAX_PHOTOS_PER_DAY = 12;
+/**
+ * The work's documents allow twelve photos per participation (one memory
+ * session; photo-memory.md, a provisional figure until the network and
+ * storage tests). This page has no session yet, so it counts the day's photos.
+ */
+export const MAX_PHOTOS = 12;
 
 export type Fix = {
   /** Date.now() when the browser delivered it. */

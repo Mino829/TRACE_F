@@ -7,9 +7,9 @@ import { PixelSprite } from "./pixel-sprite";
 import { Phrases, PxButton, Sentences, Window, clock } from "./ui";
 
 /**
- * The end of every answer: "CLEAR!" and a coin. A photo, a skipped reminder
- * and an accuracy record all end the same way, so leaving the camera closed
- * is never the losing choice and the number of photos is not a score.
+ * The end of every answer: "CLEAR!". A photo, a skipped reminder and an
+ * accuracy record all end on it, so leaving the camera closed is never the
+ * losing choice. A photo also earns a coin.
  */
 
 export function ClearTitle() {
@@ -87,7 +87,6 @@ export function SkipClear({ nextReminderAt, onClose }: { nextReminderAt: number 
         <Confetti />
         <div className="relative w-full space-y-6">
           <ClearTitle />
-          <CoinGain />
           <Window className="text-left">
             <div role="status" className="space-y-2">
               <h2 id="skip-title" ref={titleRef} tabIndex={-1} className="text-[19px] outline-none">

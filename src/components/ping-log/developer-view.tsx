@@ -122,7 +122,7 @@ export function DeveloperView(props: Props) {
         <Eyebrow>Demo</Eyebrow>
         <h2 className="text-[17px]">会場到着のデモ</h2>
         <p className="text-sm leading-relaxed text-(--px-ink-2)">
-          写真を4枚撮ったあと、ShibaLab（教室棟301）に着いたときの画面の流れを6画面で見られます。デモは記録を保存せず、サーバーにも送りません。
+          写真を4枚撮ったあと、ShibaLab（教室棟301）に着いたときの画面の流れを5画面で見られます。参加者向けのホームの「QR コードを読み取る」も、このデモの2画面目を開きます。デモは記録を保存せず、サーバーにも送りません。
         </p>
         <PxButton size="sm" icon="arrow" onClick={props.onOpenDemo}>デモを見る</PxButton>
       </Frame>

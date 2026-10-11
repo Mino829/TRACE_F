@@ -9,6 +9,7 @@ import { pushSupport, type PushSupport } from "@/lib/ping-log/environment";
 import {
   ACCURACY_PLAN,
   PUSH_API_URL,
+  REMINDER_PLAN,
   deviceId,
   dropExpired,
   forgetMe,
@@ -19,9 +20,8 @@ import {
   unsubscribe,
   uploadEntry,
   type PushPlan,
-  type ReminderInterval,
 } from "@/lib/ping-log/push";
-import { MAX_PHOTOS_PER_DAY, purposeOf } from "@/lib/ping-log/record";
+import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
 import { clearEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
 
 import { SkipClear } from "./clear-screen";
@@ -47,12 +47,12 @@ import { Sentences } from "./ui";
  * photo memory would be like, following the work's documents:
  *   1. the title screen: what the work is and one button;
  *   2. consent, as a window over the dimmed page;
- *   3. home: today's photos and the camera button, and the optional reminder;
+ *   3. home: today's photos shown large, the camera button, and the optional reminder's switch;
  *   4. the photo flow, full screen: a look at the photo, then the clear screen.
  * A reminder that arrives shows on home with "写真を撮る" and "スキップ"; both
  * end on the clear screen.
  *
- * The developer screen, behind the menu at the top right, is the team's
+ * The developer screen, behind the button left of the menu, is the team's
  * accuracy test: the ten-minute ping answered by pointing at where one
  * stands, the phone's records, and the demo of arriving at the venue.
  * Visitors never use it.
@@ -60,7 +60,6 @@ import { Sentences } from "./ui";
 
 const PENDING_KEY = "trace-ping-pending";
 const VIEW_KEY = "trace-log-view";
-const SKIPS_KEY = "trace-reminder-skips";
 const PROMPT_MESSAGE = "trace-ping";
 
 type View = "participant" | "developer";
@@ -102,16 +101,6 @@ function initialView(): View {
   return read(window.localStorage, VIEW_KEY) === "developer" ? "developer" : "participant";
 }
 
-/** Reminders answered with "スキップ" today; each is worth a coin, as a photo is. */
-function loadSkips(): string[] {
-  try {
-    const stored = JSON.parse(read(window.localStorage, SKIPS_KEY) ?? "[]") as unknown;
-    return Array.isArray(stored) ? stored.filter((value): value is string => typeof value === "string" && isToday(value)) : [];
-  } catch {
-    return [];
-  }
-}
-
 function notificationState(): NotificationPermission | "unsupported" {
   return typeof Notification === "undefined" || !("PushManager" in window) ? "unsupported" : Notification.permission;
 }
@@ -143,8 +132,8 @@ export function PingLogScreen() {
   });
   const [shot, setShot] = useState<Shot | null>(null);
   const [skipCleared, setSkipCleared] = useState(false);
-  const [demoOpen, setDemoOpen] = useState(false);
-  const [skips, setSkips] = useState<string[]>(loadSkips);
+  // The arrival demo and its first screen: 1 from the developer screen, 2 from the QR button on home.
+  const [demoStart, setDemoStart] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [permission, setPermission] = useState(notificationState);
@@ -243,7 +232,6 @@ export function PingLogScreen() {
     [entries, day],
   );
   const todayAccuracy = entries.filter((entry) => purposeOf(entry.record) === "accuracy" && isToday(entry.record.takenAt)).length;
-  const todaySkips = skips.filter(isToday).length;
 
   /**
    * Runs a task behind the busy note; resolves to its error message, or null
@@ -290,11 +278,18 @@ export function PingLogScreen() {
     setMessage(done);
   }, { silent });
 
-  // The participant's buttons sit far down the page; the error goes beside them, not up in the note.
-  const enableReminders = (interval: ReminderInterval) =>
-    consent
-      ? subscribeTo({ purpose: "photo", intervalMinutes: interval }, consent.version, `リマインダーをオンにしました。${interval}分ごとに届きます。`, true)
-      : Promise.resolve("参加の同意がまだです。");
+  // The switch shows the result itself; an error goes beside it, not up in the note.
+  const switchReminder = (on: boolean): Promise<string | null> => {
+    if (!on) {
+      return run(async () => {
+        if (!subscription) return;
+        await unsubscribe(subscription);
+        setSubscription(null);
+        setExpiresAt(null);
+      }, { silent: true });
+    }
+    return consent ? subscribeTo(REMINDER_PLAN, consent.version, "", true) : Promise.resolve("参加の同意がまだです。");
+  };
 
   const enableAccuracyPings = () =>
     void subscribeTo(ACCURACY_PLAN, DEVELOPER_CONSENT_VERSION, `精度テストの通知をオンにしました。${ACCURACY_PLAN.intervalMinutes}分ごとに届きます。`);
@@ -322,7 +317,7 @@ export function PingLogScreen() {
   const onCameraFile = (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = "";
-    if (!file || !consent || todayPhotos.length >= MAX_PHOTOS_PER_DAY) return;
+    if (!file || !consent || todayPhotos.length >= MAX_PHOTOS) return;
     // The photo's moment is when the camera hands it over; its one fix is asked for now.
     setShot({
       id: crypto.randomUUID(),
@@ -336,9 +331,6 @@ export function PingLogScreen() {
   };
 
   const skipReminder = () => {
-    const next = [...skips.filter(isToday), new Date().toISOString()];
-    write(window.localStorage, SKIPS_KEY, JSON.stringify(next));
-    setSkips(next);
     prompt(null);
     setSkipCleared(true);
   };
@@ -361,8 +353,6 @@ export function PingLogScreen() {
     await clearEntries();
     clearConsent();
     prompt(null);
-    write(window.localStorage, SKIPS_KEY, null);
-    setSkips([]);
     setSubscription(null);
     setExpiresAt(null);
     setEntries([]);
@@ -386,16 +376,14 @@ export function PingLogScreen() {
   const menuItems: MenuItem[] = [
     { label: "遊び方", onSelect: () => setHowToOpen(true) },
     ...(consent ? [{ label: "同意した内容", onSelect: () => setConsentOpen(true) }] : []),
-    ...(activePlan?.purpose === "photo" ? [{ label: "リマインダーを止める", onSelect: () => stopNotifications("リマインダーを止めました。"), disabled: busy }] : []),
     ...(consent ? [{ label: "参加をやめる", onSelect: () => setWithdrawOpen(true), tone: "danger" as const, disabled: busy }] : []),
-    { label: "開発者向けの画面", onSelect: () => switchView("developer"), tone: "quiet" },
   ];
 
   return (
     <>
       <PixelScene phase={phaseAt(now)} />
-      {demoOpen ? (
-        <StoryDemo onClose={() => setDemoOpen(false)} />
+      {demoStart !== null ? (
+        <StoryDemo start={demoStart} onClose={() => setDemoStart(null)} />
       ) : (
         <main className="relative z-[1] mx-auto w-full max-w-md space-y-7 px-4 pt-[max(10px,env(safe-area-inset-top))] pb-[calc(56px+env(safe-area-inset-bottom))]">
           <header className="px-on-scene flex min-h-11 items-center justify-between gap-3">
@@ -416,9 +404,14 @@ export function PingLogScreen() {
                 参加者向けにもどる
               </button>
             ) : (
-              <button type="button" className="px-menu-button" aria-label="メニュー" aria-haspopup="dialog" onClick={() => setMenuOpen(true)}>
-                <PixelIcon name="menu" size={22} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button type="button" className="px-dev-button" onClick={() => switchView("developer")}>
+                  開発者
+                </button>
+                <button type="button" className="px-menu-button" aria-label="メニュー" aria-haspopup="dialog" onClick={() => setMenuOpen(true)}>
+                  <PixelIcon name="menu" size={22} />
+                </button>
+              </div>
             )}
           </header>
 
@@ -452,7 +445,7 @@ export function PingLogScreen() {
                 onRecordNow={() => setAccuracyFlow({ kind: "manual", promptedAt: null })}
                 onResend={resend}
                 onClearLocal={clearLocal}
-                onOpenDemo={() => setDemoOpen(true)}
+                onOpenDemo={() => setDemoStart(1)}
               />
             </>
           ) : !consent ? (
@@ -463,15 +456,14 @@ export function PingLogScreen() {
               plan={activePlan}
               nextPingAt={nextPingAt}
               pendingAt={pendingAt}
-              now={now}
               photos={todayPhotos}
-              coins={todayPhotos.length + todaySkips}
-              unsentCoins={todayPhotos.filter((entry) => !entry.sentAt).length}
               busy={busy}
               onTakePhoto={() => openCamera(pendingAt)}
               onSkipReminder={skipReminder}
-              onEnableReminders={enableReminders}
+              onReminder={switchReminder}
               onResend={resend}
+              // The entrance's QR code and the replay wait for the work's backend; until then the button opens the demo.
+              onArrive={() => setDemoStart(2)}
             />
           )}
         </main>
@@ -495,11 +487,14 @@ export function PingLogScreen() {
           key={shot.id}
           shot={shot}
           consent={consent}
-          offerReminder={shot.number === 1 && support === "supported" && activePlan?.purpose !== "photo"}
+          offerReminder={shot.number === 1 && activePlan?.purpose !== "photo"}
+          support={support}
+          reminderOn={activePlan?.purpose === "photo"}
+          busy={busy}
           nextReminderAt={nextReminderAt}
           onRetake={() => openCamera(shot.promptedAt)}
           onSave={save}
-          onEnableReminders={enableReminders}
+          onReminder={switchReminder}
           onClose={() => setShot(null)}
         />
       )}

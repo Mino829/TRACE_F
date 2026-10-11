@@ -6,16 +6,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { Consent } from "@/lib/ping-log/consent";
 import { deviceContext, networkInfo, type NetworkInfo } from "@/lib/ping-log/context";
+import type { PushSupport } from "@/lib/ping-log/environment";
 import { preparePhoto } from "@/lib/ping-log/photo";
-import { deviceId, type ReminderInterval } from "@/lib/ping-log/push";
+import { deviceId } from "@/lib/ping-log/push";
 import { COORDINATE_VERSION, RECORD_SCHEMA, guessSource, nearCampus, type Capture, type PhotoMeta } from "@/lib/ping-log/record";
 import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
 
 import { ClearTitle, CoinGain } from "./clear-screen";
 import { useLayer } from "./layer";
 import { PixelIcon } from "./pixel-icon";
-import { ReminderChoice } from "./reminder-choice";
-import { Phrases, PxButton, PxLink, Sentences, Window, clock } from "./ui";
+import { ReminderSwitch } from "./reminder-switch";
+import { Phrases, PxButton, Sentences, Window, clock } from "./ui";
 
 /**
  * A photo from the camera to the day's memory: a look at it, then
@@ -42,34 +43,36 @@ export type Shot = {
 type Props = {
   shot: Shot;
   consent: Consent;
-  /** After the day's first photo, where notifications work and no reminder is on yet. */
+  /** After the day's first photo while the reminder is off: its switch, once, on the clear screen. */
   offerReminder: boolean;
+  support: PushSupport;
+  reminderOn: boolean;
+  busy: boolean;
   /** While the photo reminder is on. */
   nextReminderAt: number | null;
   onRetake: () => void;
   onSave: (entry: LogEntry) => Promise<SaveOutcome>;
-  /** Resolves to an error message, or null once the reminder is on. */
-  onEnableReminders: (interval: ReminderInterval) => Promise<string | null>;
+  /** Resolves to an error message, or null once the reminder is switched. */
+  onReminder: (on: boolean) => Promise<string | null>;
   onClose: () => void;
 };
 
 type Step = "preview" | "saving" | "done";
-type Offer = "open" | "busy" | "on" | "closed";
 
 /** Only a photo still waiting is worth a word; a sent one needs none. */
 const OUTCOME: Record<SaveOutcome, string> = {
   sent: "",
-  queued: "電波のよい場所でページを開くと、自動で送られます。",
+  queued: "まだ送信できていません。電波の良い場所で送信してください。",
   local: "",
 };
 
-export function PhotoFlow({ shot, consent, offerReminder, nextReminderAt, onRetake, onSave, onEnableReminders, onClose }: Props) {
+export function PhotoFlow({ shot, consent, offerReminder, support, reminderOn, busy, nextReminderAt, onRetake, onSave, onReminder, onClose }: Props) {
   const [photo, setPhoto] = useState<{ blob: Blob; meta: PhotoMeta } | null>(null);
   const [step, setStep] = useState<Step>("preview");
   const [outcome, setOutcome] = useState<SaveOutcome | null>(null);
   const [error, setError] = useState("");
-  const [offer, setOffer] = useState<Offer>(offerReminder ? "open" : "closed");
-  const [offerNote, setOfferNote] = useState("");
+  // Decided when the photo arrives, so switching it on here keeps the switch in view.
+  const [offer] = useState(offerReminder);
   const close = useLayer("#photo", onClose);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -147,13 +150,6 @@ export function PhotoFlow({ shot, consent, offerReminder, nextReminderAt, onReta
     }
   };
 
-  const enable = async (interval: ReminderInterval) => {
-    setOffer("busy");
-    const problem = await onEnableReminders(interval);
-    setOffer(problem ? "open" : "on");
-    setOfferNote(problem ?? `リマインダーをオンにしました。${interval}分ごとに届きます。`);
-  };
-
   return (
     <div className="px-stage fixed inset-0 z-40 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="photo-title">
       <header className="flex items-center gap-2 px-2 pt-[max(6px,env(safe-area-inset-top))]">
@@ -222,27 +218,10 @@ export function PhotoFlow({ shot, consent, offerReminder, nextReminderAt, onReta
                 </p>
               </div>
             </Window>
-            {offer !== "closed" && (
-              <Window tone="alert" title="撮影のリマインダー" className="text-left" as="section">
-                {offer === "on" ? (
-                  <p className="text-[15px]" role="status">
-                    <Sentences text={offerNote} />
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    <p className="text-[15px] leading-relaxed">
-                      <Sentences text="15分か30分ごとに、撮影のきっかけを通知でお知らせします。ホームから、あとで選ぶこともできます。" />
-                    </p>
-                    {offerNote && (
-                      <p className="px-note" data-tone="warn" role="alert">
-                        <Sentences text={offerNote} />
-                      </p>
-                    )}
-                    <ReminderChoice busy={offer === "busy"} onChoose={(interval) => void enable(interval)} />
-                    <PxLink onClick={() => setOffer("closed")}>いらない</PxLink>
-                  </div>
-                )}
-              </Window>
+            {offer && (
+              <div className="text-left">
+                <ReminderSwitch on={reminderOn} support={support} busy={busy} nextAt={nextReminderAt} onChange={onReminder} />
+              </div>
             )}
           </div>
         </div>

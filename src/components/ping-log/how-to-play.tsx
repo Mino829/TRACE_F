@@ -2,6 +2,9 @@
 
 import { Fragment, useEffect, useRef } from "react";
 
+import { REMINDER_PLAN } from "@/lib/ping-log/push";
+import { MAX_PHOTOS } from "@/lib/ping-log/record";
+
 import { PixelIcon, type PixelIconName } from "./pixel-icon";
 import { Phrases, PxButton, Sentences, Window, useScrollHint } from "./ui";
 
@@ -22,14 +25,14 @@ const STEPS: { icon: PixelIconName; title: string; short: string; text: string }
     icon: "qr",
     title: "ShibaLab で QR を読む",
     short: "ShibaLab\u00a0へ",
-    text: "ShibaLab（教室棟301）の入口で、QR\u00a0コードを読み取ってください。続きは会場で見られます。",
+    text: "ShibaLab（教室棟301）には、好きなときに来てください。着いたら、ホームの「QR コードを読み取る」を押して、入口の QR コードを読み取ってください。",
   },
 ];
 
 const NOTES = [
-  "撮った写真は、展示に出しません。写真ストーリーは、あなたのスマホでだけ見られます。",
-  "撮影は1日12枚までです。",
-  "撮影のリマインダーは任意です。オンにすると、15分か30分ごとに通知が届きます。",
+  "撮った写真は、展示に出しません。",
+  `撮影は${MAX_PHOTOS}枚までです。`,
+  `撮影のリマインダーは任意です。オンにすると、${REMINDER_PLAN.intervalMinutes}分ごとに届きます。`,
   "撮りたいものがないときは、リマインダーをスキップして構いません。",
 ];
 

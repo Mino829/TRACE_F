@@ -17,13 +17,13 @@ const PLAN_KEY = "trace-push-plan";
  * What the phone's one subscription is for. A phone holds a single push
  * subscription, so turning on one plan replaces the other.
  *
- * - photo: the participants' optional reminder to take a photo, every 15 or 30 minutes.
+ * - photo: the participants' optional reminder to take a photo, every 30 minutes.
  * - accuracy: the team's accuracy ping from the developer screen, every 10 minutes.
  */
 export type PushPlan = { purpose: "photo" | "accuracy"; intervalMinutes: number };
 
-export const REMINDER_INTERVALS = [15, 30] as const;
-export type ReminderInterval = (typeof REMINDER_INTERVALS)[number];
+/** The participants turn the reminder on or off, nothing more. The worker also takes 15 minutes, should the team want it. */
+export const REMINDER_PLAN: PushPlan = { purpose: "photo", intervalMinutes: 30 };
 export const ACCURACY_PLAN: PushPlan = { purpose: "accuracy", intervalMinutes: 10 };
 
 /** A random id per browser, so the worker can tell one phone's records from another's. Not tied to the hardware. */

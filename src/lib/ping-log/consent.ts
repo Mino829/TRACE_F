@@ -16,7 +16,7 @@
  * given under.
  */
 
-export const CONSENT_VERSION = "2026-10-11-photo-draft";
+export const CONSENT_VERSION = "2026-10-11-photo-draft-2";
 
 /** What the developer screen's records and accuracy pings carry in place of a participant's consent. */
 export const DEVELOPER_CONSENT_VERSION = "developer-accuracy";
@@ -67,8 +67,8 @@ export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
   {
     title: "リマインダー",
     items: [
-      "撮影のリマインダーは任意です。オンにすると、15分か30分ごとに通知が届きます。",
-      "通知はその日の24時に自動で止まります。メニューの「リマインダーを止める」で、いつでも止められます。",
+      "撮影のリマインダーは任意です。オンにすると、30分ごとに通知が届きます。",
+      "通知はその日の24時に自動で止まります。ホームのリマインダーのスイッチで、いつでも止められます。",
     ],
   },
   {

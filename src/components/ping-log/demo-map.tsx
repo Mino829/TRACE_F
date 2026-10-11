@@ -6,14 +6,9 @@ import type { DemoPhotoName } from "./pixel-photo";
  * not the real layout. The route is the made-up morning of the demo: four
  * photos from the main gate to the deck, then the walk to ShibaLab, room 301
  * of the classroom building.
- * Each leg is drawn by how sure the route is, in line pattern as well as
- * colour: solid (high), dashed (medium), dotted (low), and a sparse grey
- * dotted line where the position was not known.
  */
 
 type Point = readonly [number, number];
-
-export type Certainty = "high" | "mid" | "low" | "unknown";
 
 export type Stop = {
   id: string;
@@ -22,13 +17,6 @@ export type Stop = {
   point: Point;
   label: string;
   photo: DemoPhotoName | null;
-};
-
-export type Leg = {
-  certainty: Certainty;
-  /** The estimated walking time; null where the position was not known. */
-  walkMinutes: number | null;
-  points: Point[];
 };
 
 const START_MINUTES = 10 * 60 + 12;
@@ -42,13 +30,14 @@ export const STOPS: Stop[] = [
 ];
 
 /** Leg i runs from stop i to stop i + 1. */
-export const LEGS: Leg[] = [
-  { certainty: "high", walkMinutes: 6, points: [[28, 90], [28, 72], [48, 64], [62, 50]] },
-  { certainty: "mid", walkMinutes: 21, points: [[62, 50], [52, 46], [42, 38]] },
-  { certainty: "unknown", walkMinutes: null, points: [[42, 38], [50, 31], [74, 31], [96, 46]] },
-  { certainty: "low", walkMinutes: 18, points: [[96, 46], [93, 38], [84, 29]] },
+const LEGS: Point[][] = [
+  [[28, 90], [28, 72], [48, 64], [62, 50]],
+  [[62, 50], [52, 46], [42, 38]],
+  [[42, 38], [50, 31], [74, 31], [96, 46]],
+  [[96, 46], [93, 38], [84, 29]],
 ];
 
+/** From the first photo to the arrival, in minutes. */
 export const STORY_MINUTES = STOPS[STOPS.length - 1].minutes;
 
 /** ShibaLab's door, just below the classroom building so the star never covers its wall. */
@@ -60,44 +49,6 @@ export function storyClock(minutes: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
-const STROKE: Record<Certainty, { stroke: string; width: number; dash?: string }> = {
-  high: { stroke: "#ffd23f", width: 2 },
-  mid: { stroke: "#ffd23f", width: 2, dash: "5 3" },
-  low: { stroke: "#ffd23f", width: 2, dash: "2 3" },
-  unknown: { stroke: "#9aa0c4", width: 1.5, dash: "1.5 4" },
-};
-
-/** A short sample of a leg's line, for the legend and the story's timeline. */
-export function LineSample({ certainty, className }: { certainty: Certainty; className?: string }) {
-  const style = STROKE[certainty];
-  return (
-    <svg viewBox="0 0 24 6" width={36} height={9} className={className} aria-hidden="true">
-      <line x1={1} y1={3} x2={23} y2={3} stroke={style.stroke} strokeWidth={style.width} strokeDasharray={style.dash} />
-    </svg>
-  );
-}
-
-/** The first part of a polyline, `fraction` of its length. */
-function partial(points: Point[], fraction: number): Point[] {
-  if (fraction >= 1) return points;
-  const lengths = points.slice(1).map((point, index) => Math.hypot(point[0] - points[index][0], point[1] - points[index][1]));
-  let left = lengths.reduce((sum, length) => sum + length, 0) * Math.max(0, fraction);
-  const out: Point[] = [points[0]];
-  for (let index = 0; index < lengths.length; index += 1) {
-    if (left >= lengths[index]) {
-      out.push(points[index + 1]);
-      left -= lengths[index];
-      continue;
-    }
-    const k = lengths[index] === 0 ? 0 : left / lengths[index];
-    const [x0, y0] = points[index];
-    const [x1, y1] = points[index + 1];
-    out.push([x0 + (x1 - x0) * k, y0 + (y1 - y0) * k]);
-    break;
-  }
-  return out;
-}
-
 type Block = { x: number; y: number; width: number; height: number; label: string };
 
 const BUILDINGS: Block[] = [
@@ -107,33 +58,15 @@ const BUILDINGS: Block[] = [
   { x: 64, y: 68, width: 26, height: 18, label: "交流棟" },
 ];
 
-type Props = {
-  /** How far into the story to draw, in minutes; null draws the whole day without the walker. */
-  minutes: number | null;
-  /** A ring of light at each photo spot as the walker reaches it. */
-  ripples?: boolean;
-  className?: string;
-};
-
-export function DemoMap({ minutes, ripples = false, className }: Props) {
-  const now = minutes ?? STORY_MINUTES;
-  const reached = STOPS.filter((stop) => stop.minutes <= now);
-  const drawn = LEGS.map((leg, index) => {
-    const from = STOPS[index].minutes;
-    const to = STOPS[index + 1].minutes;
-    return { leg, points: now <= from ? [] : partial(leg.points, (now - from) / (to - from)) };
-  });
-  const current = drawn.findLast((item) => item.points.length > 0);
-  const walker = minutes !== null && minutes < STORY_MINUTES && current ? current.points[current.points.length - 1] : null;
-  const arrived = now >= STORY_MINUTES;
-
+/** The whole route of the demo's day, from the main gate to ShibaLab. */
+export function DemoMap({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 120 96"
       shapeRendering="crispEdges"
       className={className}
       role="img"
-      aria-label="キャンパスの地図（イメージ）。正門から中庭、研究棟のあたり、運河沿いのデッキを通って、教室棟の ShibaLab まで歩いた道のり"
+      aria-label="キャンパスの地図（イメージ）。正門から中庭、研究棟のあたり、運河沿いのデッキを通って、教室棟の ShibaLab まで歩いた軌跡"
     >
       <rect width={120} height={96} fill="#262e6b" />
 
@@ -180,47 +113,29 @@ export function DemoMap({ minutes, ripples = false, className }: Props) {
         正門
       </text>
 
-      {drawn.map(({ leg, points }, index) =>
-        points.length > 1 ? (
-          <polyline
-            key={index}
-            points={points.map(([x, y]) => `${x},${y}`).join(" ")}
-            fill="none"
-            stroke={STROKE[leg.certainty].stroke}
-            strokeWidth={STROKE[leg.certainty].width}
-            strokeDasharray={STROKE[leg.certainty].dash}
-            strokeLinejoin="miter"
-            shapeRendering="auto"
-          />
-        ) : null,
-      )}
+      {LEGS.map((points, index) => (
+        <polyline
+          key={index}
+          points={points.map(([x, y]) => `${x},${y}`).join(" ")}
+          fill="none"
+          stroke="#ffd23f"
+          strokeWidth={2}
+          strokeLinejoin="miter"
+          shapeRendering="auto"
+        />
+      ))}
 
-      {reached
-        .filter((stop) => stop.photo)
-        .map((stop) => (
-          <g key={stop.id}>
-            {ripples && <circle className="px-map-ripple" cx={stop.point[0]} cy={stop.point[1]} r={3} />}
-            <rect x={stop.point[0] - 2.5} y={stop.point[1] - 2.5} width={5} height={5} fill="#0b0d1f" />
-            <rect x={stop.point[0] - 1.5} y={stop.point[1] - 1.5} width={3} height={3} fill="#fff7e6" />
-          </g>
-        ))}
-
-      {walker && (
-        <g>
-          <rect x={Math.round(walker[0]) - 2} y={Math.round(walker[1]) - 2} width={4} height={4} fill="#0b0d1f" />
-          <rect x={Math.round(walker[0]) - 1} y={Math.round(walker[1]) - 1} width={2} height={2} fill={current?.leg.certainty === "unknown" ? "#9aa0c4" : "#fff1a8"} />
+      {STOPS.filter((stop) => stop.photo).map((stop) => (
+        <g key={stop.id}>
+          <rect x={stop.point[0] - 2.5} y={stop.point[1] - 2.5} width={5} height={5} fill="#0b0d1f" />
+          <rect x={stop.point[0] - 1.5} y={stop.point[1] - 1.5} width={3} height={3} fill="#fff7e6" />
         </g>
-      )}
+      ))}
 
-      {arrived && (
-        <g>
-          {ripples && <circle className="px-map-ripple" cx={ARRIVAL[0]} cy={ARRIVAL[1]} r={4} />}
-          <g transform={`translate(${ARRIVAL[0] - 4.5} ${ARRIVAL[1] - 4.5})`} className="text-(--px-yellow)">
-            <rect x={-0.5} y={-0.5} width={10} height={10} fill="#0b0d1f" />
-            <PixelIcon name="star" size={9} />
-          </g>
-        </g>
-      )}
+      <g transform={`translate(${ARRIVAL[0] - 4.5} ${ARRIVAL[1] - 4.5})`} className="text-(--px-yellow)">
+        <rect x={-0.5} y={-0.5} width={10} height={10} fill="#0b0d1f" />
+        <PixelIcon name="star" size={9} />
+      </g>
     </svg>
   );
 }

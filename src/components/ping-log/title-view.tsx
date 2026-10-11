@@ -15,7 +15,7 @@ type Props = {
 /**
  * The first screen: what the work is, in one window, and one button. It
  * reads as a photo log; what the exhibition does with the day waits for the
- * visit to ShibaLab. Where
+ * visit to ShibaLab, which people make whenever they like. Where
  * notifications cannot arrive (Safari on an iPhone, an app's own browser),
  * the way to get the optional reminder sits below in a quieter window,
  * since moving there first means joining there.
@@ -39,11 +39,11 @@ export function TitleView({ support, onStart }: Props) {
           <HowToStrip />
         </div>
         <p className="mt-3 text-[14px] leading-relaxed text-(--px-ink-2)">
-          <Phrases text="写真がたまったら、ShibaLab（教室棟301）に来てください。" />
+          <Phrases text="ShibaLab（教室棟301）には、好きなときに来てください。" />
           <InfoButton info={info} label="写真の扱いについて" />
         </p>
         <InfoNote info={info}>
-          <Sentences text="撮った写真は、展示に出しません。写真ストーリーは、あなたのスマホでだけ見られます。参加は任意です。" />
+          <Sentences text="撮った写真は、展示に出しません。参加は任意です。" />
         </InfoNote>
       </Window>
 
