@@ -1,12 +1,15 @@
 /**
- * What one answer to a ping sends to the push worker.
+ * What one record sends to the push worker. A record is one of two things:
  *
- * The record is deliberately raw. It is collected to find out how wrong a
- * phone's position is on campus and what could correct it, and a correction
- * thought of later is only testable against data that was kept: every fix in
- * the window rather than one, the browser's own fields rather than a summary,
- * and whatever hints exist about where a fix came from (the Geolocation API
- * does not say whether GPS or Wi-Fi produced it).
+ * - photo-memory: a participant's photo, with the one fix taken when the
+ *   camera handed it over. This is what the finished work is built from.
+ * - accuracy: the team's accuracy run from the developer screen, answered by
+ *   pointing at where one stands. It is deliberately raw. It is collected to
+ *   find out how wrong a phone's position is on campus and what could correct
+ *   it, and a correction thought of later is only testable against data that
+ *   was kept: every fix in the window rather than one, the browser's own
+ *   fields rather than a summary, and whatever hints exist about where a fix
+ *   came from (the Geolocation API does not say whether GPS or Wi-Fi produced it).
  */
 
 import {
@@ -27,7 +30,18 @@ import coordinates from "@/lib/map/toyosu-campus.coordinates.json";
 import type { DeviceContext, NetworkInfo, OrientationSample } from "./context";
 import type { ExifSummary } from "./exif";
 
-export const RECORD_SCHEMA = 1;
+/** 2 added `purpose`. Schema 1 records come from before the photo memory and were all accuracy runs. */
+export const RECORD_SCHEMA = 2;
+
+export type RecordPurpose = "photo-memory" | "accuracy";
+
+export const PURPOSE_LABEL: Record<RecordPurpose, string> = {
+  "photo-memory": "写真メモリー",
+  accuracy: "精度テスト",
+};
+
+/** The work's photo memory takes at most twelve photos a day. */
+export const MAX_PHOTOS_PER_DAY = 12;
 
 export type Fix = {
   /** Date.now() when the browser delivered it. */
@@ -109,10 +123,13 @@ export type PhotoMeta = {
 export type SourceGuess = "gnss" | "wifi" | "cell";
 
 export type LogRecord = {
-  schema: typeof RECORD_SCHEMA;
+  schema: 1 | typeof RECORD_SCHEMA;
+  /** Absent on schema 1; read it through purposeOf(). */
+  purpose?: RecordPurpose;
   id: string;
+  /** ping: answering a notification (a reminder, for a photo). manual: started by hand. */
   kind: "ping" | "manual";
-  /** The practice run in the setup. Real data all the same, flagged so an analysis can set it apart. */
+  /** The practice run of the setup screens that schema 1 had. Always false now. */
   tutorial: boolean;
   deviceId: string;
   consentVersion: string;
@@ -136,6 +153,10 @@ export type LogRecord = {
   orientation: OrientationSample | null;
   photo: PhotoMeta | null;
 };
+
+export function purposeOf(record: LogRecord): RecordPurpose {
+  return record.purpose ?? "accuracy";
+}
 
 export const SOURCE_LABEL: Record<SourceGuess, string> = {
   gnss: "GPS など衛星",

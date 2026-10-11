@@ -9,9 +9,9 @@ import "./log.css";
 const pixel = Press_Start_2P({ weight: "400", subsets: ["latin"], variable: "--font-pixel", display: "swap" });
 const dot = DotGothic16({ weight: "400", subsets: ["latin"], variable: "--font-dot", display: "swap" });
 
-/** Prototype: a ping every ten minutes, answered with where you are standing. */
+/** Prototype: the participant's photo memory, and behind it the developer screen's accuracy test. */
 export const metadata: Metadata = {
-  title: "定期ログ / TRACE",
+  title: "写真で残す、学祭の一日 / TRACE",
   robots: { index: false, follow: false },
   // iOS only lets a page notify once it is added to the home screen as an app.
   manifest: "/log.webmanifest",

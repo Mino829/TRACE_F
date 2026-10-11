@@ -16,6 +16,9 @@ export type LogEntry = {
   sentAt: string | null;
 };
 
+/** Where a saved entry ended up: with the worker, waiting here for a signal, or here only (no worker configured). */
+export type SaveOutcome = "sent" | "queued" | "local";
+
 const DB_NAME = "trace-ping-log";
 const STORE_NAME = "entries";
 /** 2: records replaced the photo-first entries of version 1, which are dropped. */

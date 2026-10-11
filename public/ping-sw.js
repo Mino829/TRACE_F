@@ -1,6 +1,7 @@
-// Service worker for the timed photo log (/log).
-// It shows the ten-minute ping the push worker sends, even with the screen off
-// and the page closed, and routes a tap on it back to the page.
+// Service worker for /log.
+// It shows what the push worker sends (a participant's photo reminder or the
+// team's accuracy ping), even with the screen off and the page closed, and
+// routes a tap on it back to the page.
 
 const PROMPT = "trace-ping";
 
@@ -21,7 +22,8 @@ self.addEventListener("push", (event) => {
   const promptedAt = data.promptedAt || new Date().toISOString();
   event.waitUntil((async () => {
     await self.registration.showNotification(data.title || "TRACE", {
-      body: data.body || "位置情報を記録してください。",
+      // The payload carries the text for its purpose; this is only for one that could not be read.
+      body: data.body || "タップすると TRACE が開きます。",
       tag: PROMPT,
       renotify: true,
       requireInteraction: true,

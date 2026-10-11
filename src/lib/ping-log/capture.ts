@@ -1,11 +1,17 @@
 /**
- * Collects fixes for as long as a record is open.
+ * Where the phone is, in the two ways a record asks.
  *
- * The watch runs while the person marks where they are and picks a photo, so
- * the window costs them no waiting and still shows how the fix settles. A
- * single low-accuracy request runs beside it: on most phones that is answered
- * from Wi-Fi and cell towers alone, which gives a network-only fix to set
- * against the watch's.
+ * An accuracy run (startCapture) collects fixes for as long as the record is
+ * open. The watch runs while the person marks where they are, so the window
+ * costs them no waiting and still shows how the fix settles. A single
+ * low-accuracy request runs beside it: on most phones that is answered from
+ * Wi-Fi and cell towers alone, which gives a network-only fix to set against
+ * the watch's.
+ *
+ * A photo (captureOnce) gets one fix, asked for the moment the camera hands
+ * the photo over. The work places a photo where it was taken and fills
+ * nothing in from other fixes, so a photo without a fix is kept as one
+ * without a place.
  */
 
 import type { Capture, Fix } from "./record";
@@ -14,6 +20,14 @@ import type { Capture, Fix } from "./record";
 const MAX_FIXES = 300;
 const WATCH_OPTIONS: PositionOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 };
 const COARSE_OPTIONS: PositionOptions = { enableHighAccuracy: false, maximumAge: 0, timeout: 15000 };
+/** The photo's fix waits ten seconds at most (frontend-design.md 8.1). */
+const ONCE_OPTIONS: PositionOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 };
+/**
+ * Browsers start the timeout only once location is allowed, so the first
+ * photo also waits for the permission prompt. This catches a browser that
+ * never answers at all.
+ */
+const ONCE_GIVE_UP_MS = 30000;
 
 function toFix(position: GeolocationPosition): Fix {
   const { coords } = position;
@@ -34,6 +48,40 @@ export function geolocationMessage(code: number): string {
   if (code === 1) return "位置情報が許可されていません。端末の設定で、このページ（またはブラウザ）に位置情報を許可してください。";
   if (code === 3) return "位置情報の取得に時間がかかっています。";
   return "位置情報を取得できませんでした。";
+}
+
+/** One high-accuracy fix, or none; it never rejects, since the photo is kept either way. */
+export function captureOnce(): Promise<Capture> {
+  const capture: Capture = { startedAt: Date.now(), endedAt: null, options: ONCE_OPTIONS, fixes: [], coarse: null, coarseError: null, errors: [] };
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(giveUp);
+      resolve({ ...capture, endedAt: Date.now() });
+    };
+    const giveUp = window.setTimeout(() => {
+      capture.errors.push({ at: Date.now(), code: 3, message: "no answer from the browser" });
+      settle();
+    }, ONCE_GIVE_UP_MS);
+    if (!("geolocation" in navigator)) {
+      capture.errors.push({ at: Date.now(), code: 2, message: "この端末では位置情報を使えません。" });
+      settle();
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        capture.fixes.push(toFix(position));
+        settle();
+      },
+      (error) => {
+        capture.errors.push({ at: Date.now(), code: error.code, message: error.message });
+        settle();
+      },
+      ONCE_OPTIONS,
+    );
+  });
 }
 
 export type CaptureHandle = {

@@ -1,5 +1,5 @@
 {
-  "name": "TRACE 定期ログ",
+  "name": "TRACE",
   "short_name": "TRACE",
   "start_url": "./log",
   "scope": "./",
