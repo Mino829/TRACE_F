@@ -23,6 +23,23 @@ import {
 } from "@/lib/ping-log/push";
 import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
 import { clearEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
+import {
+  TRACE_API_URL,
+  TraceApiError,
+  createExperience,
+  deleteMemorySession,
+  fetchPublicConfig,
+  getExperience,
+  type PublicConfig,
+} from "@/lib/trace-api/client";
+import {
+  clearTabExperience,
+  loadTabExperience,
+  memoryDeleteKey,
+  saveTabExperience,
+  updateTabExperience,
+  type TabExperience,
+} from "@/lib/trace-api/session";
 
 import { SkipClear } from "./clear-screen";
 import { ConfirmDialog } from "./confirm-dialog";
@@ -51,6 +68,14 @@ import { Sentences } from "./ui";
  *   4. the photo flow, full screen: a look at the photo, then the clear screen.
  * A reminder that arrives shows on home with "写真を撮る" and "スキップ"; both
  * end on the clear screen.
+ *
+ * With NEXT_PUBLIC_TRACE_API_URL set, agreeing also creates the experience on
+ * the work's backend (TRACE_B), and joining lasts as long as this tab keeps
+ * its credential: the photo limit comes from the backend's config and counts
+ * per memory session, the arrival screens show the backend's symbol, and
+ * "参加をやめる" deletes the memory session too. Photos, the arrival QR, the
+ * story and the reminder have no backend routes yet and stay on the phone and
+ * the push worker, as everything does when the variable is unset.
  *
  * The developer screen, behind the button left of the menu, is the team's
  * accuracy test: the ten-minute ping answered by pointing at where one
@@ -97,6 +122,11 @@ function initialPending(): string | null {
   return stored && isToday(stored) ? stored : null;
 }
 
+/** Consent from an earlier tab, but no credential in this one: the backend's experience cannot be picked up again. */
+function initialMessage(): string {
+  return TRACE_API_URL && loadConsent() && !loadTabExperience() ? "前の参加は、このタブでは続けられません。もう一度「はじめる」から参加してください。" : "";
+}
+
 function initialView(): View {
   return read(window.localStorage, VIEW_KEY) === "developer" ? "developer" : "participant";
 }
@@ -139,7 +169,12 @@ export function PingLogScreen() {
   const [permission, setPermission] = useState(notificationState);
   const [geolocation, setGeolocation] = useState<PermissionState | "unknown" | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
+  // The backend's side, while NEXT_PUBLIC_TRACE_API_URL is set.
+  const [traceConfig, setTraceConfig] = useState<PublicConfig | null>(null);
+  const [experience, setExperience] = useState<TabExperience | null>(() => (TRACE_API_URL ? loadTabExperience() : null));
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   // The reminder the camera was opened for, read when the photo comes back.
@@ -157,8 +192,12 @@ export function PingLogScreen() {
 
   /** Sends every record the worker has not acknowledged yet; the rest wait for the next try. */
   const sendUnsent = useCallback(async (): Promise<number> => {
-    if (!PUSH_API_URL) return 0;
     let failed = 0;
+    // Without a worker there is nothing to send, but a record just saved still has to show.
+    if (!PUSH_API_URL) {
+      setEntries(await listEntries());
+      return failed;
+    }
     for (const entry of (await listEntries()).filter((item) => !item.sentAt)) {
       try {
         await uploadEntry(entry);
@@ -213,6 +252,24 @@ export function PingLogScreen() {
     return () => navigator.serviceWorker.removeEventListener("message", onMessage);
   }, [prompt, sendUnsent]);
 
+  // The backend's config and, after a reload, whether this tab's experience still stands.
+  useEffect(() => {
+    if (!TRACE_API_URL) return;
+    // Fetched again on agreeing when this fails.
+    fetchPublicConfig().then(setTraceConfig, () => undefined);
+    const stored = loadTabExperience();
+    if (!stored) return;
+    getExperience(stored.experienceId, stored.memory)
+      .then((status) => setExperience(updateTabExperience(stored, status)))
+      .catch((error: unknown) => {
+        // Gone for good (deleted, or past its time); a lost signal keeps it.
+        if (!(error instanceof TraceApiError) || (error.status !== 401 && error.status !== 404)) return;
+        clearTabExperience();
+        setExperience(null);
+        setMessage(error.message);
+      });
+  }, []);
+
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
@@ -225,11 +282,25 @@ export function PingLogScreen() {
   const nextPingAt = upcoming !== null && (!expiresAt || upcoming < Date.parse(expiresAt)) ? upcoming : null;
   const nextReminderAt = activePlan?.purpose === "photo" ? nextPingAt : null;
 
+  // With the backend, joining lasts as long as this tab's memory session.
+  const sessionExpired = experience !== null && Date.parse(experience.expiresAt) <= now;
+  const joined = consent !== null && (!TRACE_API_URL || (experience !== null && !sessionExpired));
+  const memorySessionId = joined ? (experience?.memory.memorySessionId ?? null) : null;
+  const maxPhotos = (TRACE_API_URL && traceConfig?.photo.maxCount) || MAX_PHOTOS;
+
+  // This participation's photos: the memory session's with the backend, the day's without.
   // Kept stable through the clock's ticks, so the photos' object URLs are not remade every second.
   const day = new Date(now).toDateString();
-  const todayPhotos = useMemo(
-    () => entries.filter((entry) => purposeOf(entry.record) === "photo-memory" && new Date(entry.record.takenAt).toDateString() === day).reverse(),
-    [entries, day],
+  const memoryPhotos = useMemo(
+    () =>
+      entries
+        .filter(
+          (entry) =>
+            purposeOf(entry.record) === "photo-memory" &&
+            (TRACE_API_URL ? memorySessionId !== null && entry.memorySessionId === memorySessionId : new Date(entry.record.takenAt).toDateString() === day),
+        )
+        .reverse(),
+    [entries, day, memorySessionId],
   );
   const todayAccuracy = entries.filter((entry) => purposeOf(entry.record) === "accuracy" && isToday(entry.record.takenAt)).length;
 
@@ -259,7 +330,28 @@ export function PingLogScreen() {
     setMessage("");
   };
 
-  const agree = () => {
+  /** With the backend, the experience is created here, memory-only; joining waits until it exists. */
+  const agree = async () => {
+    if (TRACE_API_URL) {
+      setJoining(true);
+      setJoinError("");
+      try {
+        const config = traceConfig ?? (await fetchPublicConfig());
+        setTraceConfig(config);
+        if (!config.registrationOpen) throw new TraceApiError(503, "REGISTRATION_CLOSED", null);
+        const created = await createExperience(config);
+        const tab: TabExperience = { ...created, consentVersion: config.consent.version, createdAt: new Date().toISOString() };
+        saveTabExperience(tab);
+        setExperience(tab);
+      } catch (error) {
+        // The text changed on the server: read the new versions before the next try.
+        if (error instanceof TraceApiError && error.code === "CONSENT_VERSION_MISMATCH") fetchPublicConfig().then(setTraceConfig, () => setTraceConfig(null));
+        setJoinError(error instanceof Error ? error.message : "うまくいきませんでした。");
+        return;
+      } finally {
+        setJoining(false);
+      }
+    }
     setConsent(saveConsent());
     setConsentOpen(false);
     setMessage("");
@@ -317,7 +409,7 @@ export function PingLogScreen() {
   const onCameraFile = (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = "";
-    if (!file || !consent || todayPhotos.length >= MAX_PHOTOS) return;
+    if (!file || !joined || memoryPhotos.length >= maxPhotos) return;
     // The photo's moment is when the camera hands it over; its one fix is asked for now.
     setShot({
       id: crypto.randomUUID(),
@@ -326,7 +418,7 @@ export function PingLogScreen() {
       promptedAt: cameraPromptRef.current,
       location: captureOnce(),
       network: networkInfo(),
-      number: todayPhotos.length + 1,
+      number: memoryPhotos.length + 1,
     });
   };
 
@@ -336,7 +428,7 @@ export function PingLogScreen() {
   };
 
   const save = async (entry: LogEntry): Promise<SaveOutcome> => {
-    await putEntry(entry);
+    await putEntry(memorySessionId && purposeOf(entry.record) === "photo-memory" ? { ...entry, memorySessionId } : entry);
     if (entry.record.kind === "ping") prompt(null);
     const failed = await sendUnsent();
     return !PUSH_API_URL ? "local" : failed ? "queued" : "sent";
@@ -348,6 +440,22 @@ export function PingLogScreen() {
   };
 
   const withdraw = () => void run(async () => {
+    // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
+    let backendNote = "";
+    if (TRACE_API_URL && experience) {
+      try {
+        await deleteMemorySession(experience.memory, memoryDeleteKey(experience.memory.memorySessionId));
+        backendNote = "参加の記録も削除しました。";
+      } catch (error) {
+        if (!(error instanceof TraceApiError && error.status === 401)) {
+          throw new Error(`参加をやめられませんでした。${error instanceof Error ? error.message : ""}`);
+        }
+        // The backend no longer takes this credential: the session ran out, and its data waits for the retention period.
+        backendNote = "参加の記録は期限が切れていたため、ここからは削除できませんでした。保存期間が終わると自動で削除されます。";
+      }
+      clearTabExperience();
+      setExperience(null);
+    }
     if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
     const deleted = PUSH_API_URL ? await forgetMe() : 0;
     await clearEntries();
@@ -357,7 +465,7 @@ export function PingLogScreen() {
     setExpiresAt(null);
     setEntries([]);
     setConsent(null);
-    setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。`);
+    setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。${backendNote}`);
     // The menu was at the foot of a longer page; the note and the title screen are at the top.
     window.scrollTo(0, 0);
   });
@@ -383,11 +491,11 @@ export function PingLogScreen() {
     <>
       <PixelScene phase={phaseAt(now)} />
       {demoStart !== null ? (
-        <StoryDemo start={demoStart} onClose={() => setDemoStart(null)} />
+        <StoryDemo start={demoStart} alias={experience?.displayAlias ?? null} maxPhotos={maxPhotos} onClose={() => setDemoStart(null)} />
       ) : (
         <main className="relative z-[1] mx-auto w-full max-w-md space-y-7 px-4 pt-[max(10px,env(safe-area-inset-top))] pb-[calc(56px+env(safe-area-inset-bottom))]">
           <header className="px-on-scene flex min-h-11 items-center justify-between gap-3">
-            {consent || view === "developer" ? (
+            {joined || view === "developer" ? (
               <p className="flex items-center gap-2" aria-label="TRACE">
                 <PixelSprite name="pin" scale={2} />
                 <span className="px-pixel px-outlined text-[14px]" aria-hidden="true">TRACE</span>
@@ -448,15 +556,23 @@ export function PingLogScreen() {
                 onOpenDemo={() => setDemoStart(1)}
               />
             </>
-          ) : !consent ? (
-            <TitleView support={support} onStart={() => setConsentOpen(true)} />
+          ) : !joined ? (
+            <>
+              {consent && sessionExpired && (
+                <p className="px-note px-note--float">
+                  <Sentences text="参加の期限が切れました。続けるときは、もう一度「はじめる」から参加してください。" />
+                </p>
+              )}
+              <TitleView support={support} onStart={() => setConsentOpen(true)} />
+            </>
           ) : (
             <HomeView
               support={support}
               plan={activePlan}
               nextPingAt={nextPingAt}
               pendingAt={pendingAt}
-              photos={todayPhotos}
+              photos={memoryPhotos}
+              maxPhotos={maxPhotos}
               busy={busy}
               onTakePhoto={() => openCamera(pendingAt)}
               onSkipReminder={skipReminder}
@@ -504,8 +620,17 @@ export function PingLogScreen() {
       {/* The camera, opened from a tap on "写真を撮る" or "撮り直す". */}
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(event) => onCameraFile(event.currentTarget)} />
 
-      <ConsentDialog open={consentOpen && !shot} onAgree={consent ? undefined : agree} onClose={() => setConsentOpen(false)} />
-      <HowToDialog open={howToOpen} onClose={() => setHowToOpen(false)} />
+      <ConsentDialog
+        open={consentOpen && !shot}
+        onAgree={joined ? undefined : () => void agree()}
+        busy={joining}
+        error={joinError}
+        onClose={() => {
+          setConsentOpen(false);
+          setJoinError("");
+        }}
+      />
+      <HowToDialog open={howToOpen} maxPhotos={maxPhotos} onClose={() => setHowToOpen(false)} />
       <MenuDialog open={menuOpen} items={menuItems} onClose={() => setMenuOpen(false)} />
       <ConfirmDialog
         open={withdrawOpen}

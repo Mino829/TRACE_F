@@ -4,7 +4,6 @@ import { useMemo } from "react";
 
 import type { PushSupport } from "@/lib/ping-log/environment";
 import type { PushPlan } from "@/lib/ping-log/push";
-import { MAX_PHOTOS } from "@/lib/ping-log/record";
 import type { LogEntry } from "@/lib/ping-log/store";
 
 import { ArrivalWindow } from "./arrival-window";
@@ -30,8 +29,10 @@ type Props = {
   nextPingAt: number | null;
   /** A reminder waiting for an answer: its banner holds the yellow button, so the camera button steps back. */
   pendingAt: string | null;
-  /** Today's photos, oldest first. */
+  /** This participation's photos, oldest first: the memory session's, or the day's without the backend. */
   photos: LogEntry[];
+  /** How many photos one participation may hold. */
+  maxPhotos: number;
   busy: boolean;
   onTakePhoto: () => void;
   onSkipReminder: () => void;
@@ -58,7 +59,7 @@ function memoryPhotos(entries: LogEntry[]): MemoryPhoto[] {
 }
 
 export function HomeView(props: Props) {
-  const full = props.photos.length >= MAX_PHOTOS;
+  const full = props.photos.length >= props.maxPhotos;
   const photos = useMemo(() => memoryPhotos(props.photos), [props.photos]);
 
   return (
@@ -75,7 +76,7 @@ export function HomeView(props: Props) {
         </Window>
       )}
 
-      <MemoryWindow photos={photos} max={MAX_PHOTOS} busy={props.busy} onResend={props.onResend} />
+      <MemoryWindow photos={photos} max={props.maxPhotos} busy={props.busy} onResend={props.onResend} />
 
       <div className="px-on-scene flex flex-col gap-2">
         <PxButton block size="lg" icon="camera" variant={props.pendingAt ? "secondary" : "primary"} onClick={props.onTakePhoto} disabled={full}>
@@ -83,7 +84,7 @@ export function HomeView(props: Props) {
         </PxButton>
         {full && (
           <p className="px-note px-note--float">
-            <Sentences text={`${MAX_PHOTOS}枚撮り終えました。撮影は${MAX_PHOTOS}枚までです。`} />
+            <Sentences text={`${props.maxPhotos}枚撮り終えました。撮影は${props.maxPhotos}枚までです。`} />
           </p>
         )}
       </div>

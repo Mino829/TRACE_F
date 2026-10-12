@@ -10,6 +10,10 @@ type Props = {
   open: boolean;
   /** Present before consent: the button that gives it. */
   onAgree?: () => void;
+  /** Joining is under way: the answer buttons wait. */
+  busy?: boolean;
+  /** Why joining failed, shown above the answer buttons. */
+  error?: string;
   onClose: () => void;
 };
 
@@ -18,7 +22,7 @@ type Props = {
  * opened with showModal() keeps focus inside it, closes on Escape, and draws
  * its own backdrop. The answer buttons stay in view below the text.
  */
-export function ConsentDialog({ open, onAgree, onClose }: Props) {
+export function ConsentDialog({ open, onAgree, busy = false, error = "", onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useRef<HTMLParagraphElement>(null);
   const scroll = useScrollHint<HTMLDivElement>();
@@ -64,10 +68,15 @@ export function ConsentDialog({ open, onAgree, onClose }: Props) {
           <div className="border-t-3 border-(--px-navy-3) pt-3">
             {onAgree ? (
               <>
+                {error && (
+                  <p className="px-note mb-3" data-tone="warn" role="alert">
+                    <Sentences text={error} />
+                  </p>
+                )}
                 {/* Stacked: side by side, the two do not fit a phone's width. */}
                 <div className="flex flex-col gap-2">
-                  <PxButton block onClick={onAgree}>同意して参加する</PxButton>
-                  <PxButton variant="secondary" block onClick={onClose}>同意しない</PxButton>
+                  <PxButton block onClick={onAgree} disabled={busy}>{busy ? "参加しています…" : "同意して参加する"}</PxButton>
+                  <PxButton variant="secondary" block onClick={onClose} disabled={busy}>同意しない</PxButton>
                 </div>
                 <p className="mt-1 text-[13px] text-(--px-ink-2)">
                   <Sentences text="カメラなどの許可は、はじめて撮影するときに求めます。" />

@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { MAX_PHOTOS } from "@/lib/ping-log/record";
+import type { DisplayAlias } from "@/lib/trace-api/client";
 
+import { AliasSymbolIcon, aliasLook, type AliasLook } from "./alias-symbol";
 import { ArrivalWindow } from "./arrival-window";
 import { Confetti } from "./clear-screen";
 import { DemoMap, STOPS, STORY_MINUTES, storyClock } from "./demo-map";
@@ -26,6 +28,9 @@ import { Phrases, PxButton, PxLink, Sentences, Window } from "./ui";
  * code with the button on home, and the screen in the room replays their day
  * at once: the one at the head of the line is the one who reads it, so the
  * phone shows no queue.
+ *
+ * With the backend connected, the symbol is the participant's own, the one
+ * the backend gave them when they joined; otherwise it is the demo's yellow star.
  */
 
 const SCREENS = 5;
@@ -37,9 +42,14 @@ type Props = {
   onClose: () => void;
   /** 2 when the participant's own home opened it with its QR button: their home was screen 1. */
   start?: number;
+  /** The participant's colour and symbol from the backend, or null for the demo's own. */
+  alias?: DisplayAlias | null;
+  /** The photo limit home shows. */
+  maxPhotos?: number;
 };
 
-export function StoryDemo({ onClose, start = 1 }: Props) {
+export function StoryDemo({ onClose, start = 1, alias = null, maxPhotos = MAX_PHOTOS }: Props) {
+  const look = aliasLook(alias);
   const [screen, setScreen] = useState(start);
   const [notice, setNotice] = useState("");
   const close = useLayer("#demo", onClose);
@@ -67,11 +77,11 @@ export function StoryDemo({ onClose, start = 1 }: Props) {
     <div className="fixed inset-0 z-30 flex flex-col" role="dialog" aria-modal="true" aria-label="会場到着のデモ">
       <DemoBar screen={screen} onNext={next} onClose={close} />
       <div ref={scrollRef} className={`relative min-h-0 flex-1 overflow-y-auto ${screen === 2 ? "px-stage" : ""}`}>
-        {screen === 1 && <Home onScan={next} notify={notify} />}
+        {screen === 1 && <Home max={maxPhotos} onScan={next} notify={notify} />}
         {screen === 2 && <Scan onDone={next} />}
-        {screen === 3 && <Arrived onDone={next} />}
-        {screen === 4 && <Story onFinish={next} notify={notify} />}
-        {screen === 5 && <Thanks onClose={close} notify={notify} />}
+        {screen === 3 && <Arrived look={look} onDone={next} />}
+        {screen === 4 && <Story look={look} onFinish={next} notify={notify} />}
+        {screen === 5 && <Thanks look={look} onClose={close} notify={notify} />}
       </div>
       <p className="pointer-events-none fixed inset-x-4 bottom-[calc(16px+env(safe-area-inset-bottom))] z-10 mx-auto max-w-md" role="status">
         {notice && <span className="px-note px-note--float px-drop">{notice}</span>}
@@ -133,7 +143,7 @@ const MEMORY: MemoryPhoto[] = [...PHOTOS].reverse().map((stop) => ({
 }));
 
 /** 1. Home, four photos in, the same as the participant's own; its QR button at the foot opens the way in. */
-function Home({ onScan, notify }: { onScan: () => void; notify: (text: string) => void }) {
+function Home({ max, onScan, notify }: { max: number; onScan: () => void; notify: (text: string) => void }) {
   return (
     <Page>
       <p className="px-on-scene flex min-h-11 items-center gap-2" aria-label="TRACE">
@@ -142,7 +152,7 @@ function Home({ onScan, notify }: { onScan: () => void; notify: (text: string) =
       </p>
       <h2 data-demo-title tabIndex={-1} className="px-sr">ホーム</h2>
 
-      <MemoryWindow photos={MEMORY} max={MAX_PHOTOS} />
+      <MemoryWindow photos={MEMORY} max={max} />
 
       <div className="px-on-scene">
         <PxButton block size="lg" icon="camera" onClick={() => notify("デモのため、撮影はしません。")}>写真を撮る</PxButton>
@@ -250,7 +260,7 @@ const PROGRESS_STEPS = 24;
  * room's screen at once. The phone only points to the screen; the trail itself
  * is shown there.
  */
-function Arrived({ onDone }: { onDone: () => void }) {
+function Arrived({ look, onDone }: { look: AliasLook; onDone: () => void }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -282,9 +292,9 @@ function Arrived({ onDone }: { onDone: () => void }) {
 
         <Window title="あなたの記号" as="section">
           <div className="flex items-center gap-4">
-            <PixelIcon name="star" size={84} className="px-symbol px-bob text-(--px-yellow)" label="黄色い星" />
+            <AliasSymbolIcon look={look} size={84} className="px-symbol px-bob" />
             <div className="min-w-0">
-              <p className="text-[20px]">黄色い星</p>
+              <p className="text-[20px]">{look.label}</p>
               <p className="mt-1 text-[14px] leading-relaxed text-(--px-ink-2)">
                 <Sentences text="スクリーンにも同じ記号が出ます。名前や写真は出ません。" />
               </p>
@@ -316,7 +326,7 @@ function Arrived({ onDone }: { onDone: () => void }) {
 }
 
 /** 4. The photo story: the whole trail, then the photos in order with the time between them. */
-function Story({ onFinish, notify }: { onFinish: () => void; notify: (text: string) => void }) {
+function Story({ look, onFinish, notify }: { look: AliasLook; onFinish: () => void; notify: (text: string) => void }) {
   return (
     <Page>
       <Title label="Story" className="px-on-scene">
@@ -343,7 +353,7 @@ function Story({ onFinish, notify }: { onFinish: () => void; notify: (text: stri
                     <PixelPhoto name={stop.photo} className="px-timeline__thumb" label={`${DEMO_PHOTO_LABEL[stop.photo]}の写真`} />
                   ) : (
                     <span className="px-timeline__thumb grid place-items-center">
-                      <PixelIcon name="star" size={36} className="px-symbol text-(--px-yellow)" label="あなたの記号（黄色い星）" />
+                      <AliasSymbolIcon look={look} size={36} className="px-symbol" label={`あなたの記号（${look.label}）`} />
                     </span>
                   )}
                   <div className="min-w-0">
@@ -378,11 +388,11 @@ function Story({ onFinish, notify }: { onFinish: () => void; notify: (text: stri
 }
 
 /** 5. The end: thanks, how long the data stays, and deleting it now. */
-function Thanks({ onClose, notify }: { onClose: () => void; notify: (text: string) => void }) {
+function Thanks({ look, onClose, notify }: { look: AliasLook; onClose: () => void; notify: (text: string) => void }) {
   return (
     <Page>
       <div className="flex flex-col items-center gap-3 text-center">
-        <PixelIcon name="star" size={72} className="px-symbol px-bob text-(--px-yellow)" />
+        <AliasSymbolIcon look={look} size={72} className="px-symbol px-bob" />
         <Title label="Thank you" className="px-on-scene">
           <span className="px-outlined">
             <Phrases text="参加ありがとうございました" />

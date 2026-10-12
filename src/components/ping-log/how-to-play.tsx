@@ -3,7 +3,6 @@
 import { Fragment, useEffect, useRef } from "react";
 
 import { REMINDER_PLAN } from "@/lib/ping-log/push";
-import { MAX_PHOTOS } from "@/lib/ping-log/record";
 
 import { PixelIcon, type PixelIconName } from "./pixel-icon";
 import { Phrases, PxButton, Sentences, Window, useScrollHint } from "./ui";
@@ -29,9 +28,9 @@ const STEPS: { icon: PixelIconName; title: string; short: string; text: string }
   },
 ];
 
-const NOTES = [
+const notes = (maxPhotos: number) => [
   "撮った写真は、展示に出しません。",
-  `撮影は${MAX_PHOTOS}枚までです。`,
+  `撮影は${maxPhotos}枚までです。`,
   `撮影のリマインダーは任意です。オンにすると、${REMINDER_PLAN.intervalMinutes}分ごとに届きます。`,
   "撮りたいものがないときは、リマインダーをスキップして構いません。",
 ];
@@ -82,7 +81,7 @@ export function HowToSteps() {
 }
 
 /** The instructions, reopened from the menu, with the details people ask about. */
-export function HowToDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function HowToDialog({ open, maxPhotos, onClose }: { open: boolean; maxPhotos: number; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useRef<HTMLParagraphElement>(null);
   const scroll = useScrollHint<HTMLDivElement>();
@@ -109,7 +108,7 @@ export function HowToDialog({ open, onClose }: { open: boolean; onClose: () => v
           <div ref={scroll} className="px-scroll min-h-0 flex-1 space-y-5 overflow-y-auto pt-2 pr-1 pb-4">
             <HowToSteps />
             <ul className="space-y-1.5 border-t-3 border-(--px-navy-3) pt-4 text-[15px] text-(--px-ink-2)">
-              {NOTES.map((note) => (
+              {notes(maxPhotos).map((note) => (
                 <li key={note} className="ml-4 list-['-_']">
                   <Sentences text={note} />
                 </li>
