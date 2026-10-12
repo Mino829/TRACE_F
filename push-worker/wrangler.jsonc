@@ -28,7 +28,7 @@
 	],
 	"vars": {
 		// Origins the web app is opened from; add the deployed one here.
-		"ALLOWED_ORIGINS": "http://localhost:3000,https://trace-log.uni11260609.workers.dev"
+		"ALLOWED_ORIGINS": "http://localhost:3000,https://trace-log.uni11260609.workers.dev,https://trace-eight-zeta.vercel.app"
 	},
 	// VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK and VAPID_SUBJECT are secrets: `npm run wrangler -- secret put <NAME>`.
 	"observability": {
