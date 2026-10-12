@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { MAX_PHOTOS } from "@/lib/ping-log/record";
-import type { DisplayAlias } from "@/lib/trace-api/client";
 
-import { AliasSymbolIcon, aliasLook, type AliasLook } from "./alias-symbol";
 import { ArrivalWindow } from "./arrival-window";
 import { Confetti } from "./clear-screen";
 import { DemoMap, STOPS, STORY_MINUTES, storyClock } from "./demo-map";
@@ -27,10 +25,8 @@ import { Phrases, PxButton, PxLink, Sentences, Window } from "./ui";
  * People come to ShibaLab whenever they like. At the door they read the QR
  * code with the button on home, and the screen in the room replays their day
  * at once: the one at the head of the line is the one who reads it, so the
- * phone shows no queue.
- *
- * With the backend connected, the symbol is the participant's own, the one
- * the backend gave them when they joined; otherwise it is the demo's yellow star.
+ * phone shows no queue. Nor does it give them a symbol to look for on the
+ * screen: reading the code is what puts their own day there.
  */
 
 const SCREENS = 5;
@@ -42,14 +38,11 @@ type Props = {
   onClose: () => void;
   /** 2 when the participant's own home opened it with its QR button: their home was screen 1. */
   start?: number;
-  /** The participant's colour and symbol from the backend, or null for the demo's own. */
-  alias?: DisplayAlias | null;
   /** The photo limit home shows. */
   maxPhotos?: number;
 };
 
-export function StoryDemo({ onClose, start = 1, alias = null, maxPhotos = MAX_PHOTOS }: Props) {
-  const look = aliasLook(alias);
+export function StoryDemo({ onClose, start = 1, maxPhotos = MAX_PHOTOS }: Props) {
   const [screen, setScreen] = useState(start);
   const [notice, setNotice] = useState("");
   const close = useLayer("#demo", onClose);
@@ -79,9 +72,9 @@ export function StoryDemo({ onClose, start = 1, alias = null, maxPhotos = MAX_PH
       <div ref={scrollRef} className={`relative min-h-0 flex-1 overflow-y-auto ${screen === 2 ? "px-stage" : ""}`}>
         {screen === 1 && <Home max={maxPhotos} onScan={next} notify={notify} />}
         {screen === 2 && <Scan onDone={next} />}
-        {screen === 3 && <Arrived look={look} onDone={next} />}
-        {screen === 4 && <Story look={look} onFinish={next} notify={notify} />}
-        {screen === 5 && <Thanks look={look} onClose={close} notify={notify} />}
+        {screen === 3 && <Arrived onDone={next} />}
+        {screen === 4 && <Story onFinish={next} notify={notify} />}
+        {screen === 5 && <Thanks onClose={close} notify={notify} />}
       </div>
       <p className="pointer-events-none fixed inset-x-4 bottom-[calc(16px+env(safe-area-inset-bottom))] z-10 mx-auto max-w-md" role="status">
         {notice && <span className="px-note px-note--float px-drop">{notice}</span>}
@@ -256,11 +249,10 @@ function Scan({ onDone }: { onDone: () => void }) {
 const PROGRESS_STEPS = 24;
 
 /**
- * 3. Arrived: the participant's symbol, and the replay that starts on the
- * room's screen at once. The phone only points to the screen; the trail itself
- * is shown there.
+ * 3. Arrived: the replay starts on the room's screen at once. The phone only
+ * points to the screen; the trail itself is shown there.
  */
-function Arrived({ look, onDone }: { look: AliasLook; onDone: () => void }) {
+function Arrived({ onDone }: { onDone: () => void }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -290,18 +282,6 @@ function Arrived({ look, onDone }: { look: AliasLook; onDone: () => void }) {
           <span className="px-outlined">ShibaLab に到着しました</span>
         </Title>
 
-        <Window title="あなたの記号" as="section">
-          <div className="flex items-center gap-4">
-            <AliasSymbolIcon look={look} size={84} className="px-symbol px-bob" />
-            <div className="min-w-0">
-              <p className="text-[20px]">{look.label}</p>
-              <p className="mt-1 text-[14px] leading-relaxed text-(--px-ink-2)">
-                <Sentences text="スクリーンにも同じ記号が出ます。名前や写真は出ません。" />
-              </p>
-            </div>
-          </div>
-        </Window>
-
         <Window tone="alert" title={done ? "再生が終わりました" : <><span className="px-blink">&#9654;</span> 再生中</>} as="section">
           <p className="text-[20px]">スクリーンを見てください</p>
           <p className="mt-1 text-[14px] leading-relaxed text-(--px-ink-2)">
@@ -326,7 +306,7 @@ function Arrived({ look, onDone }: { look: AliasLook; onDone: () => void }) {
 }
 
 /** 4. The photo story: the whole trail, then the photos in order with the time between them. */
-function Story({ look, onFinish, notify }: { look: AliasLook; onFinish: () => void; notify: (text: string) => void }) {
+function Story({ onFinish, notify }: { onFinish: () => void; notify: (text: string) => void }) {
   return (
     <Page>
       <Title label="Story" className="px-on-scene">
@@ -353,7 +333,7 @@ function Story({ look, onFinish, notify }: { look: AliasLook; onFinish: () => vo
                     <PixelPhoto name={stop.photo} className="px-timeline__thumb" label={`${DEMO_PHOTO_LABEL[stop.photo]}の写真`} />
                   ) : (
                     <span className="px-timeline__thumb grid place-items-center">
-                      <AliasSymbolIcon look={look} size={36} className="px-symbol" label={`あなたの記号（${look.label}）`} />
+                      <PixelSprite name="pin" scale={3} />
                     </span>
                   )}
                   <div className="min-w-0">
@@ -388,11 +368,10 @@ function Story({ look, onFinish, notify }: { look: AliasLook; onFinish: () => vo
 }
 
 /** 5. The end: thanks, how long the data stays, and deleting it now. */
-function Thanks({ look, onClose, notify }: { look: AliasLook; onClose: () => void; notify: (text: string) => void }) {
+function Thanks({ onClose, notify }: { onClose: () => void; notify: (text: string) => void }) {
   return (
     <Page>
       <div className="flex flex-col items-center gap-3 text-center">
-        <AliasSymbolIcon look={look} size={72} className="px-symbol px-bob" />
         <Title label="Thank you" className="px-on-scene">
           <span className="px-outlined">
             <Phrases text="参加ありがとうございました" />

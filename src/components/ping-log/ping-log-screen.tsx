@@ -72,8 +72,7 @@ import { Sentences } from "./ui";
  * With NEXT_PUBLIC_TRACE_API_URL set, agreeing also creates the experience on
  * the work's backend (TRACE_B), and joining lasts as long as this tab keeps
  * its credential: the photo limit comes from the backend's config and counts
- * per memory session, the arrival screens show the backend's symbol, and
- * "参加をやめる" deletes the memory session too. Photos, the arrival QR, the
+ * per memory session, and "参加をやめる" deletes the memory session too. Photos, the arrival QR, the
  * story and the reminder have no backend routes yet and stay on the phone and
  * the push worker, as everything does when the variable is unset.
  *
@@ -484,7 +483,7 @@ export function PingLogScreen() {
     <>
       <PixelScene phase={phaseAt(now)} />
       {demoStart !== null ? (
-        <StoryDemo start={demoStart} alias={experience?.displayAlias ?? null} maxPhotos={maxPhotos} onClose={() => setDemoStart(null)} />
+        <StoryDemo start={demoStart} maxPhotos={maxPhotos} onClose={() => setDemoStart(null)} />
       ) : (
         <main className="relative z-[1] mx-auto w-full max-w-md space-y-7 px-4 pt-[max(10px,env(safe-area-inset-top))] pb-[calc(56px+env(safe-area-inset-bottom))]">
           <header className="px-on-scene flex min-h-11 items-center justify-between gap-3">
