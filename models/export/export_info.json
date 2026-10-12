@@ -1,0 +1,17 @@
+{
+ "campus_origin_map_xy": [
+  -160.48048400878906,
+  -14.865501403808594
+ ],
+ "verts": {
+  "research_exterior": 42329,
+  "research_interior": 46645,
+  "classroom_interior": 75531,
+  "exchange_exterior": 15380,
+  "exchange_interior": 11044,
+  "headquarters_exterior": 24124,
+  "headquarters_interior": 30404,
+  "campus_exterior": 165704,
+  "campus_all": 253797
+ }
+}

@@ -1,0 +1,314 @@
+# 本部棟の内装（3F〜14F）：部屋の区切り・教室番号の札・エレベーター・柱・床と天井
+# buildings/本部棟.blend を開いて exec(open(path, encoding="utf-8").read()) で実行する。
+# 先に外観スクリプト（build_honbuto_exterior.py）を実行して、その寸法（MASSES, rect など）を使う。
+# 何度実行しても、コレクション「05_本部棟_内装」の中身を作り直すだけ。
+#
+# 間取りは、各階のフロア案内図（image/11_撮影写真_本部棟/内装_jpg）を今の建物の形に合わせて置いたもの。実寸ではない。
+#   3・4F：教室（2301〜2306 / 2401〜2408）
+#   5〜9F：研究室・実験室＋真ん中のオープンラボ（エレベーター A・B）
+#   10〜14F：高層棟だけ。Lab・会議室（エレベーター B だけ）
+import os
+import bpy, math
+
+HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else \
+    r"C:\Users\wyuto\OneDrive\ドキュメント\blender-works\キャンパス\scripts"
+exec(open(os.path.join(HERE, "build_honbuto_exterior.py"), encoding="utf-8").read(), globals())
+
+IN_COL = "05_本部棟_内装"
+CEIL = 3.0          # 天井の高さ（床から）
+WALL_T = 0.12       # 間仕切りの厚さ
+
+
+def floor_z(f):
+    return FL[f]        # 外観スクリプトの階の高さの表（教室棟に合わせた）
+
+
+# ---------- マテリアル ----------
+IM = dict(
+    part=mat("内装_間仕切り", (0.86, 0.86, 0.85), 0.5),
+    partglass=mat("内装_間仕切りのすりガラス", (0.78, 0.83, 0.85), 0.1, alpha=0.5),
+    floor=mat("内装_床", (0.42, 0.42, 0.41), 0.8),
+    ceil=mat("内装_天井", (0.9, 0.9, 0.89), 0.8),
+    core=mat("内装_コアの壁", (0.88, 0.87, 0.85), 0.6),
+    col=mat("内装_柱", (0.9, 0.9, 0.89), 0.5),
+    door=mat("内装_ドア", (0.88, 0.88, 0.87), 0.4),
+    doorglass=mat("内装_ドアのガラス", (0.6, 0.66, 0.68), 0.05, alpha=0.4),
+    evdoor=mat("内装_エレベーター扉", (0.62, 0.63, 0.64), 0.3, 0.8),
+    sign=mat("内装_番号札_黒", (0.02, 0.02, 0.025), 0.4),
+    signtext=mat("内装_番号札_文字", (0.95, 0.95, 0.95), 0.4),
+)
+MAT.update(IM)
+
+# ---------- 準備 ----------
+icol = bpy.data.collections.get(IN_COL)
+if icol is None:
+    icol = bpy.data.collections.new(IN_COL)
+    scene.collection.children.link(icol)
+for o in list(bpy.data.objects):
+    if o.get("本部棟_内装_gen"):
+        me = o.data
+        bpy.data.objects.remove(o)
+        if me is not None and me.users == 0:
+            bpy.data.meshes.remove(me)
+
+
+def build_in(mb, name):
+    o = mb.build(name)
+    del o["本部棟_gen"]
+    o["本部棟_内装_gen"] = True
+    col.objects.unlink(o)
+    icol.objects.link(o)
+    return o
+
+
+# 文字（番号）をメッシュにして MB に足す（標準フォントには日本語がないので、札の文字は英数字にする）
+_font_cache = {}
+
+
+def text_mesh(s):
+    if s in _font_cache:
+        return _font_cache[s]
+    cu = bpy.data.curves.new("_tmp_txt", 'FONT')
+    cu.body = s
+    cu.size = 1.0
+    cu.resolution_u = 2
+    cu.align_x = 'CENTER'
+    cu.align_y = 'CENTER'
+    ob = bpy.data.objects.new("_tmp_txt", cu)
+    scene.collection.objects.link(ob)
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = ob.evaluated_get(dg)
+    me = ev.to_mesh()
+    vs = [tuple(v.co) for v in me.vertices]
+    fs = [tuple(p.vertices) for p in me.polygons]
+    ev.to_mesh_clear()
+    bpy.data.objects.remove(ob)
+    bpy.data.curves.remove(cu)
+    _font_cache[s] = (vs, fs)
+    return vs, fs
+
+
+def add_text(mb, s, center, normal, size, key="signtext"):
+    """center に、normal の向きに向いた文字を置く"""
+    vs, fs = text_mesh(s)
+    nx, ny = normal
+    rx, ry = -ny, nx            # 見る人から見て右
+    cx, cy, cz = center
+    base = len(mb.v)
+    for x, y, _ in vs:
+        mb.v.append((cx + rx * x * size + nx * 0.005, cy + ry * x * size + ny * 0.005, cz + y * size))
+    for f in fs:
+        mb.f.append(tuple(base + i for i in f))
+        mb.mi.append(mb._m(key))
+
+
+# ---------- 平面の範囲（建物の座標） ----------
+TR = (34.6, 54.7, -31.1, 14.3)       # 高層棟＋中央棟（研究室・教室のメインの四角）
+WING = (-1.8, 34.6, -0.4, 14.3)      # 低層棟（交流棟側の翼）
+TOP = (34.6, 54.7, -31.1, -4.9)      # 10〜14F（高層棟だけ）
+
+
+def wall(mb, x0, x1, y0, y1, z, key="part"):
+    """間仕切り：下の白いパネル・目の高さのすりガラス・上の白、の 3 段（面を分けて色で表す）"""
+    for zl, zh, k in ((z, z + 1.0, key), (z + 1.0, z + 2.5, "partglass"), (z + 2.5, z + CEIL, key)):
+        mb.box(x0, x1, y0, y1, zl, zh, k, skip=(0, 1))
+
+
+def room(mb, r, z, area, label=None, door=None):
+    """r=(x0,x1,y0,y1) の部屋。外壁に面した辺には壁を作らない。door=(辺, 位置0〜1)"""
+    x0, x1, y0, y1 = r
+    ax0, ax1, ay0, ay1 = area
+    t = WALL_T / 2
+    sides = {
+        "-y": (abs(y0 - ay0) > 0.3, lambda: wall(mb, x0, x1, y0 - t, y0 + t, z)),
+        "+y": (abs(y1 - ay1) > 0.3, lambda: wall(mb, x0, x1, y1 - t, y1 + t, z)),
+        "-x": (abs(x0 - ax0) > 0.3, lambda: wall(mb, x0 - t, x0 + t, y0, y1, z)),
+        "+x": (abs(x1 - ax1) > 0.3, lambda: wall(mb, x1 - t, x1 + t, y0, y1, z)),
+    }
+    for k, (inner, fn) in sides.items():
+        if inner:
+            fn()
+    if label is None:
+        return
+    # ドアのある辺（指定がなければ、部屋の内側の辺のうち建物の真ん中に近い方）
+    if door is None:
+        cx, cy = (ax0 + ax1) / 2, (ay0 + ay1) / 2
+        rx, ry = (x0 + x1) / 2, (y0 + y1) / 2
+        cand = [k for k, (inner, _) in sides.items() if inner]
+        if not cand:
+            return
+        dirs = {"-y": (0, -1), "+y": (0, 1), "-x": (-1, 0), "+x": (1, 0)}
+        door = (max(cand, key=lambda k: dirs[k][0] * (cx - rx) + dirs[k][1] * (cy - ry)), 0.8)
+    side, p = door
+    n = {"-y": (0, -1), "+y": (0, 1), "-x": (-1, 0), "+x": (1, 0)}[side]
+    if side in ("-y", "+y"):
+        wy = (y0 if side == "-y" else y1) + n[1] * (t + 0.01)
+        dx = x0 + (x1 - x0) * p
+        mb.box(dx - 0.5, dx + 0.5, wy - 0.01, wy + 0.01, z, z + 2.3, "door")
+        mb.box(dx - 0.38, dx + 0.38, wy - 0.015, wy + 0.015, z + 0.9, z + 2.1, "doorglass")
+        sx = dx - 0.75
+        mb.box(sx - 0.14, sx + 0.14, wy - 0.012, wy + 0.012, z, z + 2.6, "sign")
+        add_text(mb, label, (sx, wy + n[1] * 0.015, z + 2.1), n, 0.08 if len(label) > 4 else 0.105)
+    else:
+        wx = (x0 if side == "-x" else x1) + n[0] * (t + 0.01)
+        dy = y0 + (y1 - y0) * p
+        mb.box(wx - 0.01, wx + 0.01, dy - 0.5, dy + 0.5, z, z + 2.3, "door")
+        mb.box(wx - 0.015, wx + 0.015, dy - 0.38, dy + 0.38, z + 0.9, z + 2.1, "doorglass")
+        sy = dy - 0.75
+        mb.box(wx - 0.012, wx + 0.012, sy - 0.14, sy + 0.14, z, z + 2.6, "sign")
+        add_text(mb, label, (wx + n[0] * 0.015, sy, z + 2.1), n, 0.08 if len(label) > 4 else 0.105)
+
+
+def split(a, b, n):
+    return [(a + (b - a) * i / n, a + (b - a) * (i + 1) / n) for i in range(n)]
+
+
+# ---------- 階ごとの間取り ----------
+def plan_classroom(f):
+    """3・4F：教室"""
+    R = []
+    if f == 3:
+        for (xa, xb), no in zip([(48.0, 54.7), (42.5, 48.0), (34.6, 42.5)], ("2301", "2302", "2303")):
+            R.append((TR, (xa, xb, -31.1, -22.5), no))
+        R.append((TR, (34.6, 43.0, 6.0, 14.3), "2304"))
+        R.append((TR, (28.0, 34.6, 7.5, 14.3), "2305"))
+        R.append((TR, (28.0, 34.6, 1.0, 7.5), "2306"))
+    else:
+        for (xa, xb), no in zip(split(34.6, 54.7, 3), ("2401", "2402", "2403")):
+            R.append((TR, (xa, xb, 6.0, 14.3), no))
+        for (ya, yb), no in zip(split(-20.0, 4.0, 4)[::-1], ("2404", "2405", "2406", "2407")):
+            R.append((TR, (50.0, 54.7, ya, yb), no))
+        R.append((TR, (50.0, 54.7, -27.0, -20.0), "Global"))
+        R.append((TR, (34.6, 41.0, -31.1, -25.0), "2408"))
+        R.append((TR, (28.0, 34.6, 7.0, 14.3), "Multi"))
+        R.append((TR, (28.0, 34.6, -0.4, 6.5), "Faculty"))
+    return R
+
+
+def plan_lab(f):
+    """5〜9F：研究室・実験室とオープンラボ"""
+    p = "%02d" % f
+    R = []
+    for (ya, yb), no in zip(split(-31.1, -19.0, 3), ("K01", "K02", "K03")):
+        R.append((TR, (50.5, 54.7, ya, yb), p + no))
+    for (ya, yb), no in zip(split(-15.5, 14.3, 5), ("K06", "K08", "K10", "K11", "K13")):
+        R.append((TR, (50.5, 54.7, ya, yb), p + no))
+    for (xa, xb), no in zip(split(34.6, 50.5, 3), ("F01", "G01", "H01")):
+        R.append((TR, (xa, xb, -31.1, -26.5), p + no))
+    for (xa, xb), no in zip(split(34.6, 50.5, 3), ("I12", "H12", "F12")):
+        R.append((TR, (xa, xb, 10.0, 14.3), p + no))
+    for (xa, xb), no in zip(split(38.0, 49.0, 3), ("I10", "H10", "G10")):
+        R.append((TR, (xa, xb, 5.5, 8.5), p + no))
+    R.append((TR, (38.0, 43.5, 2.5, 5.5), "Prep"))
+    R.append((TR, (43.5, 49.0, 2.5, 5.5), p + "G09"))
+    R.append((TR, (28.0, 34.6, 7.5, 14.3), p + "A09"))
+    R.append((TR, (28.0, 34.6, 1.0, 7.5), p + "A08"))
+    # 低層棟：真ん中の廊下の両側に研究室
+    top = floor_z(f) + CEIL <= MB_BY["L"]["zt"] - 2.4
+    if top:
+        for i, (xa, xb) in enumerate(split(-1.8, 26.0, 6)):
+            R.append((WING, (xa, xb, 8.3, 14.3), p + "B%02d" % (i * 2 + 1)))
+            R.append((WING, (xa, xb, -0.4, 5.6), p + "B%02d" % (i * 2 + 2)))
+    return R
+
+
+def plan_top(f):
+    """10〜14F：高層棟だけ"""
+    R = []
+    if f == 10:
+        names = ["Lab %d" % i for i in range(1, 13)]
+    else:
+        names = ["%d%02d" % (f, i) for i in range(1, 13)]
+    ys = split(-31.1, -11.0, 4)
+    for (ya, yb), no in zip(ys, names[0:4]):
+        R.append((TOP, (50.5, 54.7, ya, yb), no))
+    for (ya, yb), no in zip(ys, names[4:8]):
+        R.append((TOP, (34.6, 38.8, ya, yb), no))
+    R.append((TOP, (41.0, 48.0, -20.0, -15.5), "Meeting 1" if f == 10 else names[8]))
+    R.append((TOP, (41.0, 48.0, -24.5, -20.0), "Meeting 2" if f == 10 else names[9]))
+    R.append((TOP, (40.0, 50.0, -31.1, -27.0), "Incubation" if f == 10 else names[10]))
+    return R
+
+
+def floors():
+    for f in range(3, 15):
+        if f <= 4:
+            yield f, "教室", plan_classroom(f)
+        elif f <= 9:
+            yield f, "研究室", plan_lab(f)
+        else:
+            yield f, "上層", plan_top(f)
+
+
+# ---------- エレベーター・コア ----------
+EV_B = dict(x=(37.0, 45.0), y=(-9.0, -6.3), face=+1, letter="B", stops="14|10·4·1")
+EV_A = dict(x=(37.0, 45.0), y=(-1.2, 1.5), face=-1, letter="A", stops="9|2·1")
+
+
+def elevators(mb, ev, z):
+    x0, x1 = ev["x"]
+    y0, y1 = ev["y"]
+    mb.box(x0, x1, y0, y1, z, z + CEIL, "core", skip=(0, 1))
+    wy = y1 if ev["face"] > 0 else y0
+    n = (0, ev["face"])
+    for c in split(x0, x1, 3):
+        cx = (c[0] + c[1]) / 2
+        mb.box(cx - 0.55, cx + 0.55, wy - 0.02, wy + 0.02, z, z + 2.3, "evdoor")
+        sx = cx + 0.8
+        mb.box(sx - 0.1, sx + 0.1, wy - 0.025, wy + 0.025, z, z + 2.6, "sign")
+        add_text(mb, ev["letter"], (sx, wy + n[1] * 0.03, z + 2.35), n, 0.14)
+
+
+def core(mb, f, z):
+    elevators(mb, EV_B, z)
+    if f <= 9:
+        elevators(mb, EV_A, z)
+    # 階段・トイレのかたまり
+    y1 = 1.5 if f <= 9 else -4.9
+    mb.box(45.5, 49.5, -9.0, y1, z, z + CEIL, "core", skip=(0, 1))
+    # 階の大きな数字（エレベーターホールの壁）
+    add_text(mb, str(f), (45.5 - 0.01, -4.0, z + 1.6), (-1, 0), 0.9, key="sign")
+
+
+# ---------- 柱 ----------
+COLS_TR = [(x, y) for x in (41.3, 48.0) for y in (-23.0, -15.5, 11.5)]
+COLS_WING = [(x, y) for x in (4.5, 11.0, 17.5, 24.0) for y in (2.0, 12.0)]
+
+
+def columns(mb, f, z):
+    pts = list(COLS_TR)
+    if f <= 9:
+        pts += [(x, y) for x, y in COLS_WING if not (f >= 5 and (y < 5.6 or y > 8.3))] if f <= 4 else []
+    if f >= 10:
+        pts = [(x, y) for x, y in pts if y < -4.9]
+    for x, y in pts:
+        mb.box(x - 0.45, x + 0.45, y - 0.45, y + 0.45, z, z + CEIL, "col", skip=(0, 1))
+
+
+# ---------- 床と天井（その階にある棟ごと） ----------
+def slabs(mb, z):
+    for m in MASSES:
+        if m["kind"] not in ("louver", "white"):
+            continue
+        if not (m["zb"] - 0.01 <= z and z + CEIL <= m["zt"] - (2.4 if m["kind"] == "louver" else 0.5)):
+            continue
+        x0, x1, y0, y1 = rect(m, z + 1.0)
+        e = 0.06
+        mb.face([(x0 + e, y0 + e, z + 0.02), (x1 - e, y0 + e, z + 0.02), (x1 - e, y1 - e, z + 0.02), (x0 + e, y1 - e, z + 0.02)], "floor")
+        mb.face([(x0 + e, y0 + e, z + CEIL), (x0 + e, y1 - e, z + CEIL), (x1 - e, y1 - e, z + CEIL), (x1 - e, y0 + e, z + CEIL)], "ceil")
+
+
+# ---------- 組み立て ----------
+for f, kind, rooms in floors():
+    z = floor_z(f)
+    mb = MB()
+    slabs(mb, z)
+    for area, r, label in rooms:
+        room(mb, r, z, area, label)
+    core(mb, f, z)
+    columns(mb, f, z)
+    o = build_in(mb, "本部棟内装_%02dF_%s" % (f, kind))
+
+total_in = sum(len(o.data.vertices) for o in icol.all_objects if o.type == 'MESH')
+total_out = sum(len(o.data.vertices) for o in col.all_objects if o.type == 'MESH')
+print("本部棟 内装 DONE verts", total_in, "外観", total_out)
