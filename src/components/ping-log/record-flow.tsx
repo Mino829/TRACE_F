@@ -25,6 +25,7 @@ import {
   type PhotoMeta,
 } from "@/lib/ping-log/record";
 import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
+import { dropPromptFromUrl } from "@/lib/ping-log/url";
 
 import { CampusPlan } from "./campus-plan";
 import { ClearTitle, Confetti } from "./clear-screen";
@@ -132,7 +133,7 @@ export function RecordFlow({ kind, promptedAt, subscribed, nextPingAt, todayCoun
   // The phone's back button steps back through the flow, and leaves it from the first step.
   useEffect(() => {
     // Drop the notification's ?prompt= from the entry underneath, so going back does not reopen an answered ping.
-    if (window.location.search) window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    dropPromptFromUrl();
     if (window.location.hash !== RECORD_HASH) window.history.pushState(null, "", RECORD_HASH);
     const onPop = () => {
       if (closing.current) return;

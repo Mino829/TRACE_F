@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { DotGothic16, Press_Start_2P } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_JP } from "next/font/google";
 
 import { PingLogClient } from "@/components/ping-log/ping-log-client";
 
 import "./log.css";
 
-/** Pixel type throughout: DotGothic16 for Japanese, Press Start 2P for Latin labels and digits. */
-const pixel = Press_Start_2P({ weight: "400", subsets: ["latin"], variable: "--font-pixel", display: "swap" });
-const dot = DotGothic16({ weight: "400", subsets: ["latin"], variable: "--font-dot", display: "swap" });
+/** RAY, on both screens: Noto Sans JP for Japanese, Geist for Latin, Geist Mono for the readouts. */
+const rayJp = Noto_Sans_JP({ subsets: ["latin"], variable: "--font-ray-jp", display: "swap", preload: false });
+const rayLatin = Geist({ subsets: ["latin"], variable: "--font-ray-latin", display: "swap" });
+const rayMono = Geist_Mono({ subsets: ["latin"], variable: "--font-ray-mono", display: "swap" });
 
 /** Prototype: the participant's photo memory, and behind it the developer screen's accuracy test. */
 export const metadata: Metadata = {
@@ -19,13 +20,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1b2150",
+  themeColor: "#d3d5d3",
   viewportFit: "cover",
 };
 
 export default function LogPage() {
   return (
-    <div className={`px-root ${pixel.variable} ${dot.variable}`}>
+    <div className={`${rayJp.variable} ${rayLatin.variable} ${rayMono.variable}`}>
       <PingLogClient />
     </div>
   );
