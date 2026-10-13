@@ -8,7 +8,7 @@
     "deploy": "node scripts/wrangler.mjs deploy",
     "vapid": "node scripts/generate-vapid.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --experimental-strip-types --test test/*.test.mjs",
     "deploy:site": "node scripts/wrangler.mjs deploy --config site.wrangler.jsonc",
     "release": "node scripts/release.mjs"
   },

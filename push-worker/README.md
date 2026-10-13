@@ -14,7 +14,7 @@ Cloudflare アカウントを誰が運用するかは、チームで相談中で
 | 名前 | 中身 | 設定ファイル |
 |---|---|---|
 | `trace-push` | 通知サーバー（このフォルダの `src/`） | `wrangler.jsonc` |
-| `trace-log` | `/log` のページ本体（Next の静的書き出し `../out`） | `site.wrangler.jsonc` |
+| `trace-log` | `/` と `/log` の静的ページ、参加者APIのGo中継 | `site.wrangler.jsonc` / `src/site.ts` |
 
 保存先は次のとおりです。
 
@@ -77,6 +77,15 @@ NEXT_STATIC_EXPORT=1 NEXT_PUBLIC_PUSH_API_URL=https://trace-push.<サブドメ�
 ```bash
 npm run deploy:site
 ```
+
+参加者画面のAPI中継を使う場合、`trace-log`側へ`TRACE_BACKEND_URL`（Go APIのHTTPSオリジン）と`TRACE_EDGE_SHARED_SECRET`（Go側と同じ32バイト以上の値）をsecretとして設定します。設定されるまで`/api/backend/*`は503を返し、静的ページだけが表示されます。`trace-push`のVAPID secretとは別です。
+
+```bash
+npm run wrangler -- secret put TRACE_BACKEND_URL --config site.wrangler.jsonc
+npm run wrangler -- secret put TRACE_EDGE_SHARED_SECRET --config site.wrangler.jsonc
+```
+
+既存のGo stagingはIAM認証で保護され、共有ヘッダーだけでは呼べません。IAM設定や参加受付の公開を変更する前に、[Go側の接続条件](https://github.com/Mino829/TRACE_B/blob/main/docs/cloudflare-origin.md)を確認してください。このリンクはバックエンド側PRのマージ後に有効になります。
 
 通知サーバーを更新するとき（`src/` や `wrangler.jsonc` を変えたとき）だけ、次を実行します。
 
