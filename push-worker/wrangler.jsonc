@@ -16,19 +16,19 @@
 			"binding": "DB",
 			"database_name": "trace-log",
 			"migrations_dir": "migrations",
-			"database_id": "05af7ee1-5901-44df-9a0b-98e13ae3639a"
+			"database_id": "4aba91bf-37d0-45f6-b566-6de757ce2586"
 		}
 	],
 	// Photos only.
 	"kv_namespaces": [
 		{
 			"binding": "LOG_KV",
-			"id": "cfe82ae96bd34adf8ac28c65468fb26f"
+			"id": "f35d5eb4f1134b1ca9a5fa9978d5eb41"
 		}
 	],
 	"vars": {
 		// Origins the web app is opened from; add the deployed one here.
-		"ALLOWED_ORIGINS": "http://localhost:3000,https://trace-log.uni11260609.workers.dev,https://trace-eight-zeta.vercel.app"
+		"ALLOWED_ORIGINS": "http://localhost:3000,https://trace-log.async5855.workers.dev"
 	},
 	// VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK and VAPID_SUBJECT are secrets: `npm run wrangler -- secret put <NAME>`.
 	"observability": {
