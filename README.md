@@ -26,8 +26,10 @@ npm run dev:local
 
 静的アセットはsecretなしでも配信できますが、参加者APIは503で閉じます。`trace-push`のD1/KVやWeb Pushのsecretとは別に管理してください。
 
+`/log`の通知と記録は、ビルド時の`NEXT_PUBLIC_PUSH_API_URL`が指す`trace-push`を使います。付けずにビルドすると、`/log`の通知と記録が使えません。
+
 ```sh
-NEXT_STATIC_EXPORT=1 npm run build
+NEXT_STATIC_EXPORT=1 NEXT_PUBLIC_PUSH_API_URL=https://trace-push.async5855.workers.dev npm run build
 cd push-worker
 npm run deploy:site
 ```
