@@ -8,7 +8,13 @@ import dynamic from "next/dynamic";
  */
 const PingLogScreen = dynamic(() => import("./ping-log-screen").then((module) => module.PingLogScreen), {
   ssr: false,
-  loading: () => <main><p>読み込んでいます…</p></main>,
+  loading: () => (
+    <main className="grid min-h-dvh place-items-center bg-(--px-navy)">
+      <p className="px-pixel px-outlined text-[12px]">
+        LOADING<span className="px-blink">_</span>
+      </p>
+    </main>
+  ),
 });
 
 export function PingLogClient() {

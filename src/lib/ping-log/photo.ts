@@ -5,11 +5,13 @@ const MAX_PHOTO_EDGE = 1280;
 
 /**
  * Phone photos are several MB; keep a JPEG small enough to send over a campus
- * connection, and keep what the original said about itself before the
- * re-encode throws it away.
+ * connection. The re-encode drops the original's EXIF from the JPEG. An
+ * accuracy run keeps what the EXIF said in the record, read before it is
+ * lost; a participant's photo leaves it behind entirely (FR-022), so pass
+ * `{ exif: false }` for those.
  */
-export async function preparePhoto(file: File): Promise<{ blob: Blob; meta: PhotoMeta }> {
-  const exif = await readExif(file);
+export async function preparePhoto(file: File, { exif: keepExif = true }: { exif?: boolean } = {}): Promise<{ blob: Blob; meta: PhotoMeta }> {
+  const exif = keepExif ? await readExif(file) : null;
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => createImageBitmap(file));
   const meta: PhotoMeta = { type: file.type, bytes: file.size, width: bitmap.width, height: bitmap.height, lastModified: file.lastModified, exif };
   const scale = Math.min(1, MAX_PHOTO_EDGE / Math.max(bitmap.width, bitmap.height));

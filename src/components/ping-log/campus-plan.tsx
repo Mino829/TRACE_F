@@ -16,6 +16,8 @@ import {
 } from "@/lib/geo/campus-georeference";
 import { buildings } from "@/lib/map/buildings";
 
+import { PixelSprite } from "./pixel-sprite";
+
 /**
  * The Toyosu campus as one pannable, pinchable drawing, for pointing at where
  * you stand.
@@ -37,7 +39,7 @@ const WALLS_FROM_SCALE = 0.28;
 const TAP_SLOP_PX = 8;
 const TAP_MS = 600;
 const EDGE_PAD_PX = 22;
-const TOOL_BUTTON = "rounded-full border border-neutral-300 bg-white/90 px-3 py-1 text-xs text-neutral-900 disabled:opacity-40";
+const TOOL_BUTTON = "min-h-10 min-w-10 border-3 border-(--px-ink) bg-(--px-navy) px-2.5 text-[14px] text-(--px-ink) shadow-[0_0_0_3px_var(--px-k)] active:translate-y-px focus-visible:outline-3 focus-visible:outline-(--px-focus)";
 
 interface View {
   scale: number;
@@ -64,9 +66,12 @@ function turn(dx: number, dy: number, degrees: number) {
 }
 
 interface Props {
+  /** Sizes the drawing; the parent decides how much of the screen it gets. */
+  className?: string;
   level: number;
   mark: CampusPx | null;
-  onMarkChange: (px: CampusPx) => void;
+  /** Also gets the zoom the mark was placed at, as a measure of how fine the claim is. */
+  onMarkChange: (px: CampusPx, viewScale: number) => void;
   /** The phone's own fix. Left out on the participant screen, where it would pull the mark towards itself. */
   me: CampusPx | null;
   meAccuracyMetres: number | null;
@@ -140,7 +145,7 @@ const HULL_POINTS = GEOFENCE_HULL.map((vertex) => {
   return `${px.x.toFixed(1)},${px.y.toFixed(1)}`;
 }).join(" ");
 
-export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: Props) {
+export function CampusPlan({ className, level, mark, onMarkChange, me, meAccuracyMetres }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const tap = useRef<{ x: number; y: number; at: number; moved: boolean } | null>(null);
@@ -311,10 +316,13 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
     if (!candidate || candidate.moved || pointers.current.size > 0) return;
     if (Date.now() - candidate.at > TAP_MS || distance(point, candidate) > TAP_SLOP_PX) return;
     const sheet = sheetOf(point);
-    onMarkChange({
-      x: Math.min(CAMPUS_SHEET.x + CAMPUS_SHEET.width, Math.max(CAMPUS_SHEET.x, sheet.x)),
-      y: Math.min(CAMPUS_SHEET.y + CAMPUS_SHEET.height, Math.max(CAMPUS_SHEET.y, sheet.y)),
-    });
+    onMarkChange(
+      {
+        x: Math.min(CAMPUS_SHEET.x + CAMPUS_SHEET.width, Math.max(CAMPUS_SHEET.x, sheet.x)),
+        y: Math.min(CAMPUS_SHEET.y + CAMPUS_SHEET.height, Math.max(CAMPUS_SHEET.y, sheet.y)),
+      },
+      view.scale,
+    );
   };
 
   /** A marker off the viewport is pinned to the edge it left by, with how far away it is. */
@@ -336,12 +344,12 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
   const mePin = me ? pin(me) : null;
   const markPin = mark ? pin(mark) : null;
   const accuracyPx = meAccuracyMetres === null ? null : meAccuracyMetres / METRES_PER_PLAN_PX;
-  const chipBase = "absolute whitespace-nowrap rounded-full bg-neutral-900/90 px-2 font-mono text-[10px] leading-5 text-white";
+  const chipBase = "absolute whitespace-nowrap bg-(--px-navy) px-2 text-[12px] leading-6 text-(--px-ink) shadow-[0_0_0_2px_var(--px-k)]";
 
   return (
-    <div className="space-y-2">
+    <div className={className ?? "h-[min(56vh,480px)]"}>
       <div
-        className="relative h-[min(56vh,480px)] cursor-crosshair touch-none overflow-hidden overscroll-contain rounded-md border border-neutral-300 bg-neutral-100 select-none dark:border-neutral-700"
+        className="relative h-full cursor-crosshair touch-none overflow-hidden overscroll-contain bg-[#dfe6f5] select-none"
         ref={viewport}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -364,12 +372,12 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
             viewBox={`${CAMPUS_SHEET.x} ${CAMPUS_SHEET.y} ${CAMPUS_SHEET.width} ${CAMPUS_SHEET.height}`}
             aria-hidden="true"
           >
-            <polygon points={HULL_POINTS} fill="none" stroke="rgba(0,0,0,.3)" strokeWidth={1.5} strokeDasharray="10 8" vectorEffect="non-scaling-stroke" />
+            <polygon points={HULL_POINTS} fill="none" stroke="rgba(56,65,143,.85)" strokeWidth={2} strokeDasharray="9 6" vectorEffect="non-scaling-stroke" />
             {plates.map((plate) => (
               <polygon
                 key={plate.id}
                 points={plate.outline}
-                fill={plate.ghost ? "rgba(255,255,255,.5)" : "#fff"}
+                fill={plate.ghost ? "rgba(255,255,255,.5)" : "#ffffff"}
                 stroke={plate.ghost ? "rgba(0,0,0,.15)" : "rgba(0,0,0,.5)"}
                 strokeWidth={1.4}
                 vectorEffect="non-scaling-stroke"
@@ -394,7 +402,7 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
                   <path key={plate.id} d={plate.walls} fill="none" stroke="rgba(38,38,38,.85)" strokeWidth={1.1} strokeLinecap="square" vectorEffect="non-scaling-stroke" />
                 ))}
             {me && accuracyPx !== null && (
-              <circle cx={me.x} cy={me.y} r={accuracyPx} fill="rgba(0,0,0,.08)" stroke="rgba(0,0,0,.35)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+              <circle cx={me.x} cy={me.y} r={accuracyPx} fill="rgba(103,232,249,.22)" stroke="#1b2150" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
             )}
             {/* Labels only where there is room; the plates overlap. */}
             {plates
@@ -405,7 +413,7 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
                   x={plate.rect.x + plate.rect.width / 2}
                   y={plate.rect.y + plate.rect.height / 2}
                   fontSize={12 / view.scale}
-                  fill="rgba(0,0,0,.45)"
+                  fill="rgba(27,33,80,.6)"
                   fontWeight={700}
                   textAnchor="middle"
                   transform={`rotate(${-degrees} ${plate.rect.x + plate.rect.width / 2} ${plate.rect.y + plate.rect.height / 2})`}
@@ -414,7 +422,7 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
           </svg>
         </div>
 
-        <div className="absolute right-2 bottom-2 left-2 z-10 flex flex-wrap items-center gap-1.5" onPointerDown={(event) => event.stopPropagation()}>
+        <div className="absolute right-3 bottom-3 left-3 z-10 flex flex-wrap items-center gap-2.5" onPointerDown={(event) => event.stopPropagation()}>
           <button className={TOOL_BUTTON} type="button" onClick={() => zoomAbout(1 / 1.6, { x: size.width / 2, y: size.height / 2 })} aria-label="縮小">−</button>
           <button className={TOOL_BUTTON} type="button" onClick={() => zoomAbout(1.6, { x: size.width / 2, y: size.height / 2 })} aria-label="拡大">＋</button>
           <button
@@ -430,17 +438,17 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
           {me && <button className={TOOL_BUTTON} type="button" onClick={() => centreOn(me)}>測った位置</button>}
         </div>
 
-        <div className="pointer-events-none absolute top-2.5 right-2.5 grid size-8 place-items-center rounded-full border border-neutral-300 bg-white/80" aria-hidden="true">
+        <div className="pointer-events-none absolute top-3 right-3 grid size-10 place-items-center border-3 border-(--px-ink) bg-(--px-navy) shadow-[0_0_0_3px_var(--px-k)]" aria-hidden="true">
           <svg viewBox="-14 -14 28 28" className="absolute size-6" style={{ transform: `rotate(${degrees - NORTH_BEARING_DEG}deg)` }}>
-            <line x1="0" y1="10" x2="0" y2="-9" stroke="rgba(0,0,0,.45)" strokeWidth={1.5} />
-            <polygon points="0,-13 4,-5 -4,-5" fill="#171717" />
+            <line x1="0" y1="10" x2="0" y2="-9" stroke="#c3c8ec" strokeWidth={2} />
+            <polygon points="0,-13 4,-5 -4,-5" fill="#ff7a8a" />
           </svg>
-          <span className="absolute bottom-px font-sans text-[8px] font-bold text-neutral-500">N</span>
+          <span className="px-pixel absolute bottom-0 text-[6px] text-(--px-ink)">N</span>
         </div>
 
         {mePin && (
           <div className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2" style={{ left: mePin.x, top: mePin.y }}>
-            <span className={`block size-3.5 border-2 border-white bg-neutral-500 shadow ${mePin.off ? "rotate-45 rounded-sm" : "rounded-full"}`} />
+            <span className={`block size-3.5 border-2 border-(--px-k) bg-(--px-cyan) ${mePin.off ? "rotate-45" : ""}`} />
             {mePin.off && (
               <span className={`${chipBase} ${mePin.chip}`}>
                 測った位置 {mePin.metres < 1000 ? `${Math.round(mePin.metres)}m` : `${(mePin.metres / 1000).toFixed(1)}km`}
@@ -449,21 +457,18 @@ export function CampusPlan({ level, mark, onMarkChange, me, meAccuracyMetres }: 
           </div>
         )}
 
-        {markPin && (
-          <div className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2" style={{ left: markPin.x, top: markPin.y }}>
-            <svg width="46" height="46" viewBox="-23 -23 46 46" className={`block overflow-visible ${markPin.off ? "opacity-50" : ""}`} aria-hidden="true">
-              <line x1="0" y1="-21" x2="0" y2="21" stroke="#171717" strokeWidth={1.6} />
-              <line x1="-21" y1="0" x2="21" y2="0" stroke="#171717" strokeWidth={1.6} />
-              <circle cx="0" cy="0" r="6" stroke="#171717" strokeWidth={1.6} fill="none" />
-            </svg>
+        {markPin && mark && (
+          // The pixel pin, its tip on the point. Pinned to the edge it turns about its middle, so it stays in view.
+          <div
+            className="pointer-events-none absolute"
+            style={{ left: markPin.x, top: markPin.y, transform: markPin.off ? "translate(-50%, -50%)" : "translate(-50%, -100%)" }}
+          >
+            {!markPin.off && <span className="absolute -bottom-1 left-1/2 block h-1.5 w-4 -translate-x-1/2 bg-[rgba(11,13,31,.35)]" />}
+            <PixelSprite key={`${mark.x}-${mark.y}`} name="pin" scale={3} className={`relative block ${markPin.off ? "opacity-60" : "px-drop"}`} />
             {markPin.off && <span className={`${chipBase} ${markPin.chip}`}>指した場所 {Math.round(markPin.metres)}m</span>}
           </div>
         )}
       </div>
-      <p className="text-xs text-neutral-500">
-        1本指で移動、2本指で拡大と縮小ができます。いまいる場所をタップしてください。
-        {me && "灰色の点はスマホが測った位置、円はその誤差の目安です。"}
-      </p>
     </div>
   );
 }

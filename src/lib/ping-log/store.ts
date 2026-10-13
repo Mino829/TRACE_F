@@ -14,7 +14,16 @@ export type LogEntry = {
   /** The shrunk JPEG, when a photo was attached. */
   photo: Blob | null;
   sentAt: string | null;
+  /**
+   * The backend's memory session a photo was taken in, when the backend is
+   * connected: the photo limit counts per session. Kept on the phone only; the
+   * push worker gets the record, not this.
+   */
+  memorySessionId?: string;
 };
+
+/** Where a saved entry ended up: with the worker, waiting here for a signal, or here only (no worker configured). */
+export type SaveOutcome = "sent" | "queued" | "local";
 
 const DB_NAME = "trace-ping-log";
 const STORE_NAME = "entries";

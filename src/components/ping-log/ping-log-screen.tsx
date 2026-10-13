@@ -1,47 +1,94 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
+import { captureOnce } from "@/lib/ping-log/capture";
+import { DEVELOPER_CONSENT_VERSION, clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
+import { networkInfo } from "@/lib/ping-log/context";
+import { pushSupport, type PushSupport } from "@/lib/ping-log/environment";
 import {
+  ACCURACY_PLAN,
   PUSH_API_URL,
+  REMINDER_PLAN,
   deviceId,
   dropExpired,
   forgetMe,
   sendTestPing,
   subscribe,
   subscriptionExpiresAt,
+  subscriptionPlan,
   unsubscribe,
   uploadEntry,
+  type PushPlan,
 } from "@/lib/ping-log/push";
-import { clearEntries, listEntries, putEntry, type LogEntry } from "@/lib/ping-log/store";
+import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
+import { clearEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
+import {
+  TRACE_API_URL,
+  TraceApiError,
+  createExperience,
+  deleteMemorySession,
+  fetchPublicConfig,
+  getExperience,
+  type PublicConfig,
+} from "@/lib/trace-api/client";
+import {
+  clearTabExperience,
+  loadTabExperience,
+  memoryDeleteKey,
+  saveTabExperience,
+  updateTabExperience,
+  type TabExperience,
+} from "@/lib/trace-api/session";
 
-import { ConsentView } from "./consent-view";
+import { SkipClear } from "./clear-screen";
+import { ConfirmDialog } from "./confirm-dialog";
+import { ConsentDialog } from "./consent-view";
 import { DeveloperView } from "./developer-view";
-import { RecordCard } from "./record-card";
-import { CARD, LINK, PRIMARY, SECONDARY, clock } from "./ui";
+import { HomeView } from "./home-view";
+import { HowToDialog } from "./how-to-play";
+import { MenuDialog, type MenuItem } from "./menu-dialog";
+import { PhotoFlow, type Shot } from "./photo-flow";
+import { PixelIcon } from "./pixel-icon";
+import { PixelScene, phaseAt } from "./pixel-scene";
+import { PixelSprite } from "./pixel-sprite";
+import { RecordFlow } from "./record-flow";
+import { StoryDemo } from "./story-demo";
+import { TitleView } from "./title-view";
+import { Sentences } from "./ui";
 
-const PING_INTERVAL_MINUTES = 10;
+/**
+ * /log has two faces.
+ *
+ * The participant screen (the default) shows the team what the finished
+ * photo memory would be like, following the work's documents:
+ *   1. the title screen: what the work is and one button;
+ *   2. consent, as a window over the dimmed page;
+ *   3. home: today's photos shown large, the camera button, and the optional reminder's switch;
+ *   4. the photo flow, full screen: a look at the photo, then the clear screen.
+ * A reminder that arrives shows on home with "写真を撮る" and "スキップ"; both
+ * end on the clear screen.
+ *
+ * With NEXT_PUBLIC_TRACE_API_URL set, agreeing also creates the experience on
+ * the work's backend (TRACE_B), and joining lasts as long as this tab keeps
+ * its credential: the photo limit comes from the backend's config and counts
+ * per memory session, the arrival screens show the backend's symbol, and
+ * "参加をやめる" deletes the memory session too. Photos, the arrival QR, the
+ * story and the reminder have no backend routes yet and stay on the phone and
+ * the push worker, as everything does when the variable is unset.
+ *
+ * The developer screen, behind the button left of the menu, is the team's
+ * accuracy test: the ten-minute ping answered by pointing at where one
+ * stands, the phone's records, and the demo of arriving at the venue.
+ * Visitors never use it.
+ */
+
 const PENDING_KEY = "trace-ping-pending";
 const VIEW_KEY = "trace-log-view";
-const OUTSIDE_KEY = "trace-allow-outside";
 const PROMPT_MESSAGE = "trace-ping";
 
 type View = "participant" | "developer";
-
-/** The ping waiting for an answer: from the notification that opened the page, or one left over from before. */
-function initialPending(): string | null {
-  const fromUrl = new URLSearchParams(window.location.search).get("prompt");
-  if (fromUrl && !Number.isNaN(Date.parse(fromUrl))) {
-    savePending(fromUrl);
-    return fromUrl;
-  }
-  return read(window.localStorage, PENDING_KEY);
-}
-
-function savePending(value: string | null): void {
-  write(window.localStorage, PENDING_KEY, value);
-}
+type AccuracyFlow = { kind: "ping" | "manual"; promptedAt: string | null };
 
 function read(storage: Storage, key: string): string | null {
   try {
@@ -60,47 +107,97 @@ function write(storage: Storage, key: string, value: string | null): void {
   }
 }
 
-function notificationState(): NotificationPermission | "unsupported" {
-  return typeof Notification === "undefined" || !("PushManager" in window) ? "unsupported" : Notification.permission;
-}
-
-/** The worker's cron fires on every tenth minute of the hour. */
-function nextPingAt(now: number): number {
-  const step = PING_INTERVAL_MINUTES * 60 * 1000;
-  return Math.floor(now / step) * step + step;
-}
-
 function isToday(value: string): boolean {
   return new Date(value).toDateString() === new Date().toDateString();
 }
 
+/** The notification waiting for an answer: from the one that opened the page, or one left from earlier today. */
+function initialPending(): string | null {
+  const fromUrl = new URLSearchParams(window.location.search).get("prompt");
+  if (fromUrl && !Number.isNaN(Date.parse(fromUrl))) {
+    write(window.localStorage, PENDING_KEY, fromUrl);
+    return fromUrl;
+  }
+  const stored = read(window.localStorage, PENDING_KEY);
+  return stored && isToday(stored) ? stored : null;
+}
+
+/** Consent from an earlier tab, but no credential in this one: the backend's experience cannot be picked up again. */
+function initialMessage(): string {
+  return TRACE_API_URL && loadConsent() && !loadTabExperience() ? "前の参加は、このタブでは続けられません。もう一度「はじめる」から参加してください。" : "";
+}
+
+function initialView(): View {
+  return read(window.localStorage, VIEW_KEY) === "developer" ? "developer" : "participant";
+}
+
+function notificationState(): NotificationPermission | "unsupported" {
+  return typeof Notification === "undefined" || !("PushManager" in window) ? "unsupported" : Notification.permission;
+}
+
+/** The worker pings on whole multiples of the interval, counted in minutes since the epoch. */
+function nextMark(now: number, intervalMinutes: number): number {
+  const step = intervalMinutes * 60 * 1000;
+  return Math.floor(now / step) * step + step;
+}
+
 export function PingLogScreen() {
-  // The participant screen is what opens by default; the developer screen lasts for this tab only.
-  const [view, setView] = useState<View>(() => (read(window.sessionStorage, VIEW_KEY) === "developer" ? "developer" : "participant"));
+  // The developer screen stays until it is switched back, through reloads and notification launches.
+  const [view, setView] = useState<View>(initialView);
   const [consent, setConsent] = useState<Consent | null>(loadConsent);
-  const [readingConsent, setReadingConsent] = useState(false);
+  // Opened from the title screen's button, once the person has seen what this is.
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [howToOpen, setHowToOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [support] = useState<PushSupport>(pushSupport);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(subscriptionExpiresAt);
+  const [plan, setPlan] = useState<PushPlan>(subscriptionPlan);
   const [pendingAt, setPendingAt] = useState<string | null>(initialPending);
-  const [manual, setManual] = useState(false);
+  // On the developer screen a tapped notification opens the accuracy record straight away.
+  const [accuracyFlow, setAccuracyFlow] = useState<AccuracyFlow | null>(() => {
+    const pending = initialPending();
+    return pending && initialView() === "developer" ? { kind: "ping", promptedAt: pending } : null;
+  });
+  const [shot, setShot] = useState<Shot | null>(null);
+  const [skipCleared, setSkipCleared] = useState(false);
+  // The arrival demo and its first screen: 1 from the developer screen, 2 from the QR button on home.
+  const [demoStart, setDemoStart] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [permission, setPermission] = useState(notificationState);
   const [geolocation, setGeolocation] = useState<PermissionState | "unknown" | null>(null);
-  const [allowOutside, setAllowOutside] = useState(() => read(window.localStorage, OUTSIDE_KEY) === "1");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialMessage);
+  // The backend's side, while NEXT_PUBLIC_TRACE_API_URL is set.
+  const [traceConfig, setTraceConfig] = useState<PublicConfig | null>(null);
+  const [experience, setExperience] = useState<TabExperience | null>(() => (TRACE_API_URL ? loadTabExperience() : null));
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  // The reminder the camera was opened for, read when the photo comes back.
+  const cameraPromptRef = useRef<string | null>(null);
+  const viewRef = useRef(view);
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
 
   const prompt = useCallback((value: string | null) => {
-    savePending(value);
+    write(window.localStorage, PENDING_KEY, value);
     setPendingAt(value);
   }, []);
 
   /** Sends every record the worker has not acknowledged yet; the rest wait for the next try. */
   const sendUnsent = useCallback(async (): Promise<number> => {
-    if (!PUSH_API_URL) return 0;
     let failed = 0;
+    // Without a worker there is nothing to send, but a record just saved still has to show.
+    if (!PUSH_API_URL) {
+      setEntries(await listEntries());
+      return failed;
+    }
     for (const entry of (await listEntries()).filter((item) => !item.sentAt)) {
       try {
         await uploadEntry(entry);
@@ -115,7 +212,7 @@ export function PingLogScreen() {
 
   useEffect(() => {
     // The prompt is in localStorage now; a reload should not bring back an answered one.
-    if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
+    if (window.location.search) window.history.replaceState(null, "", window.location.pathname + window.location.hash);
     listEntries()
       .then((items) => {
         setEntries(items);
@@ -147,85 +244,218 @@ export function PingLogScreen() {
       })
       .catch(() => setMessage("通知の準備に失敗しました。"));
     const onMessage = (event: MessageEvent) => {
-      if (event.data?.type === PROMPT_MESSAGE) prompt(event.data.promptedAt);
+      if (event.data?.type !== PROMPT_MESSAGE) return;
+      prompt(event.data.promptedAt);
+      if (viewRef.current === "developer") setAccuracyFlow((current) => current ?? { kind: "ping", promptedAt: event.data.promptedAt });
     };
     navigator.serviceWorker.addEventListener("message", onMessage);
     return () => navigator.serviceWorker.removeEventListener("message", onMessage);
   }, [prompt, sendUnsent]);
 
+  // The backend's config and, after a reload, whether this tab's experience still stands.
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 15000);
+    if (!TRACE_API_URL) return;
+    // Fetched again on agreeing when this fails.
+    fetchPublicConfig().then(setTraceConfig, () => undefined);
+    const stored = loadTabExperience();
+    if (!stored) return;
+    getExperience(stored.experienceId, stored.memory)
+      .then((status) => setExperience(updateTabExperience(stored, status)))
+      .catch((error: unknown) => {
+        // Gone for good (deleted, or past its time); a lost signal keeps it.
+        if (!(error instanceof TraceApiError) || (error.status !== 401 && error.status !== 404)) return;
+        clearTabExperience();
+        setExperience(null);
+        setMessage(error.message);
+      });
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
   const subscribed = subscription !== null && (!expiresAt || Date.parse(expiresAt) > now);
+  const activePlan = subscribed ? plan : null;
+  const upcoming = activePlan ? nextMark(now, activePlan.intervalMinutes) : null;
+  // The subscription ends at midnight: after the day's last ping there is no next one.
+  const nextPingAt = upcoming !== null && (!expiresAt || upcoming < Date.parse(expiresAt)) ? upcoming : null;
+  const nextReminderAt = activePlan?.purpose === "photo" ? nextPingAt : null;
 
-  const run = async (task: () => Promise<void>) => {
+  // With the backend, joining lasts as long as this tab's memory session.
+  const sessionExpired = experience !== null && Date.parse(experience.expiresAt) <= now;
+  const joined = consent !== null && (!TRACE_API_URL || (experience !== null && !sessionExpired));
+  const memorySessionId = joined ? (experience?.memory.memorySessionId ?? null) : null;
+  const maxPhotos = (TRACE_API_URL && traceConfig?.photo.maxCount) || MAX_PHOTOS;
+
+  // This participation's photos: the memory session's with the backend, the day's without.
+  // Kept stable through the clock's ticks, so the photos' object URLs are not remade every second.
+  const day = new Date(now).toDateString();
+  const memoryPhotos = useMemo(
+    () =>
+      entries
+        .filter(
+          (entry) =>
+            purposeOf(entry.record) === "photo-memory" &&
+            (TRACE_API_URL ? memorySessionId !== null && entry.memorySessionId === memorySessionId : new Date(entry.record.takenAt).toDateString() === day),
+        )
+        .reverse(),
+    [entries, day, memorySessionId],
+  );
+  const todayAccuracy = entries.filter((entry) => purposeOf(entry.record) === "accuracy" && isToday(entry.record.takenAt)).length;
+
+  /**
+   * Runs a task behind the busy note; resolves to its error message, or null
+   * when it worked. A silent task leaves the error to its caller, to show next
+   * to the button that was pressed.
+   */
+  const run = async (task: () => Promise<void>, { silent = false } = {}): Promise<string | null> => {
     setBusy(true);
     setMessage("");
     try {
       await task();
+      return null;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "うまくいきませんでした。");
+      const text = error instanceof Error ? error.message : "うまくいきませんでした。";
+      if (!silent) setMessage(text);
+      return text;
     } finally {
       setBusy(false);
     }
   };
 
   const switchView = (next: View) => {
-    write(window.sessionStorage, VIEW_KEY, next === "developer" ? next : null);
+    write(window.localStorage, VIEW_KEY, next === "developer" ? next : null);
     setView(next);
     setMessage("");
   };
 
-  const agree = () => {
+  /** With the backend, the experience is created here, memory-only; joining waits until it exists. */
+  const agree = async () => {
+    if (TRACE_API_URL) {
+      setJoining(true);
+      setJoinError("");
+      try {
+        const config = traceConfig ?? (await fetchPublicConfig());
+        setTraceConfig(config);
+        if (!config.registrationOpen) throw new TraceApiError(503, "REGISTRATION_CLOSED", null);
+        const created = await createExperience(config);
+        const tab: TabExperience = { ...created, consentVersion: config.consent.version, createdAt: new Date().toISOString() };
+        saveTabExperience(tab);
+        setExperience(tab);
+      } catch (error) {
+        // The text changed on the server: read the new versions before the next try.
+        if (error instanceof TraceApiError && error.code === "CONSENT_VERSION_MISMATCH") fetchPublicConfig().then(setTraceConfig, () => setTraceConfig(null));
+        setJoinError(error instanceof Error ? error.message : "うまくいきませんでした。");
+        return;
+      } finally {
+        setJoining(false);
+      }
+    }
     setConsent(saveConsent());
+    setConsentOpen(false);
     setMessage("");
   };
 
-  const start = () => run(async () => {
-    if (!consent) return;
-    if (notificationState() === "unsupported") throw new Error("このブラウザでは通知を受け取れません。iPhone は、共有ボタンから「ホーム画面に追加」をして、追加したアイコンから開いてください。");
+  /** One subscription per phone: the photo reminder and the accuracy ping replace each other. */
+  const subscribeTo = (next: PushPlan, consentVersion: string, done: string, silent = false) => run(async () => {
+    if (notificationState() === "unsupported") throw new Error("このブラウザでは通知を受け取れません。");
     const result = await Notification.requestPermission();
     setPermission(result);
-    if (result !== "granted") throw new Error("通知が許可されていません。端末の設定で許可してください。");
+    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、このサイトの通知を許可してください。");
     const registration = registrationRef.current ?? (await navigator.serviceWorker.ready);
-    setSubscription(await subscribe(registration, consent.version));
+    setSubscription(await subscribe(registration, consentVersion, next));
     setExpiresAt(subscriptionExpiresAt());
-    // Ask for location now, while the person is looking, rather than at the first record.
-    navigator.geolocation?.getCurrentPosition(() => undefined, () => undefined, { maximumAge: Infinity, timeout: 30000 });
-    setMessage(`通知を開始しました。${PING_INTERVAL_MINUTES}分ごとに通知が届きます。`);
-  });
+    setPlan(next);
+    setMessage(done);
+  }, { silent });
 
-  const stop = () => run(async () => {
+  // The switch shows the result itself; an error goes beside it, not up in the note.
+  const switchReminder = (on: boolean): Promise<string | null> => {
+    if (!on) {
+      return run(async () => {
+        if (!subscription) return;
+        await unsubscribe(subscription);
+        setSubscription(null);
+        setExpiresAt(null);
+      }, { silent: true });
+    }
+    return consent ? subscribeTo(REMINDER_PLAN, consent.version, "", true) : Promise.resolve("参加の同意がまだです。");
+  };
+
+  const enableAccuracyPings = () =>
+    void subscribeTo(ACCURACY_PLAN, DEVELOPER_CONSENT_VERSION, `精度テストの通知をオンにしました。${ACCURACY_PLAN.intervalMinutes}分ごとに届きます。`);
+
+  const stopNotifications = (done: string) => void run(async () => {
     if (!subscription) return;
     await unsubscribe(subscription);
     setSubscription(null);
     setExpiresAt(null);
-    setMessage("通知を停止しました。");
+    setMessage(done);
   });
 
-  const test = () => run(async () => {
+  const test = () => void run(async () => {
     if (!subscription) return;
     await sendTestPing(subscription);
     setMessage("テスト通知を送りました。数秒で届きます。");
   });
 
-  const save = async (entry: LogEntry) => {
-    await putEntry(entry);
+  /** Opens the phone's camera. It has to happen inside the tap, or the browser refuses. */
+  const openCamera = (promptedAt: string | null) => {
+    cameraPromptRef.current = promptedAt;
+    cameraRef.current?.click();
+  };
+
+  const onCameraFile = (input: HTMLInputElement) => {
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file || !joined || memoryPhotos.length >= maxPhotos) return;
+    // The photo's moment is when the camera hands it over; its one fix is asked for now.
+    setShot({
+      id: crypto.randomUUID(),
+      file,
+      receivedAt: Date.now(),
+      promptedAt: cameraPromptRef.current,
+      location: captureOnce(),
+      network: networkInfo(),
+      number: memoryPhotos.length + 1,
+    });
+  };
+
+  const skipReminder = () => {
+    prompt(null);
+    setSkipCleared(true);
+  };
+
+  const save = async (entry: LogEntry): Promise<SaveOutcome> => {
+    await putEntry(memorySessionId && purposeOf(entry.record) === "photo-memory" ? { ...entry, memorySessionId } : entry);
     if (entry.record.kind === "ping") prompt(null);
-    setManual(false);
     const failed = await sendUnsent();
-    setMessage(!PUSH_API_URL ? "この端末に記録されました。" : failed ? "記録されましたが、送信できませんでした。次に開いたときに再送します。" : "記録を送信しました。ご協力ありがとうございます。");
+    return !PUSH_API_URL ? "local" : failed ? "queued" : "sent";
   };
 
-  const closeRecord = () => {
-    if (manual) setManual(false);
-    else prompt(null);
+  const closeAccuracyFlow = () => {
+    if (accuracyFlow?.kind === "ping") prompt(null);
+    setAccuracyFlow(null);
   };
 
-  const withdraw = () => run(async () => {
-    if (!window.confirm("通知を止め、この端末から送ったデータをすべて削除します。よろしいですか？")) return;
+  const withdraw = () => void run(async () => {
+    // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
+    let backendNote = "";
+    if (TRACE_API_URL && experience) {
+      try {
+        await deleteMemorySession(experience.memory, memoryDeleteKey(experience.memory.memorySessionId));
+        backendNote = "参加の記録も削除しました。";
+      } catch (error) {
+        if (!(error instanceof TraceApiError && error.status === 401)) {
+          throw new Error(`参加をやめられませんでした。${error instanceof Error ? error.message : ""}`);
+        }
+        // The backend no longer takes this credential: the session ran out, and its data waits for the retention period.
+        backendNote = "参加の記録は期限が切れていたため、ここからは削除できませんでした。保存期間が終わると自動で削除されます。";
+      }
+      clearTabExperience();
+      setExperience(null);
+    }
     if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
     const deleted = PUSH_API_URL ? await forgetMe() : 0;
     await clearEntries();
@@ -235,151 +465,181 @@ export function PingLogScreen() {
     setExpiresAt(null);
     setEntries([]);
     setConsent(null);
-    setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。`);
+    setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。${backendNote}`);
+    // The menu was at the foot of a longer page; the note and the title screen are at the top.
+    window.scrollTo(0, 0);
   });
 
-  const resend = () => run(async () => {
+  const resend = () => void run(async () => {
     const failed = await sendUnsent();
     setMessage(failed ? `${failed}件を送信できませんでした。` : "未送信の記録を送りました。");
   });
 
-  const exportLocal = () => {
-    const blob = new Blob([JSON.stringify(entries.map(({ record, sentAt }) => ({ ...record, sentAt })), null, 2)], { type: "application/json" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `trace-log-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-  };
-
-  const clearLocal = () => run(async () => {
+  const clearLocal = () => void run(async () => {
     if (!window.confirm("この端末に残っている記録を削除します。送信済みのデータはサーバーに残ります。よろしいですか？")) return;
     await clearEntries();
     setEntries([]);
   });
 
-  const changeAllowOutside = (value: boolean) => {
-    write(window.localStorage, OUTSIDE_KEY, value ? "1" : null);
-    setAllowOutside(value);
-  };
-
-  const active = consent && (manual || pendingAt) ? { kind: manual ? ("manual" as const) : ("ping" as const), promptedAt: manual ? null : pendingAt } : null;
-  const recordCard = active && consent && geolocation !== null && (
-    <RecordCard
-      key={`${active.kind}-${active.promptedAt}`}
-      kind={active.kind}
-      promptedAt={active.promptedAt}
-      consent={consent}
-      developer={view === "developer"}
-      allowOutside={view === "developer" && allowOutside}
-      autoStart={active.kind === "manual" || geolocation === "granted"}
-      onSave={save}
-      onClose={closeRecord}
-    />
-  );
-  const status = (busy || message) && <p className="text-sm" role="status">{busy ? "処理しています…" : message}</p>;
-  const todayCount = entries.filter((entry) => isToday(entry.record.takenAt)).length;
-  const unsent = entries.filter((entry) => !entry.sentAt).length;
+  const menuItems: MenuItem[] = [
+    { label: "遊び方", onSelect: () => setHowToOpen(true) },
+    ...(consent ? [{ label: "同意した内容", onSelect: () => setConsentOpen(true) }] : []),
+    ...(consent ? [{ label: "参加をやめる", onSelect: () => setWithdrawOpen(true), tone: "danger" as const, disabled: busy }] : []),
+  ];
 
   return (
-    <main className="mx-auto w-full max-w-md space-y-6 px-4 py-8">
-      <header className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold">定期ログ</h1>
-          {view === "developer" && <p className="text-sm text-neutral-500">開発者向け</p>}
-        </div>
-        <button type="button" className="shrink-0 rounded-md border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700" onClick={() => switchView(view === "developer" ? "participant" : "developer")}>
-          {view === "developer" ? "参加者向け" : "開発者向け"}
-        </button>
-      </header>
-
-      {!PUSH_API_URL && (
-        <p className="rounded-lg border border-neutral-300 p-4 text-sm dark:border-neutral-700">
-          通知サーバーの URL が設定されていません。NEXT_PUBLIC_PUSH_API_URL を設定してください。
-        </p>
-      )}
-
-      {view === "developer" ? (
-        <>
-          {recordCard}
-          {status}
-          <DeveloperView
-            apiUrl={PUSH_API_URL}
-            deviceId={deviceId()}
-            consent={consent}
-            notificationPermission={permission}
-            geolocationPermission={geolocation}
-            subscription={subscribed ? subscription : null}
-            expiresAt={expiresAt}
-            nextPingAt={nextPingAt(now)}
-            allowOutside={allowOutside}
-            entries={entries}
-            busy={busy}
-            onAllowOutside={changeAllowOutside}
-            onTest={() => void test()}
-            onRecordNow={() => setManual(true)}
-            onResend={() => void resend()}
-            onExport={exportLocal}
-            onClearLocal={() => void clearLocal()}
-          />
-        </>
-      ) : !consent ? (
-        <>
-          <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-            {PING_INTERVAL_MINUTES}分ごとにスマホに通知が届きます。通知が届いたら、いまいる場所を記録してください。写真を添えることもできます。
-          </p>
-          <ConsentView onAgree={agree} />
-          {status}
-        </>
-      ) : readingConsent ? (
-        <ConsentView onClose={() => setReadingConsent(false)} />
+    <>
+      <PixelScene phase={phaseAt(now)} />
+      {demoStart !== null ? (
+        <StoryDemo start={demoStart} alias={experience?.displayAlias ?? null} maxPhotos={maxPhotos} onClose={() => setDemoStart(null)} />
       ) : (
-        <>
-          {recordCard}
-
-          <section className={CARD}>
-            {subscribed ? (
-              <div>
-                <p className="text-sm text-neutral-500">通知を受け取っています</p>
-                <p className="text-3xl font-bold tabular-nums">{clock(nextPingAt(now))}</p>
-                <p className="text-sm text-neutral-500">ごろに次の通知が届きます。画面が消えていても届きます。</p>
-                <p className="mt-2 text-xs text-neutral-500">通知はその日の24時に自動で止まります。</p>
-              </div>
-            ) : (
-              <p className="text-sm text-neutral-500">通知は停止中です。</p>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              {subscribed ? (
-                <button type="button" className={SECONDARY} onClick={() => void stop()} disabled={busy}>通知を停止する</button>
-              ) : (
-                <button type="button" className={PRIMARY} onClick={() => void start()} disabled={busy || !PUSH_API_URL}>通知を開始する</button>
-              )}
-              <button type="button" className={SECONDARY} onClick={() => setManual(true)} disabled={busy || active !== null}>今すぐ記録する</button>
-            </div>
-            {permission === "denied" && <p className="text-xs text-neutral-500">通知がオフになっています。端末の設定で許可してください。</p>}
-            {permission === "unsupported" && (
-              <p className="text-xs text-neutral-500">このブラウザでは通知を受け取れません。iPhone は、共有ボタンから「ホーム画面に追加」をして、追加したアイコンから開いてください。</p>
-            )}
-          </section>
-
-          {status}
-
-          <section className="space-y-1 text-sm">
-            <p>今日の記録 {todayCount}件</p>
-            {unsent > 0 && (
-              <p className="text-neutral-500">
-                未送信 {unsent}件。電波のよい場所で開くと送信されます。
-                <button type="button" className={`${LINK} ml-2`} onClick={() => void resend()} disabled={busy}>いま送る</button>
+        <main className="relative z-[1] mx-auto w-full max-w-md space-y-7 px-4 pt-[max(10px,env(safe-area-inset-top))] pb-[calc(56px+env(safe-area-inset-bottom))]">
+          <header className="px-on-scene flex min-h-11 items-center justify-between gap-3">
+            {joined || view === "developer" ? (
+              <p className="flex items-center gap-2" aria-label="TRACE">
+                <PixelSprite name="pin" scale={2} />
+                <span className="px-pixel px-outlined text-[14px]" aria-hidden="true">TRACE</span>
               </p>
+            ) : (
+              <span />
             )}
-          </section>
+            {view === "developer" ? (
+              <button
+                type="button"
+                className="min-h-11 bg-(--px-navy) px-3 text-[13px] text-(--px-ink-2) shadow-[0_0_0_2px_var(--px-k)] focus-visible:outline-3 focus-visible:outline-(--px-focus)"
+                onClick={() => switchView("participant")}
+              >
+                参加者向けにもどる
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button type="button" className="px-dev-button" onClick={() => switchView("developer")}>
+                  開発者
+                </button>
+                <button type="button" className="px-menu-button" aria-label="メニュー" aria-haspopup="dialog" onClick={() => setMenuOpen(true)}>
+                  <PixelIcon name="menu" size={22} />
+                </button>
+              </div>
+            )}
+          </header>
 
-          <footer className="flex gap-4 border-t border-neutral-200 pt-4 dark:border-neutral-800">
-            <button type="button" className={LINK} onClick={() => setReadingConsent(true)}>同意した内容を見る</button>
-            <button type="button" className={LINK} onClick={() => void withdraw()} disabled={busy}>参加をやめる</button>
-          </footer>
-        </>
+          {(busy || message) && (
+            <p className="px-note px-note--float" role="status">
+              <Sentences text={busy ? "処理しています…" : message} />
+            </p>
+          )}
+
+          {view === "developer" ? (
+            <>
+              {!PUSH_API_URL && (
+                <p className="px-note px-note--float" data-tone="warn">通知サーバーの URL が設定されていません。NEXT_PUBLIC_PUSH_API_URL を設定してください。</p>
+              )}
+              <DeveloperView
+                apiUrl={PUSH_API_URL}
+                deviceId={deviceId()}
+                consent={consent}
+                notificationPermission={permission}
+                geolocationPermission={geolocation}
+                pushSupport={support}
+                subscription={subscribed ? subscription : null}
+                plan={activePlan}
+                expiresAt={expiresAt}
+                nextPingAt={nextPingAt}
+                entries={entries}
+                busy={busy}
+                onEnableAccuracy={enableAccuracyPings}
+                onStopNotifications={() => stopNotifications("通知を止めました。")}
+                onTest={test}
+                onRecordNow={() => setAccuracyFlow({ kind: "manual", promptedAt: null })}
+                onResend={resend}
+                onClearLocal={clearLocal}
+                onOpenDemo={() => setDemoStart(1)}
+              />
+            </>
+          ) : !joined ? (
+            <>
+              {consent && sessionExpired && (
+                <p className="px-note px-note--float">
+                  <Sentences text="参加の期限が切れました。続けるときは、もう一度「はじめる」から参加してください。" />
+                </p>
+              )}
+              <TitleView support={support} onStart={() => setConsentOpen(true)} />
+            </>
+          ) : (
+            <HomeView
+              support={support}
+              plan={activePlan}
+              nextPingAt={nextPingAt}
+              pendingAt={pendingAt}
+              photos={memoryPhotos}
+              maxPhotos={maxPhotos}
+              busy={busy}
+              onTakePhoto={() => openCamera(pendingAt)}
+              onSkipReminder={skipReminder}
+              onReminder={switchReminder}
+              onResend={resend}
+              // The entrance's QR code and the replay wait for the work's backend; until then the button opens the demo.
+              onArrive={() => setDemoStart(2)}
+            />
+          )}
+        </main>
       )}
-    </main>
+
+      {view === "developer" && accuracyFlow && (
+        <RecordFlow
+          key={`${accuracyFlow.kind}-${accuracyFlow.promptedAt}`}
+          kind={accuracyFlow.kind}
+          promptedAt={accuracyFlow.promptedAt}
+          subscribed={activePlan?.purpose === "accuracy"}
+          nextPingAt={nextPingAt}
+          todayCount={todayAccuracy}
+          onSave={save}
+          onClose={closeAccuracyFlow}
+        />
+      )}
+
+      {shot && consent && (
+        <PhotoFlow
+          key={shot.id}
+          shot={shot}
+          consent={consent}
+          offerReminder={shot.number === 1 && activePlan?.purpose !== "photo"}
+          support={support}
+          reminderOn={activePlan?.purpose === "photo"}
+          busy={busy}
+          nextReminderAt={nextReminderAt}
+          onRetake={() => openCamera(shot.promptedAt)}
+          onSave={save}
+          onReminder={switchReminder}
+          onClose={() => setShot(null)}
+        />
+      )}
+
+      {skipCleared && <SkipClear nextReminderAt={nextReminderAt} onClose={() => setSkipCleared(false)} />}
+
+      {/* The camera, opened from a tap on "写真を撮る" or "撮り直す". */}
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(event) => onCameraFile(event.currentTarget)} />
+
+      <ConsentDialog
+        open={consentOpen && !shot}
+        onAgree={joined ? undefined : () => void agree()}
+        busy={joining}
+        error={joinError}
+        onClose={() => {
+          setConsentOpen(false);
+          setJoinError("");
+        }}
+      />
+      <HowToDialog open={howToOpen} maxPhotos={maxPhotos} onClose={() => setHowToOpen(false)} />
+      <MenuDialog open={menuOpen} items={menuItems} onClose={() => setMenuOpen(false)} />
+      <ConfirmDialog
+        open={withdrawOpen}
+        title="参加をやめますか？"
+        text="リマインダーを止め、この端末から送った写真と記録をすべて削除します。削除したものは元に戻せません。"
+        confirmLabel="やめて削除する"
+        onConfirm={withdraw}
+        onClose={() => setWithdrawOpen(false)}
+      />
+    </>
   );
 }

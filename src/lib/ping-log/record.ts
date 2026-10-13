@@ -1,12 +1,15 @@
 /**
- * What one answer to a ping sends to the push worker.
+ * What one record sends to the push worker. A record is one of two things:
  *
- * The record is deliberately raw. It is collected to find out how wrong a
- * phone's position is on campus and what could correct it, and a correction
- * thought of later is only testable against data that was kept: every fix in
- * the window rather than one, the browser's own fields rather than a summary,
- * and whatever hints exist about where a fix came from (the Geolocation API
- * does not say whether GPS or Wi-Fi produced it).
+ * - photo-memory: a participant's photo, with the one fix taken when the
+ *   camera handed it over. This is what the finished work is built from.
+ * - accuracy: the team's accuracy run from the developer screen, answered by
+ *   pointing at where one stands. It is deliberately raw. It is collected to
+ *   find out how wrong a phone's position is on campus and what could correct
+ *   it, and a correction thought of later is only testable against data that
+ *   was kept: every fix in the window rather than one, the browser's own
+ *   fields rather than a summary, and whatever hints exist about where a fix
+ *   came from (the Geolocation API does not say whether GPS or Wi-Fi produced it).
  */
 
 import {
@@ -27,7 +30,22 @@ import coordinates from "@/lib/map/toyosu-campus.coordinates.json";
 import type { DeviceContext, NetworkInfo, OrientationSample } from "./context";
 import type { ExifSummary } from "./exif";
 
-export const RECORD_SCHEMA = 1;
+/** 2 added `purpose`. Schema 1 records come from before the photo memory and were all accuracy runs. */
+export const RECORD_SCHEMA = 2;
+
+export type RecordPurpose = "photo-memory" | "accuracy";
+
+export const PURPOSE_LABEL: Record<RecordPurpose, string> = {
+  "photo-memory": "写真メモリー",
+  accuracy: "精度テスト",
+};
+
+/**
+ * The work's documents allow twelve photos per participation (one memory
+ * session; photo-memory.md, a provisional figure until the network and
+ * storage tests). This page has no session yet, so it counts the day's photos.
+ */
+export const MAX_PHOTOS = 12;
 
 export type Fix = {
   /** Date.now() when the browser delivered it. */
@@ -57,32 +75,44 @@ export type Capture = {
   errors: GeoError[];
 };
 
-export type TruthConfidence = "wall" | "feature" | "open";
-
-/** How precisely the person could point at where they stood, with the error each grade allows. */
-export const TRUTH_CONFIDENCE: Record<TruthConfidence, { label: string; metres: number }> = {
-  wall: { label: "壁や柱のすぐそば", metres: 0.3 },
-  feature: { label: "ドアや部屋の角など、図面の目印のそば", metres: 0.5 },
-  open: { label: "廊下や部屋の中ほど（目印なし）", metres: 2 },
-};
-
-/** Where the person said they were standing, in every frame an analysis might want. */
-export type Truth = {
-  coordinateVersion: string;
-  campusPx: CampusPx;
-  /** The classroom building's 912x1552 plan frame, the frame the georeference is fitted in. */
-  planPx: { x: number; y: number };
-  local: LocalEnu;
+/** What every way of marking the truth records. */
+type TruthBase = {
   wgs84: Wgs84;
   level: number;
   levelLabel: string;
-  /** Floor level above the ground floor, from the drawings' 4.2 m storey. */
-  floorHeightMetres: number;
-  /** Structures whose drawn floor at this level contains the point; empty outdoors. */
-  buildingIds: string[];
-  confidence: TruthConfidence;
   markedAt: number;
 };
+
+/**
+ * Where the person said they were standing. On the Toyosu campus it is marked
+ * on the drawings, which know floors and buildings; anywhere else on a map.
+ * Instead of asking how sure they were, the zoom they marked at is kept: a
+ * point placed at street-level zoom is a looser claim than one placed on a
+ * single room.
+ */
+export type Truth =
+  | (TruthBase & {
+      method: "campus-plan";
+      coordinateVersion: string;
+      campusPx: CampusPx;
+      /** The classroom building's 912x1552 plan frame, the frame the georeference is fitted in. */
+      planPx: { x: number; y: number };
+      local: LocalEnu;
+      /** Floor level above the ground floor, from the drawings' 4.2 m storey. */
+      floorHeightMetres: number;
+      /** Structures whose drawn floor at this level contains the point; empty outdoors. */
+      buildingIds: string[];
+      /** Screen pixels per sheet pixel when the mark was placed (one sheet pixel is about 6 cm). */
+      viewScale: number;
+    })
+  | (TruthBase & {
+      method: "map";
+      /** Map zoom when the pin was placed (at 18 one screen pixel is about 0.5 m in Tokyo). */
+      zoom: number;
+      layer: MapLayer;
+    });
+
+export type MapLayer = "gsi-std" | "gsi-photo";
 
 export type PhotoMeta = {
   type: string;
@@ -97,9 +127,14 @@ export type PhotoMeta = {
 export type SourceGuess = "gnss" | "wifi" | "cell";
 
 export type LogRecord = {
-  schema: typeof RECORD_SCHEMA;
+  schema: 1 | typeof RECORD_SCHEMA;
+  /** Absent on schema 1; read it through purposeOf(). */
+  purpose?: RecordPurpose;
   id: string;
+  /** ping: answering a notification (a reminder, for a photo). manual: started by hand. */
   kind: "ping" | "manual";
+  /** The practice run of the setup screens that schema 1 had. Always false now. */
+  tutorial: boolean;
   deviceId: string;
   consentVersion: string;
   consentedAt: string;
@@ -108,9 +143,10 @@ export type LogRecord = {
   capture: Capture;
   sourceGuess: SourceGuess | null;
   coordinateVersion: string;
+  /** Near the Toyosu campus, where the drawings were offered for marking. */
   insideCampus: boolean;
-  /** Recorded off campus because the developer view allowed it. */
-  forcedOutside: boolean;
+  /** The floor the person picked, kept even when they could not point at the spot. */
+  reportedLevel: number | null;
   truth: Truth | null;
   /** The person was asked for the truth and said they did not know. */
   truthSkipped: boolean;
@@ -121,6 +157,10 @@ export type LogRecord = {
   orientation: OrientationSample | null;
   photo: PhotoMeta | null;
 };
+
+export function purposeOf(record: LogRecord): RecordPurpose {
+  return record.purpose ?? "accuracy";
+}
 
 export const SOURCE_LABEL: Record<SourceGuess, string> = {
   gnss: "GPS など衛星",
@@ -147,17 +187,27 @@ export function guessSource(fix: Fix): SourceGuess {
 const CAMPUS_MARGIN_METRES = 100;
 
 /**
- * On or near the Toyosu campus. A fix is judged by the best case its accuracy
- * allows, so a poor fix taken on campus is kept: those are the ones the
- * calibration most needs.
+ * On or near the Toyosu campus, where the drawings are offered for marking. A
+ * fix is judged by the best case its accuracy allows, so a poor fix taken on
+ * campus still gets the drawings.
  */
 export function nearCampus(fix: Pick<Fix, "latitude" | "longitude" | "accuracy">): boolean {
   return insideGeofence(wgs84ToLocal({ lat: fix.latitude, lon: fix.longitude }), CAMPUS_MARGIN_METRES + fix.accuracy);
 }
 
-export function buildTruth(mark: CampusPx, level: number, confidence: TruthConfidence, markedAt: number): Truth {
+/** Great-circle distance in metres, for errors anywhere rather than only near the campus origin. */
+export function haversineMetres(a: Wgs84, b: Wgs84): number {
+  const radians = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * radians;
+  const dLon = (b.lon - a.lon) * radians;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * radians) * Math.cos(b.lat * radians) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371008.8 * Math.asin(Math.sqrt(h));
+}
+
+export function campusTruth(mark: CampusPx, level: number, markedAt: number, viewScale: number): Truth {
   const local = campusPxToLocal(mark);
   return {
+    method: "campus-plan",
     coordinateVersion: COORDINATE_VERSION,
     campusPx: mark,
     planPx: campusPxToPlanPx(toyosuClassroom.id, mark),
@@ -167,9 +217,13 @@ export function buildTruth(mark: CampusPx, level: number, confidence: TruthConfi
     levelLabel: levelLabel(level),
     floorHeightMetres: (level - 1) * coordinates.scale.storeyMetres,
     buildingIds: structuresAt(local, level),
-    confidence,
+    viewScale,
     markedAt,
   };
+}
+
+export function mapTruth(pin: Wgs84, level: number, markedAt: number, zoom: number, layer: MapLayer): Truth {
+  return { method: "map", wgs84: pin, level, levelLabel: levelLabel(level), zoom, layer, markedAt };
 }
 
 export { COORDINATE_VERSION };

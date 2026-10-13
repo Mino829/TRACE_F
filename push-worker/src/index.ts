@@ -1,14 +1,19 @@
 /**
- * TRACE push worker: keeps the phones that asked to be pinged, pings them on
- * the cron schedule in wrangler.jsonc, and stores the location (and the photo,
- * when there is one) each phone sends back.
+ * TRACE push worker: keeps the phones that asked to be pinged, pings each on
+ * the interval it subscribed with, and stores the records each phone sends
+ * back (with the photo, when there is one).
+ *
+ * A subscription is for one of two things: a participant's optional photo
+ * reminder (every 15 or 30 minutes) or the team's accuracy ping (every 10).
+ * The cron in wrangler.jsonc runs every 5 minutes and pings the
+ * subscriptions due on that run.
  *
  * Storage:
  *   D1 `DB`      subscriptions, records (schema in migrations/)
  *   KV `LOG_KV`  photo:<record id> → JPEG bytes
  */
 
-import { endOfDayJst, haversineMetres } from "./helpers";
+import { endOfDayJst, haversineMetres, isDue, parsePlan, type PushPurpose } from "./helpers";
 import { sendPush, type PushSubscriptionJSON, type Vapid } from "./webpush";
 
 interface Env {
@@ -21,7 +26,8 @@ interface Env {
   ALLOWED_ORIGINS: string;
 }
 
-type SubscriptionRow = { key: string; endpoint: string; p256dh: string; auth: string };
+type SubscriptionRow = { key: string; endpoint: string; p256dh: string; auth: string; purpose: PushPurpose; interval_minutes: number };
+const SUBSCRIPTION_COLUMNS = "key, endpoint, p256dh, auth, purpose, interval_minutes";
 
 /** The parts of a record the worker reads; the rest is stored as sent. */
 type Fix = { latitude: number; longitude: number; accuracy: number; altitude: number | null; altitudeAccuracy: number | null };
@@ -34,15 +40,17 @@ type IncomingRecord = {
   takenAt: string;
   capture?: { fixes?: Fix[]; coarse?: Fix | null };
   sourceGuess?: string | null;
-  truth?: { wgs84?: { lat: number; lon: number }; level?: number; buildingIds?: string[]; confidence?: string } | null;
+  truth?: { method?: string; wgs84?: { lat: number; lon: number }; level?: number; buildingIds?: string[] } | null;
   network?: { type?: string } | null;
 };
 
 const MAX_PHOTO_BYTES = 3 * 1024 * 1024;
 const MAX_RECORD_BYTES = 512 * 1024;
-/** A ping older than the next one is pointless, so the push service may drop it after ten minutes. */
-const PING_TTL_SECONDS = 600;
-const PING_BODY = "位置情報を記録してください。";
+/** A reminder never names a place, a photo or the participant's symbol: it can show on a locked screen. */
+const PING_BODY: Record<PushPurpose, string> = {
+  accuracy: "位置情報を記録してください。",
+  photo: "残したい景色があれば、写真を撮ってみませんか。",
+};
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 function vapid(env: Env): Vapid {
@@ -86,10 +94,14 @@ function json(body: unknown, status: number, cors: Record<string, string>): Resp
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...cors } });
 }
 
-/** Sends one ping; a subscription the push service no longer knows is forgotten here too. */
+/**
+ * Sends one ping; a subscription the push service no longer knows is forgotten here too.
+ * A ping older than the next one is pointless, so the push service may drop it after one interval.
+ */
 async function ping(env: Env, row: SubscriptionRow, promptedAt: string): Promise<number> {
   const subscription = { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } };
-  const response = await sendPush(subscription, { title: "TRACE", body: PING_BODY, promptedAt }, vapid(env), PING_TTL_SECONDS);
+  const body = PING_BODY[row.purpose] ?? PING_BODY.accuracy;
+  const response = await sendPush(subscription, { title: "TRACE", body, promptedAt }, vapid(env), row.interval_minutes * 60);
   if (response.status === 404 || response.status === 410) await env.DB.prepare("DELETE FROM subscriptions WHERE key = ?").bind(row.key).run();
   return response.status;
 }
@@ -145,7 +157,7 @@ async function handleRecord(request: Request, env: Env, cors: Record<string, str
   await env.DB.prepare(
     `INSERT OR IGNORE INTO records (id, device_id, kind, consent_version, prompted_at, taken_at, received_at, fix_count,
        latitude, longitude, accuracy, altitude, altitude_accuracy, source_guess,
-       truth_latitude, truth_longitude, truth_level, truth_buildings, truth_confidence, error_m,
+       truth_latitude, truth_longitude, truth_level, truth_buildings, truth_method, error_m,
        photo_key, connection_type, asn, as_organization, payload)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).bind(
@@ -167,7 +179,7 @@ async function handleRecord(request: Request, env: Env, cors: Record<string, str
     truth?.wgs84?.lon ?? null,
     finite(truth?.level),
     Array.isArray(truth?.buildingIds) ? truth.buildingIds.join(",").slice(0, 256) : null,
-    text(truth?.confidence, 16) || null,
+    text(truth?.method, 16) || null,
     errorM,
     photoKey,
     text(record.network?.type, 16) || null,
@@ -200,18 +212,32 @@ export default {
         return json({ publicKey: env.VAPID_PUBLIC_KEY }, 200, cors);
       }
 
+      // Subscribing again with the same endpoint replaces the row, which is how a phone moves between plans.
       if (request.method === "POST" && pathname === "/subscribe") {
-        const body = (await request.json()) as { subscription?: unknown; deviceId?: unknown; consentVersion?: unknown };
+        const body = (await request.json()) as { subscription?: unknown; deviceId?: unknown; consentVersion?: unknown; purpose?: unknown; intervalMinutes?: unknown };
         if (!isSubscription(body.subscription)) return json({ error: "invalid subscription" }, 400, cors);
         if (!text(body.consentVersion)) return json({ error: "consentVersion is required" }, 400, cors);
+        const plan = parsePlan(body.purpose, body.intervalMinutes);
+        if (!plan) return json({ error: "purpose must be accuracy (10 minutes) or photo (15 or 30 minutes)" }, 400, cors);
         const now = Date.now();
         const expiresAt = endOfDayJst(now);
         const { endpoint, keys } = body.subscription;
         await env.DB.prepare(
-          `INSERT OR REPLACE INTO subscriptions (key, endpoint, p256dh, auth, device_id, consent_version, created_at, expires_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(await subscriptionKey(endpoint), endpoint, keys.p256dh, keys.auth, text(body.deviceId) || "unknown", text(body.consentVersion), new Date(now).toISOString(), expiresAt).run();
-        return json({ ok: true, expiresAt }, 201, cors);
+          `INSERT OR REPLACE INTO subscriptions (key, endpoint, p256dh, auth, device_id, consent_version, created_at, expires_at, purpose, interval_minutes)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).bind(
+          await subscriptionKey(endpoint),
+          endpoint,
+          keys.p256dh,
+          keys.auth,
+          text(body.deviceId) || "unknown",
+          text(body.consentVersion),
+          new Date(now).toISOString(),
+          expiresAt,
+          plan.purpose,
+          plan.intervalMinutes,
+        ).run();
+        return json({ ok: true, expiresAt, ...plan }, 201, cors);
       }
 
       if (request.method === "POST" && pathname === "/unsubscribe") {
@@ -225,7 +251,7 @@ export default {
       if (request.method === "POST" && pathname === "/test") {
         const body = (await request.json()) as { endpoint?: unknown };
         if (typeof body.endpoint !== "string") return json({ error: "endpoint is required" }, 400, cors);
-        const row = await env.DB.prepare("SELECT key, endpoint, p256dh, auth FROM subscriptions WHERE key = ? AND expires_at > ?")
+        const row = await env.DB.prepare(`SELECT ${SUBSCRIPTION_COLUMNS} FROM subscriptions WHERE key = ? AND expires_at > ?`)
           .bind(await subscriptionKey(body.endpoint), new Date().toISOString())
           .first<SubscriptionRow>();
         if (!row) return json({ error: "not subscribed" }, 404, cors);
@@ -251,8 +277,9 @@ export default {
   async scheduled(controller, env, ctx): Promise<void> {
     const promptedAt = new Date(controller.scheduledTime).toISOString();
     await env.DB.prepare("DELETE FROM subscriptions WHERE expires_at <= ?").bind(promptedAt).run();
-    const { results } = await env.DB.prepare("SELECT key, endpoint, p256dh, auth FROM subscriptions").all<SubscriptionRow>();
+    const { results } = await env.DB.prepare(`SELECT ${SUBSCRIPTION_COLUMNS} FROM subscriptions`).all<SubscriptionRow>();
+    const due = results.filter((row) => isDue(controller.scheduledTime, row.interval_minutes));
     // Each ping is one outbound request: the free plan allows 50 per run, the paid plan 10,000.
-    ctx.waitUntil(Promise.allSettled(results.map((row) => ping(env, row, promptedAt))));
+    ctx.waitUntil(Promise.allSettled(due.map((row) => ping(env, row, promptedAt))));
   },
 } satisfies ExportedHandler<Env>;

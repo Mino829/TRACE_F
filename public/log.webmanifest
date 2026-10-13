@@ -1,7 +1,10 @@
 {
-  "name": "TRACE 定期ログ",
+  "name": "TRACE",
   "short_name": "TRACE",
   "start_url": "./log",
   "scope": "./",
-  "display": "standalone"
+  "display": "standalone",
+  "background_color": "#1b2150",
+  "theme_color": "#1b2150",
+  "icons": [{ "src": "/log/apple-icon", "sizes": "180x180", "type": "image/png" }]
 }
