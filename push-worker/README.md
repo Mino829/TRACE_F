@@ -40,11 +40,15 @@ Cloudflare アカウントを誰が運用するかは、チームで相談中で
 
 ## 準備
 
+デプロイ先は、チームの共通 Cloudflare アカウントです（workers.dev のサブドメインは `async5855`）。
+API トークンは一人ずつ、共通アカウントで自分用に作ります。有効期限を付けてください。
+
 このフォルダに `.env` を置きます（git には入りません）。
 
 ```
-CLOUDFLARE_API_TOKEN=Cloudflare の API トークン（Edit Cloudflare Workers テンプレートに「Account / D1 / Edit」を追加したもの）
-CLOUDFLARE_ACCOUNT_ID=アカウント ID
+CLOUDFLARE_API_TOKEN=自分の API トークン（Edit Cloudflare Workers テンプレートに「Account / D1 / Edit」を追加したもの）
+CLOUDFLARE_ACCOUNT_ID=共通アカウントの ID（ダッシュボードの Account details に出ます）
+PUSH_API_URL=https://trace-push.async5855.workers.dev
 ```
 
 wrangler は必ず `npm run wrangler -- <コマンド>` のように、`scripts/wrangler.mjs` 経由で実行します。
@@ -60,7 +64,7 @@ npm install
 まとめて公開するときは、リポジトリのルートで次の1行を実行します。
 マイグレーションの適用、通知サーバーのデプロイ、ページの静的書き出し、ページのデプロイを、この順に行います。
 途中で失敗すると、その段階で止まります。
-ページは `.env` の `PUSH_API_URL` に向けて書き出します（書いていなければ `https://trace-push.uni11260609.workers.dev`）。
+ページは `.env` の `PUSH_API_URL` に向けて書き出します（書いていなければ `https://trace-push.async5855.workers.dev`）。
 
 ```bash
 npm --prefix push-worker run release

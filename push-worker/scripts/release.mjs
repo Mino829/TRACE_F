@@ -26,7 +26,7 @@ function fromEnvFile(name) {
   return undefined;
 }
 
-const pushUrl = fromEnvFile("PUSH_API_URL") || "https://trace-push.uni11260609.workers.dev";
+const pushUrl = fromEnvFile("PUSH_API_URL") || "https://trace-push.async5855.workers.dev";
 
 const steps = [
   ["マイグレーションを本番の D1 に適用", [wrangler, "d1", "migrations", "apply", "DB", "--remote"], root, {}],
