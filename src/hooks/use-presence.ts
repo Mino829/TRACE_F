@@ -7,7 +7,7 @@ import type { ParticipantSession } from "@/lib/session";
 export function usePresence(session: ParticipantSession | null, enabled: boolean, intervalSeconds: number) {
   const [message, setMessage] = useState("位置送信は一時停止中です。");
   const [accepted, setLastAccepted] = useState<{ sessionId: string; at: string; expiresAt: string; accuracy: number } | null>(null);
-  const [clock, setClock] = useState(0);
+  const [clock, setClock] = useState(Date.now);
   useEffect(() => {
     const timer = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -15,7 +15,7 @@ export function usePresence(session: ParticipantSession | null, enabled: boolean
 
   const liveId = session?.livePresenceSession?.sessionId;
   const token = session?.livePresenceSession?.participantToken;
-  const expiresAt = session?.expiresAt;
+  const expiresAt = session?.livePresenceSession?.expiresAt;
   useEffect(() => {
     if (!enabled || !liveId || !token || !expiresAt) return;
     let watcher: number | undefined;

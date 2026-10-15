@@ -7,7 +7,7 @@
  * starts without them and has to join again.
  */
 
-import type { DisplayAlias, MemoryCredential } from "./client";
+import type { DisplayAlias, ExperienceStatus, MemoryCredential } from "./client";
 
 const CREDENTIAL_KEY = "trace-memory-credential";
 const EXPERIENCE_KEY = "trace-experience";
@@ -17,8 +17,6 @@ const DELETE_KEY = "trace-memory-delete-key";
 export type ExperienceInfo = {
   experienceId: string;
   displayAlias: DisplayAlias;
-  expiresAt: string;
-  deleteAfter: string;
   consentVersion: string;
   createdAt: string;
 };
@@ -43,10 +41,13 @@ function write(key: string, value: unknown): void {
 }
 
 export function loadTabExperience(): TabExperience | null {
-  const memory = read<MemoryCredential>(CREDENTIAL_KEY);
-  const info = read<ExperienceInfo>(EXPERIENCE_KEY);
-  if (!memory?.participantToken || !memory.memorySessionId || !info?.experienceId) return null;
-  return { ...info, memory };
+  const stored = read<MemoryCredential>(CREDENTIAL_KEY);
+  const info = read<ExperienceInfo & { expiresAt?: string; deleteAfter?: string }>(EXPERIENCE_KEY);
+  if (!stored?.participantToken || !stored.memorySessionId || !info?.experienceId) return null;
+  const memory = { ...stored, expiresAt: stored.expiresAt ?? info.expiresAt, deleteAfter: stored.deleteAfter ?? info.deleteAfter };
+  if (!memory.expiresAt || !memory.deleteAfter) return null;
+  return { experienceId: info.experienceId, displayAlias: info.displayAlias,
+    consentVersion: info.consentVersion, createdAt: info.createdAt, memory };
 }
 
 export function saveTabExperience({ memory, ...info }: TabExperience): void {
@@ -55,8 +56,13 @@ export function saveTabExperience({ memory, ...info }: TabExperience): void {
 }
 
 /** Keeps the credential and swaps in what the backend now says about the experience. */
-export function updateTabExperience(experience: TabExperience, update: Pick<ExperienceInfo, "displayAlias" | "expiresAt" | "deleteAfter">): TabExperience {
-  const next = { ...experience, ...update };
+export function updateTabExperience(experience: TabExperience, update: ExperienceStatus): TabExperience {
+  if (experience.memory.memorySessionId !== update.memorySession.sessionId) {
+    throw new Error("参加情報の確認に失敗しました。削除するための情報はこのタブに保持されています。");
+  }
+  const next = { ...experience, displayAlias: update.displayAlias, memory: {
+    ...experience.memory, expiresAt: update.memorySession.expiresAt, deleteAfter: update.memorySession.deleteAfter,
+  } };
   saveTabExperience(next);
   return next;
 }

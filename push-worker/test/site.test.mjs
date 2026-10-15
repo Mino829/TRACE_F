@@ -35,6 +35,27 @@ test("allows only participant API paths and forwards credentials without URL lea
   assert.equal(response.headers.get("X-Request-ID"), "req-1");
 });
 
+test("two-token delete forwards the live token only for the dedicated experience route", async () => {
+  const headers = { Origin: site, Authorization: "Bearer memory-token", "X-Trace-Live-Token": "live-token", "Idempotency-Key": "same-key" };
+  const requests = [];
+  for (const path of ["v1/experiences/exp_abc", "v1/memory-sessions/mem_abc"]) {
+    const response = await handleSiteRequest(new Request(`${site}/api/backend/${path}`, {
+      method: "DELETE", headers,
+    }), env, async (upstream) => {
+      requests.push(upstream);
+      return new Response(path.startsWith("v1/experiences/") ? JSON.stringify({
+        memory: "deleted", live: "pending", complete: false,
+      }) : null, { status: path.startsWith("v1/experiences/") ? 200 : 204 });
+    });
+    assert.equal(response.status, path.startsWith("v1/experiences/") ? 200 : 204);
+    if (response.status === 200) assert.deepEqual(await response.json(), { memory: "deleted", live: "pending", complete: false });
+  }
+  assert.equal(requests[0].headers.get("X-Trace-Live-Token"), "live-token");
+  assert.equal(requests[1].headers.get("X-Trace-Live-Token"), null);
+  assert.equal(requests[0].headers.get("Authorization"), "Bearer memory-token");
+  assert.equal(requests[0].headers.get("Idempotency-Key"), "same-key");
+});
+
 test("rejects unexpected requests before calling the backend", async () => {
   const noCall = async () => { throw new Error("backend called"); };
   const cases = [
