@@ -262,11 +262,8 @@ export function PingLogScreen() {
     getExperience(stored.experienceId, stored.memory)
       .then((status) => setExperience(updateTabExperience(stored, status)))
       .catch((error: unknown) => {
-        // Gone for good (deleted, or past its time); a lost signal keeps it.
-        if (!(error instanceof TraceApiError) || (error.status !== 401 && error.status !== 404)) return;
-        clearTabExperience();
-        setExperience(null);
-        setMessage(error.message);
+        // A read failure does not prove deletion; keep the credential and its delete key.
+        setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
       });
   }, []);
 
@@ -283,7 +280,7 @@ export function PingLogScreen() {
   const nextReminderAt = activePlan?.purpose === "photo" ? nextPingAt : null;
 
   // With the backend, joining lasts as long as this tab's memory session.
-  const sessionExpired = experience !== null && Date.parse(experience.expiresAt) <= now;
+  const sessionExpired = experience !== null && Date.parse(experience.memory.expiresAt) <= now;
   const joined = consent !== null && (!TRACE_API_URL || (experience !== null && !sessionExpired));
   const memorySessionId = joined ? (experience?.memory.memorySessionId ?? null) : null;
   const maxPhotos = (TRACE_API_URL && traceConfig?.photo.maxCount) || MAX_PHOTOS;
@@ -447,11 +444,7 @@ export function PingLogScreen() {
         await deleteMemorySession(experience.memory, memoryDeleteKey(experience.memory.memorySessionId));
         backendNote = "参加の記録も削除しました。";
       } catch (error) {
-        if (!(error instanceof TraceApiError && error.status === 401)) {
-          throw new Error(`参加をやめられませんでした。${error instanceof Error ? error.message : ""}`);
-        }
-        // The backend no longer takes this credential: the session ran out, and its data waits for the retention period.
-        backendNote = "参加の記録は期限が切れていたため、ここからは削除できませんでした。保存期間が終わると自動で削除されます。";
+        throw new Error(`参加をやめられませんでした。${error instanceof Error ? error.message : ""}`);
       }
       clearTabExperience();
       setExperience(null);

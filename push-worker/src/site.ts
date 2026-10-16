@@ -13,7 +13,7 @@ const MAX_JSON_BODY = 16 * 1024;
 const allowed: Record<string, RegExp[]> = {
   GET: [/^health\/(live|ready)$/, /^v1\/public\/config$/, /^v1\/experiences\/exp_[A-Za-z0-9_-]+$/],
   POST: [/^v1\/experiences$/, /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+\/(position|on-site|stop)$/],
-  DELETE: [/^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+$/, /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+$/],
+  DELETE: [/^v1\/experiences\/exp_[A-Za-z0-9_-]+$/, /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+$/, /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+$/],
 };
 
 function failure(code: string, status: number): Response {
@@ -84,6 +84,10 @@ export async function handleSiteRequest(
   for (const name of ["Authorization", "Content-Type", "Idempotency-Key"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
+  }
+  if (request.method === "DELETE" && /^v1\/experiences\/exp_[A-Za-z0-9_-]+$/.test(path)) {
+    const liveToken = request.headers.get("X-Trace-Live-Token");
+    if (liveToken) headers.set("X-Trace-Live-Token", liveToken);
   }
   try {
     const response = await upstreamFetch(new Request(new URL(`/${path}`, backend), {

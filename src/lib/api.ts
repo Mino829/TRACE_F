@@ -13,6 +13,8 @@ export interface PublicConfig {
 export interface Credential {
   sessionId: string;
   participantToken: string;
+  expiresAt: string;
+  deleteAfter: string;
 }
 
 export interface Experience {
@@ -20,19 +22,20 @@ export interface Experience {
   memorySession: Credential;
   livePresenceSession?: Credential & { trackingStatus: string; presencePhase: string };
   displayAlias: { color: string; symbol: string };
-  expiresAt: string;
-  deleteAfter: string;
   positionIntervalSeconds: number;
 }
 
 export interface ExperienceState {
-  memorySessionId: string;
-  livePresenceSessionId: string | null;
-  trackingStatus: string | null;
-  presencePhase: string | null;
+  memorySession: Pick<Credential, "sessionId" | "expiresAt" | "deleteAfter">;
+  livePresenceSession?: Pick<Credential, "sessionId" | "expiresAt" | "deleteAfter"> & { trackingStatus: string; presencePhase: string };
   displayAlias: Experience["displayAlias"];
-  expiresAt: string;
-  deleteAfter: string;
+  photoSummary: { ready: number; pending: number; failed: number; maxCount: number };
+}
+
+export interface DeleteResult {
+  memory: "deleted" | "pending";
+  live: "deleted" | "pending";
+  complete: boolean;
 }
 
 const messages: Record<string, string> = {
@@ -59,10 +62,11 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, options: {
-  method?: string; token?: string; body?: unknown; key?: string; signal?: AbortSignal;
+  method?: string; token?: string; liveToken?: string; body?: unknown; key?: string; signal?: AbortSignal;
 } = {}): Promise<T> {
   const headers: Record<string, string> = {};
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
+  if (options.liveToken) headers["X-Trace-Live-Token"] = options.liveToken;
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (options.key) headers["Idempotency-Key"] = options.key;
   let response: Response;

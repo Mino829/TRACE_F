@@ -1,9 +1,7 @@
 /**
- * Client for the work's backend (TRACE_B, Mino829/TRACE_B), for the four
- * routes it serves so far: the public config, creating an experience, reading
- * it back, and deleting its memory session. Shapes follow TRACE_B's
- * internal/api/server.go at 5ca7cbe, which the API doc (trace-campus-
- * installation docs/api.md) describes.
+ * Client for TRACE_B public config, memory-only experience creation and
+ * status, and individual memory deletion. The /log demo does not create live
+ * presence or upload photos to TRACE_B.
  *
  * The backend's URL comes from NEXT_PUBLIC_TRACE_API_URL. Unset, /log keeps
  * everything on the phone and the push worker, as before.
@@ -37,23 +35,20 @@ export type PublicConfig = {
 };
 
 /** What authorizes reading the experience and deleting its memory. Kept apart from any other credential type. */
-export type MemoryCredential = { memorySessionId: string; participantToken: string };
+export type MemoryCredential = { memorySessionId: string; participantToken: string; expiresAt: string; deleteAfter: string };
 
 export type CreatedExperience = {
   experienceId: string;
   memory: MemoryCredential;
   displayAlias: DisplayAlias;
-  expiresAt: string;
-  deleteAfter: string;
 };
 
-/** GET /v1/experiences/{id}: never any position, so the phone cannot rebuild a trail from it. */
+/** GET /v1/experiences/{id} never returns a position or participant tokens. */
 export type ExperienceStatus = {
-  memorySessionId: string;
+  memorySession: { sessionId: string; expiresAt: string; deleteAfter: string };
+  livePresenceSession?: { sessionId: string; trackingStatus: string; presencePhase: string; expiresAt: string; deleteAfter: string };
   displayAlias: DisplayAlias;
   photoSummary: { ready: number; pending: number; failed: number; maxCount: number };
-  expiresAt: string;
-  deleteAfter: string;
 };
 
 /**
@@ -133,10 +128,8 @@ export async function fetchPublicConfig(): Promise<PublicConfig> {
 
 type CreateResponse = {
   experienceId: string;
-  memorySession: { sessionId: string; participantToken: string };
+  memorySession: { sessionId: string; participantToken: string; expiresAt: string; deleteAfter: string };
   displayAlias: DisplayAlias;
-  expiresAt: string;
-  deleteAfter: string;
 };
 
 /**
@@ -154,13 +147,14 @@ export async function createExperience(config: PublicConfig): Promise<CreatedExp
       clientTime: new Date().toISOString(),
     },
   });
-  if (!created?.memorySession?.participantToken) throw new TraceApiError(0, "UNKNOWN", null);
+  if (!created?.memorySession?.participantToken || !created.memorySession.expiresAt || !created.memorySession.deleteAfter) {
+    throw new TraceApiError(0, "UNKNOWN", null);
+  }
   return {
     experienceId: created.experienceId,
-    memory: { memorySessionId: created.memorySession.sessionId, participantToken: created.memorySession.participantToken },
+    memory: { memorySessionId: created.memorySession.sessionId, participantToken: created.memorySession.participantToken,
+      expiresAt: created.memorySession.expiresAt, deleteAfter: created.memorySession.deleteAfter },
     displayAlias: created.displayAlias,
-    expiresAt: created.expiresAt,
-    deleteAfter: created.deleteAfter,
   };
 }
 
