@@ -49,6 +49,23 @@ async function limitedBody(request: Request): Promise<ArrayBuffer | null> {
   return buffer;
 }
 
+/** Accept only canonical, unambiguous addresses supplied by the Cloudflare edge. */
+function canonicalClientIP(value: string | null): string | null {
+  if (!value) return null;
+  if (value.includes(":")) {
+    try {
+      return new URL(`http://[${value}]/`).hostname === `[${value}]` ? value : null;
+    } catch {
+      return null;
+    }
+  }
+  const parts = value.split(".");
+  if (parts.length !== 4 || parts.some((part) => !/^(?:0|[1-9][0-9]{0,2})$/.test(part) || Number(part) > 255)) {
+    return null;
+  }
+  return value;
+}
+
 export async function handleSiteRequest(
   request: Request,
   env: SiteEnv,
@@ -89,6 +106,8 @@ export async function handleSiteRequest(
     const liveToken = request.headers.get("X-Trace-Live-Token");
     if (liveToken) headers.set("X-Trace-Live-Token", liveToken);
   }
+  const clientIP = canonicalClientIP(request.headers.get("CF-Connecting-IP"));
+  if (clientIP) headers.set("X-Trace-Client-IP", clientIP);
   try {
     const response = await upstreamFetch(new Request(new URL(`/${path}`, backend), {
       method: request.method,

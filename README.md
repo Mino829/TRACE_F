@@ -24,6 +24,8 @@ npm run dev:local
 - `TRACE_BACKEND_URL`: Go APIのHTTPSオリジン。末尾のパスを含めない
 - `TRACE_EDGE_SHARED_SECRET`: WorkerからGoへのアクセス確認用。`/v1/*`へ`X-Trace-Edge-Secret`として送る
 
+サイトWorkerはCloudflareが設定する`CF-Connecting-IP`が正規のIPv4/IPv6アドレスの場合だけ、Go APIへ`X-Trace-Client-IP`として1つ送ります。ブラウザからの`X-Forwarded-For`と`X-Trace-Client-IP`は転送しません。値がない場合や不正な場合はヘッダーを付けず、Go側は接続元アドレスへフォールバックします。この信頼境界はCloudflare経由の配信を前提とし、Go側は共有secretが一致するときだけ転送IPを信頼します。
+
 静的アセットはsecretなしでも配信できますが、参加者APIは503で閉じます。`trace-push`のD1/KVやWeb Pushのsecretとは別に管理してください。
 
 `/log`の通知と記録は、ビルド時の`NEXT_PUBLIC_PUSH_API_URL`が指す`trace-push`を使います。付けずにビルドすると、`/log`の通知と記録が使えません。
