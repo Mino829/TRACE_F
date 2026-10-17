@@ -97,15 +97,24 @@ function base64UrlToBytes(text: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
+/** A fetch to the worker that never shows the browser's own words ("Load failed", "Failed to fetch") when the worker cannot be reached. */
+async function reach(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${PUSH_API_URL}${path}`, init);
+  } catch {
+    throw new Error("通知サーバーにつながりませんでした。電波の良い場所で、もう一度試してください。");
+  }
+}
+
 async function post(path: string, body: unknown): Promise<Response> {
-  const response = await fetch(`${PUSH_API_URL}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const response = await reach(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   if (!response.ok) throw new Error(`通知サーバーへの送信に失敗しました（${response.status}）。`);
   return response;
 }
 
 /** Subscribes this phone, or moves its subscription to another plan; the worker keeps one row per subscription. */
 export async function subscribe(registration: ServiceWorkerRegistration, consentVersion: string, plan: PushPlan): Promise<PushSubscription> {
-  const response = await fetch(`${PUSH_API_URL}/vapid-public-key`);
+  const response = await reach("/vapid-public-key");
   if (!response.ok) throw new Error("通知サーバーに接続できませんでした。");
   const { publicKey } = (await response.json()) as { publicKey: string };
   const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(publicKey) });
@@ -139,7 +148,7 @@ export async function uploadEntry(entry: LogEntry): Promise<void> {
   const form = new FormData();
   form.set("record", JSON.stringify(entry.record));
   if (entry.photo) form.set("photo", new File([entry.photo], `${entry.id}.jpg`, { type: "image/jpeg" }));
-  const response = await fetch(`${PUSH_API_URL}/records`, { method: "POST", body: form });
+  const response = await reach("/records", { method: "POST", body: form });
   if (!response.ok) throw new Error(`送信に失敗しました（${response.status}）。`);
 }
 
