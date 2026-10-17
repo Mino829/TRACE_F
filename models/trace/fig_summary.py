@@ -5,13 +5,13 @@ from PIL import Image, ImageDraw, ImageFont
 
 FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
 G = json.load(open(os.path.join(os.path.dirname(FIG), "campus_graph.json"), encoding="utf-8"))
-ITEMS = [("01_配置図_真上から.png", f"① 配置図：{len(G['nodes'])}か所・{len(G['edges'])}本（真上から）"),
+ITEMS = [("01_配置図_真上から.png", f"① 配置図：点{len(G['nodes'])}・つながり{len(G['edges'])}（真上から）"),
          ("02_3D_全体_豊洲駅側の空から.png", "② 3D：点とつながり（豊洲駅側の空から）"),
-         ("03_教室棟3F_ShibaLabまで.png", "③ 教室棟3F：入口→ShibaLab（301）"),
+         ("03_建物の中_階ごと.png", "③ 建物の中：階ごとの点とつながり"),
          ("04_軌跡の例_そのまま（建物に隠れる）.png", "④ 軌跡の例：3Dにそのまま置くと建物に隠れる"),
          ("05_軌跡の例_重ねる_直線.png", "⑤ 軌跡の例：線を上に重ねる（直線）"),
          ("06_軌跡の例_重ねる_なめらか.png", "⑥ 軌跡の例：線を上に重ねる（角を丸める）"),
-         ("07_チェックポイント一覧.png", "⑦ 点の一覧（緯度経度・アプリの座標・GPSで使うか）"),
+         ("07_チェックポイント一覧.png", "⑦ ゴールの点の一覧（緯度経度・アプリの座標・GPSで使うか）"),
          ("08_3D_建物を消して階を見る.png", "⑧ 建物を消して見た点とつながり（階・渡り廊下）")]
 CW, CH, PAD, TH, COLS = 900, 506, 30, 56, 2
 rows = (len(ITEMS) + 1) // COLS
@@ -21,7 +21,7 @@ sheet = Image.new("RGB", (W, H), (245, 245, 242))
 d = ImageDraw.Draw(sheet)
 fb = ImageFont.truetype("C:/Windows/Fonts/meiryob.ttc", 40)
 ft = ImageFont.truetype("C:/Windows/Fonts/meiryob.ttc", 24)
-d.text((PAD, 36), "TRACE チェックポイントのまとめ（TRACE_F #8・2026-10-17 下書き）", font=fb, fill=(20, 20, 20))
+d.text((PAD, 36), "TRACE 道の網のまとめ（TRACE_F #8・2026-10-17 下書き 2）", font=fb, fill=(20, 20, 20))
 for i, (f, t) in enumerate(ITEMS):
     r, c = divmod(i, COLS)
     x, y = PAD + c * (CW + PAD), 120 + r * (CH + TH + PAD)

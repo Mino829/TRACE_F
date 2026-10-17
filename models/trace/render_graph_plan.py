@@ -10,12 +10,13 @@ ROOT = globals().get("TRACE_ROOT") or os.path.dirname(bpy.data.filepath)
 PNG = os.path.join(ROOT, "trace", "campus_graph_plan.png")
 P = json.load(open(os.path.join(ROOT, "buildings", "配置.json"), encoding="utf-8"))
 sc = bpy.context.scene
-cps = [o for o in bpy.data.collections["30_TRACE_チェックポイント"].objects if o.type == 'EMPTY']
+SRC = json.load(open(os.path.join(ROOT, "trace", "campus_graph.src.json"), encoding="utf-8"))
+NODES = [(n["id"], n["name"], Vector(n["blender"])) for n in SRC["nodes"]]
 
 # 点が全部入る範囲（教室棟の向きに回した座標で）
 th = P["教室棟"]["theta"]
 rot = lambda v: Vector((math.cos(th) * v.x + math.sin(th) * v.y, -math.sin(th) * v.x + math.cos(th) * v.y))
-pts = [rot(o.location) for o in cps]
+pts = [rot(p) for _, _, p in NODES]
 lo = Vector((min(p.x for p in pts), min(p.y for p in pts)))
 hi = Vector((max(p.x for p in pts), max(p.y for p in pts)))
 mid = (lo + hi) / 2
@@ -39,13 +40,18 @@ sh.show_shadows = False
 sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = 1920, 1080, 100
 sc.render.filepath = PNG
 bpy.context.view_layer.update()
-uv = {o["id"]: (o["name"], list(world_to_camera_view(sc, cam, o.matrix_world.translation))[:2]) for o in cps}
+uv = {i: (name, list(world_to_camera_view(sc, cam, p))[:2]) for i, name, p in NODES}
 north = list(world_to_camera_view(sc, cam, c + Vector((0, 30, -300))))[:2]
 center = list(world_to_camera_view(sc, cam, c + Vector((0, 0, -300))))[:2]
 mpp = cd.ortho_scale / 1920
+net = bpy.data.objects.get("TRACE_道の網")       # 点と線は label_graph_plan.py で上に描くので、レンダーでは隠す
+if net:
+    net.hide_render = True
 try:
     bpy.ops.render.render(write_still=True)
 finally:
+    if net:
+        net.hide_render = False
     sc.render.engine, sc.camera = keep["engine"], keep["cam"]
     sc.render.resolution_x, sc.render.resolution_y = keep["rx"], keep["ry"]
     sc.render.filepath, sc.render.resolution_percentage = keep["fp"], keep["pct"]

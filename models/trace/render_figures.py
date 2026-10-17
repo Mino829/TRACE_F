@@ -2,6 +2,7 @@
 #   shot("01_全体", ...)        … 点とつながりを全部見せる
 #   trail(順番, smooth)         … 来場者が歩いた例の光の線（一時的なオブジェクト。clear_trail() で消す）
 import bpy, math, os
+exec(open(os.path.join(os.path.dirname(bpy.data.filepath), "trace", "trace_graph.py"), encoding="utf-8").read())   # set_input など
 from mathutils import Vector
 
 # キャンパス全体.blend と同じフォルダ（make_campus_all.py のように保存前に exec するときは TRACE_ROOT を先に入れておく）
@@ -13,17 +14,23 @@ sc = bpy.context.scene
 
 
 def P(nid):
-    return bpy.data.objects["CP_" + nid].matrix_world.translation.copy()
+    """点の位置（元データ campus_graph.src.json から）"""
+    import json
+    if "_pos" not in globals():
+        g = json.load(open(os.path.join(ROOT, "trace", "campus_graph.src.json"), encoding="utf-8"))
+        globals()["_pos"] = {n["id"]: n["blender"] for n in g["nodes"]}
+    return Vector(_pos[nid])
 
 
 def show_graph(edges=True, rings=True, points=True):
-    for o in bpy.data.collections[COL].objects:
-        if o.name.startswith("EDGE_"):
-            o.hide_render = not edges
-        elif o.name.endswith("_範囲"):
-            o.hide_render = not rings
-        elif o.name.endswith("_球"):
-            o.hide_render = not points
+    """道の網の見た目を切りかえる。points = "check" ならゴールの点だけ"""
+    o = bpy.data.objects["TRACE_道の網"]
+    mod = o.modifiers["見た目"]
+    vals = {"線": edges, "輪": rings, "点": bool(points), "ゴールの点だけ": points == "check"}
+    for item in mod.node_group.interface.items_tree:
+        if item.in_out == 'INPUT' and item.name in vals:
+            set_input(mod, item.identifier, vals[item.name])
+    o.update_tag()
 
 
 def _emit(name, rgb, strength):
@@ -152,14 +159,46 @@ SEQ = ["big-tree", "hq-piloti", "koryu-plaza", "grand-stairs-bottom", "hq-exchan
 VIEW = ((-330, -190, 170), (-150, -20, 0))
 
 
+def route(seq):
+    """ゴールの点の順番を、道の網の上の最短の道（点の id の列）に広げる"""
+    import heapq, json
+    g = json.load(open(os.path.join(ROOT, "trace", "campus_graph.src.json"), encoding="utf-8"))
+    pos = {n["id"]: Vector(n["blender"]) for n in g["nodes"]}
+    adj = {i: [] for i in pos}
+    for e in g["edges"]:
+        w = (pos[e["from"]] - pos[e["to"]]).length
+        adj[e["from"]].append((e["to"], w))
+        adj[e["to"]].append((e["from"], w))
+    out = [seq[0]]
+    for a, b in zip(seq, seq[1:]):
+        dist, prev, q = {a: 0.0}, {}, [(0.0, a)]
+        while q:
+            d, u = heapq.heappop(q)
+            if u == b:
+                break
+            if d > dist[u]:
+                continue
+            for v, w in adj[u]:
+                if d + w < dist.get(v, 1e18):
+                    dist[v], prev[v] = d + w, u
+                    heapq.heappush(q, (d + w, v))
+        part, u = [], b
+        while u != a:
+            part.append(u)
+            u = prev[u]
+        out += part[::-1]
+    return out
+
+
 def render_all(seq=SEQ, samples=16):
     """figures/ の 02（全体）と 04（そのまま）、05・06 の素材（_背景_夜・_線_直線・_線_なめらか）を撮る"""
     out = []
     try:
         show_graph(True, True, True)
         out.append(shot("02_3D_全体_豊洲駅側の空から", *VIEW, lens=32, samples=24))
-        show_graph(False, False, True)
+        show_graph(False, False, "check")
         night(True)
+        seq = route(seq)
         trail(seq, smooth=True, strength=1.5)
         out.append(shot("04_軌跡の例_そのまま（建物に隠れる）", *VIEW, lens=32, samples=samples))
         clear_trail()
@@ -169,7 +208,7 @@ def render_all(seq=SEQ, samples=16):
         view(*VIEW, lens=32, samples=samples)
         for sm in (False, True):
             trail(seq, smooth=sm, strength=1.5)
-            show_graph(False, False, True)
+            show_graph(False, False, "check")
             out.append(trail_layer("_線_" + ("なめらか" if sm else "直線")))
     finally:
         night(False)

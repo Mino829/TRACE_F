@@ -1,11 +1,11 @@
 # TRACE のチェックポイント（グラフの点とつながり）を Blender に置く・書き戻す・書き出す
 #   キャンパス全体.blend を開いて、Blender の中で実行する:
 #     exec(open(r"<このファイル>", encoding="utf-8").read()); build()   … 元データ → 点と線を作り直す
-#     pull()    … Blender で動かした点の位置を元データ（campus_graph.src.json）に書き戻す
+#     pull()    … 編集モードで動かした頂点（点）の位置を元データ（campus_graph.src.json）に書き戻す
+#   点とつながりは 1 つのメッシュ「TRACE_道の網」（頂点 = 点、辺 = つながり）。見た目は Geometry Nodes
 #     export()  … バックエンドに渡す campus_graph.json を書き出す（緯度経度・アプリの座標つき）
 import bpy, json, math, os, sys
 from datetime import date
-from mathutils import Matrix
 
 # キャンパス全体.blend と同じフォルダ（make_campus_all.py のように保存前に exec するときは TRACE_ROOT を先に入れておく）
 ROOT = globals().get("TRACE_ROOT") or os.path.dirname(bpy.data.filepath)
@@ -16,7 +16,7 @@ import importlib, trace_geo
 importlib.reload(trace_geo)
 
 COL = "30_TRACE_チェックポイント"
-GRAPH_VERSION = "toyosu-graph-2026-10-17.draft"
+GRAPH_VERSION = "toyosu-graph-2026-10-17.2.draft"
 KIND_COLOR = {"ground": (0.1, 0.55, 1.0), "stairs": (1.0, 0.6, 0.1), "bridge": (0.75, 0.3, 1.0), "indoor": (0.2, 0.8, 0.3), "escalator": (1.0, 0.85, 0.1)}
 
 
@@ -31,102 +31,177 @@ def _mat(name, rgb):
     return m
 
 
+KINDS = list(KIND_COLOR)                    # 辺の属性 kind の番号の順
+ROLES = ["checkpoint", "room", "waypoint"]  # 頂点の属性 role の番号の順
+NET = "TRACE_道の網"
+
+
 def _clear():
     col = bpy.data.collections.get(COL)
     if col:
-        for o in list(col.all_objects):
-            bpy.data.objects.remove(o, do_unlink=True)
+        objs = list(col.all_objects)
+        datas = [o.data for o in objs if o.data]
+        bpy.data.batch_remove(objs)             # 1 つずつ消すと遅い（前の版は点ごとに 3 つのオブジェクトがあった）
+        bpy.data.batch_remove([d for d in datas if d.users == 0])
     else:
         col = bpy.data.collections.new(COL)
         bpy.context.scene.collection.children.link(col)
     return col
 
 
+def _sock(node, ident):
+    """Compare の整数の入力は、版によって A_INT（4.x）か A（5.x）"""
+    for name in (ident, ident.split("_")[0]):
+        for s in node.inputs:
+            if s.identifier == name and s.type == 'INT':
+                return s
+    raise KeyError(ident)
+
+
+def _gn():
+    """道の網の見た目：辺 → 種類ごとの色の管、頂点 → 球（ゴールは大きく）、ゴールのまわりに半径の輪"""
+    ng = bpy.data.node_groups.get("TRACE_道の網の見た目")
+    if ng:
+        bpy.data.node_groups.remove(ng)
+    ng = bpy.data.node_groups.new("TRACE_道の網の見た目", 'GeometryNodeTree')
+    io = ng.interface
+    io.new_socket("Geometry", in_out='INPUT', socket_type='NodeSocketGeometry')
+    for name, val in (("線", True), ("点", True), ("ゴールの点だけ", False), ("輪", True)):
+        io.new_socket(name, in_out='INPUT', socket_type='NodeSocketBool').default_value = val
+    io.new_socket("Geometry", in_out='OUTPUT', socket_type='NodeSocketGeometry')
+    N, Lk = ng.nodes, ng.links.new
+    gi, go = N.new("NodeGroupInput"), N.new("NodeGroupOutput")
+    join = N.new("GeometryNodeJoinGeometry")
+    Lk(join.outputs[0], go.inputs[0])
+
+    def attr(name, dtype):
+        a = N.new("GeometryNodeInputNamedAttribute")
+        a.data_type = dtype
+        a.inputs["Name"].default_value = name
+        return a.outputs["Attribute"]
+
+    def eq(value, k):
+        c = N.new("FunctionNodeCompare")
+        c.data_type, c.operation = 'INT', 'EQUAL'
+        Lk(value, _sock(c, "A_INT"))
+        _sock(c, "B_INT").default_value = k
+        return c.outputs[0]
+
+    def boolean(op, a, b=None):
+        m = N.new("FunctionNodeBooleanMath")
+        m.operation = op
+        Lk(a, m.inputs[0])
+        if b is not None:
+            Lk(b, m.inputs[1])
+        return m.outputs[0]
+
+    def tube(geo, radius, mat):
+        prof = N.new("GeometryNodeCurvePrimitiveCircle")
+        prof.inputs["Resolution"].default_value = 8
+        prof.inputs["Radius"].default_value = radius
+        cm = N.new("GeometryNodeCurveToMesh")
+        Lk(geo, cm.inputs["Curve"])
+        Lk(prof.outputs["Curve"], cm.inputs["Profile Curve"])
+        sm = N.new("GeometryNodeSetMaterial")
+        Lk(cm.outputs[0], sm.inputs["Geometry"])
+        sm.inputs["Material"].default_value = mat
+        return sm.outputs[0]
+
+    # 線（種類ごと）
+    kind = attr("kind", 'INT')
+    for k, name in enumerate(KINDS):
+        sep = N.new("GeometryNodeSeparateGeometry")
+        sep.domain = 'EDGE'
+        Lk(gi.outputs["Geometry"], sep.inputs["Geometry"])
+        Lk(boolean('AND', eq(kind, k), gi.outputs["線"]), sep.inputs["Selection"])
+        m2c = N.new("GeometryNodeMeshToCurve")
+        Lk(sep.outputs["Selection"], m2c.inputs["Mesh"])
+        Lk(tube(m2c.outputs[0], 0.6, _mat("TRACE_線_" + name, KIND_COLOR[name])), join.inputs[0])
+    # 点（球）。ゴールは半径 1.5m、ほかは 0.6m
+    role = attr("role", 'INT')
+    is_check = eq(role, 0)
+    sel = boolean('AND', gi.outputs["点"], boolean('OR', boolean('NOT', gi.outputs["ゴールの点だけ"]), is_check))
+    sph = N.new("GeometryNodeMeshUVSphere")
+    sph.inputs["Segments"].default_value, sph.inputs["Rings"].default_value, sph.inputs["Radius"].default_value = 16, 8, 1.0
+    sw = N.new("GeometryNodeSwitch")
+    sw.input_type = 'FLOAT'
+    Lk(is_check, sw.inputs["Switch"])
+    sw.inputs["False"].default_value, sw.inputs["True"].default_value = 0.6, 1.5
+    iop = N.new("GeometryNodeInstanceOnPoints")
+    Lk(gi.outputs["Geometry"], iop.inputs["Points"])
+    Lk(sel, iop.inputs["Selection"])
+    Lk(sph.outputs["Mesh"], iop.inputs["Instance"])
+    Lk(sw.outputs[0], iop.inputs["Scale"])
+    smp = N.new("GeometryNodeSetMaterial")
+    Lk(iop.outputs[0], smp.inputs["Geometry"])
+    smp.inputs["Material"].default_value = _mat("TRACE_点", (1.0, 0.15, 0.1))
+    Lk(smp.outputs[0], join.inputs[0])
+    # 半径の輪（ゴールだけ。半径は頂点の属性 radius）
+    circ = N.new("GeometryNodeCurvePrimitiveCircle")
+    circ.inputs["Resolution"].default_value, circ.inputs["Radius"].default_value = 48, 1.0
+    # 半径 1m の輪を radius 倍に広げるので、管の太さは先に割っておく（ゴールの radius はどれも 15m）
+    ring = tube(circ.outputs["Curve"], 0.25 / 15, _mat("TRACE_点", (1.0, 0.15, 0.1)))
+    iop2 = N.new("GeometryNodeInstanceOnPoints")
+    Lk(gi.outputs["Geometry"], iop2.inputs["Points"])
+    Lk(boolean('AND', is_check, gi.outputs["輪"]), iop2.inputs["Selection"])
+    Lk(ring, iop2.inputs["Instance"])
+    Lk(attr("radius", 'FLOAT'), iop2.inputs["Scale"])
+    Lk(iop2.outputs[0], join.inputs[0])
+    return ng
+
+
 def build():
+    """元データ → 1 つのメッシュ（頂点 = 点、辺 = つながり）。点の順番 = 頂点の番号"""
     src = json.load(open(GRAPH_SRC, encoding="utf-8"))
     col = _clear()
-    pos = {}
-    m_pt = _mat("TRACE_点", (1.0, 0.15, 0.1))
-    for n in src["nodes"]:
-        p = n["blender"]
-        pos[n["id"]] = p
-        # 点：動かせる空オブジェクト（これが位置の正）＋ 見た目の球（子）
-        e = bpy.data.objects.new("CP_" + n["id"], None)
-        e.empty_display_type = 'SPHERE'
-        e.empty_display_size = 2.0
-        e.location = p
-        for k in ("id", "name", "building", "floor", "note"):
-            e[k] = n.get(k) or ""
-        e["radius"] = n.get("radius", 15)
-        e["gpsSnap"] = n.get("gpsSnap", True)
-        col.objects.link(e)
-        me = bpy.data.meshes.get("TRACE_球")
-        if not me:
-            import bmesh
-            me = bpy.data.meshes.new("TRACE_球")
-            bm = bmesh.new()
-            bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=8, radius=1.5)
-            bm.to_mesh(me)
-            bm.free()
-            me.materials.append(m_pt)
-        s = bpy.data.objects.new("CP_" + n["id"] + "_球", me)
-        s.parent = e
-        s.hide_select = True
-        col.objects.link(s)
-        # 範囲（半径）の輪
-        cu = bpy.data.curves.new("CP_" + n["id"] + "_範囲", 'CURVE')
-        cu.dimensions = '3D'
-        cu.bevel_depth = 0.25
-        sp = cu.splines.new('POLY')
-        seg = 48
-        sp.points.add(seg)
-        r = e["radius"]
-        for i in range(seg + 1):
-            a = 2 * math.pi * i / seg
-            sp.points[i].co = (r * math.cos(a), r * math.sin(a), 0.3, 1)
-        cu.materials.append(m_pt)
-        ring = bpy.data.objects.new("CP_" + n["id"] + "_範囲", cu)
-        ring.parent = e
-        ring.hide_select = True
-        col.objects.link(ring)
-    # つながり：点を動かすと線もついてくるように、端点をフックで点につなぐ
-    for ed in src["edges"]:
-        a, b = bpy.data.objects["CP_" + ed["from"]], bpy.data.objects["CP_" + ed["to"]]
-        cu = bpy.data.curves.new("EDGE_" + ed["id"], 'CURVE')
-        cu.dimensions = '3D'
-        cu.bevel_depth = 0.6
-        sp = cu.splines.new('POLY')
-        sp.points.add(1)
-        sp.points[0].co = (*a.location, 1)
-        sp.points[1].co = (*b.location, 1)
-        cu.materials.append(_mat("TRACE_線_" + ed["kind"], KIND_COLOR[ed["kind"]]))
-        o = bpy.data.objects.new("EDGE_" + ed["id"], cu)
-        o["from"], o["to"], o["kind"] = ed["from"], ed["to"], ed["kind"]
-        o.hide_select = True
-        col.objects.link(o)
-        for i, t in enumerate((a, b)):
-            h = o.modifiers.new(f"hook{i}", 'HOOK')
-            h.object = t
-            h.vertex_indices_set([i])
-            # 作ったばかりの空は matrix_world がまだ更新されていないので、位置から作る
-            h.matrix_inverse = Matrix.Translation(t.location).inverted()
+    index = {n["id"]: i for i, n in enumerate(src["nodes"])}
+    me = bpy.data.meshes.new(NET)
+    me.from_pydata([n["blender"] for n in src["nodes"]], [(index[e["from"]], index[e["to"]]) for e in src["edges"]], [])
+    me.attributes.new("kind", 'INT', 'EDGE').data.foreach_set("value", [KINDS.index(e["kind"]) for e in src["edges"]])
+    me.attributes.new("role", 'INT', 'POINT').data.foreach_set(
+        "value", [ROLES.index(n.get("role", "checkpoint")) for n in src["nodes"]])
+    me.attributes.new("radius", 'FLOAT', 'POINT').data.foreach_set("value", [float(n.get("radius", 15)) for n in src["nodes"]])
+    o = bpy.data.objects.new(NET, me)
+    o["node_ids"] = [n["id"] for n in src["nodes"]]       # 頂点の番号 → 点の id（pull() で使う）
+    col.objects.link(o)
+    o.modifiers.new("見た目", 'NODES').node_group = _gn()
     return {"nodes": len(src["nodes"]), "edges": len(src["edges"])}
 
 
+def set_input(mod, identifier, value):
+    """Geometry Nodes のモディファイアの入力に値を入れる（5.x は properties.inputs、4.x は mod[identifier]）"""
+    props = getattr(mod, "properties", None)
+    if props is not None and hasattr(props.inputs, identifier):
+        getattr(props.inputs, identifier).value = value
+    else:
+        mod[identifier] = value
+
+
+def show(**kw):
+    """見た目の切りかえ：show(線=True, 点=True, ゴールの点だけ=False, 輪=True)"""
+    o = bpy.data.objects[NET]
+    mod = o.modifiers["見た目"]
+    for item in mod.node_group.interface.items_tree:
+        if item.in_out == 'INPUT' and item.name in kw:
+            set_input(mod, item.identifier, kw[item.name])
+    o.update_tag()
+
+
 def pull():
-    """Blender で動かした点の位置を元データに書き戻す"""
+    """編集モードで動かした頂点の位置を元データに書き戻す（頂点を足したり消したりしない。順番が点の id とずれる）"""
     src = json.load(open(GRAPH_SRC, encoding="utf-8"))
+    o = bpy.data.objects[NET]
+    if o.mode == 'EDIT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    ids = list(o["node_ids"])
+    if len(o.data.vertices) != len(ids) or ids != [n["id"] for n in src["nodes"]]:
+        raise RuntimeError("頂点の数か順番が元データと合わない。頂点を足したり消したりしたときは build_network.py の道を直す")
     moved = []
-    for n in src["nodes"]:
-        e = bpy.data.objects.get("CP_" + n["id"])
-        if not e:
-            continue
-        p = [round(v, 2) for v in e.matrix_world.translation]
+    for n, v in zip(src["nodes"], o.data.vertices):
+        p = [round(c, 2) for c in (o.matrix_world @ v.co)]
         if p != n["blender"]:
             moved.append(n["id"])
         n["blender"] = p
-        n["radius"] = e.get("radius", n.get("radius", 15))
-        n["gpsSnap"] = bool(e.get("gpsSnap", n.get("gpsSnap", True)))
     json.dump(src, open(GRAPH_SRC, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     return {"moved": moved}
 
@@ -141,7 +216,7 @@ def export():
         east, north = trace_geo.latlon_to_enu(lat, lon)
         pos[n["id"]] = (east, north, z)
         nodes.append({
-            "id": n["id"], "name": n["name"], "building": n["building"], "floor": n["floor"],
+            "id": n["id"], "name": n["name"], "role": n.get("role", "checkpoint"), "building": n["building"], "floor": n["floor"],
             "lat": round(lat, 7), "lon": round(lon, 7),
             "local": {"east": round(east, 2), "north": round(north, 2)},
             "heightMetres": z,
@@ -166,6 +241,7 @@ def export():
             "threeD": "キャンパス全体.blend の座標（1 = 1m, Z 上, 地面 = 0）。平面直角座標系 第IX系 (X=-37645, Y=-3322) を原点にずらしたもの",
             "heightMetres": "地面からの高さ。MVP は高さ固定なので経路の計算には使わない",
         },
+        "roles": {"checkpoint": "ゴール・目印の点（名前がある）", "room": "教室の中の点", "waypoint": "道の途中の点（数m〜10m おき）"},
         "edgeKinds": {"ground": "地上の道", "stairs": "階段", "bridge": "渡り廊下", "indoor": "建物の中", "escalator": "エスカレーター"},
         "gpsSnap": "true = GPS の位置をこの点にまとめてよい。false = 上の階の点など、GPS では見分けられないので描画（演出）だけに使う",
         "nodes": nodes,
