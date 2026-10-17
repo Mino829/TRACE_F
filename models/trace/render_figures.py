@@ -143,3 +143,48 @@ _last_view = [((), {})]
 
 def view(loc, target, **kw):
     _last_view[0] = ((loc, target), kw)
+
+
+# 軌跡の例：大樹（豊洲駅側）から入って広場へ。本部棟から渡り廊下で交流棟 4F・6F（大講義室）、教室棟 6F→5F→4F→3F と下りて ShibaLab へ
+SEQ = ["big-tree", "hq-piloti", "koryu-plaza", "grand-stairs-bottom", "hq-exchange-bridge", "hq-entrance", "hq-4f-bridge",
+       "exchange-4f", "exchange-6f-hall", "classroom-6f-bridge", "classroom-5f-lobby", "classroom-4f-lobby",
+       "classroom-3f-lobby", "shibalab"]
+VIEW = ((-330, -190, 170), (-150, -20, 0))
+
+
+def render_all(seq=SEQ, samples=16):
+    """figures/ の 02（全体）と 04（そのまま）、05・06 の素材（_背景_夜・_線_直線・_線_なめらか）を撮る"""
+    out = []
+    try:
+        show_graph(True, True, True)
+        out.append(shot("02_3D_全体_豊洲駅側の空から", *VIEW, lens=32, samples=24))
+        show_graph(False, False, True)
+        night(True)
+        trail(seq, smooth=True, strength=1.5)
+        out.append(shot("04_軌跡の例_そのまま（建物に隠れる）", *VIEW, lens=32, samples=samples))
+        clear_trail()
+        show_graph(False, False, False)
+        out.append(shot("_背景_夜", *VIEW, lens=32, samples=samples))
+        night(False)
+        view(*VIEW, lens=32, samples=samples)
+        for sm in (False, True):
+            trail(seq, smooth=sm, strength=1.5)
+            show_graph(False, False, True)
+            out.append(trail_layer("_線_" + ("なめらか" if sm else "直線")))
+    finally:
+        night(False)
+        clear_trail()
+        show_graph(True, True, True)
+    return out
+
+
+def render_floors(samples=24):
+    """建物を消して、点とつながりだけを斜めから撮る（階の重なりが見える）→ figures/08"""
+    show_graph(True, False, True)
+    night(True)
+    try:
+        return shot("08_3D_建物を消して階を見る", (-105, -125, 40), (-190, -15, 13), lens=26, samples=samples,
+                    hide=("周辺建物_OSM", "10_建物", "20_内装"))
+    finally:
+        night(False)
+        show_graph(True, True, True)

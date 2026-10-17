@@ -9,7 +9,7 @@
 
 ## campus_graph.json
 
-- 点 16 か所・つながり 23 本。`campusGraphVersion` は `toyosu-graph-2026-10-17.draft`
+- 点 23 か所（外 14・建物の中 9）・つながり 34 本。`campusGraphVersion` は `toyosu-graph-2026-10-17.draft`
 - 点（`nodes`）
 
 | 項目 | 中身 |
@@ -21,13 +21,18 @@
 | `heightMetres` | 地面からの高さ。MVP は高さ固定なので経路の計算には使わない（演出用） |
 | `threeD` | 3DCG（`キャンパス全体.blend`）の座標。1 = 1m、Z が上 |
 | `radiusMetres` | この点にまとめる範囲（今は全部 15m） |
-| `gpsSnap` | `true` = GPS の位置をこの点にまとめてよい。`false` = 3F の点など、GPS では階を見分けられないので演出だけに使う |
+| `gpsSnap` | `true` = GPS の位置をこの点にまとめてよい。`false` = 建物の上の階の点。GPS では階を見分けられないので演出だけに使う |
 
-- つながり（`edges`）：`from` / `to` / `kind`（`ground` 地上の道・`stairs` 階段・`escalator` エスカレーター・`indoor` 建物の中）/ `lengthMetres`（平面の直線距離）/ `passable`
-- `gpsSnap: true` の点どうしは、ShibaLab まわりの 3F の点を除いて 30m 以上離してある
+- つながり（`edges`）：`from` / `to` / `kind`（`ground` 地上の道・`stairs` 階段・`escalator` エスカレーター・`indoor` 建物の中・`bridge` 渡り廊下）/ `lengthMetres`（平面の直線距離）/ `passable`
+- `gpsSnap: true` の点どうしは、すべて 30m 以上離してある
 
 ## 決めたこと
-- 建物の中は **ShibaLab の展示がある教室棟 3F だけ**。第54回芝浦祭（2026/10/31〜11/1）の ShibaLab は **301**（[芝浦祭のフロアマップ](https://shibaurasai.jp/map54/)）
+- 建物の中は**第54回芝浦祭（2026/10/31〜11/1）の会場の階**だけ（[芝浦祭のフロアマップ](https://shibaurasai.jp/map54/)）。研究棟の中は作らない
+  - 教室棟：3F（ShibaLab は **301**・ロビー）、4F（403〜408）、5F（502〜511）、6F（交流棟の大講義室への渡り廊下の口）
+  - 交流棟：4F（401・402）、6F（大講義室）
+  - 本部棟：会場はないが、交流棟と渡り廊下でつながる 4F・6F
+  - 階どうしはエスカレーター・階段、建物どうしは渡り廊下（教室棟〜交流棟は 4F・6F、交流棟〜本部棟は 4F・6F）でつないだ
+- 外の点は増やさない（2026-10-17 ユーザーの判断。いったん 7 か所足したが戻した）
 - 3DCG の座標は PLATEAU と同じ平面直角座標系 第IX系なので、そのまま緯度経度に直せる。アプリの原点を 3DCG に置くと、教室棟の壁から 0.45m 以内に乗る（アプリと 3DCG の座標はずれていない）
 - ⑯ 大樹（豊洲駅側の角）は、芝浦祭のキャンパス図で豊洲駅から来る入口になっているので足した
 
@@ -38,6 +43,7 @@
 
 ## 軌跡の見せ方（試した結果）
 - 線を 3D の中にそのまま置くと、本部棟のピロティ・研究棟のゲートの下・教室棟の中などで建物に隠れて、ほとんど見えない（`figures/04`）
+- 建物を消すと、階の重なりと渡り廊下が見える（`figures/08`）
 - 建物と線を別々にレンダーして、線をグローつきで上に重ねると、全体の道すじがはっきり見える（`figures/05`・`06`）。TouchDesigner でも同じようにレイヤーを重ねる想定
 - 角を丸めた線（`06`）の方が光が流れる感じが出る
 
@@ -49,7 +55,7 @@ trace/
 ├─ campus_graph.src.json    ← 元データ（点の位置 = 3DCG の座標）
 ├─ trace_graph.py           ← Blender で点と線を置く・書き戻す・書き出す
 ├─ render_graph_plan.py / label_graph_plan.py   ← 配置図（figures/01）
-├─ render_figures.py / glow_composite.py         ← 3D の図と軌跡の例（figures/02・04〜06）
+├─ render_figures.py / glow_composite.py         ← 3D の図と軌跡の例（figures/02・04〜06・08）
 ├─ fig_3F_and_table.py / fig_summary.py          ← 3F の図・一覧表・まとめ（figures/03・07・00）
 └─ figures/
 ```

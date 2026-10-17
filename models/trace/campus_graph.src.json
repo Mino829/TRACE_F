@@ -224,6 +224,104 @@
    "radius": 15,
    "gpsSnap": true,
    "note": "要確認：第54回芝浦祭のキャンパス図（shibaurasai.jp/map54）から位置を推定。豊洲駅から来る人の入口"
+  },
+  {
+   "id": "classroom-4f-lobby",
+   "name": "教室棟4F ロビー（403〜408）",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -144.65,
+    44.37,
+    16.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "3F→4F のエスカレーターを上がったところ。床 16m"
+  },
+  {
+   "id": "classroom-5f-lobby",
+   "name": "教室棟5F ロビー（502〜511）",
+   "building": "教室棟",
+   "floor": "5F",
+   "blender": [
+    -138.9,
+    50.49,
+    21.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "4F→5F のエスカレーターを上がったところ。床 21m"
+  },
+  {
+   "id": "classroom-6f-bridge",
+   "name": "教室棟6F 渡り廊下の口（大講義室へ）",
+   "building": "教室棟",
+   "floor": "6F",
+   "blender": [
+    -185.66,
+    5.23,
+    26.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "交流棟側の端。芝浦祭のフロアマップでは 6F から交流棟の大講義室へ行く。床 26m"
+  },
+  {
+   "id": "exchange-4f",
+   "name": "交流棟4F 401・402",
+   "building": "交流棟",
+   "floor": "4F",
+   "blender": [
+    -204.33,
+    -39.98,
+    16.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "廊下（本部棟側）の 401 と 402 の間。床 16m"
+  },
+  {
+   "id": "exchange-6f-hall",
+   "name": "交流棟6F 大講義室",
+   "building": "交流棟",
+   "floor": "6F",
+   "blender": [
+    -214.69,
+    -34.65,
+    26.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "大講義室の真ん中。床 26m"
+  },
+  {
+   "id": "hq-4f-bridge",
+   "name": "本部棟4F 渡り廊下の口",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -172.5,
+    -51.5,
+    16.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "交流棟からの渡り廊下（下のデッキ）が本部棟に着くところ。床 16m"
+  },
+  {
+   "id": "hq-6f-bridge",
+   "name": "本部棟6F 渡り廊下の口",
+   "building": "本部棟",
+   "floor": "6F",
+   "blender": [
+    -172.5,
+    -51.5,
+    26.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "交流棟からの渡り廊下（屋根付き）が本部棟に着くところ。床 26m"
   }
  ],
  "edges": [
@@ -364,6 +462,72 @@
    "from": "big-tree",
    "to": "exchange-road",
    "kind": "ground"
+  },
+  {
+   "id": "classroom-3f-lobby--classroom-4f-lobby",
+   "from": "classroom-3f-lobby",
+   "to": "classroom-4f-lobby",
+   "kind": "escalator"
+  },
+  {
+   "id": "classroom-4f-lobby--classroom-5f-lobby",
+   "from": "classroom-4f-lobby",
+   "to": "classroom-5f-lobby",
+   "kind": "escalator"
+  },
+  {
+   "id": "classroom-5f-lobby--classroom-6f-bridge",
+   "from": "classroom-5f-lobby",
+   "to": "classroom-6f-bridge",
+   "kind": "escalator"
+  },
+  {
+   "id": "classroom-4f-lobby--exchange-4f",
+   "from": "classroom-4f-lobby",
+   "to": "exchange-4f",
+   "kind": "bridge"
+  },
+  {
+   "id": "classroom-6f-bridge--exchange-6f-hall",
+   "from": "classroom-6f-bridge",
+   "to": "exchange-6f-hall",
+   "kind": "bridge"
+  },
+  {
+   "id": "classroom-entrance--exchange-4f",
+   "from": "classroom-entrance",
+   "to": "exchange-4f",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-4f--exchange-6f-hall",
+   "from": "exchange-4f",
+   "to": "exchange-6f-hall",
+   "kind": "stairs"
+  },
+  {
+   "id": "exchange-4f--hq-4f-bridge",
+   "from": "exchange-4f",
+   "to": "hq-4f-bridge",
+   "kind": "bridge"
+  },
+  {
+   "id": "exchange-6f-hall--hq-6f-bridge",
+   "from": "exchange-6f-hall",
+   "to": "hq-6f-bridge",
+   "kind": "bridge"
+  },
+  {
+   "id": "hq-4f-bridge--hq-6f-bridge",
+   "from": "hq-4f-bridge",
+   "to": "hq-6f-bridge",
+   "kind": "stairs"
+  },
+  {
+   "id": "hq-4f-bridge--hq-entrance",
+   "from": "hq-4f-bridge",
+   "to": "hq-entrance",
+   "kind": "indoor"
   }
  ]
 }

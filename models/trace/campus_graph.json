@@ -353,6 +353,153 @@
    "radiusMetres": 15,
    "gpsSnap": true,
    "note": "要確認：第54回芝浦祭のキャンパス図（shibaurasai.jp/map54）から位置を推定。豊洲駅から来る人の入口"
+  },
+  {
+   "id": "classroom-4f-lobby",
+   "name": "教室棟4F ロビー（403〜408）",
+   "building": "教室棟",
+   "floor": "4F",
+   "lat": 35.6610809,
+   "lon": 139.7950442,
+   "local": {
+    "east": 44.01,
+    "north": 38.6
+   },
+   "heightMetres": 16.0,
+   "threeD": {
+    "x": -144.65,
+    "y": 44.37,
+    "z": 16.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "3F→4F のエスカレーターを上がったところ。床 16m"
+  },
+  {
+   "id": "classroom-5f-lobby",
+   "name": "教室棟5F ロビー（502〜511）",
+   "building": "教室棟",
+   "floor": "5F",
+   "lat": 35.661136,
+   "lon": 139.7951077,
+   "local": {
+    "east": 49.76,
+    "north": 44.74
+   },
+   "heightMetres": 21.0,
+   "threeD": {
+    "x": -138.9,
+    "y": 50.49,
+    "z": 21.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "4F→5F のエスカレーターを上がったところ。床 21m"
+  },
+  {
+   "id": "classroom-6f-bridge",
+   "name": "教室棟6F 渡り廊下の口（大講義室へ）",
+   "building": "教室棟",
+   "floor": "6F",
+   "lat": 35.6607279,
+   "lon": 139.7945915,
+   "local": {
+    "east": 3.06,
+    "north": -0.69
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -185.66,
+    "y": 5.23,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "交流棟側の端。芝浦祭のフロアマップでは 6F から交流棟の大講義室へ行く。床 26m"
+  },
+  {
+   "id": "exchange-4f",
+   "name": "交流棟4F 401・402",
+   "building": "交流棟",
+   "floor": "4F",
+   "lat": 35.6603203,
+   "lon": 139.7943854,
+   "local": {
+    "east": -15.57,
+    "north": -46.06
+   },
+   "heightMetres": 16.0,
+   "threeD": {
+    "x": -204.33,
+    "y": -39.98,
+    "z": 16.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "廊下（本部棟側）の 401 と 402 の間。床 16m"
+  },
+  {
+   "id": "exchange-6f-hall",
+   "name": "交流棟6F 大講義室",
+   "building": "交流棟",
+   "floor": "6F",
+   "lat": 35.6603683,
+   "lon": 139.794271,
+   "local": {
+    "east": -25.92,
+    "north": -40.72
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -214.69,
+    "y": -34.65,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "大講義室の真ん中。床 26m"
+  },
+  {
+   "id": "hq-4f-bridge",
+   "name": "本部棟4F 渡り廊下の口",
+   "building": "本部棟",
+   "floor": "4F",
+   "lat": 35.6602166,
+   "lon": 139.7947371,
+   "local": {
+    "east": 16.23,
+    "north": -57.61
+   },
+   "heightMetres": 16.0,
+   "threeD": {
+    "x": -172.5,
+    "y": -51.5,
+    "z": 16.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "交流棟からの渡り廊下（下のデッキ）が本部棟に着くところ。床 16m"
+  },
+  {
+   "id": "hq-6f-bridge",
+   "name": "本部棟6F 渡り廊下の口",
+   "building": "本部棟",
+   "floor": "6F",
+   "lat": 35.6602166,
+   "lon": 139.7947371,
+   "local": {
+    "east": 16.23,
+    "north": -57.61
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -172.5,
+    "y": -51.5,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "交流棟からの渡り廊下（屋根付き）が本部棟に着くところ。床 26m"
   }
  ],
  "edges": [
@@ -538,6 +685,94 @@
    "to": "exchange-road",
    "kind": "ground",
    "lengthMetres": 122.4,
+   "passable": true
+  },
+  {
+   "id": "classroom-3f-lobby--classroom-4f-lobby",
+   "from": "classroom-3f-lobby",
+   "to": "classroom-4f-lobby",
+   "kind": "escalator",
+   "lengthMetres": 15.2,
+   "passable": true
+  },
+  {
+   "id": "classroom-4f-lobby--classroom-5f-lobby",
+   "from": "classroom-4f-lobby",
+   "to": "classroom-5f-lobby",
+   "kind": "escalator",
+   "lengthMetres": 8.4,
+   "passable": true
+  },
+  {
+   "id": "classroom-5f-lobby--classroom-6f-bridge",
+   "from": "classroom-5f-lobby",
+   "to": "classroom-6f-bridge",
+   "kind": "escalator",
+   "lengthMetres": 65.1,
+   "passable": true
+  },
+  {
+   "id": "classroom-4f-lobby--exchange-4f",
+   "from": "classroom-4f-lobby",
+   "to": "exchange-4f",
+   "kind": "bridge",
+   "lengthMetres": 103.5,
+   "passable": true
+  },
+  {
+   "id": "classroom-6f-bridge--exchange-6f-hall",
+   "from": "classroom-6f-bridge",
+   "to": "exchange-6f-hall",
+   "kind": "bridge",
+   "lengthMetres": 49.4,
+   "passable": true
+  },
+  {
+   "id": "classroom-entrance--exchange-4f",
+   "from": "classroom-entrance",
+   "to": "exchange-4f",
+   "kind": "indoor",
+   "lengthMetres": 48.6,
+   "passable": true
+  },
+  {
+   "id": "exchange-4f--exchange-6f-hall",
+   "from": "exchange-4f",
+   "to": "exchange-6f-hall",
+   "kind": "stairs",
+   "lengthMetres": 11.6,
+   "passable": true
+  },
+  {
+   "id": "exchange-4f--hq-4f-bridge",
+   "from": "exchange-4f",
+   "to": "hq-4f-bridge",
+   "kind": "bridge",
+   "lengthMetres": 33.8,
+   "passable": true
+  },
+  {
+   "id": "exchange-6f-hall--hq-6f-bridge",
+   "from": "exchange-6f-hall",
+   "to": "hq-6f-bridge",
+   "kind": "bridge",
+   "lengthMetres": 45.4,
+   "passable": true
+  },
+  {
+   "id": "hq-4f-bridge--hq-6f-bridge",
+   "from": "hq-4f-bridge",
+   "to": "hq-6f-bridge",
+   "kind": "stairs",
+   "lengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-4f-bridge--hq-entrance",
+   "from": "hq-4f-bridge",
+   "to": "hq-entrance",
+   "kind": "indoor",
+   "lengthMetres": 35.5,
    "passable": true
   }
  ]

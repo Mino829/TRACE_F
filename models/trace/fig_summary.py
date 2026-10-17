@@ -1,16 +1,18 @@
 # figures/ の図を 1 枚に並べる → figures/00_まとめ.png
 #   python trace/fig_summary.py
-import os
+import json, os
 from PIL import Image, ImageDraw, ImageFont
 
 FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figures")
-ITEMS = [("01_配置図_真上から.png", "① 配置図：16か所・23本（真上から）"),
+G = json.load(open(os.path.join(os.path.dirname(FIG), "campus_graph.json"), encoding="utf-8"))
+ITEMS = [("01_配置図_真上から.png", f"① 配置図：{len(G['nodes'])}か所・{len(G['edges'])}本（真上から）"),
          ("02_3D_全体_豊洲駅側の空から.png", "② 3D：点とつながり（豊洲駅側の空から）"),
          ("03_教室棟3F_ShibaLabまで.png", "③ 教室棟3F：入口→ShibaLab（301）"),
          ("04_軌跡の例_そのまま（建物に隠れる）.png", "④ 軌跡の例：3Dにそのまま置くと建物に隠れる"),
          ("05_軌跡の例_重ねる_直線.png", "⑤ 軌跡の例：線を上に重ねる（直線）"),
          ("06_軌跡の例_重ねる_なめらか.png", "⑥ 軌跡の例：線を上に重ねる（角を丸める）"),
-         ("07_チェックポイント一覧.png", "⑦ 点の一覧（緯度経度・アプリの座標・GPSで使うか）")]
+         ("07_チェックポイント一覧.png", "⑦ 点の一覧（緯度経度・アプリの座標・GPSで使うか）"),
+         ("08_3D_建物を消して階を見る.png", "⑧ 建物を消して見た点とつながり（階・渡り廊下）")]
 CW, CH, PAD, TH, COLS = 900, 506, 30, 56, 2
 rows = (len(ITEMS) + 1) // COLS
 W = COLS * CW + (COLS + 1) * PAD
