@@ -1,0 +1,407 @@
+/*
+ * The developer screen in RAY's paper and ink. The pixel parts keep their
+ * structure (src/app/log/log.css); this only gives them RAY's colours, type
+ * and hairlines, under .px-ray. The accuracy test's map and plan keep their
+ * own drawing.
+ */
+
+html:has(.px-root.px-ray),
+html:has(.px-root.px-ray) body {
+  background: #d3d5d3;
+}
+
+.px-root.px-ray {
+  --ray-paper: #d3d5d3;
+  --ray-ink: #0c0c0d;
+  --ray-rule: rgba(12, 12, 13, 0.26);
+  --ray-hatch: rgba(12, 12, 13, 0.2);
+  --ray-mono: var(--font-ray-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* The pixel tokens, in two colours: grounds are paper, rules are faint ink, every accent is ink. */
+  --px-k: var(--ray-ink);
+  --px-navy: var(--ray-paper);
+  --px-navy-2: #c8cac8;
+  --px-navy-3: var(--ray-rule);
+  --px-ink: var(--ray-ink);
+  --px-ink-2: #47484c;
+  --px-yellow: var(--ray-ink);
+  --px-yellow-hi: var(--ray-ink);
+  --px-yellow-lo: var(--ray-ink);
+  --px-yellow-depth: var(--ray-ink);
+  --px-amber: var(--ray-ink);
+  --px-green: var(--ray-ink);
+  --px-red: var(--ray-ink);
+  --px-red-deep: var(--ray-ink);
+  --px-cyan: var(--ray-ink);
+  --px-focus: var(--ray-ink);
+
+  background: var(--ray-paper);
+  color: var(--ray-ink);
+  font-family: var(--font-ray-jp), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", system-ui, sans-serif;
+  font-size: 15.5px;
+}
+
+/* The printed sheet's hairlines, as behind the participant screens. */
+.px-root.px-ray::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, rgba(12, 12, 13, 0.09) 0 1px, transparent 1px 78px),
+    repeating-linear-gradient(0deg, rgba(12, 12, 13, 0.09) 0 1px, transparent 1px 78px);
+  background-position: 18px 0, 0 22px;
+}
+
+.px-ray :is(h1, h2, h3) {
+  font-weight: 800;
+}
+
+.px-ray :is(.px-pixel, .px-label, .px-chip, .px-digits, .px-lift__display, .px-lift__btn, .px-step__no) {
+  font-family: var(--ray-mono);
+}
+
+.px-ray .px-label {
+  color: var(--px-ink-2);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+/* The wordmark leads to the participant's home. */
+.px-ray .px-ray-mark {
+  min-height: 44px;
+  margin-left: -6px;
+  padding: 0 6px;
+  font-family: var(--font-ray-latin), Arial, sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.px-ray .px-ray-mark:focus-visible {
+  outline: 2px solid var(--ray-ink);
+  outline-offset: -2px;
+}
+
+/* Windows: a hairline box on paper, its name set into the top edge. */
+.px-ray .px-window {
+  border: 0;
+  border-image: none;
+  filter: none;
+  padding: 16px 16px 18px;
+  background: var(--ray-paper);
+  box-shadow: inset 0 0 0 1px var(--ray-ink);
+}
+
+.px-ray .px-window--dim {
+  box-shadow: inset 0 0 0 1px var(--ray-rule);
+}
+
+.px-ray .px-window--alert {
+  box-shadow: inset 0 0 0 1.5px var(--ray-ink);
+}
+
+.px-ray .px-window__title,
+.px-ray .px-window--dim .px-window__title {
+  top: -9px;
+  left: 10px;
+  padding: 0 6px;
+  background: var(--ray-paper);
+  color: var(--px-ink-2);
+  font-family: var(--ray-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  line-height: 18px;
+  text-transform: uppercase;
+}
+
+.px-ray .px-panel {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ray-rule);
+}
+
+/* Buttons: an ink block; beside it, a line; deleting, hatched. */
+.px-ray .px-btn {
+  --face: var(--ray-ink);
+  --fg: var(--ray-paper);
+  margin: 0;
+  min-height: 52px;
+  padding: 10px 18px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: none;
+  transition: none;
+}
+
+.px-ray .px-btn--secondary {
+  --face: transparent;
+  --fg: var(--ray-ink);
+  box-shadow: inset 0 0 0 1.5px var(--ray-ink);
+}
+
+.px-ray .px-btn--danger {
+  --face: transparent;
+  --fg: var(--ray-ink);
+  box-shadow: inset 0 0 0 1.5px var(--ray-ink);
+  background-image: repeating-linear-gradient(-45deg, var(--ray-hatch) 0 3px, transparent 3px 7px);
+}
+
+.px-ray .px-btn:disabled {
+  --face: transparent;
+  --fg: var(--px-ink-2);
+  box-shadow: inset 0 0 0 1px var(--ray-rule);
+}
+
+.px-ray .px-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.px-ray .px-btn--secondary:active:not(:disabled),
+.px-ray .px-btn--danger:active:not(:disabled) {
+  box-shadow: inset 0 0 0 1.5px var(--ray-ink);
+}
+
+@media (hover: hover) {
+  .px-ray .px-btn:hover:not(:disabled) {
+    --face: #2a2b2e;
+  }
+
+  .px-ray .px-btn--secondary:hover:not(:disabled),
+  .px-ray .px-btn--danger:hover:not(:disabled) {
+    --face: rgba(12, 12, 13, 0.06);
+  }
+}
+
+.px-ray .px-btn:focus-visible {
+  outline: 2px solid var(--ray-ink);
+  outline-offset: 3px;
+}
+
+.px-ray .px-btn--sm {
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 14.5px;
+}
+
+.px-ray .px-btn--block {
+  width: 100%;
+}
+
+.px-ray .px-link {
+  font-weight: 600;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+}
+
+.px-ray .px-link::before {
+  content: none;
+}
+
+.px-ray .px-chip {
+  margin: 0;
+  padding: 3px 8px;
+  background: var(--ray-ink);
+  color: var(--ray-paper);
+  font-size: 10px;
+  box-shadow: none;
+}
+
+.px-ray .px-chip--off {
+  background: transparent;
+  color: var(--ray-ink);
+  box-shadow: inset 0 0 0 1px var(--ray-ink);
+}
+
+/* Notes: an ink bar, as the participant's; a warning is a hatched line box. */
+.px-ray .px-note {
+  border-left: 0;
+  background: var(--ray-ink);
+  color: var(--ray-paper);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.px-ray .px-note--float {
+  margin-inline: 0;
+  box-shadow: none;
+}
+
+.px-ray .px-note[data-tone="warn"] {
+  background: repeating-linear-gradient(-45deg, var(--ray-hatch) 0 3px, transparent 3px 7px);
+  color: var(--ray-ink);
+  box-shadow: inset 0 0 0 1.5px var(--ray-ink);
+}
+
+/* Choices: line boxes; the chosen one inverts. */
+.px-ray :is(.px-tile, .px-lift__btn) {
+  border: 0;
+  background: transparent;
+  color: var(--ray-ink);
+  box-shadow: inset 0 0 0 1px var(--ray-ink);
+  font-weight: 700;
+}
+
+.px-ray :is(.px-tile, .px-lift__btn):active {
+  box-shadow: inset 0 0 0 1px var(--ray-ink);
+  transform: translateY(1px);
+}
+
+.px-ray :is(.px-tile[aria-pressed="true"], .px-tile[aria-checked="true"], .px-tile[aria-selected="true"], .px-lift__btn[aria-pressed="true"]) {
+  background: var(--ray-ink);
+  color: var(--ray-paper);
+  box-shadow: none;
+}
+
+.px-ray :is(.px-tile[aria-pressed="true"], .px-tile[aria-checked="true"], .px-tile[aria-selected="true"])::before {
+  content: none;
+}
+
+.px-ray .px-lift__display {
+  border: 0;
+  background: var(--ray-ink);
+  color: var(--ray-paper);
+  font-size: 22px;
+  text-shadow: none;
+}
+
+.px-ray .px-lift__display small,
+.px-ray .px-lift__btn--ground small {
+  color: inherit;
+  font-family: var(--font-ray-jp), sans-serif;
+  opacity: 0.75;
+}
+
+.px-ray .px-lift__btn {
+  font-size: 13px;
+}
+
+/* The ground line between 1F and the basements: one rule. */
+.px-ray .px-lift__ground {
+  height: 14px;
+  margin: 2px 0;
+  background: linear-gradient(var(--ray-ink), var(--ray-ink)) center / 100% 1.5px no-repeat;
+}
+
+.px-ray .px-lift__ground::before {
+  content: none;
+}
+
+.px-ray .px-lift__ground span {
+  padding: 0 6px;
+  background: var(--ray-paper);
+  color: var(--px-ink-2);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.px-ray .px-step {
+  border-bottom-width: 2px;
+}
+
+.px-ray .px-step[data-state="current"] {
+  font-weight: 700;
+}
+
+.px-ray .px-step[data-state="done"] {
+  color: var(--px-ink-2);
+}
+
+.px-ray .px-step__no {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 0 0 1px currentColor;
+  font-size: 10px;
+}
+
+.px-ray .px-step:is([data-state="current"], [data-state="done"]) .px-step__no {
+  background: var(--ray-ink);
+  color: var(--ray-paper);
+  box-shadow: none;
+}
+
+.px-ray .px-actionbar {
+  border-top: 1px solid var(--ray-rule);
+  background: var(--ray-paper);
+}
+
+/* The accuracy test's ground: paper and the sheet's hairlines. */
+.px-ray .px-stage {
+  background-color: var(--ray-paper);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(12, 12, 13, 0.09) 0 1px, transparent 1px 78px),
+    repeating-linear-gradient(0deg, rgba(12, 12, 13, 0.09) 0 1px, transparent 1px 78px);
+  background-size: auto;
+  background-position: 18px 0, 0 22px;
+}
+
+.px-ray .px-mapframe {
+  border: 1.5px solid var(--ray-ink);
+  box-shadow: none;
+}
+
+.px-ray .px-loader i {
+  background: var(--ray-ink);
+  box-shadow: none;
+}
+
+.px-ray .px-clear {
+  color: var(--ray-ink);
+  font-family: var(--font-ray-latin), Arial, sans-serif;
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  text-shadow: none;
+}
+
+.px-ray .px-confetti i {
+  background: var(--ray-ink);
+  opacity: 0.7;
+}
+
+/* The ping's alarm box shows without the white flashes; the animation still ends it. */
+.px-ray .px-encounter {
+  animation: px-ray-hold 1100ms both;
+}
+
+@keyframes px-ray-hold {
+  to {
+    opacity: 1;
+  }
+}
+
+.px-ray .leaflet-container {
+  font-family: var(--font-ray-jp), sans-serif;
+}
+
+.px-ray .leaflet-bar,
+.px-ray .leaflet-control-layers {
+  border: 1px solid var(--ray-ink) !important;
+  background: var(--ray-paper);
+  box-shadow: none !important;
+  color: var(--ray-ink);
+}
+
+.px-ray .leaflet-bar a {
+  border-bottom: 1px solid var(--ray-rule);
+  background: var(--ray-paper);
+  color: var(--ray-ink);
+  font-family: var(--ray-mono);
+}
+
+.px-ray .leaflet-bar a:hover {
+  background: #c8cac8;
+  color: var(--ray-ink);
+}
+
+.px-ray .leaflet-control-attribution {
+  background: rgba(211, 213, 211, 0.85);
+  color: var(--px-ink-2);
+}
+
+.px-ray .leaflet-control-attribution a {
+  color: var(--ray-ink);
+}

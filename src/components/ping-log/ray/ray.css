@@ -1,0 +1,1831 @@
+/*
+ * RAY: the participant screens of /log, in ShibaLab's theme.
+ *
+ * Two fields only. DAY is paper with ink type: everything before arrival,
+ * legible in sunlight. ROOM is ink with paper type: from the QR code at
+ * ShibaLab on, quiet in a dark room. --swap is paper + ink, so a
+ * difference-blended --swap fill trades the two exactly.
+ *
+ * The behind-the-text light is one WebGL canvas (src/lib/ray/field.ts); the
+ * screen changes, tears and the negative split are two canvases above
+ * everything (src/lib/ray/fx.ts). Everything here sits under .ray, so the
+ * developer screen's pixel look stays as it is.
+ */
+
+@keyframes ray-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 日だまり: the light shifts a little and back; a cloud passes now and then. */
+@keyframes ray-sun-drift {
+  from {
+    transform: translate3d(-3%, 2%, 0) rotate(-1.5deg);
+  }
+  to {
+    transform: translate3d(3%, -2%, 0) rotate(1.5deg);
+  }
+}
+
+@keyframes ray-sun-cloud {
+  0%,
+  64% {
+    opacity: 1;
+  }
+  74%,
+  80% {
+    opacity: 0.3;
+  }
+  92%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes ray-shear-in {
+  from {
+    transform: translateX(var(--dx));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+html:has(.ray),
+html:has(.ray) body {
+  background: #050506;
+  overflow: hidden;
+}
+
+.ray {
+  --paper: #d3d5d3;
+  --ink: #0c0c0d;
+  --swap: #dfe1e0;
+  --jp: var(--font-ray-jp), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", system-ui, sans-serif;
+  --latin: var(--font-ray-latin), var(--font-ray-jp), "Helvetica Neue", Arial, sans-serif;
+  --mono: var(--font-ray-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  position: fixed;
+  inset: 0;
+  background: #050506;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+
+  & button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    touch-action: manipulation; /* no double-tap zoom on a quick second tap */
+  }
+
+  & img,
+  & canvas,
+  & svg {
+    display: block;
+  }
+
+  /* --------------------------------------------------------------- phone */
+
+  /* One phone-wide column; on a wide screen it stands in the middle of a dark room. */
+  & .phone {
+    --bg: var(--paper);
+    --fg: var(--ink);
+    --fg-2: #47484c; /* 6.2:1 on paper */
+    --rule: rgba(12, 12, 13, 0.26);
+    --faint: rgba(12, 12, 13, 0.1);
+    --hatch: rgba(12, 12, 13, 0.2);
+    --safe-top: max(14px, env(safe-area-inset-top));
+    --safe-bottom: max(14px, env(safe-area-inset-bottom));
+
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: min(100%, 480px);
+    transform: translateX(-50%);
+    color: var(--fg);
+    background: var(--bg);
+    isolation: isolate;
+    container-type: size; /* cqh below is the phone's own height */
+    overflow: hidden;
+    font-family: var(--jp);
+    font-size: 15.5px;
+    line-height: 1.75;
+  }
+
+  & .phone[data-field="room"] {
+    --bg: var(--ink);
+    --fg: var(--paper);
+    --fg-2: #a2a4a7; /* 7.8:1 on ink */
+    --rule: rgba(211, 213, 211, 0.24);
+    --faint: rgba(211, 213, 211, 0.09);
+    --hatch: rgba(211, 213, 211, 0.24);
+  }
+
+  & .field {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+  }
+
+  & .fx {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  & .fx--shutter {
+    z-index: 70;
+  }
+  & .fx--tear {
+    z-index: 71;
+    mix-blend-mode: difference;
+  }
+
+  /* Printed-sheet hairlines on paper only (multiply vanishes on ink). */
+  & .sheet {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+    background:
+      repeating-linear-gradient(90deg, rgba(12, 12, 13, 0.16) 0 1px, transparent 1px 78px),
+      repeating-linear-gradient(0deg, rgba(12, 12, 13, 0.16) 0 1px, transparent 1px 78px);
+    background-position: 18px 0, 0 22px;
+  }
+  & .phone[data-field="room"] .sheet {
+    display: none;
+  }
+
+  /*
+   * The paper's own life (?tweaks=, RayStage). None of it puts dots behind
+   * text, and none of it shows on the title, the camera at the QR code or in
+   * the dark room, which have their own light.
+   */
+  & .phone:is([data-field="room"], [data-scene]) :is(.daylight, .depth-clock, .touchlights) {
+    display: none;
+  }
+  /* A screen to read through (the consent) keeps to paper and hairlines; overlays have their own ground. */
+  & .phone:has(> .screen--read) :is(.daylight, .depth-clock) {
+    display: none;
+  }
+
+  /* 日だまり: color-dodge brightens the paper in proportion and leaves the ink as it is. */
+  & .daylight {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    mix-blend-mode: color-dodge;
+  }
+  & .daylight__drift {
+    position: absolute;
+    inset: 0;
+    animation:
+      ray-sun-drift 46s ease-in-out infinite alternate,
+      ray-sun-cloud 31s linear infinite;
+  }
+  /*
+   * Four panes and the frame's shadow between them, cast low from the sun's
+   * side (--sun-side, -1 in the morning to 1 in the evening) onto the lower
+   * half, where the paper shows between the photos and the buttons.
+   */
+  & .daylight__panes {
+    position: absolute;
+    left: 50%;
+    top: 60%;
+    width: 74%;
+    height: 50%;
+    display: grid;
+    grid-template: repeat(2, 1fr) / repeat(2, 1fr);
+    gap: 14px;
+    translate: calc(-50% + var(--sun-side, 0) * 20%) -50%;
+    rotate: calc(var(--sun-side, 0) * -10deg);
+    transform: skewX(calc(var(--sun-side, 0) * -18deg));
+    filter: blur(6px);
+  }
+  /* About a tenth brighter: paper #d3d5d3 to #eceeec. */
+  & .daylight__panes i {
+    background: rgb(30, 30, 30);
+  }
+
+  /* 奥行き: the hairlines and the clock follow a scroll slower than the text (--near, --far). */
+  & .phone[data-motion="depth"] .sheet {
+    bottom: -78px;
+    transform: translate3d(0, var(--near, 0px), 0);
+  }
+  & .depth-clock {
+    position: absolute;
+    top: 52%;
+    right: -0.05em;
+    margin: 0;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: min(178px, 38cqw);
+    letter-spacing: -0.06em;
+    line-height: 0.8;
+    color: #ebece9;
+    white-space: nowrap;
+    user-select: none;
+    translate: 0 var(--far, 0px);
+  }
+
+  /* A tap: the paper around the finger brightens for a moment. */
+  & .touchlights {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    mix-blend-mode: color-dodge;
+  }
+  & .touchlight {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    margin: -120px 0 0 -120px;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(28, 28, 28), rgba(28, 28, 28, 0.45) 50%, transparent);
+    opacity: 0;
+  }
+
+  /* HUD: corner brackets and the bottom readout. */
+  & .hud {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+  }
+  & .hud__c {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 0 solid var(--fg);
+    opacity: 0.8;
+  }
+  & .hud__c--tl {
+    top: calc(var(--safe-top) - 6px);
+    left: 10px;
+    border-top-width: 1px;
+    border-left-width: 1px;
+  }
+  & .hud__c--tr {
+    top: calc(var(--safe-top) - 6px);
+    right: 10px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+  }
+  & .hud__c--bl {
+    bottom: calc(var(--safe-bottom) - 6px);
+    left: 10px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+  }
+  & .hud__c--br {
+    bottom: calc(var(--safe-bottom) - 6px);
+    right: 10px;
+    border-bottom-width: 1px;
+    border-right-width: 1px;
+  }
+  /* The readout sits on its own strip, so scrolled text never runs through it. */
+  & .hud__read {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--safe-bottom) + 12px);
+    padding: 0 30px calc(var(--safe-bottom) - 7px);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    color: var(--fg-2);
+    text-transform: uppercase;
+    background: var(--bg);
+    box-shadow: 0 -1px 0 var(--rule);
+  }
+  /* Scene screens (title, scan) keep the readout floating over the picture. */
+  & .phone[data-scene] .hud__read {
+    background: none;
+    box-shadow: none;
+  }
+  & .phone[data-scene="title"] :is(.hud__c--bl, .hud__c--br, .hud__read) {
+    --fg: var(--paper);
+    --fg-2: #a2a4a7;
+  }
+
+  /* ------------------------------------------------------------- screens */
+
+  /*
+   * Screens keep z-index auto: no stacking context, so the difference and
+   * multiply blends inside them reach the field canvas underneath.
+   */
+  & .screen {
+    position: absolute;
+    inset: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    padding: calc(var(--safe-top) + 4px) 20px calc(var(--safe-bottom) + 26px);
+  }
+  & .screen::-webkit-scrollbar {
+    display: none;
+  }
+  & .screen--flex {
+    display: flex;
+    flex-direction: column;
+  }
+  & .overlay {
+    z-index: 40;
+    padding: 0;
+  }
+  & .overlay--sheet {
+    z-index: 65; /* the scrim also dims the HUD */
+    overflow: hidden;
+  }
+
+  /* type */
+  & .mono {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.5;
+  }
+  & .mono--dim {
+    color: var(--fg-2);
+  }
+  & .latin {
+    font-family: var(--latin);
+  }
+  & .h1 {
+    font-size: 27px;
+    line-height: 1.32;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  & .h2 {
+    font-size: 21px;
+    line-height: 1.45;
+    font-weight: 800;
+    text-wrap: balance;
+  }
+  & .h3 {
+    font-size: 17px;
+    line-height: 1.5;
+    font-weight: 700;
+  }
+  & .body {
+    font-size: 15.5px;
+    line-height: 1.8;
+    font-weight: 500;
+  }
+  & .small {
+    font-size: 13.5px;
+    line-height: 1.7;
+    font-weight: 500;
+    color: var(--fg-2);
+  }
+  /* Japanese wraps between phrases (BudouX in Phrases and Sentences), never inside a word. */
+  & .px-phrases {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+  & :is(h1, h2, h3, p):focus {
+    outline: none;
+  }
+
+  /* masthead */
+  & .mast {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    margin: 0 -6px 6px;
+    position: relative;
+    z-index: 2;
+  }
+  & .mast__mark {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    padding-left: 6px;
+  }
+  & .wordmark {
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: 21px;
+    letter-spacing: -0.045em;
+    line-height: 1;
+  }
+  /* The wordmark leads home: a 44px tap, the word where it was. */
+  & button.wordmark {
+    height: 44px;
+    margin: 0 -6px;
+    padding: 0 6px;
+  }
+  & button.wordmark:focus-visible {
+    outline: 2px solid var(--fg);
+    outline-offset: -2px;
+  }
+  & .mast__right {
+    display: flex;
+    align-items: center;
+  }
+  & .mast__dev {
+    font-size: 13.5px;
+    color: var(--fg-2);
+    padding: 0 10px;
+    height: 44px;
+  }
+  & .icon-btn {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+  }
+  & .icon-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Buttons: an ink block on paper, a paper block on ink. */
+  & .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 58px;
+    padding: 0 18px;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    background: var(--fg);
+    color: var(--bg);
+    position: relative;
+  }
+  & .btn svg {
+    width: 22px;
+    height: 22px;
+    flex: none;
+  }
+  & .btn--line {
+    background: var(--bg);
+    color: var(--fg);
+    box-shadow: inset 0 0 0 1.5px var(--fg);
+  }
+  & .btn[disabled] {
+    background: transparent;
+    color: var(--fg-2);
+    box-shadow: inset 0 0 0 1px var(--rule);
+    cursor: default;
+  }
+  & .btn--danger {
+    background: transparent;
+    color: var(--fg);
+    box-shadow: inset 0 0 0 1.5px var(--fg);
+    background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 3px, transparent 3px 7px);
+  }
+  & .btn:active:not([disabled]) {
+    transform: translateY(1px);
+  }
+  & .btns {
+    display: grid;
+    gap: 10px;
+  }
+  /* A long screen's foot, for its button (Dock). */
+  & .dockbar {
+    margin: 16px -20px 0;
+    padding: 10px 20px 14px;
+  }
+  /*
+   * While the photos scroll by, the camera button waits just above the
+   * readout; then it settles in its place. The screen's bottom padding counts
+   * as the edge here: 18px into it, the box reaches the readout's strip and
+   * the button stands 10px above it.
+   */
+  & .dockbar.is-sticky {
+    position: sticky;
+    bottom: -18px;
+    z-index: 5;
+  }
+  /* Held there, it gets a ground of its own, so what scrolls under it never shows around the button. */
+  & .dockbar.is-stuck {
+    background: var(--bg);
+    box-shadow: 0 -1px 0 var(--rule);
+  }
+  & .btns--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  & :is(.btn, .icon-btn, .seg, .info, .link, .mast__dev, .strip, .menu-list button):focus-visible {
+    outline: 2px solid var(--fg);
+    outline-offset: 3px;
+  }
+  & [hidden] {
+    display: none !important;
+  }
+
+  /* The segmented switch (OFF / ON): the active side inverts. */
+  & .seg {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    box-shadow: inset 0 0 0 1.5px var(--fg);
+    flex: none;
+  }
+  & .seg[disabled] {
+    opacity: 0.55;
+    cursor: default;
+  }
+  & .seg__o {
+    min-width: 56px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: 0.14em;
+  }
+  & .seg__o.is-on {
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  /* The "i" mark and its note. */
+  & .info {
+    width: 44px;
+    height: 44px;
+    display: inline-grid;
+    place-items: center;
+    vertical-align: middle;
+    margin: -12px -10px -12px -6px;
+  }
+  & .info span {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid currentColor;
+    display: grid;
+    place-items: center;
+    font-family: var(--latin);
+    font-size: 11.5px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  /* The note floats below its mark, over what follows, so nothing moves when it opens. Pop sets its top and --tip. */
+  & .pop-at {
+    position: relative;
+    z-index: 6;
+    height: 0;
+  }
+  & .pop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 14px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 500;
+    box-shadow: 0 0 0 1px var(--bg); /* apart from a dark photo below it */
+  }
+  & .pop::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: var(--tip, 24px);
+    width: 12px;
+    height: 6px;
+    background: var(--fg);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+
+  /* Bracket panel: corners only, like a detection frame. */
+  & .bracket {
+    position: relative;
+    padding: 16px 16px 18px;
+  }
+  & .bracket::before,
+  & .bracket::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--fg), var(--fg)) top left / 16px 1.5px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) top left / 1.5px 16px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) top right / 16px 1.5px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) top right / 1.5px 16px no-repeat;
+  }
+  & .bracket::after {
+    background:
+      linear-gradient(var(--fg), var(--fg)) bottom left / 16px 1.5px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) bottom left / 1.5px 16px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) bottom right / 16px 1.5px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) bottom right / 1.5px 16px no-repeat;
+  }
+  & .kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* A panel on a solid inverted ground (the reminder, the menu). */
+  & .inv {
+    background: var(--fg);
+    color: var(--bg);
+    --fg-2: currentColor;
+  }
+  & .inv .btn {
+    background: var(--bg);
+    color: var(--fg);
+  }
+  & .inv .btn--line {
+    background: transparent;
+    color: var(--bg);
+    box-shadow: inset 0 0 0 1.5px var(--bg);
+  }
+  & .inv .btn[disabled] {
+    background: transparent;
+    color: var(--bg);
+    opacity: 0.55;
+  }
+  & .inv :is(.btn, .icon-btn, .link, .menu-list button):focus-visible {
+    outline-color: var(--bg);
+  }
+
+  /* Notes from the page: an error, or what just happened. */
+  & .note-bar {
+    margin: 4px 0 16px;
+    padding: 10px 12px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 13.5px;
+    line-height: 1.65;
+    font-weight: 600;
+  }
+
+  /* --------------------------------------------------------------- title */
+
+  /* It fits one screen; on a short phone with a note above, it scrolls rather than cut off the button. */
+  & .title {
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  /* The upper part gives way on a short phone, so the lower part and its button always fit (TitleScreen moves the field's line with it). */
+  & .title__top {
+    padding: var(--safe-top) 20px 0;
+    flex: 0 1 38%;
+    min-height: 132px;
+    position: relative;
+  }
+  & .ghost {
+    position: absolute;
+    left: -14px;
+    top: 26px;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: 238px;
+    letter-spacing: -0.07em;
+    line-height: 0.8;
+    color: #ebece9;
+    white-space: nowrap;
+    user-select: none;
+  }
+  & .title__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-top: 4px;
+    margin-right: -12px;
+    position: relative;
+  }
+  & .title__bottom {
+    padding: 0 20px calc(var(--safe-bottom) + 20px);
+    position: relative;
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+  & .title__word {
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: 92px;
+    letter-spacing: -0.065em;
+    line-height: 0.78;
+    margin: -37px 0 0 -5px;
+    color: #dfe1e0;
+    mix-blend-mode: difference;
+  }
+  & .title__tag {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.4;
+    margin-top: 18px;
+    color: var(--paper);
+    letter-spacing: 0.01em;
+  }
+  & .title__lead {
+    font-size: 14.5px;
+    line-height: 1.8;
+    color: #b4b6b9;
+    margin-top: 10px;
+    font-weight: 500;
+  }
+  & .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 20px;
+    box-shadow: inset 0 0 0 1px rgba(211, 213, 211, 0.5);
+    list-style: none;
+  }
+  & .steps li {
+    padding: 9px 8px 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--paper);
+    border-left: 1px solid rgba(211, 213, 211, 0.5);
+  }
+  & .steps li:first-child {
+    border-left: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  & .steps .mono {
+    display: block;
+    font-size: 10px;
+    margin-bottom: 3px;
+    opacity: 0.8;
+  }
+  & .title__note {
+    margin-top: 16px;
+    color: var(--paper);
+    font-size: 14.5px;
+    line-height: 1.7;
+    font-weight: 500;
+  }
+  & .title .pop {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  & .title .pop::before {
+    background: var(--paper);
+  }
+  & .title .note-bar {
+    margin: 14px 0 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  & .title__cta {
+    margin-top: auto;
+    padding-top: 16px;
+  }
+  & .title__cta .btn {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  & .title :is(.btn, .icon-btn, .info, .link, .mast__dev):focus-visible {
+    outline-color: var(--paper);
+  }
+
+  /* ------------------------------------------------------------- consent */
+
+  & .consent__head {
+    margin: 6px 0 18px;
+  }
+  & .consent__lead {
+    margin: 12px 0 8px;
+  }
+  & .sec {
+    padding: 16px 0 6px;
+    border-top: 1px solid var(--rule);
+  }
+  & .sec ul {
+    list-style: none;
+    margin: 6px 0 4px;
+  }
+  & .sec li,
+  & .notes li {
+    position: relative;
+    padding-left: 14px;
+    font-size: 14.5px;
+    line-height: 1.75;
+    margin-bottom: 6px;
+  }
+  & .sec li::before,
+  & .notes li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.75em;
+    width: 5px;
+    height: 5px;
+    background: var(--fg);
+  }
+  & .notes {
+    list-style: none;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+  }
+  & .notes li {
+    font-size: 13.5px;
+    color: var(--fg-2);
+  }
+  & .dock {
+    position: sticky;
+    bottom: calc(-1 * (var(--safe-bottom) + 26px));
+    margin: 18px -20px calc(-1 * (var(--safe-bottom) + 26px));
+    padding: 14px 20px calc(var(--safe-bottom) + 24px);
+    background: var(--bg);
+    border-top: 1px solid var(--rule);
+    z-index: 5;
+  }
+  & .dock .small {
+    margin-top: 10px;
+    text-align: center;
+  }
+  & .dock .note-bar {
+    margin: 0 0 12px;
+  }
+
+  /* ---------------------------------------------------------------- home */
+
+  & .ping {
+    margin: 0 0 18px;
+    padding: 14px 16px 16px;
+    position: relative;
+  }
+  & .ping__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  & .blink {
+    animation: ray-blink 1s steps(1) infinite;
+  }
+  /*
+   * The day's page: a ruled head, then the photos as large as the phone's
+   * height leaves room for the camera button below. Each line under the
+   * heading takes its height from the photos.
+   */
+  & .home {
+    --lead: 0px;
+    --unsent: 0px;
+    --remain: 0px;
+    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--unsent) - var(--remain)) * 0.75)));
+  }
+  & .home:has(.home__lead) {
+    --lead: 34px;
+  }
+  & .home:has(.unsent) {
+    --unsent: 58px;
+  }
+  & .home:has(.remain) {
+    --remain: 32px;
+  }
+  & .home__head {
+    margin: 2px 0 18px;
+  }
+  & .home__meta {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 7px;
+    border-bottom: 1.5px solid var(--fg);
+    color: var(--fg-2);
+  }
+  & .home__title {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-top: 12px;
+    font-size: 30px;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+  & .home__lead {
+    margin-top: 6px;
+  }
+  & .home :is(.slot, .print:not(.print--small, .print--wide)) {
+    --w: var(--print-w);
+  }
+  & .home .dockbar {
+    margin-top: 8px;
+  }
+  & .row-reminder .h3 {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  /* ShibaLab at the foot: a glimpse of the dark room, in ink down to the bottom of the page. */
+  & .ink {
+    --bg: var(--ink);
+    --fg: var(--paper);
+    --fg-2: #a2a4a7; /* 7.8:1 on ink */
+    --rule: rgba(211, 213, 211, 0.24);
+    --faint: rgba(211, 213, 211, 0.09);
+    --hatch: rgba(211, 213, 211, 0.24);
+    background: var(--bg);
+    color: var(--fg);
+  }
+  & .home__lab {
+    position: relative;
+    overflow: hidden;
+    margin: 34px -20px calc(-1 * (var(--safe-bottom) + 26px));
+    padding: 20px 20px calc(var(--safe-bottom) + 52px);
+  }
+  & .home__lab > * {
+    position: relative;
+  }
+  & .home__lab .home__room {
+    position: absolute;
+    top: 8px;
+    right: -0.07em;
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: 150px;
+    letter-spacing: -0.07em;
+    line-height: 0.8;
+    color: rgba(211, 213, 211, 0.07);
+    pointer-events: none;
+    user-select: none;
+  }
+  & .home__lab .btn {
+    margin-top: 18px;
+  }
+
+  & .strip {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin: 0 -20px;
+    padding: 6px 20px 4px;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    list-style: none;
+  }
+  & .strip::-webkit-scrollbar {
+    display: none;
+  }
+  & .strip > * {
+    scroll-snap-align: center;
+    flex: none;
+  }
+  & .strip--one {
+    justify-content: center;
+  }
+
+  /* A print: the photo in its own colours in a hairline frame, and its frame number and time below. */
+  & .print {
+    position: relative;
+    margin: 0;
+    --w: 268px;
+  }
+  & .print--small {
+    --w: 178px;
+  }
+  /* A landscape photo gets the column's width instead. */
+  & .print--wide {
+    --w: min(335px, calc(100cqw - 40px));
+  }
+  & .print--small.print--wide {
+    --w: 260px;
+  }
+  & .print__frame {
+    position: relative;
+    display: block;
+    width: var(--w);
+    aspect-ratio: var(--ratio, 3 / 4);
+    background: var(--bg);
+  }
+  & .print__frame::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px var(--fg);
+    pointer-events: none;
+  }
+  & .print__img,
+  & .print__bits {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  & .print__img {
+    object-fit: cover;
+  }
+  /* The pixel copy above the photo shows only while it tears. */
+  & .print__bits {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    opacity: 0;
+  }
+  & .is-tear > .print__bits,
+  & .is-tear .print__frame > .print__bits {
+    opacity: 1;
+  }
+  & .print__cap {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 1px 0;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+  }
+  & .ray-mark {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    box-shadow: 0 0 0 1px var(--bg), inset 0 0 0 1px var(--fg);
+    pointer-events: none;
+    transition:
+      left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+      top 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  & .ray-mark::after {
+    content: "RAY";
+    position: absolute;
+    left: 20px;
+    top: -1px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: var(--fg);
+    background: var(--bg);
+    padding: 0 3px;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+  /* The label goes left when the point is near the right edge. */
+  & .ray-mark--l::after {
+    left: auto;
+    right: 20px;
+  }
+
+  /* Windows of light: each draws its light on its own canvas, inside the box (LightWindow). */
+  & .lightwindow {
+    position: relative;
+    overflow: hidden;
+  }
+  & .lightwindow__field {
+    position: absolute;
+    top: 0;
+    left: 0;
+    mix-blend-mode: multiply;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+  }
+  & .empty::after,
+  & .skip__win::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px var(--fg);
+    pointer-events: none;
+  }
+  & .slot {
+    --w: 268px;
+    width: var(--w);
+    margin: 0 auto;
+  }
+  & .empty {
+    aspect-ratio: 3 / 4;
+  }
+  & .unsent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -6px 0 16px;
+    padding: 2px 0 2px 14px;
+    border-left: 3px solid var(--fg);
+  }
+  & .link {
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 4px;
+  }
+  & .link[disabled] {
+    color: var(--fg-2);
+    cursor: default;
+  }
+  & .remain {
+    margin: -8px 0 14px;
+  }
+  & .limit {
+    margin-top: 12px;
+  }
+  & .row-reminder {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+  }
+  & .next {
+    margin-top: 2px;
+  }
+  & .problem {
+    margin-top: 10px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+    line-height: 1.65;
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1.5px var(--fg);
+    background-image: repeating-linear-gradient(-45deg, var(--faint) 0 3px, transparent 3px 7px);
+  }
+  & .ios-link .link {
+    padding-left: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--fg-2);
+  }
+  & .lab__head {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  /* ----------------------------------------------------- preview / clear */
+
+  & .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 48px;
+    margin: 0 -10px 4px;
+  }
+  & .topbar > * {
+    flex: 1 1 0;
+  }
+  /* The middle keeps its one line; the two sides share what is left, so it stays centred. */
+  & .topbar > :nth-child(2) {
+    flex: none;
+    text-align: center;
+    white-space: nowrap;
+  }
+  & .topbar > :last-child {
+    display: flex;
+    justify-content: flex-end;
+  }
+  & .topbar .link {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    padding: 0 10px;
+  }
+  & .topbar .link svg {
+    width: 18px;
+    height: 18px;
+  }
+  & .topbar .mono {
+    padding: 0 12px;
+  }
+  & .preview__photo {
+    position: relative;
+    margin: 14px auto 0;
+    width: min(100%, 350px, calc((100cqh - 310px) * var(--ratio, 0.75)));
+    aspect-ratio: var(--ratio, 3 / 4);
+    background: var(--faint);
+  }
+  & .preview__photo :is(img, canvas) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  & .preview__photo::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--fg), var(--fg)) top left / 14px 1.5px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) top left / 1.5px 14px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) top right / 14px 1.5px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) top right / 1.5px 14px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) bottom left / 14px 1.5px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) bottom left / 1.5px 14px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) bottom right / 14px 1.5px no-repeat,
+      linear-gradient(var(--fg), var(--fg)) bottom right / 1.5px 14px no-repeat;
+  }
+  & .preview__wait {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  & .preview__cap {
+    display: flex;
+    justify-content: space-between;
+    margin: 14px auto 0;
+    width: min(100%, 350px, calc((100cqh - 310px) * var(--ratio, 0.75)));
+  }
+  & .actionbar {
+    position: sticky;
+    bottom: calc(-1 * (var(--safe-bottom) + 26px));
+    margin: 20px -20px calc(-1 * (var(--safe-bottom) + 26px));
+    padding: 12px 20px calc(var(--safe-bottom) + 24px);
+    background: var(--bg);
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 10px;
+    z-index: 5;
+  }
+  & .actionbar .btn {
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+  & .actionbar .note-bar {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  & .clear {
+    text-align: center;
+  }
+  & .clear .topbar {
+    text-align: left;
+  }
+  & .clearword {
+    position: relative;
+    height: 112px;
+    margin: 26px -20px 0;
+    overflow: hidden;
+  }
+  & .clearword__s {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 112px;
+    font-family: var(--latin);
+    font-weight: 900;
+    font-size: 106px;
+    letter-spacing: -0.07em;
+    line-height: 112px;
+    white-space: nowrap;
+    color: var(--fg);
+  }
+  & .clearword__s.is-in {
+    animation: ray-shear-in 0.62s cubic-bezier(0.16, 0.84, 0.2, 1) both;
+  }
+  & .clear__print {
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+  }
+  /* The frame gives way on a shorter phone, so the button home stays above the readout. */
+  & .skip__frame {
+    --h: clamp(100px, calc(100cqh - 480px), 237px);
+    width: calc(var(--h) * 0.75);
+    margin: 18px auto 0;
+    text-align: left;
+  }
+  & .skip__win {
+    height: var(--h);
+  }
+  & .clear__msg {
+    margin-top: 18px;
+  }
+  & .clear__sub {
+    margin-top: 8px;
+  }
+  & .clear__offer {
+    margin-top: 22px;
+    text-align: left;
+  }
+  /* The print gives way on a shorter phone, so its message shows with it. */
+  & .clear__print .print--small {
+    --w: clamp(90px, calc((100cqh - 470px) * 0.75), 178px);
+  }
+  & .clear__print .print--small.print--wide {
+    --w: clamp(160px, calc((100cqh - 470px) * 1.33), 260px);
+  }
+
+  /* ---------------------------------------------------------------- ping */
+
+  & .pingscreen__clock {
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: 104px;
+    letter-spacing: -0.06em;
+    line-height: 0.9;
+    margin: 40px 0 16px -4px;
+    font-variant-numeric: tabular-nums;
+  }
+  & .pingscreen .h2 {
+    font-size: 22px;
+  }
+  & .pingscreen__fill {
+    flex: 1;
+    min-height: 120px;
+    margin: 22px -20px 18px;
+  }
+
+  /* ---------------------------------------------------------------- scan */
+
+  & .scan {
+    overflow: clip;
+  }
+  & .scan__head {
+    margin: 4px 0 10px;
+  }
+  & .scan__window {
+    position: relative;
+    height: 54%;
+    min-height: 330px;
+    margin: 0 -20px;
+  }
+  & .scan__target {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 236px;
+    height: 236px;
+    margin: -118px 0 0 -118px;
+  }
+  & .scan__target i {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border: 0 solid #fff;
+    mix-blend-mode: difference;
+  }
+  & .scan__target i:nth-child(1) {
+    top: 0;
+    left: 0;
+    border-top-width: 3px;
+    border-left-width: 3px;
+  }
+  & .scan__target i:nth-child(2) {
+    top: 0;
+    right: 0;
+    border-top-width: 3px;
+    border-right-width: 3px;
+  }
+  & .scan__target i:nth-child(3) {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: 3px;
+    border-left-width: 3px;
+  }
+  & .scan__target i:nth-child(4) {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: 3px;
+    border-right-width: 3px;
+  }
+  & .scan__cross {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    mix-blend-mode: difference;
+  }
+  & .scan__cross::before,
+  & .scan__cross::after {
+    content: "";
+    position: absolute;
+    background: #fff;
+  }
+  & .scan__cross::before {
+    left: 10px;
+    top: 0;
+    width: 1.5px;
+    height: 22px;
+  }
+  & .scan__cross::after {
+    top: 10px;
+    left: 0;
+    height: 1.5px;
+    width: 22px;
+  }
+  & .trk {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  & .trk.is-on {
+    opacity: 1;
+  }
+  & .trk i {
+    display: block;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 3px -6px;
+    box-shadow: inset 0 0 0 1.5px #fff, 0 0 0 1px #000;
+  }
+  & .trk span {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    background: #000;
+    color: #fff;
+    padding: 1px 4px;
+    white-space: nowrap;
+  }
+  & .scan__status {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 16px;
+    min-height: 30px;
+  }
+
+  /* -------------------------------------------------------- room screens */
+
+  & .arrived__stage {
+    height: 220px;
+    margin: 0 -20px;
+    position: relative;
+  }
+  & .play {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+  }
+  & .play__line {
+    position: relative;
+    height: 22px;
+    margin: 18px 0 4px;
+  }
+  & .play__line::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 10px;
+    height: 1px;
+    background: var(--rule);
+  }
+  & .play__run {
+    position: absolute;
+    left: 0;
+    top: 9px;
+    height: 3px;
+    width: 0;
+    background: var(--fg);
+  }
+  & .play__run::after {
+    content: "";
+    position: absolute;
+    right: -4px;
+    top: -4px;
+    width: 11px;
+    height: 11px;
+    background: var(--fg);
+  }
+  & .play__ends {
+    display: flex;
+    justify-content: space-between;
+  }
+  & .float-note {
+    margin-top: 22px;
+    padding: 2px 14px;
+    border-left: 3px solid var(--fg);
+  }
+
+  & .story__item {
+    margin-top: 26px;
+  }
+  & .story__time {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  & .story__time .t {
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  & .story__photo {
+    position: relative;
+    width: 100%;
+    aspect-ratio: var(--ratio, 3 / 4);
+    background: var(--bg);
+  }
+  & .story__photo :is(img, canvas) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  & .story__gap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 0;
+  }
+  & .story__gap::before {
+    content: "";
+    width: 1px;
+    height: 40px;
+    background: var(--rule);
+    margin-left: 6px;
+  }
+  & .story__del {
+    display: flex;
+    justify-content: flex-end;
+  }
+  & .thanks__tag {
+    margin-top: 28px;
+  }
+  & .endlog {
+    margin-top: 30px;
+    text-align: center;
+    line-height: 2;
+  }
+
+  /* ------------------------------------------------------------ overlays */
+
+  & .full {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    background: var(--bg);
+    padding: calc(var(--safe-top) + 4px) 20px calc(var(--safe-bottom) + 26px);
+    scrollbar-width: none;
+  }
+  & .full::-webkit-scrollbar {
+    display: none;
+  }
+  & .sheet-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    padding: calc(var(--safe-top) + 4px) 20px 22px;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  & .sheet-panel--bottom {
+    top: auto;
+    bottom: 0;
+    background: var(--bg);
+    padding: 20px 20px calc(var(--safe-bottom) + 24px);
+    box-shadow: 0 -1px 0 var(--rule);
+  }
+  & .menu-list {
+    list-style: none;
+    margin-top: 4px;
+  }
+  & .menu-list button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    min-height: 60px;
+    text-align: left;
+    border-top: 1px solid rgba(127, 127, 127, 0.35);
+    font-size: 18px;
+    font-weight: 800;
+  }
+  & .menu-list li:last-child button {
+    border-bottom: 1px solid rgba(127, 127, 127, 0.35);
+  }
+  & .menu-list button[disabled] {
+    opacity: 0.55;
+    cursor: default;
+  }
+  & .scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(12, 12, 13, 0.55);
+  }
+  & .phone[data-field="room"] .scrim {
+    background: rgba(211, 213, 211, 0.18);
+  }
+  & .howto__step {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 10px;
+    padding: 18px 0;
+    border-top: 1px solid var(--rule);
+  }
+  & .howto__n {
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: 44px;
+    letter-spacing: -0.05em;
+    line-height: 0.9;
+  }
+  & .install__step {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 0;
+    border-top: 1px solid var(--rule);
+    list-style: none;
+  }
+  & .install__step svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  & .toast {
+    position: absolute;
+    z-index: 80;
+    left: 20px;
+    right: 20px;
+    bottom: calc(var(--safe-bottom) + 18px);
+    background: var(--fg);
+    color: var(--bg);
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    transform: translateY(12px);
+    opacity: 0;
+    transition:
+      transform 0.2s,
+      opacity 0.2s;
+    pointer-events: none;
+  }
+  & .toast.is-on {
+    transform: none;
+    opacity: 1;
+  }
+
+  /* The team's switch for the paper's motion (?tweaks=): a tab in the right margin, and its panel beside it. */
+  & .tweaks {
+    position: absolute;
+    z-index: 62;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  & .tweaks__chip {
+    writing-mode: vertical-rl;
+    width: 22px;
+    padding: 12px 0;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    box-shadow: 0 0 0 1px var(--bg);
+  }
+  & .tweaks__panel {
+    width: min(300px, calc(100cqw - 44px));
+    padding: 12px 14px 14px;
+    background: var(--fg);
+    color: var(--bg);
+    --fg-2: currentColor;
+    box-shadow: 0 0 0 1px var(--bg);
+  }
+  & .tweaks fieldset {
+    margin: 10px 0 0;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
+  }
+  & .tweaks legend {
+    padding: 0;
+    margin-bottom: 4px;
+  }
+  & .tweaks__opts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  & .tweaks__opts button {
+    min-height: 38px;
+    padding: 0 11px;
+    font-size: 13.5px;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px currentColor;
+  }
+  & .tweaks__opts button[aria-pressed="true"] {
+    background: var(--bg);
+    color: var(--fg);
+    box-shadow: none;
+  }
+  & .tweaks :is(button):focus-visible {
+    outline: 2px solid var(--bg);
+    outline-offset: 2px;
+  }
+
+  & .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* The shortest phones (an iPhone SE in Safari is about 548px tall): the title and the skip tighten so they fit without scrolling. */
+  @container (max-height: 620px) {
+    & .title__tag {
+      font-size: 21px;
+      margin-top: 12px;
+    }
+    & .title__lead {
+      font-size: 13.5px;
+      line-height: 1.7;
+      margin-top: 6px;
+    }
+    & .steps {
+      margin-top: 14px;
+    }
+    & .steps li {
+      padding: 7px 8px 8px;
+    }
+    & .title__note {
+      margin-top: 10px;
+      font-size: 13.5px;
+    }
+    & .title__cta {
+      padding-top: 12px;
+    }
+    & .clearword {
+      height: 84px;
+      margin-top: 14px;
+    }
+    & .clearword__s {
+      height: 84px;
+      font-size: 80px;
+      line-height: 84px;
+    }
+  }
+  /* Short phones (iPhone SE and the like): keep both consent buttons and the text in view. */
+  @container (max-height: 700px) {
+    & .btn {
+      min-height: 52px;
+    }
+    & .dock {
+      padding-top: 10px;
+    }
+    & .dock .btns {
+      gap: 8px;
+    }
+    & .dock .small {
+      margin-top: 6px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    & .blink,
+    & .clearword__s.is-in {
+      animation: none;
+    }
+    & .ray-mark,
+    & .toast {
+      transition: none;
+    }
+    & .daylight__drift {
+      animation: none;
+    }
+  }
+}
