@@ -56,6 +56,39 @@ test("two-token delete forwards the live token only for the dedicated experience
   assert.equal(requests[0].headers.get("Idempotency-Key"), "same-key");
 });
 
+test("forwards only the Cloudflare client IP, never browser-supplied forwarding headers", async () => {
+  const cases = [
+    ["203.0.113.42", "203.0.113.42"],
+    ["2001:db8::42", "2001:db8::42"],
+    [null, null],
+    ["", null],
+    ["203.0.113.42, 198.51.100.7", null],
+    ["010.0.0.1", null],
+    ["256.0.0.1", null],
+    ["2001:DB8::42", null],
+    ["2001:db8::42%eth0", null],
+  ];
+  for (const [cloudflareIP, expected] of cases) {
+    const headers = new Headers({
+      "X-Forwarded-For": "198.51.100.21",
+      "X-Trace-Client-IP": "198.51.100.22",
+      "X-Trace-Edge-Secret": "browser-secret",
+    });
+    if (cloudflareIP !== null) headers.set("CF-Connecting-IP", cloudflareIP);
+    const request = new Request(`${site}/api/backend/v1/public/config`, { headers });
+    let forwarded;
+    await handleSiteRequest(request, env, async (upstream) => {
+      forwarded = upstream;
+      return Response.json({});
+    });
+    assert.equal(forwarded.headers.get("X-Trace-Client-IP"), expected, `CF-Connecting-IP: ${cloudflareIP}`);
+    assert.equal(forwarded.headers.get("X-Forwarded-For"), null);
+    assert.equal(forwarded.headers.get("CF-Connecting-IP"), null);
+    assert.equal(forwarded.headers.get("X-Trace-Edge-Secret"), env.TRACE_EDGE_SHARED_SECRET);
+    assert.equal([...forwarded.headers.keys()].filter((name) => name === "x-trace-client-ip").length, expected ? 1 : 0);
+  }
+});
+
 test("rejects unexpected requests before calling the backend", async () => {
   const noCall = async () => { throw new Error("backend called"); };
   const cases = [
