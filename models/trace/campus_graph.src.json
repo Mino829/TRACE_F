@@ -1,0 +1,369 @@
+{
+ "$comment": "TRACE のチェックポイントの元データ。blender = キャンパス全体.blend の地図の座標(m)。Blender で点を動かしたら trace_graph.py の pull で書き戻す",
+ "nodes": [
+  {
+   "id": "classroom-entrance",
+   "name": "教室棟・交流棟の入口（アプリの原点）",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -188.72,
+    5.92,
+    0.0
+   ],
+   "radius": 15,
+   "note": "アプリの原点＝教室棟1F南側の自動ドア。交流棟の入口(6648)は約18mしか離れていないのでまとめた",
+   "gpsSnap": true
+  },
+  {
+   "id": "grand-stairs-bottom",
+   "name": "大階段の下（広場）",
+   "building": null,
+   "floor": "屋外",
+   "blender": [
+    -149.54,
+    -20.17,
+    0.0
+   ],
+   "radius": 15,
+   "note": "",
+   "gpsSnap": true
+  },
+  {
+   "id": "sit-lawn",
+   "name": "SITの芝生（大階段の上）",
+   "building": "研究棟",
+   "floor": "屋外2F",
+   "blender": [
+    -123.86,
+    7.2,
+    8.1
+   ],
+   "radius": 15,
+   "note": "床 8.1m",
+   "gpsSnap": true
+  },
+  {
+   "id": "research-gate",
+   "name": "研究棟ゲート",
+   "building": "研究棟",
+   "floor": "屋外2F",
+   "blender": [
+    -102.8,
+    29.95,
+    8.1
+   ],
+   "radius": 15,
+   "note": "ゲートの床 8.1m",
+   "gpsSnap": true
+  },
+  {
+   "id": "research-road",
+   "name": "研究棟 道路側の口",
+   "building": "研究棟",
+   "floor": "屋外",
+   "blender": [
+    -81.73,
+    52.69,
+    0
+   ],
+   "radius": 15,
+   "note": "要確認：ゲートの道路側の出口の高さ",
+   "gpsSnap": true
+  },
+  {
+   "id": "classroom-research-corner",
+   "name": "教室棟と研究棟の角",
+   "building": null,
+   "floor": "屋外",
+   "blender": [
+    -140.62,
+    33.08,
+    0.0
+   ],
+   "radius": 15,
+   "note": "",
+   "gpsSnap": true
+  },
+  {
+   "id": "classroom-road",
+   "name": "教室棟 道路側",
+   "building": "教室棟",
+   "floor": "屋外",
+   "blender": [
+    -174.68,
+    49.79,
+    0
+   ],
+   "radius": 15,
+   "note": "",
+   "gpsSnap": true
+  },
+  {
+   "id": "exchange-road",
+   "name": "交流棟 道路側",
+   "building": "交流棟",
+   "floor": "屋外",
+   "blender": [
+    -235.38,
+    -28.93,
+    0
+   ],
+   "radius": 15,
+   "note": "",
+   "gpsSnap": true
+  },
+  {
+   "id": "hq-exchange-bridge",
+   "name": "本部棟と交流棟の渡り廊下の下",
+   "building": null,
+   "floor": "屋外",
+   "blender": [
+    -181.87,
+    -43.22,
+    0.0
+   ],
+   "radius": 15,
+   "note": "渡り廊下は4F・6F",
+   "gpsSnap": true
+  },
+  {
+   "id": "hq-entrance",
+   "name": "本部棟 玄関",
+   "building": "本部棟",
+   "floor": "1F",
+   "blender": [
+    -191.94,
+    -81.07,
+    0.0
+   ],
+   "radius": 15,
+   "note": "玄関は X=13 の面（庇つき）",
+   "gpsSnap": true
+  },
+  {
+   "id": "hq-piloti",
+   "name": "本部棟 ピロティ",
+   "building": "本部棟",
+   "floor": "1F",
+   "blender": [
+    -169.75,
+    -101.27,
+    0.0
+   ],
+   "radius": 15,
+   "note": "",
+   "gpsSnap": true
+  },
+  {
+   "id": "koryu-plaza",
+   "name": "交流プラザ",
+   "building": null,
+   "floor": "屋外",
+   "blender": [
+    -116.0,
+    -35.0,
+    0.0
+   ],
+   "radius": 15,
+   "note": "",
+   "gpsSnap": true
+  },
+  {
+   "id": "research-south",
+   "name": "研究棟 運河側の端",
+   "building": "研究棟",
+   "floor": "屋外",
+   "blender": [
+    -79.88,
+    -21.26,
+    0
+   ],
+   "radius": 15,
+   "note": "",
+   "gpsSnap": true
+  },
+  {
+   "id": "classroom-3f-lobby",
+   "name": "教室棟3F ロビー（エスカレーター）",
+   "building": "教室棟",
+   "floor": "3F",
+   "blender": [
+    -155.06,
+    33.29,
+    11
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "2F→3F のエスカレーターを上がったところ。床 11m"
+  },
+  {
+   "id": "shibalab",
+   "name": "ShibaLab（教室棟3F 301）",
+   "building": "教室棟",
+   "floor": "3F",
+   "blender": [
+    -182.9,
+    19.71,
+    11
+   ],
+   "radius": 15,
+   "note": "第54回芝浦祭（2026/10/31〜11/1）の展示会場。301 は 3F 道路側の一番交流棟寄り（build_kyoshitsu_interior.py の NORTH[3]）。床 11m",
+   "gpsSnap": false
+  },
+  {
+   "id": "big-tree",
+   "name": "大樹（豊洲駅側の角）",
+   "building": null,
+   "floor": "屋外",
+   "blender": [
+    -170.63,
+    -132.53,
+    0.0
+   ],
+   "radius": 15,
+   "gpsSnap": true,
+   "note": "要確認：第54回芝浦祭のキャンパス図（shibaurasai.jp/map54）から位置を推定。豊洲駅から来る人の入口"
+  }
+ ],
+ "edges": [
+  {
+   "id": "classroom-entrance--grand-stairs-bottom",
+   "from": "classroom-entrance",
+   "to": "grand-stairs-bottom",
+   "kind": "ground"
+  },
+  {
+   "id": "classroom-entrance--exchange-road",
+   "from": "classroom-entrance",
+   "to": "exchange-road",
+   "kind": "ground"
+  },
+  {
+   "id": "classroom-entrance--classroom-road",
+   "from": "classroom-entrance",
+   "to": "classroom-road",
+   "kind": "ground"
+  },
+  {
+   "id": "classroom-entrance--hq-exchange-bridge",
+   "from": "classroom-entrance",
+   "to": "hq-exchange-bridge",
+   "kind": "ground"
+  },
+  {
+   "id": "grand-stairs-bottom--sit-lawn",
+   "from": "grand-stairs-bottom",
+   "to": "sit-lawn",
+   "kind": "stairs"
+  },
+  {
+   "id": "grand-stairs-bottom--classroom-research-corner",
+   "from": "grand-stairs-bottom",
+   "to": "classroom-research-corner",
+   "kind": "ground"
+  },
+  {
+   "id": "grand-stairs-bottom--hq-exchange-bridge",
+   "from": "grand-stairs-bottom",
+   "to": "hq-exchange-bridge",
+   "kind": "ground"
+  },
+  {
+   "id": "grand-stairs-bottom--koryu-plaza",
+   "from": "grand-stairs-bottom",
+   "to": "koryu-plaza",
+   "kind": "ground"
+  },
+  {
+   "id": "sit-lawn--research-gate",
+   "from": "sit-lawn",
+   "to": "research-gate",
+   "kind": "ground"
+  },
+  {
+   "id": "research-gate--research-road",
+   "from": "research-gate",
+   "to": "research-road",
+   "kind": "ground"
+  },
+  {
+   "id": "research-road--classroom-road",
+   "from": "research-road",
+   "to": "classroom-road",
+   "kind": "ground"
+  },
+  {
+   "id": "classroom-road--classroom-research-corner",
+   "from": "classroom-road",
+   "to": "classroom-research-corner",
+   "kind": "ground"
+  },
+  {
+   "id": "exchange-road--hq-entrance",
+   "from": "exchange-road",
+   "to": "hq-entrance",
+   "kind": "ground"
+  },
+  {
+   "id": "hq-exchange-bridge--hq-entrance",
+   "from": "hq-exchange-bridge",
+   "to": "hq-entrance",
+   "kind": "ground"
+  },
+  {
+   "id": "hq-exchange-bridge--hq-piloti",
+   "from": "hq-exchange-bridge",
+   "to": "hq-piloti",
+   "kind": "ground"
+  },
+  {
+   "id": "hq-entrance--hq-piloti",
+   "from": "hq-entrance",
+   "to": "hq-piloti",
+   "kind": "ground"
+  },
+  {
+   "id": "hq-piloti--koryu-plaza",
+   "from": "hq-piloti",
+   "to": "koryu-plaza",
+   "kind": "ground"
+  },
+  {
+   "id": "koryu-plaza--research-south",
+   "from": "koryu-plaza",
+   "to": "research-south",
+   "kind": "ground"
+  },
+  {
+   "id": "classroom-entrance--classroom-3f-lobby",
+   "from": "classroom-entrance",
+   "to": "classroom-3f-lobby",
+   "kind": "escalator"
+  },
+  {
+   "id": "classroom-3f-lobby--shibalab",
+   "from": "classroom-3f-lobby",
+   "to": "shibalab",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-entrance--shibalab",
+   "from": "classroom-entrance",
+   "to": "shibalab",
+   "kind": "stairs"
+  },
+  {
+   "id": "big-tree--hq-piloti",
+   "from": "big-tree",
+   "to": "hq-piloti",
+   "kind": "ground"
+  },
+  {
+   "id": "big-tree--exchange-road",
+   "from": "big-tree",
+   "to": "exchange-road",
+   "kind": "ground"
+  }
+ ]
+}

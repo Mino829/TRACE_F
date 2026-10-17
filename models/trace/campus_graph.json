@@ -1,0 +1,544 @@
+{
+ "schemaVersion": 1,
+ "campusGraphVersion": "toyosu-graph-2026-10-17.draft",
+ "coordinateVersion": "toyosu-2026-08-28.1",
+ "threeDMapVersion": "キャンパス全体.blend 2026-10-17",
+ "exportedAt": "2026-10-17",
+ "coordinates": {
+  "local": "アプリのローカル ENU（原点 = 教室棟1F南面の自動ドア, east/north はメートル）。coordinateVersion の式で緯度経度から計算",
+  "threeD": "キャンパス全体.blend の座標（1 = 1m, Z 上, 地面 = 0）。平面直角座標系 第IX系 (X=-37645, Y=-3322) を原点にずらしたもの",
+  "heightMetres": "地面からの高さ。MVP は高さ固定なので経路の計算には使わない"
+ },
+ "edgeKinds": {
+  "ground": "地上の道",
+  "stairs": "階段",
+  "bridge": "渡り廊下",
+  "indoor": "建物の中",
+  "escalator": "エスカレーター"
+ },
+ "gpsSnap": "true = GPS の位置をこの点にまとめてよい。false = 上の階の点など、GPS では見分けられないので描画（演出）だけに使う",
+ "nodes": [
+  {
+   "id": "classroom-entrance",
+   "name": "教室棟・交流棟の入口（アプリの原点）",
+   "building": "教室棟",
+   "floor": "1F",
+   "lat": 35.6607341,
+   "lon": 139.7945577,
+   "local": {
+    "east": 0.01,
+    "north": 0.0
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -188.72,
+    "y": 5.92,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": "アプリの原点＝教室棟1F南側の自動ドア。交流棟の入口(6648)は約18mしか離れていないのでまとめた"
+  },
+  {
+   "id": "grand-stairs-bottom",
+   "name": "大階段の下（広場）",
+   "building": null,
+   "floor": "屋外",
+   "lat": 35.6604991,
+   "lon": 139.7949905,
+   "local": {
+    "east": 39.15,
+    "north": -26.16
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -149.54,
+    "y": -20.17,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": ""
+  },
+  {
+   "id": "sit-lawn",
+   "name": "SITの芝生（大階段の上）",
+   "building": "研究棟",
+   "floor": "屋外2F",
+   "lat": 35.6607459,
+   "lon": 139.795274,
+   "local": {
+    "east": 64.8,
+    "north": 1.31
+   },
+   "heightMetres": 8.1,
+   "threeD": {
+    "x": -123.86,
+    "y": 7.2,
+    "z": 8.1
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": "床 8.1m"
+  },
+  {
+   "id": "research-gate",
+   "name": "研究棟ゲート",
+   "building": "研究棟",
+   "floor": "屋外2F",
+   "lat": 35.660951,
+   "lon": 139.7955065,
+   "local": {
+    "east": 85.83,
+    "north": 24.15
+   },
+   "heightMetres": 8.1,
+   "threeD": {
+    "x": -102.8,
+    "y": 29.95,
+    "z": 8.1
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": "ゲートの床 8.1m"
+  },
+  {
+   "id": "research-road",
+   "name": "研究棟 道路側の口",
+   "building": "研究棟",
+   "floor": "屋外",
+   "lat": 35.6611561,
+   "lon": 139.7957392,
+   "local": {
+    "east": 106.87,
+    "north": 46.97
+   },
+   "heightMetres": 0,
+   "threeD": {
+    "x": -81.73,
+    "y": 52.69,
+    "z": 0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": "要確認：ゲートの道路側の出口の高さ"
+  },
+  {
+   "id": "classroom-research-corner",
+   "name": "教室棟と研究棟の角",
+   "building": null,
+   "floor": "屋外",
+   "lat": 35.6609791,
+   "lon": 139.7950888,
+   "local": {
+    "east": 48.04,
+    "north": 27.27
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -140.62,
+    "y": 33.08,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": ""
+  },
+  {
+   "id": "classroom-road",
+   "name": "教室棟 道路側",
+   "building": "教室棟",
+   "floor": "屋外",
+   "lat": 35.6611296,
+   "lon": 139.7947125,
+   "local": {
+    "east": 14.01,
+    "north": 44.03
+   },
+   "heightMetres": 0,
+   "threeD": {
+    "x": -174.68,
+    "y": 49.79,
+    "z": 0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": ""
+  },
+  {
+   "id": "exchange-road",
+   "name": "交流棟 道路側",
+   "building": "交流棟",
+   "floor": "屋外",
+   "lat": 35.6604198,
+   "lon": 139.7940425,
+   "local": {
+    "east": -46.59,
+    "north": -34.98
+   },
+   "heightMetres": 0,
+   "threeD": {
+    "x": -235.38,
+    "y": -28.93,
+    "z": 0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": ""
+  },
+  {
+   "id": "hq-exchange-bridge",
+   "name": "本部棟と交流棟の渡り廊下の下",
+   "building": null,
+   "floor": "屋外",
+   "lat": 35.6602912,
+   "lon": 139.7946335,
+   "local": {
+    "east": 6.87,
+    "north": -49.3
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -181.87,
+    "y": -43.22,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": "渡り廊下は4F・6F"
+  },
+  {
+   "id": "hq-entrance",
+   "name": "本部棟 玄関",
+   "building": "本部棟",
+   "floor": "1F",
+   "lat": 35.65995,
+   "lon": 139.7945225,
+   "local": {
+    "east": -3.18,
+    "north": -87.28
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -191.94,
+    "y": -81.07,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": "玄関は X=13 の面（庇つき）"
+  },
+  {
+   "id": "hq-piloti",
+   "name": "本部棟 ピロティ",
+   "building": "本部棟",
+   "floor": "1F",
+   "lat": 35.659768,
+   "lon": 139.7947676,
+   "local": {
+    "east": 19.0,
+    "north": -107.54
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -169.75,
+    "y": -101.27,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": ""
+  },
+  {
+   "id": "koryu-plaza",
+   "name": "交流プラザ",
+   "building": null,
+   "floor": "屋外",
+   "lat": 35.6603655,
+   "lon": 139.795361,
+   "local": {
+    "east": 72.67,
+    "north": -41.03
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -116.0,
+    "y": -35.0,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": ""
+  },
+  {
+   "id": "research-south",
+   "name": "研究棟 運河側の端",
+   "building": "研究棟",
+   "floor": "屋外",
+   "lat": 35.6604895,
+   "lon": 139.7957599,
+   "local": {
+    "east": 108.74,
+    "north": -27.23
+   },
+   "heightMetres": 0,
+   "threeD": {
+    "x": -79.88,
+    "y": -21.26,
+    "z": 0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": ""
+  },
+  {
+   "id": "classroom-3f-lobby",
+   "name": "教室棟3F ロビー（エスカレーター）",
+   "building": "教室棟",
+   "floor": "3F",
+   "lat": 35.660981,
+   "lon": 139.7949293,
+   "local": {
+    "east": 33.62,
+    "north": 27.48
+   },
+   "heightMetres": 11,
+   "threeD": {
+    "x": -155.06,
+    "y": 33.29,
+    "z": 11
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "2F→3F のエスカレーターを上がったところ。床 11m"
+  },
+  {
+   "id": "shibalab",
+   "name": "ShibaLab（教室棟3F 301）",
+   "building": "教室棟",
+   "floor": "3F",
+   "lat": 35.6608584,
+   "lon": 139.7946219,
+   "local": {
+    "east": 5.81,
+    "north": 13.84
+   },
+   "heightMetres": 11,
+   "threeD": {
+    "x": -182.9,
+    "y": 19.71,
+    "z": 11
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "note": "第54回芝浦祭（2026/10/31〜11/1）の展示会場。301 は 3F 道路側の一番交流棟寄り（build_kyoshitsu_interior.py の NORTH[3]）。床 11m"
+  },
+  {
+   "id": "big-tree",
+   "name": "大樹（豊洲駅側の角）",
+   "building": null,
+   "floor": "屋外",
+   "lat": 35.6594862,
+   "lon": 139.7947581,
+   "local": {
+    "east": 18.13,
+    "north": -138.91
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -170.63,
+    "y": -132.53,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": true,
+   "note": "要確認：第54回芝浦祭のキャンパス図（shibaurasai.jp/map54）から位置を推定。豊洲駅から来る人の入口"
+  }
+ ],
+ "edges": [
+  {
+   "id": "classroom-entrance--grand-stairs-bottom",
+   "from": "classroom-entrance",
+   "to": "grand-stairs-bottom",
+   "kind": "ground",
+   "lengthMetres": 47.1,
+   "passable": true
+  },
+  {
+   "id": "classroom-entrance--exchange-road",
+   "from": "classroom-entrance",
+   "to": "exchange-road",
+   "kind": "ground",
+   "lengthMetres": 58.3,
+   "passable": true
+  },
+  {
+   "id": "classroom-entrance--classroom-road",
+   "from": "classroom-entrance",
+   "to": "classroom-road",
+   "kind": "ground",
+   "lengthMetres": 46.2,
+   "passable": true
+  },
+  {
+   "id": "classroom-entrance--hq-exchange-bridge",
+   "from": "classroom-entrance",
+   "to": "hq-exchange-bridge",
+   "kind": "ground",
+   "lengthMetres": 49.8,
+   "passable": true
+  },
+  {
+   "id": "grand-stairs-bottom--sit-lawn",
+   "from": "grand-stairs-bottom",
+   "to": "sit-lawn",
+   "kind": "stairs",
+   "lengthMetres": 37.6,
+   "passable": true
+  },
+  {
+   "id": "grand-stairs-bottom--classroom-research-corner",
+   "from": "grand-stairs-bottom",
+   "to": "classroom-research-corner",
+   "kind": "ground",
+   "lengthMetres": 54.2,
+   "passable": true
+  },
+  {
+   "id": "grand-stairs-bottom--hq-exchange-bridge",
+   "from": "grand-stairs-bottom",
+   "to": "hq-exchange-bridge",
+   "kind": "ground",
+   "lengthMetres": 39.7,
+   "passable": true
+  },
+  {
+   "id": "grand-stairs-bottom--koryu-plaza",
+   "from": "grand-stairs-bottom",
+   "to": "koryu-plaza",
+   "kind": "ground",
+   "lengthMetres": 36.7,
+   "passable": true
+  },
+  {
+   "id": "sit-lawn--research-gate",
+   "from": "sit-lawn",
+   "to": "research-gate",
+   "kind": "ground",
+   "lengthMetres": 31.0,
+   "passable": true
+  },
+  {
+   "id": "research-gate--research-road",
+   "from": "research-gate",
+   "to": "research-road",
+   "kind": "ground",
+   "lengthMetres": 31.0,
+   "passable": true
+  },
+  {
+   "id": "research-road--classroom-road",
+   "from": "research-road",
+   "to": "classroom-road",
+   "kind": "ground",
+   "lengthMetres": 92.9,
+   "passable": true
+  },
+  {
+   "id": "classroom-road--classroom-research-corner",
+   "from": "classroom-road",
+   "to": "classroom-research-corner",
+   "kind": "ground",
+   "lengthMetres": 37.9,
+   "passable": true
+  },
+  {
+   "id": "exchange-road--hq-entrance",
+   "from": "exchange-road",
+   "to": "hq-entrance",
+   "kind": "ground",
+   "lengthMetres": 68.0,
+   "passable": true
+  },
+  {
+   "id": "hq-exchange-bridge--hq-entrance",
+   "from": "hq-exchange-bridge",
+   "to": "hq-entrance",
+   "kind": "ground",
+   "lengthMetres": 39.3,
+   "passable": true
+  },
+  {
+   "id": "hq-exchange-bridge--hq-piloti",
+   "from": "hq-exchange-bridge",
+   "to": "hq-piloti",
+   "kind": "ground",
+   "lengthMetres": 59.5,
+   "passable": true
+  },
+  {
+   "id": "hq-entrance--hq-piloti",
+   "from": "hq-entrance",
+   "to": "hq-piloti",
+   "kind": "ground",
+   "lengthMetres": 30.0,
+   "passable": true
+  },
+  {
+   "id": "hq-piloti--koryu-plaza",
+   "from": "hq-piloti",
+   "to": "koryu-plaza",
+   "kind": "ground",
+   "lengthMetres": 85.5,
+   "passable": true
+  },
+  {
+   "id": "koryu-plaza--research-south",
+   "from": "koryu-plaza",
+   "to": "research-south",
+   "kind": "ground",
+   "lengthMetres": 38.6,
+   "passable": true
+  },
+  {
+   "id": "classroom-entrance--classroom-3f-lobby",
+   "from": "classroom-entrance",
+   "to": "classroom-3f-lobby",
+   "kind": "escalator",
+   "lengthMetres": 43.4,
+   "passable": true
+  },
+  {
+   "id": "classroom-3f-lobby--shibalab",
+   "from": "classroom-3f-lobby",
+   "to": "shibalab",
+   "kind": "indoor",
+   "lengthMetres": 31.0,
+   "passable": true
+  },
+  {
+   "id": "classroom-entrance--shibalab",
+   "from": "classroom-entrance",
+   "to": "shibalab",
+   "kind": "stairs",
+   "lengthMetres": 15.0,
+   "passable": true
+  },
+  {
+   "id": "big-tree--hq-piloti",
+   "from": "big-tree",
+   "to": "hq-piloti",
+   "kind": "ground",
+   "lengthMetres": 31.4,
+   "passable": true
+  },
+  {
+   "id": "big-tree--exchange-road",
+   "from": "big-tree",
+   "to": "exchange-road",
+   "kind": "ground",
+   "lengthMetres": 122.4,
+   "passable": true
+  }
+ ]
+}
