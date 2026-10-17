@@ -118,5 +118,9 @@ scene.view_settings.view_transform = 'AgX'
 for lib in list(bpy.data.libraries):
     if os.path.basename(lib.filepath) == "toyosu_campus.blend":
         bpy.data.libraries.remove(lib)
+# TRACE のチェックポイント（元データ trace/campus_graph.src.json から作り直す）
+TRACE_ROOT = ROOT
+exec(open(os.path.join(ROOT, "trace", "trace_graph.py"), encoding="utf-8").read())
+build()
 bpy.ops.wm.save_as_mainfile(filepath=OUT, relative_remap=True)
 print("saved", OUT, [l.filepath for l in bpy.data.libraries])
