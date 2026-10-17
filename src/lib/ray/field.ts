@@ -309,13 +309,15 @@ export class RayField {
     this.resize();
   }
 
-  dispose(): void {
+  /** Stops drawing. release also hands the GPU context back, for a canvas that is thrown away with it. */
+  dispose(release = false): void {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.disposers.forEach((dispose) => dispose());
     this.disposers = [];
     this.tweens.forEach((tween) => tween.done());
     this.tweens = [];
+    if (release) this.gl?.getExtension("WEBGL_lose_context")?.loseContext();
   }
 
   private init(): boolean {

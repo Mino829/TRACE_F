@@ -12,7 +12,7 @@ import { HomeMark, Icon, Phrases, ROOM, Screen, Sentences, SWAP, useField, useRa
 
 /**
  * The demo of arriving at ShibaLab, after a day of nine sample photos:
- * reading the QR code at the door, the arrival while the room's screen
+ * reading the QR code in the booth's projected picture, the arrival while the room's screen
  * replays the day, the photo story, and the thanks. The arrival QR and the
  * replay stand in for the work's backend, which is not settled yet, so the
  * camera is a drawing and nothing is saved, sent or deleted.
@@ -100,37 +100,32 @@ const QR = (() => {
   return { n, m };
 })();
 
-/** The camera's view of the poster at the door, swaying a little as a hand would. Returns where the code is. */
+/** The camera's view of the code in the booth's projected picture, swaying a little as a hand would. Returns where the code is. */
 function drawCamera(context: CanvasRenderingContext2D, width: number, height: number, t: number) {
   const sx = Math.sin(t * 1.3) * 5 + Math.sin(t * 2.9) * 2;
   const sy = Math.cos(t * 1.1) * 4;
   context.save();
-  context.fillStyle = "#6d7073";
+  context.fillStyle = "#1d1e20";
   context.fillRect(0, 0, width, height);
   context.translate(sx, sy);
-  const wall = context.createLinearGradient(0, 0, width, height);
-  wall.addColorStop(0, "#a6a9ab");
-  wall.addColorStop(0.55, "#7d8083");
-  wall.addColorStop(1, "#4b4e51");
-  context.fillStyle = wall;
-  context.fillRect(-20, -20, width + 40, height + 40);
-  context.fillStyle = "#2c2e30";
-  context.fillRect(-20, height * 0.84, width + 40, height);
-  context.fillStyle = "#3a3c3f";
-  context.fillRect(width * 0.79, height * 0.06, width * 0.3, height * 0.8);
-  context.fillStyle = "#1f2123";
-  context.fillRect(width * 0.8, height * 0.08, width * 0.28, height * 0.76);
+  // The projected picture in the dark room, brightest where the lamp points.
+  const light = context.createRadialGradient(width * 0.45, height * 0.36, width * 0.08, width * 0.45, height * 0.36, width * 0.9);
+  light.addColorStop(0, "#dcddd9");
+  light.addColorStop(1, "#7f817f");
+  context.fillStyle = light;
+  context.fillRect(-width * 0.14, -height * 0.08, width * 1.2, height * 0.86);
   const pw = width * 0.5;
-  const ph = pw * 1.36;
+  const ph = pw * 1.3;
   const px = (width - pw) / 2 - 8;
-  const py = height * 0.19;
-  context.fillStyle = "#f1f1ed";
+  const py = height * 0.17;
+  context.fillStyle = "#f2f2ef";
   context.fillRect(px, py, pw, ph);
   const q = pw * 0.74;
   const qx = px + (pw - q) / 2;
   const qy = py + pw * 0.13;
   const cell = q / QR.n;
-  context.fillStyle = "#121314";
+  // A projector cannot show black: the dark modules are only as dark as the room.
+  context.fillStyle = "#2f3133";
   for (let y = 0; y < QR.n; y += 1) {
     for (let x = 0; x < QR.n; x += 1) {
       if (QR.m[y][x]) context.fillRect(qx + x * cell, qy + y * cell, cell + 0.4, cell + 0.4);
@@ -138,9 +133,9 @@ function drawCamera(context: CanvasRenderingContext2D, width: number, height: nu
   }
   context.font = `800 ${Math.round(pw * 0.13)}px Geist, Arial, sans-serif`;
   context.textAlign = "center";
-  context.fillText("ShibaLab", px + pw / 2, qy + q + pw * 0.2);
-  context.font = `500 ${Math.round(pw * 0.065)}px monospace`;
-  context.fillText("TRACE / 301", px + pw / 2, qy + q + pw * 0.31);
+  context.fillText("ASYNC", px + pw / 2, qy + q + pw * 0.2);
+  context.font = `600 ${Math.round(pw * 0.085)}px monospace`;
+  context.fillText("TRACE", px + pw / 2, qy + q + pw * 0.33);
   context.restore();
   return { x0: qx + sx, y0: qy + sy, x1: qx + q + sx, y1: qy + q + sy };
 }
@@ -249,7 +244,7 @@ function Scan({ inert, onCancel, onRead }: { inert: boolean; onCancel: () => voi
         <span className="mono mono--dim">Demo</span>
       </div>
       <h1 className="h2 scan__head">
-        <Phrases text="入口の QR コードを、枠に入れてください" />
+        <Phrases text="ASYNC のブースの QR コードを、枠に入れてください" />
       </h1>
       <div ref={windowRef} className="scan__window">
         <div className="scan__target" aria-hidden="true">

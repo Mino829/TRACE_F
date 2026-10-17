@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 import { CONSENT_LEAD, CONSENT_SECTIONS } from "@/lib/ping-log/consent";
 import type { PushSupport } from "@/lib/ping-log/environment";
@@ -12,6 +12,7 @@ import { Print, Strip, frameLabel } from "./prints";
 import {
   ClearWord,
   DAY,
+  Dock,
   Icon,
   Info,
   LightWindow,
@@ -42,34 +43,57 @@ export function installLabel(support: PushSupport): string {
 
 /* ------------------------------------------------------------------ title */
 
+/**
+ * Where the paper turns black: the foot of the title's upper part, in the
+ * field's terms (0 at the bottom). The upper part gives way on a short phone
+ * so the button stays in view, and the line moves with it.
+ */
+function useSplit(top: RefObject<HTMLElement | null>): number {
+  const [split, setSplit] = useState(0.62);
+  useLayoutEffect(() => {
+    const box = top.current;
+    const screen = box?.parentElement;
+    if (!box || !screen) return;
+    const measure = () => setSplit(Number((1 - box.offsetHeight / screen.clientHeight).toFixed(3)));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(screen);
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, [top]);
+  return split;
+}
+
+/**
+ * The title fits on one screen without scrolling: the black below the line
+ * is the field's, fixed behind the page, and TRACE has to stay on the line.
+ */
 export function TitleScreen({
   notes,
-  support,
   inert,
   onStart,
   onDeveloper,
   onMenu,
-  onInstall,
 }: {
   notes: string[];
-  support: PushSupport;
   inert: boolean;
   onStart: () => void;
   onDeveloper: () => void;
   onMenu: () => void;
-  onInstall: () => void;
 }) {
   const info = useInfo();
+  const top = useRef<HTMLDivElement>(null);
+  const split = useSplit(top);
   // One beam comes down from the upper right, clear of the text, and lands just past the line where the paper turns black.
   useField(
     "day",
-    { scene: 1, splitOn: 1, splitY: 0.62, invert: 0, beamA: [1.05, 0.95], beamB: [0.87, 0.608], beam: 1, grow: 1, flow: 3, pool: 1, poolAt: 1, poolR: [0.075, 0.02] },
+    { scene: 1, splitOn: 1, splitY: split, invert: 0, beamA: [1.05, 0.95], beamB: [0.87, split - 0.012], beam: 1, grow: 1, flow: 3, pool: 1, poolAt: 1, poolR: [0.075, 0.02] },
     "title",
   );
 
   return (
     <Screen className="title" inert={inert}>
-      <div className="title__top">
+      <div className="title__top" ref={top}>
         <div className="ghost" aria-hidden="true">
           RAY
         </div>
@@ -107,13 +131,6 @@ export function TitleScreen({
           <Info info={info} label="写真の扱いについて" />
         </p>
         <Pop info={info} text="撮った写真は、展示に出しません。参加は任意です。" />
-        {support !== "supported" && (
-          <p className="title__ios">
-            <button type="button" className="link" onClick={onInstall}>
-              {installLabel(support)}
-            </button>
-          </p>
-        )}
         <div className="title__cta">
           <button type="button" className="btn" onClick={onStart}>
             はじめる
@@ -236,9 +253,10 @@ type HomeProps = {
 };
 
 /**
- * Home: a reminder waiting for an answer, today's photos shown large, the
- * camera button, the reminder's switch, and at the foot the way into
- * ShibaLab. Nothing here mentions where photos were taken.
+ * Home, where a participant lands every time after joining: a reminder
+ * waiting for an answer, today's photos shown large under a ruled head, the
+ * camera button, the reminder's switch, and at the foot, in the dark of the
+ * room, the way into ShibaLab. Nothing here mentions where photos were taken.
  */
 export function HomeScreen(props: HomeProps) {
   const { photos, maxPhotos, pendingAt } = props;
@@ -254,7 +272,7 @@ export function HomeScreen(props: HomeProps) {
   useField("day", DAY);
 
   return (
-    <Screen inert={props.inert}>
+    <Screen className="home" inert={props.inert}>
       <Mast onDeveloper={props.onDeveloper} onMenu={props.onMenu} />
       <NoteBar text={props.message} />
 
@@ -283,28 +301,45 @@ export function HomeScreen(props: HomeProps) {
         </section>
       )}
 
-      <div className="sec-head">
-        <h2 className="h2">
+      <header className="home__head">
+        <p className="home__meta mono">
+          <span>Memory</span>
+          <span aria-hidden="true">
+            {String(count).padStart(2, "0")} / {maxPhotos}
+          </span>
+          <span className="sr-only">{`${count}枚（${maxPhotos}枚まで）`}</span>
+        </p>
+        <h1 className="h1 home__title">
           きょうのメモリー
           <Info info={memoryInfo} label="きょうのメモリーについて" />
-        </h2>
-        {count > 1 && <span className="small">新しい順</span>}
-      </div>
+        </h1>
+        {count === 0 && (
+          <p className="body home__lead">
+            <Sentences text="残したい瞬間を見つけたら、撮ってください。" />
+          </p>
+        )}
+      </header>
       <Pop info={memoryInfo} text={`撮影は${maxPhotos}枚までです。送信できていない写真は、電波の良い場所で送信してください。`} />
+      {unsent > 0 && (
+        <div className="unsent">
+          <span className="body">
+            <b>未送信</b> {unsent}枚
+          </span>
+          <button type="button" className="link" disabled={props.busy} onClick={props.onResend}>
+            いま送る
+          </button>
+        </div>
+      )}
+      {left > 0 && left <= 3 && <p className="h3 remain">あと{left}枚撮れます</p>}
 
       {count === 0 ? (
-        <>
-          <div className="slot">
-            <LightWindow className="empty" />
-            <div className="print__cap" aria-hidden="true">
-              <span>{frameLabel(1)}</span>
-              <span>{clock(now)}</span>
-            </div>
+        <div className="slot">
+          <LightWindow className="empty" />
+          <div className="print__cap" aria-hidden="true">
+            <span>{frameLabel(1)}</span>
+            <span>{clock(now)}</span>
           </div>
-          <p className="body hint">
-            <Sentences text="残したい瞬間を見つけたら、「写真を撮る」を押してください。" />
-          </p>
-        </>
+        </div>
       ) : (
         <Strip label="きょうの写真（新しい順）" one={count === 1}>
           {[...photos].reverse().map((entry, index) => {
@@ -323,23 +358,13 @@ export function HomeScreen(props: HomeProps) {
         </Strip>
       )}
 
-      {unsent > 0 && (
-        <div className="unsent">
-          <span className="body">
-            <b>未送信</b> {unsent}枚
-          </span>
-          <button type="button" className="link" disabled={props.busy} onClick={props.onResend}>
-            いま送る
-          </button>
-        </div>
-      )}
-      {left > 0 && left <= 3 && <p className="h3 remain">あと{left}枚撮れます</p>}
-      <div className="home__shoot">
+      {/* The button follows a scroll, unless a reminder above has its own. */}
+      <Dock sticky={!pendingAt && !full}>
         <button type="button" className={`btn${pendingAt ? " btn--line" : ""}`} disabled={full} onClick={props.onTakePhoto}>
           <Icon name="camera" />
           写真を撮る
         </button>
-      </div>
+      </Dock>
       {full && (
         <p className="small limit">
           <Sentences text={`${maxPhotos}枚撮り終えました。撮影は${maxPhotos}枚までです。`} />
@@ -374,15 +399,18 @@ export function HomeScreen(props: HomeProps) {
         </p>
       )}
 
-      <section className="lab bracket" aria-label="ShibaLab">
+      <section className="home__lab ink" aria-label="ShibaLab">
+        <p className="home__room" aria-hidden="true">
+          301
+        </p>
         <div className="lab__head">
           <span className="mono">ShibaLab</span>
           <span className="mono">Room 301</span>
         </div>
         <p className="body">
-          <Sentences text="ShibaLab（教室棟301）には、好きなときに来てください。着いたら、入口の QR コードを読み取ってください。" />
+          <Sentences text="ShibaLab（教室棟301）には、好きなときに来てください。着いたら、ASYNC のブースにある QR コードを読み取ってください。" />
         </p>
-        <button type="button" className="btn btn--line" onClick={props.onArrive}>
+        <button type="button" className="btn" onClick={props.onArrive}>
           <Icon name="qr" />
           QR コードを読み取る
         </button>

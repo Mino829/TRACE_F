@@ -14,7 +14,7 @@ import { useLayer } from "../layer";
 import { clock } from "../ui";
 import { Print, PrintPhoto, frameLabel, tearOne } from "./prints";
 import { REMINDER_NOTE, useReminderSwitch } from "./screens";
-import { ClearWord, DAY, Icon, NoteBar, Phrases, Screen, Seg, Sentences, SWAP, useField, useRay } from "./stage";
+import { ClearWord, DAY, Dock, Icon, NoteBar, Phrases, Screen, Seg, Sentences, SWAP, useField, useRay } from "./stage";
 
 /**
  * A photo from the camera to the day's memory: a look at it, then
@@ -208,9 +208,12 @@ export function PhotoScreen(props: Props) {
           )}
         </section>
       )}
-      <button type="button" className="btn" onClick={() => void go(close)}>
-        ホームへもどる
-      </button>
+      {/* After the first photo the way home leads past the reminder's offer, so it stays in its place. */}
+      <Dock sticky={!offer}>
+        <button type="button" className="btn" onClick={() => void go(close)}>
+          ホームへもどる
+        </button>
+      </Dock>
     </Screen>
   );
 }

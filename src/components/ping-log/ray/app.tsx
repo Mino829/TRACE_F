@@ -140,15 +140,7 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
       );
     }
     return (
-      <TitleScreen
-        notes={props.notes}
-        support={props.support}
-        inert={inert}
-        onStart={() => void go(props.onOpenConsent)}
-        onDeveloper={props.onDeveloper}
-        onMenu={onMenu}
-        onInstall={onInstall}
-      />
+      <TitleScreen notes={props.notes} inert={inert} onStart={() => void go(props.onOpenConsent)} onDeveloper={props.onDeveloper} onMenu={onMenu} />
     );
   }
 

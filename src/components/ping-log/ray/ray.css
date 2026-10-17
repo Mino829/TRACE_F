@@ -511,6 +511,27 @@ html:has(.ray) body {
     display: grid;
     gap: 10px;
   }
+  /* A long screen's foot, for its button (Dock). */
+  & .dockbar {
+    margin: 16px -20px 0;
+    padding: 10px 20px 14px;
+  }
+  /*
+   * While the photos scroll by, the camera button waits just above the
+   * readout; then it settles in its place. The screen's bottom padding counts
+   * as the edge here: 18px into it, the box reaches the readout's strip and
+   * the button stands 10px above it.
+   */
+  & .dockbar.is-sticky {
+    position: sticky;
+    bottom: -18px;
+    z-index: 5;
+  }
+  /* Held there, it gets a ground of its own, so what scrolls under it never shows around the button. */
+  & .dockbar.is-stuck {
+    background: var(--bg);
+    box-shadow: 0 -1px 0 var(--rule);
+  }
   & .btns--2 {
     grid-template-columns: 1fr 1fr;
   }
@@ -673,10 +694,11 @@ html:has(.ray) body {
     display: flex;
     flex-direction: column;
   }
+  /* The upper part gives way on a short phone, so the lower part and its button always fit (TitleScreen moves the field's line with it). */
   & .title__top {
     padding: var(--safe-top) 20px 0;
-    height: 38%;
-    flex: none;
+    flex: 0 1 38%;
+    min-height: 132px;
     position: relative;
   }
   & .ghost {
@@ -779,15 +801,6 @@ html:has(.ray) body {
     background: var(--paper);
     color: var(--ink);
   }
-  & .title__ios {
-    margin-top: 6px;
-  }
-  & .title__ios .link {
-    color: #b4b6b9;
-    padding-left: 0;
-    font-size: 13.5px;
-    font-weight: 600;
-  }
   & .title__cta {
     margin-top: auto;
     padding-top: 16px;
@@ -876,17 +889,94 @@ html:has(.ray) body {
   & .blink {
     animation: ray-blink 1s steps(1) infinite;
   }
-  & .sec-head {
+  /*
+   * The day's page: a ruled head, then the photos as large as the phone's
+   * height leaves room for the camera button below. Each line under the
+   * heading takes its height from the photos.
+   */
+  & .home {
+    --lead: 0px;
+    --unsent: 0px;
+    --remain: 0px;
+    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--unsent) - var(--remain)) * 0.75)));
+  }
+  & .home:has(.home__lead) {
+    --lead: 34px;
+  }
+  & .home:has(.unsent) {
+    --unsent: 58px;
+  }
+  & .home:has(.remain) {
+    --remain: 32px;
+  }
+  & .home__head {
+    margin: 2px 0 18px;
+  }
+  & .home__meta {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 7px;
+    border-bottom: 1.5px solid var(--fg);
+    color: var(--fg-2);
+  }
+  & .home__title {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin: 4px 0 12px;
+    gap: 2px;
+    margin-top: 12px;
+    font-size: 30px;
+    line-height: 1.25;
+    letter-spacing: 0;
   }
-  & .sec-head .h2,
+  & .home__lead {
+    margin-top: 6px;
+  }
+  & .home :is(.slot, .print:not(.print--small, .print--wide)) {
+    --w: var(--print-w);
+  }
+  & .home .dockbar {
+    margin-top: 8px;
+  }
   & .row-reminder .h3 {
     display: flex;
     align-items: center;
     gap: 2px;
+  }
+  /* ShibaLab at the foot: a glimpse of the dark room, in ink down to the bottom of the page. */
+  & .ink {
+    --bg: var(--ink);
+    --fg: var(--paper);
+    --fg-2: #a2a4a7; /* 7.8:1 on ink */
+    --rule: rgba(211, 213, 211, 0.24);
+    --faint: rgba(211, 213, 211, 0.09);
+    --hatch: rgba(211, 213, 211, 0.24);
+    background: var(--bg);
+    color: var(--fg);
+  }
+  & .home__lab {
+    position: relative;
+    overflow: hidden;
+    margin: 34px -20px calc(-1 * (var(--safe-bottom) + 26px));
+    padding: 20px 20px calc(var(--safe-bottom) + 52px);
+  }
+  & .home__lab > * {
+    position: relative;
+  }
+  & .home__lab .home__room {
+    position: absolute;
+    top: 8px;
+    right: -0.07em;
+    font-family: var(--latin);
+    font-weight: 800;
+    font-size: 150px;
+    letter-spacing: -0.07em;
+    line-height: 0.8;
+    color: rgba(211, 213, 211, 0.07);
+    pointer-events: none;
+    user-select: none;
+  }
+  & .home__lab .btn {
+    margin-top: 18px;
   }
 
   & .strip {
@@ -1000,26 +1090,42 @@ html:has(.ray) body {
     right: 20px;
   }
 
-  /* Windows of light: transparent boxes the field shows through. */
+  /* Windows of light: each draws its light on its own canvas, inside the box (LightWindow). */
+  & .lightwindow {
+    position: relative;
+    overflow: hidden;
+  }
+  & .lightwindow__field {
+    position: absolute;
+    top: 0;
+    left: 0;
+    mix-blend-mode: multiply;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+  }
+  & .empty::after,
+  & .skip__win::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px var(--fg);
+    pointer-events: none;
+  }
   & .slot {
-    width: 268px;
+    --w: 268px;
+    width: var(--w);
     margin: 0 auto;
   }
   & .empty {
-    width: 268px;
-    height: 357px;
-    position: relative;
-    box-shadow: inset 0 0 0 1px var(--fg);
-  }
-  & .hint {
-    margin-top: 8px;
+    aspect-ratio: 3 / 4;
   }
   & .unsent {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 12px;
+    margin: -6px 0 16px;
     padding: 2px 0 2px 14px;
     border-left: 3px solid var(--fg);
   }
@@ -1037,10 +1143,7 @@ html:has(.ray) body {
     cursor: default;
   }
   & .remain {
-    margin-top: 14px;
-  }
-  & .home__shoot {
-    margin-top: 18px;
+    margin: -8px 0 14px;
   }
   & .limit {
     margin-top: 12px;
@@ -1050,7 +1153,7 @@ html:has(.ray) body {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-top: 26px;
+    margin-top: 10px;
     padding-top: 16px;
     border-top: 1px solid var(--rule);
   }
@@ -1072,16 +1175,10 @@ html:has(.ray) body {
     font-weight: 600;
     color: var(--fg-2);
   }
-  & .lab {
-    margin-top: 26px;
-  }
   & .lab__head {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
-  }
-  & .lab .btn {
-    margin-top: 14px;
   }
 
   /* ----------------------------------------------------- preview / clear */
@@ -1216,14 +1313,15 @@ html:has(.ray) body {
     justify-content: center;
     margin-top: 18px;
   }
+  /* The frame gives way on a shorter phone, so the button home stays above the readout. */
   & .skip__frame {
-    width: 178px;
+    --h: clamp(100px, calc(100cqh - 480px), 237px);
+    width: calc(var(--h) * 0.75);
     margin: 18px auto 0;
     text-align: left;
   }
   & .skip__win {
-    height: 237px;
-    box-shadow: inset 0 0 0 1px var(--fg);
+    height: var(--h);
   }
   & .clear__msg {
     margin-top: 18px;
@@ -1235,8 +1333,12 @@ html:has(.ray) body {
     margin-top: 22px;
     text-align: left;
   }
-  & .clear > .btn {
-    margin-top: 26px;
+  /* The print gives way on a shorter phone, so its message shows with it. */
+  & .clear__print .print--small {
+    --w: clamp(90px, calc((100cqh - 470px) * 0.75), 178px);
+  }
+  & .clear__print .print--small.print--wide {
+    --w: clamp(160px, calc((100cqh - 470px) * 1.33), 260px);
   }
 
   /* ---------------------------------------------------------------- ping */
@@ -1663,6 +1765,40 @@ html:has(.ray) body {
     white-space: nowrap;
   }
 
+  /* The shortest phones (an iPhone SE in Safari is about 548px tall): the title and the skip tighten so they fit without scrolling. */
+  @container (max-height: 620px) {
+    & .title__tag {
+      font-size: 21px;
+      margin-top: 12px;
+    }
+    & .title__lead {
+      font-size: 13.5px;
+      line-height: 1.7;
+      margin-top: 6px;
+    }
+    & .steps {
+      margin-top: 14px;
+    }
+    & .steps li {
+      padding: 7px 8px 8px;
+    }
+    & .title__note {
+      margin-top: 10px;
+      font-size: 13.5px;
+    }
+    & .title__cta {
+      padding-top: 12px;
+    }
+    & .clearword {
+      height: 84px;
+      margin-top: 14px;
+    }
+    & .clearword__s {
+      height: 84px;
+      font-size: 80px;
+      line-height: 84px;
+    }
+  }
   /* Short phones (iPhone SE and the like): keep both consent buttons and the text in view. */
   @container (max-height: 700px) {
     & .btn {

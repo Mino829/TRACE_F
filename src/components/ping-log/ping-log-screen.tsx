@@ -517,7 +517,7 @@ export function PingLogScreen() {
           skipped={skipped}
           onCloseSkip={() => setSkipped(null)}
           demo={demo}
-          // The entrance's QR code and the replay wait for the work's backend; until then the button opens the demo.
+          // The booth's QR code and the replay wait for the work's backend; until then the button opens the demo.
           onArrive={() => setDemo("home")}
           onCloseDemo={() => setDemo(null)}
           onTakePhoto={() => openCamera(pendingAt)}

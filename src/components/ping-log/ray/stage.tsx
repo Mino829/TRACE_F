@@ -43,6 +43,8 @@ type Ray = {
   toast: (text: string) => void;
   setMode: (mode: FieldMode, scene?: Scene) => void;
   mode: FieldMode;
+  /** Whether the light inside a window keeps moving (光の窓). */
+  drift: boolean;
 };
 
 const RayContext = createContext<Ray | null>(null);
@@ -53,10 +55,7 @@ export function useRay(): Ray {
   return ray;
 }
 
-/**
- * Plain paper: the field of every day screen. The light itself belongs to
- * LightWindow, which brings it up and takes it away, so these leave it alone.
- */
+/** Plain paper: the field of every day screen. A window's light is LightWindow's own. */
 export const DAY: FieldProps = { scene: 0, splitOn: 0, invert: 0 };
 /** Plain ink: the reading screens in the room. */
 export const ROOM: FieldProps = { scene: 0, splitOn: 0, invert: 1, sun: 0.4 };
@@ -172,11 +171,6 @@ export function RayStage({ children, overlay }: { children: ReactNode; overlay?:
   }, []);
 
   const motion = tweaks.motion;
-
-  // 光の窓: the light inside a window keeps moving.
-  useEffect(() => {
-    engine?.field.set({ drift: motion === "window" ? 1 : 0 });
-  }, [engine, motion]);
 
   // 奥行き: as a screen scrolls, the hairlines and the clock follow slower and a little late, so they seem
   // to lie further back. Nothing moves while the screen is still, and under reduced motion nothing moves.
@@ -312,8 +306,8 @@ export function RayStage({ children, overlay }: { children: ReactNode; overlay?:
   }, []);
 
   const value = useMemo<Ray>(
-    () => ({ field: engine?.field ?? null, fx: engine?.fx ?? null, go, toast, setMode, mode }),
-    [engine, go, toast, setMode, mode],
+    () => ({ field: engine?.field ?? null, fx: engine?.fx ?? null, go, toast, setMode, mode, drift: motion === "window" }),
+    [engine, go, toast, setMode, mode, motion],
   );
 
   return (
@@ -391,54 +385,90 @@ export function useScroller(): RefObject<HTMLElement | null> | null {
 }
 
 /**
- * A window of light: a transparent box the field's sunlight shows through,
- * following it as the screen scrolls or as anything above it opens or closes.
- * The light comes up when it appears and goes when it leaves. sweep swings
- * the light in from the side first.
+ * A window of light: the paper's sunlight inside a box. The light comes up
+ * when the box appears; sweep swings it in from the side first.
+ *
+ * The box draws the light on a canvas of its own, so the light scrolls with
+ * the box. Drawn on the field behind the screen instead, it trails every
+ * scroll on an iPhone, where the page scrolls apart from the script, and its
+ * dots land on the text around the box. The canvas prints only the ink: its
+ * paper is white and multiplies, so the paper under it, sunlit or not, shows
+ * through unchanged.
  */
 export function LightWindow({ className, soft = 0, sweep = false }: { className: string; soft?: number; sweep?: boolean }) {
-  const { field } = useRay();
-  const scroller = useScroller();
+  const { drift } = useRay();
   const ref = useRef<HTMLDivElement>(null);
+  const light = useRef<RayField | null>(null);
+  const drifting = useRef(drift);
 
   useEffect(() => {
     const box = ref.current;
-    if (!field || !box) return;
-    let last = "";
-    const update = () => {
-      const rect = box.getBoundingClientRect();
-      const key = `${rect.left},${rect.top},${rect.width},${rect.height},${field.canvas.clientWidth},${field.canvas.clientHeight}`;
-      if (key === last) return;
-      last = key;
-      field.window(rect, soft);
-    };
-    update();
+    if (!box) return;
+    const canvas = document.createElement("canvas");
+    canvas.className = "lightwindow__field";
+    box.prepend(canvas);
+    const field = new RayField(canvas, box, 2);
+    light.current = field;
+    // The field sizes its canvas first, then the window is framed on it.
+    const frame = () => field.window(box.getBoundingClientRect(), soft);
+    const observer = new ResizeObserver(frame);
+    observer.observe(box);
+    frame();
     const sun = sunAngle();
-    field.set({ glow: 0, bands: 0, sun: sweep ? sun + 0.8 : sun });
+    field.set({ ...DAY, paper: [1, 1, 1], drift: drifting.current ? 1 : 0, glow: 0, bands: 0, sun: sweep ? sun + 0.8 : sun });
     void field.to({ glow: 1.75, bands: 0.82 }, 1400, "out");
     if (sweep) void field.to({ sun }, 2200, "out");
-    const scroll = scroller?.current;
-    scroll?.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    const observer = new ResizeObserver(update);
-    observer.observe(box);
-    // A note or a panel opening above the box moves it without resizing it.
-    const mutations = new MutationObserver(update);
-    if (scroll) mutations.observe(scroll, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class", "style"] });
     return () => {
-      scroll?.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
       observer.disconnect();
-      mutations.disconnect();
-      field.set({ glow: 0, bands: 0 });
-      field.window(null);
+      field.dispose(true);
+      canvas.remove();
+      light.current = null;
     };
-  }, [field, scroller, soft, sweep]);
+  }, [soft, sweep]);
 
-  return <div ref={ref} className={className} aria-hidden="true" />;
+  useEffect(() => {
+    drifting.current = drift;
+    light.current?.set({ drift: drift ? 1 : 0 });
+  }, [drift]);
+
+  return <div ref={ref} className={`lightwindow ${className}`} aria-hidden="true" />;
 }
 
 /* ------------------------------------------------------------------ parts */
+
+/** Whether a sticky box at the foot of its screen is being held there, with the page scrolling under it. */
+function useStuck(box: RefObject<HTMLElement | null>, active: boolean): boolean {
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const element = box.current;
+    const screen = element?.closest<HTMLElement>(".screen");
+    if (!active || !element || !screen) return;
+    // Held, the box's foot sits a pixel below this line; in its own place, above it.
+    const line = parseFloat(getComputedStyle(screen).paddingBottom) + parseFloat(getComputedStyle(element).bottom) + 1;
+    const observer = new IntersectionObserver(
+      ([entry]) => setStuck(entry.intersectionRatio < 1 && !!entry.rootBounds && entry.boundingClientRect.bottom > entry.rootBounds.bottom),
+      { root: screen, rootMargin: `0px 0px ${-line}px 0px`, threshold: 1 },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [box, active]);
+  return active && stuck;
+}
+
+/**
+ * The foot of a long screen, for its button: while the page scrolls, the
+ * button waits just above the readout on a ground of its own, then settles
+ * in its place. Not sticky, it simply stands in its place.
+ */
+export function Dock({ sticky = true, children }: { sticky?: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const stuck = useStuck(ref, sticky);
+  return (
+    <div ref={ref} className={`dockbar${sticky ? " is-sticky" : ""}${stuck ? " is-stuck" : ""}`}>
+      {children}
+    </div>
+  );
+}
 
 const ICONS = {
   camera: (
