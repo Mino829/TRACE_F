@@ -10,7 +10,7 @@
 
 ## campus_graph.json
 
-- 点 350 か所・つながり 366 本。`campusGraphVersion` は `toyosu-graph-2026-10-17.2.draft`
+- 点 350 か所・つながり 366 本。`campusGraphVersion` は `toyosu-graph-2026-10-18.1.draft`
 - 点の種類（`role`）
 
 | role | 数 | 中身 |
@@ -32,7 +32,7 @@
 | `radiusMetres` | この点にまとめる範囲の目安（ゴール 15m、外の道 5m、建物の中 3m） |
 | `gpsSnap` | `true` = 地面の高さの外の点（GPS の位置を乗せてよい）。`false` = 建物の中の点。GPS では階や部屋を見分けられないので演出だけに使う |
 
-- つながり（`edges`）：`from` / `to` / `kind`（`ground` 地上の道・`stairs` 階段・`escalator` エスカレーター・`indoor` 建物の中・`bridge` 渡り廊下）/ `lengthMetres`（平面の直線距離）/ `passable`
+- つながり（`edges`）：`from` / `to` / `kind`（`ground` 地上の道・`stairs` 階段・`escalator` エスカレーター・`indoor` 建物の中・`bridge` 渡り廊下）/ `lengthMetres`（高さも入れた直線距離。2026-10-18 から）/ `planarLengthMetres`（平面だけの距離）/ `passable`
 - 入口（`classroom-entrance`）からすべての点にたどれる（離れ小島の点はない）
 
 ## 決めたこと
