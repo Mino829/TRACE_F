@@ -19,7 +19,8 @@ import { ArrivalQr } from "./arrival-qr";
  *
  * Prototype: nothing arrives from TRACE_B yet, so the top screen has test
  * buttons (Space also plays). A test keeps going, one walk after another,
- * until 終了する (or Esc). Query: ?duration=20 (seconds per walk), ?fps=1
+ * until 終了する (or Esc). Query: ?speed=1.5 (pace; 1 walks at WALK_SPEED),
+ * ?duration=30 (fit every walk into that many seconds instead), ?fps=1
  * (frames per second in the corner, to check the booth PC keeps up).
  */
 type Screen = "loading" | "top" | "playback" | "arrived";
@@ -54,7 +55,8 @@ export function DisplayClient() {
         import("@/lib/display/route-path"),
       ]);
       const params = new URLSearchParams(window.location.search);
-      const duration = Number(params.get("duration")) || 20;
+      const speed = Number(params.get("speed")) || 1;
+      const duration = Number(params.get("duration")) || undefined;
       const showFps = params.get("fps") === "1";
       // Test walks favour indoors and the escalators, like most visitors.
       routesRef.current = {
@@ -66,6 +68,7 @@ export function DisplayClient() {
         follow: droneRef.current!,
         walk: walkRef.current!,
         mapLabels: labelsRef.current!,
+        speed,
         duration,
         onProgress: ({ s, length, stop, place, done, fps }) => {
           setStatus({ stop, place, progress: s / length });

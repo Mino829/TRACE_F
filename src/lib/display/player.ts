@@ -7,7 +7,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 
 import { EDGES, GRID_THETA, NODES, toScene, type Vec3 } from "./campus-graph";
-import { lookAheadAt, placeAt, pointAt, stopAt, type RoutePath } from "./route-path";
+import { buildTimeline, lookAheadAt, placeAt, pointAt, stopAt, type RoutePath, type Timeline } from "./route-path";
 
 /**
  * The exhibit's replay: a walk drawn as a growing line of light on the
@@ -29,8 +29,10 @@ export interface PlayerOptions {
   walk: HTMLCanvasElement;
   /** Labels on the map are DOM nodes laid over its canvas. */
   mapLabels: HTMLElement;
-  /** Seconds for the whole walk. */
-  duration: number;
+  /** Pace: 1 walks at WALK_SPEED (route-path.ts); 2 is twice as fast. */
+  speed: number;
+  /** If set, the whole walk takes this many seconds instead, at the same relative pace. */
+  duration?: number;
   /** fps: frames drawn in the last second, for checking the booth PC keeps up. */
   onProgress?: (p: { s: number; length: number; stop: string; place: string; done: boolean; fps: number }) => void;
 }
@@ -135,6 +137,7 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   const labels = makeLabels(opts.mapLabels);
 
   let path: RoutePath | null = null;
+  let timeline: Timeline | null = null;
   let start = 0;
   let last = 0;
   let frame = 0;
@@ -159,6 +162,7 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
 
   function play(next: RoutePath) {
     path = next;
+    timeline = buildTimeline(next, opts.speed, opts.duration);
     head.visible = true;
     clearTrail();
     trail = new THREE.Mesh(buildTube(next), trailMaterial);
@@ -179,9 +183,10 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     frame = requestAnimationFrame(tick);
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
-    if (!path || !trail) return;
-    const t = Math.min(1, (now - start) / 1000 / opts.duration);
-    const s = easeInOut(t) * path.length;
+    if (!path || !trail || !timeline) return;
+    const elapsed = (now - start) / 1000;
+    const s = timeline.sAt(elapsed);
+    const done = elapsed >= timeline.duration;
     const p = new THREE.Vector3(...pointAt(path, s));
     head.position.copy(p).y += TRAIL_LIFT;
     const { tubularSegments, radialSegments } = trail.geometry.parameters;
@@ -214,7 +219,7 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
       frames = 0;
       fpsSince = now;
     }
-    opts.onProgress?.({ s, length: path.length, stop: stopAt(path, s), place, done: t >= 1, fps });
+    opts.onProgress?.({ s, length: path.length, stop: stopAt(path, s), place, done, fps });
   }
   frame = requestAnimationFrame(tick);
 
@@ -525,6 +530,3 @@ async function loadCampus() {
   };
 }
 
-function easeInOut(t: number): number {
-  return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-}

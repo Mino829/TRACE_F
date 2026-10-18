@@ -1,4 +1,4 @@
-import { NODES, toScene, type Vec3 } from "./campus-graph";
+import { EDGES, NODES, toScene, type EdgeKind, type Vec3 } from "./campus-graph";
 
 /**
  * A replayed walk as a polyline in scene metres, measured by distance along
@@ -14,6 +14,14 @@ export interface RoutePath {
   stops: { s: number; name: string; at: Vec3 }[];
   /** Where each point is: "教室棟 3F", or "屋外". */
   places: string[];
+  /** The kind of edge from each point to the next (one fewer than points). */
+  kinds: EdgeKind[];
+}
+
+const EDGE_KIND = new Map<string, EdgeKind>();
+for (const e of EDGES) {
+  EDGE_KIND.set(`${e.from}|${e.to}`, e.kind);
+  EDGE_KIND.set(`${e.to}|${e.from}`, e.kind);
 }
 
 export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
@@ -21,8 +29,10 @@ export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
   const at: number[] = [];
   const stops: RoutePath["stops"] = [];
   const places: string[] = [];
+  const kinds: EdgeKind[] = [];
   let s = 0;
-  for (const id of nodeIds) {
+  nodeIds.forEach((id, i) => {
+    if (i > 0) kinds.push(EDGE_KIND.get(`${nodeIds[i - 1]}|${id}`) ?? "ground");
     const node = NODES.get(id);
     if (!node) throw new Error(`Unknown node: ${id}`);
     const p = toScene(node.threeD);
@@ -32,8 +42,44 @@ export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
     // Outdoor checkpoints can still name a building (研究棟ゲート): those read 屋外.
     places.push(node.building && !node.floor.startsWith("屋外") ? `${node.building} ${node.floor}` : "屋外");
     if (node.role === "checkpoint") stops.push({ s, name: node.name, at: p });
-  }
-  return { points, at, length: s, stops, places };
+  });
+  return { points, at, length: s, stops, places, kinds };
+}
+
+/**
+ * Walking speed on each kind of edge, in metres per second. Slow enough
+ * indoors that the first person can tell where it is; the long outdoor runs
+ * go quicker; stairs and escalators slowest, so the climb shows.
+ */
+export const WALK_SPEED: Record<EdgeKind, number> = { ground: 18, indoor: 8, bridge: 8, escalator: 5, stairs: 5 };
+
+/**
+ * When the walk reaches each point, at WALK_SPEED times `speed`. With a
+ * `duration`, the same pacing is stretched or squeezed to fit it instead.
+ */
+export interface Timeline {
+  duration: number;
+  /** Distance along the route after t seconds. */
+  sAt(t: number): number;
+}
+
+export function buildTimeline(path: RoutePath, speed = 1, duration?: number): Timeline {
+  const times = [0];
+  path.kinds.forEach((kind, i) => {
+    times.push(times[i] + (path.at[i + 1] - path.at[i]) / (WALK_SPEED[kind] * speed));
+  });
+  const natural = times[times.length - 1] || 1;
+  const scale = duration ? duration / natural : 1;
+  return {
+    duration: natural * scale,
+    sAt(t) {
+      const u = Math.min(natural, Math.max(0, t / scale));
+      let i = 0;
+      while (i + 2 < times.length && times[i + 1] <= u) i++;
+      const f = (u - times[i]) / (times[i + 1] - times[i] || 1);
+      return path.at[i] + (path.at[i + 1] - path.at[i]) * Math.min(1, f);
+    },
+  };
 }
 
 /** Point at distance s (clamped to the ends). */
