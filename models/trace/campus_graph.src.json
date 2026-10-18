@@ -2342,6 +2342,21 @@
    "note": ""
   },
   {
+   "id": "k1-009",
+   "name": "エスカレーター 1F→3F 3",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -155.89,
+    32.4,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": ""
+  },
+  {
    "id": "k3-001",
    "name": "教室棟3F 廊下 1",
    "building": "教室棟",
@@ -3907,8 +3922,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -180.62,
-    10.6,
+    -180.63,
+    10.58,
     26.0
    ],
    "radius": 3,
@@ -3922,8 +3937,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -176.67,
-    14.8,
+    -176.7,
+    14.77,
     26.0
    ],
    "radius": 3,
@@ -3937,8 +3952,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -172.73,
-    19.0,
+    -172.77,
+    18.95,
     26.0
    ],
    "radius": 3,
@@ -3952,8 +3967,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -168.78,
-    23.2,
+    -168.84,
+    23.14,
     26.0
    ],
    "radius": 3,
@@ -3967,8 +3982,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -164.84,
-    27.4,
+    -164.91,
+    27.32,
     26.0
    ],
    "radius": 3,
@@ -3982,8 +3997,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -160.89,
-    31.61,
+    -160.98,
+    31.51,
     26.0
    ],
    "radius": 3,
@@ -3997,8 +4012,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -156.95,
-    35.81,
+    -157.05,
+    35.69,
     26.0
    ],
    "radius": 3,
@@ -4012,8 +4027,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -153.0,
-    40.01,
+    -153.12,
+    39.88,
     26.0
    ],
    "radius": 3,
@@ -4027,8 +4042,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -149.05,
-    44.21,
+    -149.19,
+    44.07,
     26.0
    ],
    "radius": 3,
@@ -4042,8 +4057,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -145.11,
-    48.41,
+    -145.26,
+    48.25,
     26.0
    ],
    "radius": 3,
@@ -4057,8 +4072,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -141.16,
-    52.61,
+    -141.33,
+    52.44,
     26.0
    ],
    "radius": 3,
@@ -4102,8 +4117,8 @@
    "building": "教室棟",
    "floor": "6F",
    "blender": [
-    -138.9,
-    50.49,
+    -135.14,
+    54.5,
     26.0
    ],
    "radius": 3,
@@ -4154,6 +4169,81 @@
    "radius": 3,
    "gpsSnap": false,
    "role": "room",
+   "note": ""
+  },
+  {
+   "id": "k3-031",
+   "name": "教室棟3F ロビー（エスカレーター） 1",
+   "building": "教室棟",
+   "floor": "3F",
+   "blender": [
+    -154.18,
+    34.22,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": ""
+  },
+  {
+   "id": "k4-032",
+   "name": "教室棟4F ロビー（エスカレーター） 1",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -146.61,
+    42.28,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": ""
+  },
+  {
+   "id": "k4-033",
+   "name": "教室棟4F ロビー（エスカレーター） 2",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -142.74,
+    46.41,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": ""
+  },
+  {
+   "id": "k5-044",
+   "name": "教室棟5F ロビー（エスカレーター） 1",
+   "building": "教室棟",
+   "floor": "5F",
+   "blender": [
+    -135.14,
+    54.5,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": ""
+  },
+  {
+   "id": "k5-045",
+   "name": "教室棟5F ロビー（エスカレーター） 2",
+   "building": "教室棟",
+   "floor": "5F",
+   "blender": [
+    -142.74,
+    46.41,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
    "note": ""
   },
   {
@@ -5848,9 +5938,9 @@
    "kind": "indoor"
   },
   {
-   "id": "k1-008--classroom-3f-lobby",
+   "id": "k1-008--k1-009",
    "from": "k1-008",
-   "to": "classroom-3f-lobby",
+   "to": "k1-009",
    "kind": "escalator"
   },
   {
@@ -6562,8 +6652,8 @@
    "kind": "indoor"
   },
   {
-   "id": "k6-012--k6-015",
-   "from": "k6-012",
+   "id": "k6-013--k6-015",
+   "from": "k6-013",
    "to": "k6-015",
    "kind": "indoor"
   },
@@ -6586,20 +6676,56 @@
    "kind": "indoor"
   },
   {
-   "id": "classroom-3f-lobby--classroom-4f-lobby",
+   "id": "k1-009--classroom-3f-lobby",
+   "from": "k1-009",
+   "to": "classroom-3f-lobby",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-3f-lobby--k3-031",
    "from": "classroom-3f-lobby",
+   "to": "k3-031",
+   "kind": "indoor"
+  },
+  {
+   "id": "k4-032--classroom-4f-lobby",
+   "from": "k4-032",
    "to": "classroom-4f-lobby",
-   "kind": "escalator"
+   "kind": "indoor"
   },
   {
-   "id": "classroom-4f-lobby--classroom-5f-lobby",
+   "id": "classroom-4f-lobby--k4-033",
    "from": "classroom-4f-lobby",
+   "to": "k4-033",
+   "kind": "indoor"
+  },
+  {
+   "id": "k5-044--classroom-5f-lobby",
+   "from": "k5-044",
    "to": "classroom-5f-lobby",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-5f-lobby--k5-045",
+   "from": "classroom-5f-lobby",
+   "to": "k5-045",
+   "kind": "indoor"
+  },
+  {
+   "id": "k3-031--k4-032",
+   "from": "k3-031",
+   "to": "k4-032",
    "kind": "escalator"
   },
   {
-   "id": "classroom-5f-lobby--k6-015",
-   "from": "classroom-5f-lobby",
+   "id": "k4-033--k5-044",
+   "from": "k4-033",
+   "to": "k5-044",
+   "kind": "escalator"
+  },
+  {
+   "id": "k5-045--k6-015",
+   "from": "k5-045",
    "to": "k6-015",
    "kind": "escalator"
   },

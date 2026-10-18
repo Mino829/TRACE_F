@@ -80,7 +80,7 @@ path("本部棟の玄関から北へ", "o", "out", [(-100, -57, 0), (-88, -57, 0
 # 教室棟 1F：入口 → 交流棟側の階段・エスカレーター（1F→2F→3F）
 path("教室棟1F", "k1", "in", ["@classroom-entrance", (-38.4, 0.2, 0), (-38.4, -5.6, 0), (-26.2, -5.6, 0)], "indoor")
 path("教室棟1F 階段", "k1", "in", [(-38.4, 0.2, 0), (-38.4, 5.4, 0)], "indoor")
-path("エスカレーター 1F→3F", "k1", "in", [(-26.2, -5.6, 0), (-13.4, -5.6, 6), (-10.9, -5.6, 6), "@classroom-3f-lobby"],
+path("エスカレーター 1F→3F", "k1", "in", [(-26.2, -5.6, 0), (-13.4, -5.6, 6), (-10.9, -5.6, 6), (0.18, -5.6, 11.0)],
      ["escalator", "indoor", "escalator"])
 
 # 教室棟 3F〜6F：廊下（v -2.5）、教室（v 5.4）、ロビー（v -5.6）、交流棟側の端の階段（u -38.4）
@@ -93,7 +93,7 @@ ROOMS = {
 }
 FZ = {3: 11.0, 4: 16.0, 5: 21.0, 6: 26.0}
 LOBBY = {3: ("@classroom-3f-lobby", 1.4), 4: ("@classroom-4f-lobby", 16.6), 5: ("@classroom-5f-lobby", 25.0),
-         6: ((25.0, -5.6, 26.0), 25.0)}
+         6: ((30.5, -5.6, 26.0), 30.5)}
 ROOM_NODE = {}                                   # (階, 教室) → 点の座標（あとで名前をつける）
 for f, z in FZ.items():
     stops = sorted({-40.0, -38.4, 36.0, LOBBY[f][1]} | {uc for _, uc in ROOMS[f]} | ({-32.6} if f == 3 else set()))
@@ -109,9 +109,14 @@ for f, z in FZ.items():
 path("教室棟3F Global Learning Commons", "k3", "in", [(-32.6, -2.5, 11.0), (-32.6, -7.5, 11.0)], "indoor")
 ROOM_NODE[(-32.6, -7.5, 11.0)] = "教室棟3F Global Learning Commons"
 # 階をまたぐ（エスカレーターはロビーどうし、階段は交流棟側の端）
-path("エスカレーター 3F→4F", "k3", "in", ["@classroom-3f-lobby", "@classroom-4f-lobby"], "escalator")
-path("エスカレーター 4F→5F", "k4", "in", ["@classroom-4f-lobby", "@classroom-5f-lobby"], "escalator")
-path("エスカレーター 5F→6F", "k5", "in", ["@classroom-5f-lobby", (25.0, -5.6, 26.0)], "escalator")
+# エスカレーター（build_kyoshitsu_interior.py の ESC）：乗り口・降り口をロビー側（v -5.6）に置く
+#   2F→3F：-10.9→0.18、3F→4F：2.68→13.74、4F→5F・5F→6F：19.4→30.5（同じ XY に重なる）
+path("教室棟3F ロビー（エスカレーター）", "k3", "in", [(0.18, -5.6, 11.0), "@classroom-3f-lobby", (2.68, -5.6, 11.0)], "indoor")
+path("教室棟4F ロビー（エスカレーター）", "k4", "in", [(13.74, -5.6, 16.0), "@classroom-4f-lobby", (19.4, -5.6, 16.0)], "indoor")
+path("教室棟5F ロビー（エスカレーター）", "k5", "in", [(30.5, -5.6, 21.0), "@classroom-5f-lobby", (19.4, -5.6, 21.0)], "indoor")
+path("エスカレーター 3F→4F", "k3", "in", [(2.68, -5.6, 11.0), (13.74, -5.6, 16.0)], "escalator")
+path("エスカレーター 4F→5F", "k4", "in", [(19.4, -5.6, 16.0), (30.5, -5.6, 21.0)], "escalator")
+path("エスカレーター 5F→6F", "k5", "in", [(19.4, -5.6, 21.0), (30.5, -5.6, 26.0)], "escalator")
 for a, b in ((1, 3), (3, 4), (4, 5), (5, 6)):
     za, zb = (0.0 if a == 1 else FZ[a]), FZ[b]
     path(f"教室棟 階段 {a}F→{b}F", f"k{a}", "in", [(-38.4, 5.4, za), (-38.4, 5.4, zb)], "stairs")

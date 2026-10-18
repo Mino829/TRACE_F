@@ -227,3 +227,118 @@ def render_floors(samples=24):
     finally:
         night(False)
         show_graph(True, True, True)
+
+
+# ---------- 確認用の図（上から・横から・斜めから。建物を透かして道の網を重ねる） ----------
+# Workbench で「建物だけ（半透明）」と「道の網だけ（背景が透明）」を別々に撮り、check_overlay.py で重ねる
+import json as _json
+from bpy_extras.object_utils import world_to_camera_view as _w2c
+FLOOR_Z = {"1F": 0.0, "2F": 6.0, "3F": 11.0, "4F": 16.0, "5F": 21.0, "6F": 26.0}
+
+
+def _grid_dirs():
+    P = _json.load(open(os.path.join(ROOT, "buildings", "配置.json"), encoding="utf-8"))
+    t = P["教室棟"]["theta"]
+    return Vector((math.cos(t), math.sin(t), 0)), Vector((-math.sin(t), math.cos(t), 0)), t
+
+
+def _wb_pass(path, cam, network, ghost_alpha=0.22):
+    """network=False：建物を半透明で（道の網は隠す）。network=True：道の網だけ、背景は透明"""
+    keep = dict(engine=sc.render.engine, film=sc.render.film_transparent, xray=sc.display.shading.show_xray,
+                xa=sc.display.shading.xray_alpha, ct=sc.display.shading.color_type, light=sc.display.shading.light,
+                sh=sc.display.shading.show_shadows, cav=sc.display.shading.show_cavity, fp=sc.render.filepath, cam=sc.camera)
+    net = bpy.data.objects["TRACE_道の網"]
+    tops = [c for c in sc.collection.children if c.name != COL and not c.hide_render]
+    osm = [c for c in bpy.data.collections if c.name == "周辺建物_OSM" and not c.hide_render]
+    sh = sc.display.shading
+    sc.render.engine = 'BLENDER_WORKBENCH'
+    sh.color_type, sh.light, sh.show_shadows = 'MATERIAL', 'STUDIO', False
+    sh.show_cavity = not network
+    sc.camera = cam
+    sc.render.filepath = path
+    try:
+        for c in osm:
+            c.hide_render = True
+        if network:
+            for c in tops:
+                c.hide_render = True
+            sc.render.film_transparent, sh.show_xray = True, False
+        else:
+            net.hide_render = True
+            sc.render.film_transparent, sh.show_xray, sh.xray_alpha = False, True, ghost_alpha
+        bpy.ops.render.render(write_still=True)
+    finally:
+        for c in tops + osm:
+            c.hide_render = False
+        net.hide_render = False
+        sc.render.engine, sc.render.film_transparent = keep["engine"], keep["film"]
+        sh.show_xray, sh.xray_alpha, sh.color_type, sh.light = keep["xray"], keep["xa"], keep["ct"], keep["light"]
+        sh.show_shadows, sh.show_cavity = keep["sh"], keep["cav"]
+        sc.render.filepath, sc.camera = keep["fp"], keep["cam"]
+
+
+def check_view(name, title, loc, target, ortho=None, lens=30, res=(1920, 1080), floors=False):
+    """確認用の図を 1 枚：_<name>_建物.png と _<name>_網.png を撮り、重ねるための情報を JSON に書く"""
+    cd = bpy.data.cameras.new("TRACE_確認")
+    cd.clip_end = 3000
+    if ortho:
+        cd.type, cd.ortho_scale = 'ORTHO', ortho
+    else:
+        cd.lens = lens
+    cam = bpy.data.objects.new("TRACE_確認", cd)
+    sc.collection.objects.link(cam)
+    cam.location = loc
+    d = Vector(target) - Vector(loc)
+    if d.normalized().z < -0.999:                     # 真上から：画面の横 = 碁盤の目の u（教室棟の長い辺）
+        cam.rotation_euler = (0, 0, _grid_dirs()[2])
+    else:
+        cam.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
+    keep = (sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage)
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = *res, 100
+    show_graph(True, False, True)
+    try:
+        bpy.context.view_layer.update()
+        meta = {"title": title, "floors": {}, "metresPerPx": (ortho / res[0]) if ortho else None}
+        if floors:                                    # 階の高さの線（画面の高さ方向の位置）
+            for f, z in FLOOR_Z.items():
+                meta["floors"][f] = 1 - _w2c(sc, cam, Vector((target[0], target[1], z))).y
+        _wb_pass(os.path.join(FIG, f"_{name}_建物.png"), cam, False)
+        _wb_pass(os.path.join(FIG, f"_{name}_網.png"), cam, True)
+        _json.dump(meta, open(os.path.join(FIG, f"_{name}.json"), "w", encoding="utf-8"), ensure_ascii=False)
+    finally:
+        show_graph(True, True, True)
+        sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = keep
+        bpy.data.objects.remove(cam)
+        bpy.data.cameras.remove(cd)
+    return name
+
+
+def render_checks():
+    """上から（全体・教室棟まわり）、横から（2 方向）、斜めから"""
+    g = _json.load(open(os.path.join(ROOT, "trace", "campus_graph.src.json"), encoding="utf-8"))
+    ps = [Vector(n["blender"]) for n in g["nodes"]]
+    U, V, t = _grid_dirs()
+    us = [p.dot(U) for p in ps]
+    vs = [p.dot(V) for p in ps]
+    cu, cv = (min(us) + max(us)) / 2, (min(vs) + max(vs)) / 2
+    c = U * cu + V * cv
+    w, h = max(us) - min(us), max(vs) - min(vs)
+    out = []
+    # 上から：全体（u が画面の横）
+    out.append(check_view("09_上から_全体", "上から：道の網の全体（建物は半透明）", c + Vector((0, 0, 400)), c,
+                          ortho=max(w, h * 16 / 9) + 30))
+    # 上から：教室棟・交流棟・本部棟のまわり（建物の中の道が多いところ）
+    ck = Vector((*_json.load(open(os.path.join(ROOT, "buildings", "配置.json"), encoding="utf-8"))["教室棟"]["center"], 0))
+    ck = ck + U * (-40) + V * (-20)
+    out.append(check_view("10_上から_教室棟と交流棟のまわり", "上から：教室棟・交流棟・本部棟のまわり（建物の中の道も見える）",
+                          ck + Vector((0, 0, 400)), ck, ortho=130))
+    # 横から：道路側（+v）から見る（u が横、高さが縦）
+    out.append(check_view("11_横から_道路側から", "横から：道路側（北西）から見る（建物の長い辺の向き）",
+                          c + V * 400 + Vector((0, 0, 30)), c + Vector((0, 0, 30)), ortho=w + 30, floors=True))
+    # 横から：研究棟側（+u）から見る（v が横）
+    out.append(check_view("12_横から_研究棟側から", "横から：研究棟側（北東）から見る",
+                          c + U * 400 + Vector((0, 0, 30)), c + Vector((0, 0, 30)), ortho=h + 30, floors=True))
+    # 斜めから：建物を透かして
+    out.append(check_view("13_斜めから_建物を透かして", "斜めから：建物を透かして見る（豊洲駅側の空から）",
+                          (-330, -190, 170), (-150, -20, 0), lens=32))
+    return out
