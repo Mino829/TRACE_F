@@ -72,9 +72,10 @@ export const METRES: EdgeCost = { ground: 1, stairs: 1, escalator: 1, indoor: 1,
 /**
  * For test walks: most visitors ride the escalators and stay indoors, so
  * indoor corridors, bridges and above all escalators are cheap and the open
- * ground is dear. Stairs stay a little dear so the escalator wins.
+ * ground is dear. Stairs are dearer still, so in the classroom building the
+ * walk goes round to the escalators instead of up the end stair next to the door.
  */
-export const INDOOR_FIRST: EdgeCost = { ground: 2.5, stairs: 1.6, escalator: 0.15, indoor: 0.6, bridge: 0.5 };
+export const INDOOR_FIRST: EdgeCost = { ground: 2.5, stairs: 5, escalator: 0.15, indoor: 0.6, bridge: 0.5 };
 
 /** Cheapest walk between two nodes (Dijkstra; metres times the edge kind's cost). */
 export function shortestPath(from: string, to: string, cost: EdgeCost = METRES): string[] {

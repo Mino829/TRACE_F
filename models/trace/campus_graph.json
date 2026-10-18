@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "campusGraphVersion": "toyosu-graph-2026-10-18.1.draft",
+ "campusGraphVersion": "toyosu-graph-2026-10-18.2.draft",
  "coordinateVersion": "toyosu-2026-08-28.1",
  "threeDMapVersion": "キャンパス全体.blend 2026-10-18",
  "exportedAt": "2026-10-18",
@@ -3416,7 +3416,7 @@
    "name": "エスカレーター 1F→3F 1",
    "role": "waypoint",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "2F",
    "lat": 35.6608837,
    "lon": 139.7948175,
    "local": {
@@ -3438,7 +3438,7 @@
    "name": "エスカレーター 1F→3F 2",
    "role": "waypoint",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "2F",
    "lat": 35.6609001,
    "lon": 139.7948364,
    "local": {
@@ -3460,7 +3460,7 @@
    "name": "エスカレーター 1F→3F 3",
    "role": "waypoint",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "3F",
    "lat": 35.6609729,
    "lon": 139.7949201,
    "local": {
@@ -7618,7 +7618,7 @@
    "name": "本部棟 階段 4F→1F 1",
    "role": "waypoint",
    "building": "本部棟",
-   "floor": "4F",
+   "floor": "1F",
    "lat": 35.6602171,
    "lon": 139.7947372,
    "local": {

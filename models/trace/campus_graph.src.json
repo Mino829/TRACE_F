@@ -1,5 +1,5 @@
 {
- "$comment": "TRACE のチェックポイントの元データ。blender = キャンパス全体.blend の地図の座標(m)。Blender で点を動かしたら trace_graph.py の pull で書き戻す。点とつながりは build_network.py で作る（道の定義を直して作り直す）。点とつながりは build_network.py で作る（道の定義を直して作り直す）",
+ "$comment": "TRACE のチェックポイントの元データ。blender = キャンパス全体.blend の地図の座標(m)。Blender で点を動かしたら trace_graph.py の pull で書き戻す。点とつながりは build_network.py で作る（道の定義を直して作り直す）。点とつながりは build_network.py で作る（道の定義を直して作り直す）。点とつながりは build_network.py で作る（道の定義を直して作り直す）",
  "nodes": [
   {
    "id": "classroom-entrance",
@@ -2315,7 +2315,7 @@
    "id": "k1-007",
    "name": "エスカレーター 1F→3F 1",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "2F",
    "blender": [
     -165.19,
     22.5,
@@ -2330,7 +2330,7 @@
    "id": "k1-008",
    "name": "エスカレーター 1F→3F 2",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "2F",
    "blender": [
     -163.48,
     24.32,
@@ -2345,7 +2345,7 @@
    "id": "k1-009",
    "name": "エスカレーター 1F→3F 3",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "3F",
    "blender": [
     -155.89,
     32.4,
@@ -5180,7 +5180,7 @@
    "id": "h4-001",
    "name": "本部棟 階段 4F→1F 1",
    "building": "本部棟",
-   "floor": "4F",
+   "floor": "1F",
    "blender": [
     -172.49,
     -51.45,

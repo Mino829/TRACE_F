@@ -16,7 +16,7 @@ import importlib, trace_geo
 importlib.reload(trace_geo)
 
 COL = "30_TRACE_チェックポイント"
-GRAPH_VERSION = "toyosu-graph-2026-10-18.1.draft"
+GRAPH_VERSION = "toyosu-graph-2026-10-18.2.draft"
 KIND_COLOR = {"ground": (0.1, 0.55, 1.0), "stairs": (1.0, 0.6, 0.1), "bridge": (0.75, 0.3, 1.0), "indoor": (0.2, 0.8, 0.3), "escalator": (1.0, 0.85, 0.1)}
 
 

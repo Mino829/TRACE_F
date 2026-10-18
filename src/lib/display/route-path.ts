@@ -29,7 +29,8 @@ export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
     if (points.length) s += dist(points[points.length - 1], p);
     points.push(p);
     at.push(s);
-    places.push(node.building ? `${node.building} ${node.floor}` : "屋外");
+    // Outdoor checkpoints can still name a building (研究棟ゲート): those read 屋外.
+    places.push(node.building && !node.floor.startsWith("屋外") ? `${node.building} ${node.floor}` : "屋外");
     if (node.role === "checkpoint") stops.push({ s, name: node.name, at: p });
   }
   return { points, at, length: s, stops, places };

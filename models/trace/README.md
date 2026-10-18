@@ -10,7 +10,7 @@
 
 ## campus_graph.json
 
-- 点 350 か所・つながり 366 本。`campusGraphVersion` は `toyosu-graph-2026-10-18.1.draft`
+- 点 350 か所・つながり 366 本。`campusGraphVersion` は `toyosu-graph-2026-10-18.2.draft`
 - 点の種類（`role`）
 
 | role | 数 | 中身 |
