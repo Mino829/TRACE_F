@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Cloudflare Worker with its own toolchain.
     "push-worker/**",
+    // Draco decoder copied as-is from three/examples/jsm/libs/draco (third-party build output).
+    "public/display/draco/**",
   ]),
 ]);
 
