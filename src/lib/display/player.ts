@@ -17,17 +17,22 @@ import { lookAheadAt, placeAt, pointAt, stopAt, type RoutePath } from "./route-p
  *   only (no interiors, no neighbours), and the line, the network, the stops
  *   and the labels are drawn over them so the walk shows even indoors. The
  *   frame fits the whole network and drifts slowly so the picture lives.
- * - Drone (right): follows the head of the line from behind and above, with
- *   every floor drawn as see-through outlines.
+ * - Drone: follows the head of the line from behind and above, with every
+ *   floor drawn as see-through outlines.
+ * - Walk: first person at eye height, the campus in its own colours and solid,
+ *   the line a faint guide on the floor. No outlines and no bloom, so it costs
+ *   little next to the other two.
  */
 export interface PlayerOptions {
   overview: HTMLCanvasElement;
   follow: HTMLCanvasElement;
+  walk: HTMLCanvasElement;
   /** Labels on the map are DOM nodes laid over its canvas. */
   mapLabels: HTMLElement;
   /** Seconds for the whole walk. */
   duration: number;
-  onProgress?: (p: { s: number; length: number; stop: string; place: string; done: boolean }) => void;
+  /** fps: frames drawn in the last second, for checking the booth PC keeps up. */
+  onProgress?: (p: { s: number; length: number; stop: string; place: string; done: boolean; fps: number }) => void;
 }
 
 export interface Player {
@@ -54,9 +59,13 @@ const FOLLOW_PITCH = THREE.MathUtils.degToRad(48);
 /** Anything closer to the drone than this is clipped, so it never flies into a wall. */
 const FOLLOW_NEAR = 55;
 const FACE_OPACITY = 0.05;
+const EYE = 1.6;
+const SKY = new THREE.Color(0xa9c3dd);
+/** From eye height the line runs right under the camera, so the walk gets a faint one. */
+const WALK_TRAIL_COLOR = new THREE.Color(0.45, 0.62, 0.75);
 
 /** What campus.glb's objects are (userData.trace_layer, from scripts/export_web.py), as camera layers. */
-const LAYER = { exterior: 1, interior: 2, site: 3, surroundings: 4, exteriorLines: 5, otherLines: 6 } as const;
+const LAYER = { exterior: 1, interior: 2, site: 3, surroundings: 4, exteriorLines: 5, otherLines: 6, network: 7, head: 8 } as const;
 
 /** Map labels: building names at roof height (Blender metres, buildings/配置.json). */
 const BUILDING_LABELS: { name: string; at: Vec3 }[] = [
@@ -75,20 +84,26 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   const scene = new THREE.Scene();
   // No scene.background: a colour background clears on every render call,
   // which would wipe the map's earlier passes. The renderers clear to ink instead.
-  scene.add(new THREE.HemisphereLight(0xc8d4ff, 0x202030, 1.6));
-  const moon = new THREE.DirectionalLight(0xdde6ff, 1.2);
-  moon.position.set(-120, 200, 80);
-  scene.add(moon);
+  // Daylight for the walk's colours: a blue sky above, warm ground bounce below,
+  // and a low warm sun. The map draws flat colours and the drone is see-through,
+  // so the light only really shows in the walk.
+  scene.add(new THREE.HemisphereLight(0xdde8ff, 0x8a7d6c, 2.4));
+  const sun = new THREE.DirectionalLight(0xfff0d8, 2.2);
+  sun.position.set(-160, 180, 120);
+  scene.add(sun);
 
   const campus = await loadCampus();
   scene.add(campus.root);
-  scene.add(buildNetworkLines());
+  const network = buildNetworkLines();
+  network.layers.set(LAYER.network);
+  scene.add(network);
 
   const trailMaterial = new THREE.MeshBasicMaterial({ color: TRAIL_COLOR, toneMapped: false });
   const head = new THREE.Mesh(
     new THREE.SphereGeometry(1.4, 20, 12),
     new THREE.MeshBasicMaterial({ color: new THREE.Color(2.5, 2.5, 2.5), toneMapped: false }),
   );
+  head.layers.set(LAYER.head);
   scene.add(head);
   const stopMarks = new THREE.Group();
   scene.add(stopMarks);
@@ -100,11 +115,23 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   const followCamera = new THREE.PerspectiveCamera(36, 1, FOLLOW_NEAR, 2000);
   for (const l of Object.values(LAYER)) followCamera.layers.enable(l);
   followCamera.layers.disable(LAYER.surroundings);
-  const drone = makeView(opts.follow, 0.8, (composer) => composer.addPass(new RenderPass(scene, followCamera)), (w, h) => {
+  const drone = makeView(opts.follow, 0.8, INK, (composer) => composer.addPass(new RenderPass(scene, followCamera)), (w, h) => {
     followCamera.aspect = w / h;
     followCamera.updateProjectionMatrix();
+  }, () => {
+    campus.ghost();
+    trailMaterial.color.copy(TRAIL_COLOR);
   });
-  const views = [map.view, drone];
+  const walkCamera = new THREE.PerspectiveCamera(70, 1, 0.1, 1500);
+  for (const l of [LAYER.exterior, LAYER.interior, LAYER.site, LAYER.surroundings]) walkCamera.layers.enable(l);
+  const walk = makeView(opts.walk, 0, SKY, (composer) => composer.addPass(new RenderPass(scene, walkCamera)), (w, h) => {
+    walkCamera.aspect = w / h;
+    walkCamera.updateProjectionMatrix();
+  }, () => {
+    campus.solid();
+    trailMaterial.color.copy(WALK_TRAIL_COLOR);
+  });
+  const views = [map.view, drone, walk];
   const labels = makeLabels(opts.mapLabels);
 
   let path: RoutePath | null = null;
@@ -114,9 +141,12 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   const followPos = new THREE.Vector3();
   const followLook = new THREE.Vector3();
   const heading = new THREE.Vector3();
+  const walkLook = new THREE.Vector3();
+  let frames = 0;
+  let fps = 0;
+  let fpsSince = 0;
   const observer = new ResizeObserver(() => views.forEach((v) => v.resize()));
-  observer.observe(opts.overview);
-  observer.observe(opts.follow);
+  for (const c of [opts.overview, opts.follow, opts.walk]) observer.observe(c);
   views.forEach((v) => v.resize());
 
   function clearTrail() {
@@ -142,6 +172,7 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     heading.copy(headingAt(next, 0));
     followLook.copy(p);
     followPos.copy(droneSpot(p, heading));
+    walkLook.set(...lookAheadAt(next, 0, 6)).y += EYE;
   }
 
   function tick(now: number) {
@@ -167,11 +198,23 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     followCamera.position.copy(followPos);
     followCamera.lookAt(followLook);
 
+    // Walk: eye on the line, gaze eased toward a point a few metres ahead.
+    walkCamera.position.set(p.x, p.y + EYE, p.z);
+    const ahead = lookAheadAt(path, s, 6);
+    walkLook.lerp(new THREE.Vector3(ahead[0], ahead[1] + EYE, ahead[2]), 1 - Math.exp(-dt * 4));
+    walkCamera.lookAt(walkLook);
+
     const place = placeAt(path, s);
     map.drift(now / 1000);
     labels.update(map.camera, opts.overview, head.position, place);
     for (const v of views) v.render();
-    opts.onProgress?.({ s, length: path.length, stop: stopAt(path, s), place, done: t >= 1 });
+    frames++;
+    if (now - fpsSince >= 1000) {
+      fps = Math.round((frames * 1000) / (now - fpsSince));
+      frames = 0;
+      fpsSince = now;
+    }
+    opts.onProgress?.({ s, length: path.length, stop: stopAt(path, s), place, done: t >= 1, fps });
   }
   frame = requestAnimationFrame(tick);
 
@@ -207,9 +250,10 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
     });
-    const pass = (layer: number, override?: THREE.Material, clearDepth = false) => {
+    const pass = (layers: number[], override?: THREE.Material, clearDepth = false) => {
       const cam = camera.clone();
-      cam.layers.set(layer);
+      cam.layers.disableAll();
+      for (const l of layers) cam.layers.enable(l);
       cams.push(cam);
       const rp = new RenderPass(scene, cam, override);
       rp.clear = cams.length === 1;
@@ -217,12 +261,12 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
       return rp;
     };
     const cams: THREE.OrthographicCamera[] = [];
-    const view = makeView(opts.overview, 0.9, (composer) => {
-      composer.addPass(pass(LAYER.site, ground));
-      composer.addPass(pass(LAYER.exterior, roofs));
-      composer.addPass(pass(LAYER.exteriorLines));
-      composer.addPass(pass(0, undefined, true));
-    }, fit);
+    const view = makeView(opts.overview, 0.9, INK, (composer) => {
+      composer.addPass(pass([LAYER.site], ground));
+      composer.addPass(pass([LAYER.exterior], roofs));
+      composer.addPass(pass([LAYER.exteriorLines]));
+      composer.addPass(pass([0, LAYER.network, LAYER.head], undefined, true));
+    }, fit, () => trailMaterial.color.copy(TRAIL_COLOR));
     let base = { center: new THREE.Vector3(), halfW: 1, halfH: 1 };
 
     /** Size the frame so every point of the network fits, with room for the drift. */
@@ -277,16 +321,19 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   function makeView(
     canvas: HTMLCanvasElement,
     bloomStrength: number,
+    clearColor: THREE.Color,
     addPasses: (composer: EffectComposer) => void,
     onResize: (w: number, h: number) => void,
+    prepare: () => void,
   ) {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setClearColor(INK);
+    renderer.setClearColor(clearColor);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     const composer = new EffectComposer(renderer);
     addPasses(composer);
-    composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), bloomStrength, 0.45, 0.9));
+    // The walk has no bloom: the line runs right under its camera and would flood the view.
+    if (bloomStrength > 0) composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), bloomStrength, 0.45, 0.9));
     composer.addPass(new OutputPass());
     return {
       resize() {
@@ -297,6 +344,7 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
         onResize(w, h);
       },
       render() {
+        prepare();
         composer.render();
       },
       dispose() {
@@ -416,7 +464,11 @@ async function loadCampus() {
   const loader = new GLTFLoader();
   loader.setDRACOLoader(draco);
   const gltf = await loader.loadAsync("/display/campus.glb");
-  const materials = new Set<THREE.MeshStandardMaterial>();
+  const materials = new Map<
+    THREE.MeshStandardMaterial,
+    { opacity: number; transparent: boolean; depthWrite: boolean; color: THREE.Color }
+  >();
+  const ghostColor = new THREE.Color(0x2c2e34);
   const exteriorLines = new THREE.LineBasicMaterial({ color: 0x8c8e8e, transparent: true, opacity: 0.55, depthWrite: false });
   const otherLines = new THREE.LineBasicMaterial({ color: 0x8c8e8e, transparent: true, opacity: 0.2, depthWrite: false });
   const meshes: THREE.Mesh[] = [];
@@ -429,12 +481,9 @@ async function loadCampus() {
     for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
       const std = m as THREE.MeshStandardMaterial;
       if (materials.has(std)) continue;
+      materials.set(std, { opacity: std.opacity, transparent: std.transparent, depthWrite: std.depthWrite, color: std.color.clone() });
       std.emissive?.setScalar(0);
-      std.transparent = true;
-      std.opacity = FACE_OPACITY;
-      std.depthWrite = false;
       std.side = THREE.DoubleSide;
-      materials.add(std);
     }
     if (kind === "surroundings") continue;
     const lines = new THREE.LineSegments(
@@ -445,13 +494,31 @@ async function loadCampus() {
     mesh.add(lines);
   }
   draco.dispose();
+  let style: "ghost" | "solid" | null = null;
+  /** The drone sees through every floor; the walk sees the campus as it is. */
+  const setStyle = (next: "ghost" | "solid") => {
+    if (style === next) return;
+    style = next;
+    for (const [m, own] of materials) {
+      // Ghost faces are dark as well as faint: under the walk's daylight they would glow white.
+      if (next === "ghost") {
+        Object.assign(m, { transparent: true, opacity: FACE_OPACITY, depthWrite: false });
+        m.color.copy(ghostColor);
+      } else {
+        Object.assign(m, { opacity: own.opacity, transparent: own.transparent, depthWrite: own.depthWrite });
+        m.color.copy(own.color);
+      }
+    }
+  };
   return {
     root: gltf.scene,
+    ghost: () => setStyle("ghost"),
+    solid: () => setStyle("solid"),
     dispose() {
       gltf.scene.traverse((o) => {
         if ((o as THREE.Mesh).isMesh || (o as THREE.LineSegments).isLineSegments) (o as THREE.Mesh).geometry.dispose();
       });
-      materials.forEach((m) => m.dispose());
+      materials.forEach((_, m) => m.dispose());
       exteriorLines.dispose();
       otherLines.dispose();
     },

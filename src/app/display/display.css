@@ -543,3 +543,57 @@ html:has(.dsp) body {
   margin-left: 1.2em;
   color: var(--paper);
 }
+
+/* ------------------------------------------- drone + minimap + walk */
+
+/* The drone takes the left half; the whole-campus map sits small in its corner. */
+.dsp-minimap {
+  position: absolute;
+  left: var(--pad);
+  top: calc(var(--pad) + 96px);
+  width: 38%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--rule);
+  background: var(--ink);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+
+  & .dsp-label {
+    font-size: clamp(10px, 0.7vw, 13px);
+  }
+  & .dsp-label--goal {
+    font-size: clamp(9px, 0.6vw, 11px);
+  }
+  & .dsp-label--here {
+    font-size: clamp(10px, 0.7vw, 13px);
+  }
+}
+
+.dsp-minimap__label {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: clamp(10px, 0.7vw, 13px);
+  letter-spacing: 0.14em;
+  color: var(--fg-2);
+}
+
+/* The walk is in daylight colours; its label sits on the sky. */
+.dsp-view__label--sky {
+  color: var(--ink);
+}
+
+.dsp-fps {
+  position: absolute;
+  right: 40px;
+  bottom: 40px;
+  z-index: 45;
+  margin: 0;
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--paper);
+}

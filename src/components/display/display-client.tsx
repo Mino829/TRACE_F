@@ -12,13 +12,15 @@ import { ArrivalQr } from "./arrival-qr";
  * screens of /log. Three screens:
  *
  * - top: the arrival QR on paper. Visitors read it with TRACE on their phone.
- * - playback: ink. The campus map on the left and a drone following the line
- *   on the right replay the visitor's walk.
+ * - playback: ink. A drone following the line (left, large, with a small map
+ *   of the whole campus in its corner) and a first-person walk in colour
+ *   (right) replay the visitor's walk.
  * - arrived: a short card, then back to the top.
  *
  * Prototype: nothing arrives from TRACE_B yet, so the top screen has test
  * buttons (Space also plays). A test keeps going, one walk after another,
- * until 終了する (or Esc). Query: ?duration=20 (seconds per walk).
+ * until 終了する (or Esc). Query: ?duration=20 (seconds per walk), ?fps=1
+ * (frames per second in the corner, to check the booth PC keeps up).
  */
 type Screen = "loading" | "top" | "playback" | "arrived";
 
@@ -28,6 +30,8 @@ type TestRoute = "sample" | "random";
 export function DisplayClient() {
   const mapRef = useRef<HTMLCanvasElement>(null);
   const droneRef = useRef<HTMLCanvasElement>(null);
+  const walkRef = useRef<HTMLCanvasElement>(null);
+  const [fps, setFps] = useState<number | null>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
   const routesRef = useRef<Record<TestRoute, () => RoutePath> | null>(null);
@@ -49,7 +53,9 @@ export function DisplayClient() {
         import("@/lib/display/campus-graph"),
         import("@/lib/display/route-path"),
       ]);
-      const duration = Number(new URLSearchParams(window.location.search).get("duration")) || 20;
+      const params = new URLSearchParams(window.location.search);
+      const duration = Number(params.get("duration")) || 20;
+      const showFps = params.get("fps") === "1";
       // Test walks favour indoors and the escalators, like most visitors.
       routesRef.current = {
         sample: () => buildRoutePath(graph.routeThrough(graph.SAMPLE_STOPS, graph.INDOOR_FIRST)),
@@ -58,10 +64,12 @@ export function DisplayClient() {
       const player = await createPlayer({
         overview: mapRef.current!,
         follow: droneRef.current!,
+        walk: walkRef.current!,
         mapLabels: labelsRef.current!,
         duration,
-        onProgress: ({ s, length, stop, place, done }) => {
+        onProgress: ({ s, length, stop, place, done, fps }) => {
           setStatus({ stop, place, progress: s / length });
+          if (showFps) setFps(fps);
           if (done && playingRef.current) {
             playingRef.current = false;
             setArrivedAt(clock(new Date()).slice(0, 5));
@@ -130,13 +138,17 @@ export function DisplayClient() {
       {/* Playback: always mounted so the campus is loaded before the first visitor. */}
       <div className="dsp-stage" aria-hidden={screen === "top"}>
         <section className="dsp-view">
-          <canvas ref={mapRef} className="dsp-canvas" aria-label="キャンパス全体と軌跡" />
-          <div ref={labelsRef} className="dsp-labels" aria-hidden="true" />
-          <p className="dsp-view__label">MAP</p>
-        </section>
-        <section className="dsp-view">
           <canvas ref={droneRef} className="dsp-canvas" aria-label="光の先頭を追いかける視点" />
           <p className="dsp-view__label">DRONE</p>
+          <section className="dsp-minimap">
+            <canvas ref={mapRef} className="dsp-canvas" aria-label="キャンパス全体と軌跡" />
+            <div ref={labelsRef} className="dsp-labels" aria-hidden="true" />
+            <p className="dsp-minimap__label">MAP</p>
+          </section>
+        </section>
+        <section className="dsp-view">
+          <canvas ref={walkRef} className="dsp-canvas" aria-label="一人称の視点" />
+          <p className="dsp-view__label dsp-view__label--sky">WALK</p>
         </section>
         <header className="dsp-mast dsp-mast--room">
           <p className="dsp-mark">
@@ -222,6 +234,7 @@ export function DisplayClient() {
       )}
 
       <Hud screen={screen} />
+      {fps !== null && screen !== "top" && <p className="dsp-fps">{fps} FPS</p>}
     </div>
   );
 }
