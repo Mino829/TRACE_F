@@ -29,7 +29,7 @@ import {
  * - Drone: follows the head of the line from behind and above, with every
  *   floor drawn as see-through outlines.
  * - Walk: first person at eye height, the campus in its own colours and solid,
- *   the line a faint guide on the floor. No outlines and no bloom, so it costs
+ *   without the line (the map and the drone show it). No outlines and no bloom, so it costs
  *   little next to the other two.
  */
 export interface PlayerOptions {
@@ -81,8 +81,6 @@ const SKY = new THREE.Color(0xa9c3dd);
 const FLOWER_BEDS = toScene({ x: -138.6, y: -8.5, z: 2 });
 /** How far down the window gaze may tip. */
 const WINDOW_PITCH = THREE.MathUtils.degToRad(14);
-/** From eye height the line runs right under the camera, so the walk gets a faint one. */
-const WALK_TRAIL_COLOR = new THREE.Color(0.45, 0.62, 0.75);
 
 /** What campus.glb's objects are (userData.trace_layer, from scripts/export_web.py), as camera layers. */
 const LAYER = { exterior: 1, interior: 2, site: 3, surroundings: 4, exteriorLines: 5, otherLines: 6, network: 7, head: 8 } as const;
@@ -141,6 +139,7 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   }, () => {
     campus.ghost();
     trailMaterial.color.copy(TRAIL_COLOR);
+    if (trail) trail.visible = true;
   });
   const walkCamera = new THREE.PerspectiveCamera(70, 1, 0.1, 1500);
   for (const l of [LAYER.exterior, LAYER.interior, LAYER.site, LAYER.surroundings]) walkCamera.layers.enable(l);
@@ -149,7 +148,9 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     walkCamera.updateProjectionMatrix();
   }, () => {
     campus.solid();
-    trailMaterial.color.copy(WALK_TRAIL_COLOR);
+    // No line in the walk: where the route doubles back (into a room and out
+    // again), the part already drawn lies just ahead of the eye and fills the view.
+    if (trail) trail.visible = false;
   });
   const views = [map.view, drone, walk];
   const labels = makeLabels(opts.mapLabels);
@@ -292,7 +293,10 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
       composer.addPass(pass([LAYER.exterior], roofs));
       composer.addPass(pass([LAYER.exteriorLines]));
       composer.addPass(pass([0, LAYER.network, LAYER.head], undefined, true));
-    }, fit, () => trailMaterial.color.copy(TRAIL_COLOR));
+    }, fit, () => {
+      trailMaterial.color.copy(TRAIL_COLOR);
+      if (trail) trail.visible = true;
+    });
     let base = { center: new THREE.Vector3(), halfW: 1, halfH: 1 };
 
     /** Size the frame so every point of the network fits, with room for the drift. */
