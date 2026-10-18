@@ -28,11 +28,14 @@ export interface PlayerOptions {
 
 export interface Player {
   play(path: RoutePath): void;
+  /** Clears the line and stops drawing until the next play (the top screen covers the canvases). */
+  stop(): void;
   dispose(): void;
 }
 
-const TRAIL_COLOR = new THREE.Color(0.35, 1.6, 2.2); // over 1, so bloom picks it up
-const NETWORK_COLOR = new THREE.Color(0.12, 0.32, 0.42);
+// RAY is black and white: the line is paper-white light, over 1 so bloom picks it up.
+const TRAIL_COLOR = new THREE.Color(2.1, 2.15, 2.1);
+const NETWORK_COLOR = new THREE.Color(0.22, 0.23, 0.23);
 const TRAIL_LIFT = 0.4;
 const TRAIL_RADIUS = 0.45;
 /** How far down the map looks (0 = from the side, 90 = straight down). */
@@ -43,7 +46,7 @@ const FOLLOW_PITCH = THREE.MathUtils.degToRad(48);
 /** Anything closer to the drone than this is clipped, so it never flies into a wall. */
 const FOLLOW_NEAR = 55;
 const FACE_OPACITY = 0.05;
-const OUTLINE_COLOR = new THREE.Color(0.36, 0.48, 0.66);
+const OUTLINE_COLOR = new THREE.Color(0.55, 0.56, 0.56);
 
 /** Campus grid directions in the scene: u along the classroom building, v toward the road. */
 const U = new THREE.Vector3(Math.cos(GRID_THETA), 0, -Math.sin(GRID_THETA));
@@ -51,7 +54,7 @@ const V = new THREE.Vector3(-Math.sin(GRID_THETA), 0, -Math.cos(GRID_THETA));
 
 export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x070a12);
+  scene.background = new THREE.Color(0x0c0c0d); // RAY ink
   scene.add(new THREE.HemisphereLight(0xc8d4ff, 0x202030, 1.6));
   const moon = new THREE.DirectionalLight(0xdde6ff, 1.2);
   moon.position.set(-120, 200, 80);
@@ -90,12 +93,17 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   window.addEventListener("resize", resize);
   resize();
 
+  function clearTrail() {
+    if (!trail) return;
+    scene.remove(trail);
+    trail.geometry.dispose();
+    trail = null;
+  }
+
   function play(next: RoutePath) {
     path = next;
-    if (trail) {
-      scene.remove(trail);
-      trail.geometry.dispose();
-    }
+    head.visible = true;
+    clearTrail();
     trail = new THREE.Mesh(buildTube(next), trailMaterial);
     trail.geometry.setDrawRange(0, 0);
     scene.add(trail);
@@ -129,17 +137,22 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
       followCamera.lookAt(followLook);
       opts.onProgress?.({ s, length: path.length, stop: stopAt(path, s), done: t >= 1 });
     }
-    for (const v of views) v.render();
+    if (path) for (const v of views) v.render();
   }
   frame = requestAnimationFrame(tick);
 
   return {
     play,
+    stop() {
+      path = null;
+      head.visible = false;
+      clearTrail();
+    },
     dispose() {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", resize);
       views.forEach((v) => v.dispose());
-      trail?.geometry.dispose();
+      clearTrail();
       campus.dispose();
     },
   };
