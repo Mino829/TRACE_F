@@ -29,7 +29,8 @@ models/
 │   ├─ 研究棟.blend / 教室棟.blend / 交流棟.blend / 本部棟.blend
 │   └─ 配置.json            ← 各建物の地図上の位置と向き
 ├─ scripts/                ← モデルを作り直す Blender のスクリプト
-└─ renders/                ← 上の画像
+├─ renders/                ← 上の画像
+└─ trace/                  ← TRACE のチェックポイント（campus_graph.json）。説明は trace/README.md
 ```
 
 ## export/（FBX）
