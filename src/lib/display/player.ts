@@ -414,7 +414,9 @@ function makeLabels(root: HTMLElement) {
       root.hidden = true;
     },
     dispose() {
-      root.replaceChildren();
+      // Only this player's own labels: in development React mounts twice, and
+      // the first player can be disposed after the second has added its labels.
+      for (const el of [...buildings.map((b) => b.el), goal, here]) el.remove();
     },
   };
 }
