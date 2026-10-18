@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
  */
 export function DisplayClient() {
   const overviewRef = useRef<HTMLCanvasElement>(null);
-  const walkRef = useRef<HTMLCanvasElement>(null);
+  const followRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<{ stop: string; progress: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +32,7 @@ export function DisplayClient() {
       let restart: number | undefined;
       const player = await createPlayer({
         overview: overviewRef.current!,
-        firstPerson: walkRef.current!,
+        follow: followRef.current!,
         duration,
         onProgress: ({ s, length, stop, done }) => {
           setStatus({ stop, progress: s / length });
@@ -63,7 +63,7 @@ export function DisplayClient() {
   return (
     <div className="display-root">
       <canvas ref={overviewRef} className="display-view" aria-label="キャンパス全体と軌跡" />
-      <canvas ref={walkRef} className="display-view" aria-label="一人称の視点" />
+      <canvas ref={followRef} className="display-view" aria-label="光の先頭を追いかける視点" />
       <div className="display-caption">
         {error ? (
           <p className="display-error">読み込めませんでした：{error}</p>

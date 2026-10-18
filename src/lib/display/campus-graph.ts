@@ -38,15 +38,16 @@ export const EDGES: readonly GraphEdge[] = graph.edges as GraphEdge[];
  */
 const ORIGIN = { x: -160.48048400878906, y: -14.865501403808594 };
 
+/**
+ * The campus grid: the classroom building's long side (buildings/配置.json).
+ * Every ground edge of the network runs along it or at right angles to it.
+ */
+export const GRID_THETA = 0.8168140899333461;
+
 export type Vec3 = [number, number, number];
 
 export function toScene(p: { x: number; y: number; z: number }): Vec3 {
   return [p.x - ORIGIN.x, p.z, -(p.y - ORIGIN.y)];
-}
-
-/** Same conversion for the hand-picked camera spots, given in Blender metres. */
-export function blenderToScene(x: number, y: number, z: number): Vec3 {
-  return toScene({ x, y, z });
 }
 
 const adjacency = (() => {
