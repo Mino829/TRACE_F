@@ -17,21 +17,26 @@ import { ArrivalQr } from "./arrival-qr";
  * - arrived: a short card, then back to the top.
  *
  * Prototype: nothing arrives from TRACE_B yet, so the top screen has test
- * buttons (Space also plays). Query: ?duration=20 (seconds per walk).
+ * buttons (Space also plays). A test keeps going, one walk after another,
+ * until 終了する (or Esc). Query: ?duration=20 (seconds per walk).
  */
 type Screen = "loading" | "top" | "playback" | "arrived";
 
-const ARRIVED_SECONDS = 5;
+const ARRIVED_SECONDS = 4;
+type TestRoute = "sample" | "random";
 
 export function DisplayClient() {
   const mapRef = useRef<HTMLCanvasElement>(null);
   const droneRef = useRef<HTMLCanvasElement>(null);
+  const labelsRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
-  const routesRef = useRef<{ sample: () => RoutePath; random: () => RoutePath } | null>(null);
+  const routesRef = useRef<Record<TestRoute, () => RoutePath> | null>(null);
   /** True from play until the walk ends or the top screen takes over. */
   const playingRef = useRef(false);
+  /** The test running, if any: after each walk the next one starts until 終了する. */
+  const testRef = useRef<TestRoute | null>(null);
   const [screen, setScreen] = useState<Screen>("loading");
-  const [status, setStatus] = useState({ stop: "", progress: 0 });
+  const [status, setStatus] = useState({ stop: "", place: "", progress: 0 });
   const [arrivedAt, setArrivedAt] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -45,16 +50,18 @@ export function DisplayClient() {
         import("@/lib/display/route-path"),
       ]);
       const duration = Number(new URLSearchParams(window.location.search).get("duration")) || 20;
+      // Test walks favour indoors and the escalators, like most visitors.
       routesRef.current = {
-        sample: () => buildRoutePath(graph.routeThrough(graph.SAMPLE_STOPS)),
-        random: () => buildRoutePath(graph.routeThrough(randomStops(graph))),
+        sample: () => buildRoutePath(graph.routeThrough(graph.SAMPLE_STOPS, graph.INDOOR_FIRST)),
+        random: () => buildRoutePath(graph.routeThrough(graph.randomIndoorStops(), graph.INDOOR_FIRST)),
       };
       const player = await createPlayer({
         overview: mapRef.current!,
         follow: droneRef.current!,
+        mapLabels: labelsRef.current!,
         duration,
-        onProgress: ({ s, length, stop, done }) => {
-          setStatus({ stop, progress: s / length });
+        onProgress: ({ s, length, stop, place, done }) => {
+          setStatus({ stop, place, progress: s / length });
           if (done && playingRef.current) {
             playingRef.current = false;
             setArrivedAt(clock(new Date()).slice(0, 5));
@@ -76,11 +83,12 @@ export function DisplayClient() {
     };
   }, []);
 
-  const play = useCallback((which: "sample" | "random") => {
+  const play = useCallback((which: TestRoute) => {
     const player = playerRef.current;
     const routes = routesRef.current;
     if (!player || !routes) return;
-    setStatus({ stop: "", progress: 0 });
+    testRef.current = which;
+    setStatus({ stop: "", place: "", progress: 0 });
     playingRef.current = true;
     player.play(routes[which]());
     setScreen("playback");
@@ -88,16 +96,21 @@ export function DisplayClient() {
 
   const backToTop = useCallback(() => {
     playingRef.current = false;
+    testRef.current = null;
     playerRef.current?.stop();
     setScreen("top");
   }, []);
 
-  // The arrived card stays a few seconds, then the booth is ready for the next visitor.
+  // The arrived card stays a few seconds; a test then plays its next walk,
+  // a real arrival hands the booth back to the top screen.
   useEffect(() => {
     if (screen !== "arrived") return;
-    const id = window.setTimeout(backToTop, ARRIVED_SECONDS * 1000);
+    const id = window.setTimeout(() => {
+      if (testRef.current) play(testRef.current);
+      else backToTop();
+    }, ARRIVED_SECONDS * 1000);
     return () => window.clearTimeout(id);
-  }, [screen, backToTop]);
+  }, [screen, play, backToTop]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -118,6 +131,7 @@ export function DisplayClient() {
       <div className="dsp-stage" aria-hidden={screen === "top"}>
         <section className="dsp-view">
           <canvas ref={mapRef} className="dsp-canvas" aria-label="キャンパス全体と軌跡" />
+          <div ref={labelsRef} className="dsp-labels" aria-hidden="true" />
           <p className="dsp-view__label">MAP</p>
         </section>
         <section className="dsp-view">
@@ -129,12 +143,17 @@ export function DisplayClient() {
             <span className="wordmark">TRACE</span>
             <span className="dsp-mono">SHIBALAB 301</span>
           </p>
-          <button type="button" className="dsp-test" onClick={backToTop}>
-            トップに戻る <span className="dsp-mono">TEST · ESC</span>
-          </button>
+          <div className="dsp-tests">
+            <span className="dsp-mono">TEST · 繰り返し再生中</span>
+            <button type="button" className="dsp-test" onClick={backToTop}>
+              ■ 終了する <span className="dsp-mono">ESC</span>
+            </button>
+          </div>
         </header>
         <div className="dsp-play">
-          <p className="dsp-mono dsp-play__kicker">PLAYBACK</p>
+          <p className="dsp-mono dsp-play__kicker">
+            PLAYBACK<span className="dsp-play__place">{status.place}</span>
+          </p>
           <p className="dsp-play__stop">{status.stop || "…"}</p>
           <div className="dsp-play__bar">
             <span style={{ width: `${status.progress * 100}%` }} />
@@ -235,17 +254,4 @@ function Hud({ screen }: { screen: Screen }) {
 
 function clock(d: Date): string {
   return [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, "0")).join(":");
-}
-
-/** A test walk: two or three outdoor checkpoints in random order, always ending at ShibaLab. */
-function randomStops(graph: typeof import("@/lib/display/campus-graph")): string[] {
-  const outdoor = [...graph.NODES.values()]
-    .filter((n) => n.role === "checkpoint" && n.floor === "屋外")
-    .map((n) => n.id);
-  const picked: string[] = [];
-  while (picked.length < 3) {
-    const id = outdoor[Math.floor(Math.random() * outdoor.length)];
-    if (!picked.includes(id)) picked.push(id);
-  }
-  return [...picked, "shibalab"];
 }

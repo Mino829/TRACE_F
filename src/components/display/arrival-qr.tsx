@@ -16,16 +16,23 @@ const PERIOD_SECONDS = 30;
  */
 export function ArrivalQr() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [now, setNow] = useState(() => Date.now());
-  const slot = Math.floor(now / 1000 / PERIOD_SECONDS);
-  const left = PERIOD_SECONDS - (Math.floor(now / 1000) % PERIOD_SECONDS);
+  // Counted in the browser only, so the server render and the first client render agree.
+  const [now, setNow] = useState<number | null>(null);
+  const slot = now === null ? null : Math.floor(now / 1000 / PERIOD_SECONDS);
+  const left = now === null ? PERIOD_SECONDS : PERIOD_SECONDS - (Math.floor(now / 1000) % PERIOD_SECONDS);
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(id);
+    const tick = () => setNow(Date.now());
+    const first = window.setTimeout(tick, 0);
+    const id = window.setInterval(tick, 250);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {
+    if (slot === null) return;
     const url = `${window.location.origin}/log?arrival=demo-${slot.toString(36)}`;
     QRCode.toCanvas(canvasRef.current!, url, {
       errorCorrectionLevel: "M",

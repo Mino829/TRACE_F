@@ -51,20 +51,33 @@ export function toScene(p: { x: number; y: number; z: number }): Vec3 {
 }
 
 const adjacency = (() => {
-  const adj = new Map<string, { to: string; weight: number }[]>();
+  const adj = new Map<string, { to: string; metres: number; kind: EdgeKind }[]>();
   for (const id of NODES.keys()) adj.set(id, []);
   for (const e of EDGES) {
     const a = NODES.get(e.from)!.threeD;
     const b = NODES.get(e.to)!.threeD;
-    const weight = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-    adj.get(e.from)!.push({ to: e.to, weight });
-    adj.get(e.to)!.push({ to: e.from, weight });
+    const metres = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+    adj.get(e.from)!.push({ to: e.to, metres, kind: e.kind });
+    adj.get(e.to)!.push({ to: e.from, metres, kind: e.kind });
   }
   return adj;
 })();
 
-/** Shortest walk between two nodes (Dijkstra over metres walked). */
-export function shortestPath(from: string, to: string): string[] {
+/** How much one metre of each kind of edge costs when choosing a walk. */
+export type EdgeCost = Record<EdgeKind, number>;
+
+/** Plain shortest walk in metres. */
+export const METRES: EdgeCost = { ground: 1, stairs: 1, escalator: 1, indoor: 1, bridge: 1 };
+
+/**
+ * For test walks: most visitors ride the escalators and stay indoors, so
+ * indoor corridors, bridges and above all escalators are cheap and the open
+ * ground is dear. Stairs stay a little dear so the escalator wins.
+ */
+export const INDOOR_FIRST: EdgeCost = { ground: 2.5, stairs: 1.6, escalator: 0.15, indoor: 0.6, bridge: 0.5 };
+
+/** Cheapest walk between two nodes (Dijkstra; metres times the edge kind's cost). */
+export function shortestPath(from: string, to: string, cost: EdgeCost = METRES): string[] {
   if (!NODES.has(from) || !NODES.has(to)) throw new Error(`Unknown node: ${from} -> ${to}`);
   const dist = new Map<string, number>([[from, 0]]);
   const prev = new Map<string, string>();
@@ -81,7 +94,8 @@ export function shortestPath(from: string, to: string): string[] {
     if (u === undefined) throw new Error(`No path: ${from} -> ${to}`);
     if (u === to) break;
     done.add(u);
-    for (const { to: v, weight } of adjacency.get(u)!) {
+    for (const { to: v, metres, kind } of adjacency.get(u)!) {
+      const weight = metres * cost[kind];
       if (best + weight < (dist.get(v) ?? Infinity)) {
         dist.set(v, best + weight);
         prev.set(v, u);
@@ -98,10 +112,30 @@ export function shortestPath(from: string, to: string): string[] {
  * will eventually hand over this node list itself (FR-024); until then the
  * prototype stitches shortest paths between checkpoints.
  */
-export function routeThrough(stops: readonly string[]): string[] {
+export function routeThrough(stops: readonly string[], cost: EdgeCost = METRES): string[] {
   const route = [stops[0]];
-  for (let i = 1; i < stops.length; i++) route.push(...shortestPath(stops[i - 1], stops[i]).slice(1));
+  for (let i = 1; i < stops.length; i++) route.push(...shortestPath(stops[i - 1], stops[i], cost).slice(1));
   return route;
+}
+
+/**
+ * A test walk that spends its time indoors: in from one of the ways onto
+ * campus, through two or three rooms or halls on the upper floors (so the
+ * escalators get ridden), ending at ShibaLab.
+ */
+export function randomIndoorStops(random: () => number = Math.random): string[] {
+  const pick = <T,>(xs: readonly T[]) => xs[Math.floor(random() * xs.length)];
+  const entrances = ["big-tree", "exchange-road", "classroom-road", "koryu-plaza", "grand-stairs-bottom"];
+  const upstairs = [...NODES.values()]
+    .filter((n) => (n.role === "room" || n.role === "checkpoint") && n.building && !["1F", "2F"].includes(n.floor))
+    .filter((n) => n.id !== "shibalab")
+    .map((n) => n.id);
+  const stops = [pick(entrances)];
+  while (stops.length < 1 + 2 + Math.floor(random() * 2)) {
+    const id = pick(upstairs);
+    if (!stops.includes(id)) stops.push(id);
+  }
+  return [...stops, "shibalab"];
 }
 
 /** Big tree (Toyosu station side) up through the buildings to ShibaLab, 3F room 301. */

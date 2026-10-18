@@ -10,14 +10,17 @@ export interface RoutePath {
   /** Distance from the start to each point. */
   at: number[];
   length: number;
-  /** Named stops along the way, for the caption. */
-  stops: { s: number; name: string }[];
+  /** Named stops along the way, for the caption and the map markers. */
+  stops: { s: number; name: string; at: Vec3 }[];
+  /** Where each point is: "教室棟 3F", or "屋外". */
+  places: string[];
 }
 
 export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
   const points: Vec3[] = [];
   const at: number[] = [];
-  const stops: { s: number; name: string }[] = [];
+  const stops: RoutePath["stops"] = [];
+  const places: string[] = [];
   let s = 0;
   for (const id of nodeIds) {
     const node = NODES.get(id);
@@ -26,9 +29,10 @@ export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
     if (points.length) s += dist(points[points.length - 1], p);
     points.push(p);
     at.push(s);
-    if (node.role === "checkpoint") stops.push({ s, name: node.name });
+    places.push(node.building ? `${node.building} ${node.floor}` : "屋外");
+    if (node.role === "checkpoint") stops.push({ s, name: node.name, at: p });
   }
-  return { points, at, length: s, stops };
+  return { points, at, length: s, stops, places };
 }
 
 /** Point at distance s (clamped to the ends). */
@@ -61,6 +65,13 @@ export function lookAheadAt(path: RoutePath, s: number, ahead: number): Vec3 {
     if (Math.hypot(p[0] - here[0], p[2] - here[2]) >= ahead) return p;
   }
   return pointAt(path, path.length);
+}
+
+/** Where the walk is at s (the place of the last point passed). */
+export function placeAt(path: RoutePath, s: number): string {
+  let i = 0;
+  while (i + 1 < path.at.length && path.at[i + 1] <= s) i++;
+  return path.places[i];
 }
 
 /** The last named stop passed by s. */

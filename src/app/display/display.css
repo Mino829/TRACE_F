@@ -493,3 +493,53 @@ html:has(.dsp) body {
   --fg: var(--ink);
   --fg-2: #47484c;
 }
+
+/* -------------------------------------------------------- map labels */
+
+.dsp-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.dsp-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  translate: -50% -50%;
+  font-weight: 700;
+  font-size: clamp(13px, 1vw, 19px);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--paper);
+  opacity: 0.75;
+  text-shadow: 0 0 6px var(--ink), 0 0 2px var(--ink);
+}
+
+/* The goal, under its breathing ring. */
+.dsp-label--goal {
+  translate: -50% 18px;
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: clamp(11px, 0.8vw, 14px);
+  letter-spacing: 0.14em;
+  opacity: 1;
+}
+
+/* Where the head of the line is now: building and floor, set off to its upper right. */
+.dsp-label--here {
+  translate: 14px calc(-100% - 10px);
+  padding: 3px 9px;
+  font-size: clamp(13px, 0.95vw, 18px);
+  color: var(--ink);
+  background: var(--paper);
+  opacity: 1;
+  text-shadow: none;
+}
+
+.dsp-play__place {
+  margin-left: 1.2em;
+  color: var(--paper);
+}
