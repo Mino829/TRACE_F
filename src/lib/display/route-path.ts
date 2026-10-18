@@ -54,19 +54,22 @@ export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
 export const WALK_SPEED: Record<EdgeKind, number> = { ground: 18, indoor: 8, bridge: 8, escalator: 4, stairs: 5 };
 
 /**
- * How much the walk should be looking out of the window at s: 1 while riding
- * an escalator, easing in over `before` metres ahead of it and out over
- * `after` metres past it, 0 elsewhere.
+ * How much the walk should be looking out of the window at s, riding an
+ * escalator: facing ahead as it steps on, turning toward the window over the
+ * middle of the ride (never more than `peak`, so the way ahead stays in the
+ * corner of the view), and facing ahead again before it steps off. 0 elsewhere.
  */
-export function escalatorWeight(path: RoutePath, s: number, before = 5, after = 7): number {
+export function escalatorWeight(path: RoutePath, s: number, peak = 0.6): number {
   let w = 0;
   path.kinds.forEach((kind, i) => {
     if (kind !== "escalator") return;
     const a = path.at[i];
     const b = path.at[i + 1];
-    if (s >= a && s <= b) w = 1;
-    else if (s < a && s > a - before) w = Math.max(w, smooth((s - (a - before)) / before));
-    else if (s > b && s < b + after) w = Math.max(w, smooth(1 - (s - b) / after));
+    if (s <= a || s >= b) return;
+    const f = (s - a) / (b - a);
+    // Ahead for the first and last fifth, a smooth bump in between.
+    const bump = f < 0.2 || f > 0.8 ? 0 : Math.sin(((f - 0.2) / 0.6) * Math.PI);
+    w = Math.max(w, peak * smooth(bump));
   });
   return w;
 }
