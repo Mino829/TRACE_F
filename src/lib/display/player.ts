@@ -7,7 +7,16 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 
 import { EDGES, GRID_THETA, NODES, toScene, type Vec3 } from "./campus-graph";
-import { buildTimeline, lookAheadAt, placeAt, pointAt, stopAt, type RoutePath, type Timeline } from "./route-path";
+import {
+  buildTimeline,
+  escalatorWeight,
+  lookAheadAt,
+  placeAt,
+  pointAt,
+  stopAt,
+  type RoutePath,
+  type Timeline,
+} from "./route-path";
 
 /**
  * The exhibit's replay: a walk drawn as a growing line of light on the
@@ -63,6 +72,15 @@ const FOLLOW_NEAR = 55;
 const FACE_OPACITY = 0.05;
 const EYE = 1.6;
 const SKY = new THREE.Color(0xa9c3dd);
+/**
+ * The classroom building's escalators run along its south-east glass. Riding
+ * them, the walk turns to look out at the flower beds of the grand stairs
+ * below (the middle of the stairs, Blender metres: research building's stairs
+ * in buildings/研究棟.blend, the same spot as the network's grand-stairs nodes).
+ */
+const FLOWER_BEDS = toScene({ x: -138.6, y: -8.5, z: 2 });
+/** How far down the window gaze may tip. */
+const WINDOW_PITCH = THREE.MathUtils.degToRad(14);
 /** From eye height the line runs right under the camera, so the walk gets a faint one. */
 const WALK_TRAIL_COLOR = new THREE.Color(0.45, 0.62, 0.75);
 
@@ -203,10 +221,13 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     followCamera.position.copy(followPos);
     followCamera.lookAt(followLook);
 
-    // Walk: eye on the line, gaze eased toward a point a few metres ahead.
+    // Walk: eye on the line, gaze eased toward a point a few metres ahead,
+    // or, on an escalator, out of the window at the flower beds.
     walkCamera.position.set(p.x, p.y + EYE, p.z);
     const ahead = lookAheadAt(path, s, 6);
-    walkLook.lerp(new THREE.Vector3(ahead[0], ahead[1] + EYE, ahead[2]), 1 - Math.exp(-dt * 4));
+    const forward = new THREE.Vector3(ahead[0], ahead[1] + EYE, ahead[2]);
+    const out = outOfWindow(walkCamera.position, 8);
+    walkLook.lerp(forward.lerp(out, escalatorWeight(path, s)), 1 - Math.exp(-dt * 3));
     walkCamera.lookAt(walkLook);
 
     const place = placeAt(path, s);
@@ -396,6 +417,21 @@ function makeLabels(root: HTMLElement) {
       root.replaceChildren();
     },
   };
+}
+
+/**
+ * A point `reach` metres from the eye toward the flower beds, so the gaze
+ * target sits at the same distance as the forward one and the blend between
+ * them turns the head rather than pushing the focus far away.
+ */
+function outOfWindow(eye: THREE.Vector3, reach: number): THREE.Vector3 {
+  const to = new THREE.Vector3(...FLOWER_BEDS).sub(eye);
+  // Looking straight down at the beds from the upper floors fills the view
+  // with the escalator's own handrail; a shallow downward look keeps the
+  // window in the middle and the beds and the lawn in its lower part.
+  const flat = Math.hypot(to.x, to.z);
+  const pitch = Math.max(Math.atan2(to.y, flat), -WINDOW_PITCH);
+  return eye.clone().add(new THREE.Vector3((to.x / flat) * Math.cos(pitch), Math.sin(pitch), (to.z / flat) * Math.cos(pitch)).multiplyScalar(reach));
 }
 
 function droneSpot(head: THREE.Vector3, heading: THREE.Vector3): THREE.Vector3 {

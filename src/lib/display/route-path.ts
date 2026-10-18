@@ -51,7 +51,29 @@ export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
  * indoors that the first person can tell where it is; the long outdoor runs
  * go quicker; stairs and escalators slowest, so the climb shows.
  */
-export const WALK_SPEED: Record<EdgeKind, number> = { ground: 18, indoor: 8, bridge: 8, escalator: 5, stairs: 5 };
+export const WALK_SPEED: Record<EdgeKind, number> = { ground: 18, indoor: 8, bridge: 8, escalator: 4, stairs: 5 };
+
+/**
+ * How much the walk should be looking out of the window at s: 1 while riding
+ * an escalator, easing in over `before` metres ahead of it and out over
+ * `after` metres past it, 0 elsewhere.
+ */
+export function escalatorWeight(path: RoutePath, s: number, before = 5, after = 7): number {
+  let w = 0;
+  path.kinds.forEach((kind, i) => {
+    if (kind !== "escalator") return;
+    const a = path.at[i];
+    const b = path.at[i + 1];
+    if (s >= a && s <= b) w = 1;
+    else if (s < a && s > a - before) w = Math.max(w, smooth((s - (a - before)) / before));
+    else if (s > b && s < b + after) w = Math.max(w, smooth(1 - (s - b) / after));
+  });
+  return w;
+}
+
+function smooth(x: number): number {
+  return x * x * (3 - 2 * x);
+}
 
 /**
  * When the walk reaches each point, at WALK_SPEED times `speed`. With a
