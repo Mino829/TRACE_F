@@ -179,7 +179,9 @@ def node(p, area, where, label):
     grid[nid] = p
     key = tuple(round(c, 2) for c in p)
     name = ROOM_NODE.get(key, f"{label}")
-    floor = "屋外" if where == "out" else f"{area[1]}F"
+    # 階は高さから決める（道の区分の名前ではなく。エスカレーターの途中の点は、乗り継ぎ場所の 2F や降り口の 3F になる）
+    FLOOR_OF_Z = {0.0: "1F", 6.0: "2F", 11.0: "3F", 16.0: "4F", 21.0: "5F", 26.0: "6F"}
+    floor = "屋外" if where == "out" else FLOOR_OF_Z.get(round(p[2], 1), f"{area[1]}F")
     building = None if where == "out" else {"k": "教室棟", "x": "交流棟", "h": "本部棟"}[area[0]]
     nodes.append(dict(id=nid, name=name, building=building, floor=floor, blender=to_world(*p), radius=5 if where == "out" else 3,
                       gpsSnap=(where == "out" and p[2] == 0), role="room" if key in ROOM_NODE else "waypoint", note=""))

@@ -16,7 +16,7 @@ import importlib, trace_geo
 importlib.reload(trace_geo)
 
 COL = "30_TRACE_チェックポイント"
-GRAPH_VERSION = "toyosu-graph-2026-10-17.2.draft"
+GRAPH_VERSION = "toyosu-graph-2026-10-18.2.draft"
 KIND_COLOR = {"ground": (0.1, 0.55, 1.0), "stairs": (1.0, 0.6, 0.1), "bridge": (0.75, 0.3, 1.0), "indoor": (0.2, 0.8, 0.3), "escalator": (1.0, 0.85, 0.1)}
 
 
@@ -229,7 +229,9 @@ def export():
     for e in src["edges"]:
         a, b = pos[e["from"]], pos[e["to"]]
         edges.append({"id": e["id"], "from": e["from"], "to": e["to"], "kind": e["kind"],
-                      "lengthMetres": round(math.dist(a[:2], b[:2]), 1), "passable": True})
+                      # 高さも入れた距離（平面だけだと、真上に上がる階段が 0m になって最短の道を探すときに「タダ」になる）
+                      "lengthMetres": round(math.dist(a, b), 1), "planarLengthMetres": round(math.dist(a[:2], b[:2]), 1),
+                      "passable": True})
     out = {
         "schemaVersion": 1,
         "campusGraphVersion": GRAPH_VERSION,

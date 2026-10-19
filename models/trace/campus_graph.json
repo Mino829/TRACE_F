@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "campusGraphVersion": "toyosu-graph-2026-10-17.2.draft",
+ "campusGraphVersion": "toyosu-graph-2026-10-18.2.draft",
  "coordinateVersion": "toyosu-2026-08-28.1",
  "threeDMapVersion": "キャンパス全体.blend 2026-10-18",
  "exportedAt": "2026-10-18",
@@ -3416,7 +3416,7 @@
    "name": "エスカレーター 1F→3F 1",
    "role": "waypoint",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "2F",
    "lat": 35.6608837,
    "lon": 139.7948175,
    "local": {
@@ -3438,7 +3438,7 @@
    "name": "エスカレーター 1F→3F 2",
    "role": "waypoint",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "2F",
    "lat": 35.6609001,
    "lon": 139.7948364,
    "local": {
@@ -3460,7 +3460,7 @@
    "name": "エスカレーター 1F→3F 3",
    "role": "waypoint",
    "building": "教室棟",
-   "floor": "1F",
+   "floor": "3F",
    "lat": 35.6609729,
    "lon": 139.7949201,
    "local": {
@@ -7618,7 +7618,7 @@
    "name": "本部棟 階段 4F→1F 1",
    "role": "waypoint",
    "building": "本部棟",
-   "floor": "4F",
+   "floor": "1F",
    "lat": 35.6602171,
    "lon": 139.7947372,
    "local": {
@@ -7731,6 +7731,7 @@
    "to": "o-002",
    "kind": "ground",
    "lengthMetres": 7.8,
+   "planarLengthMetres": 7.8,
    "passable": true
   },
   {
@@ -7739,6 +7740,7 @@
    "to": "o-003",
    "kind": "ground",
    "lengthMetres": 7.8,
+   "planarLengthMetres": 7.8,
    "passable": true
   },
   {
@@ -7747,6 +7749,7 @@
    "to": "o-004",
    "kind": "ground",
    "lengthMetres": 7.8,
+   "planarLengthMetres": 7.8,
    "passable": true
   },
   {
@@ -7755,6 +7758,7 @@
    "to": "exchange-road",
    "kind": "ground",
    "lengthMetres": 7.8,
+   "planarLengthMetres": 7.8,
    "passable": true
   },
   {
@@ -7763,6 +7767,7 @@
    "to": "o-005",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -7771,6 +7776,7 @@
    "to": "o-006",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -7779,6 +7785,7 @@
    "to": "o-007",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -7787,6 +7794,7 @@
    "to": "o-008",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -7795,6 +7803,7 @@
    "to": "o-009",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -7803,6 +7812,7 @@
    "to": "o-011",
    "kind": "ground",
    "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
    "passable": true
   },
   {
@@ -7811,6 +7821,7 @@
    "to": "o-012",
    "kind": "ground",
    "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
    "passable": true
   },
   {
@@ -7819,6 +7830,7 @@
    "to": "o-013",
    "kind": "ground",
    "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
    "passable": true
   },
   {
@@ -7827,6 +7839,7 @@
    "to": "o-014",
    "kind": "ground",
    "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
    "passable": true
   },
   {
@@ -7835,6 +7848,7 @@
    "to": "classroom-road",
    "kind": "ground",
    "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
    "passable": true
   },
   {
@@ -7843,6 +7857,7 @@
    "to": "o-015",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -7851,6 +7866,7 @@
    "to": "o-016",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -7859,6 +7875,7 @@
    "to": "o-017",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -7867,6 +7884,7 @@
    "to": "o-018",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -7875,6 +7893,7 @@
    "to": "o-019",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -7883,6 +7902,7 @@
    "to": "o-020",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -7891,6 +7911,7 @@
    "to": "o-021",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -7899,6 +7920,7 @@
    "to": "o-022",
    "kind": "ground",
    "lengthMetres": 8.5,
+   "planarLengthMetres": 8.5,
    "passable": true
   },
   {
@@ -7907,6 +7929,7 @@
    "to": "o-023",
    "kind": "ground",
    "lengthMetres": 8.5,
+   "planarLengthMetres": 8.5,
    "passable": true
   },
   {
@@ -7915,6 +7938,7 @@
    "to": "o-024",
    "kind": "ground",
    "lengthMetres": 8.5,
+   "planarLengthMetres": 8.5,
    "passable": true
   },
   {
@@ -7923,6 +7947,7 @@
    "to": "o-025",
    "kind": "ground",
    "lengthMetres": 8.5,
+   "planarLengthMetres": 8.5,
    "passable": true
   },
   {
@@ -7931,6 +7956,7 @@
    "to": "o-026",
    "kind": "ground",
    "lengthMetres": 8.5,
+   "planarLengthMetres": 8.5,
    "passable": true
   },
   {
@@ -7939,6 +7965,7 @@
    "to": "o-027",
    "kind": "ground",
    "lengthMetres": 9.5,
+   "planarLengthMetres": 9.5,
    "passable": true
   },
   {
@@ -7947,6 +7974,7 @@
    "to": "o-028",
    "kind": "ground",
    "lengthMetres": 9.5,
+   "planarLengthMetres": 9.5,
    "passable": true
   },
   {
@@ -7955,6 +7983,7 @@
    "to": "o-029",
    "kind": "ground",
    "lengthMetres": 9.5,
+   "planarLengthMetres": 9.5,
    "passable": true
   },
   {
@@ -7963,6 +7992,7 @@
    "to": "o-030",
    "kind": "ground",
    "lengthMetres": 9.5,
+   "planarLengthMetres": 9.5,
    "passable": true
   },
   {
@@ -7971,6 +8001,7 @@
    "to": "o-031",
    "kind": "ground",
    "lengthMetres": 9.5,
+   "planarLengthMetres": 9.5,
    "passable": true
   },
   {
@@ -7979,6 +8010,7 @@
    "to": "o-032",
    "kind": "ground",
    "lengthMetres": 9.5,
+   "planarLengthMetres": 9.5,
    "passable": true
   },
   {
@@ -7987,6 +8019,7 @@
    "to": "o-033",
    "kind": "ground",
    "lengthMetres": 9.5,
+   "planarLengthMetres": 9.5,
    "passable": true
   },
   {
@@ -7995,6 +8028,7 @@
    "to": "big-tree",
    "kind": "ground",
    "lengthMetres": 9.5,
+   "planarLengthMetres": 9.5,
    "passable": true
   },
   {
@@ -8003,6 +8037,7 @@
    "to": "o-034",
    "kind": "ground",
    "lengthMetres": 7.5,
+   "planarLengthMetres": 7.5,
    "passable": true
   },
   {
@@ -8011,6 +8046,7 @@
    "to": "o-035",
    "kind": "ground",
    "lengthMetres": 7.6,
+   "planarLengthMetres": 7.6,
    "passable": true
   },
   {
@@ -8019,6 +8055,7 @@
    "to": "o-036",
    "kind": "ground",
    "lengthMetres": 7.5,
+   "planarLengthMetres": 7.5,
    "passable": true
   },
   {
@@ -8027,6 +8064,7 @@
    "to": "o-037",
    "kind": "ground",
    "lengthMetres": 7.6,
+   "planarLengthMetres": 7.6,
    "passable": true
   },
   {
@@ -8035,6 +8073,7 @@
    "to": "o-038",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8043,6 +8082,7 @@
    "to": "o-039",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8051,6 +8091,7 @@
    "to": "o-040",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8059,6 +8100,7 @@
    "to": "o-041",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8067,6 +8109,7 @@
    "to": "o-042",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8075,6 +8118,7 @@
    "to": "o-043",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8083,6 +8127,7 @@
    "to": "o-044",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8091,6 +8136,7 @@
    "to": "o-045",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8099,6 +8145,7 @@
    "to": "o-046",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8107,6 +8154,7 @@
    "to": "o-047",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8115,6 +8163,7 @@
    "to": "o-048",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8123,6 +8172,7 @@
    "to": "o-049",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8131,6 +8181,7 @@
    "to": "o-050",
    "kind": "ground",
    "lengthMetres": 7.1,
+   "planarLengthMetres": 7.1,
    "passable": true
   },
   {
@@ -8139,6 +8190,7 @@
    "to": "o-051",
    "kind": "ground",
    "lengthMetres": 7.1,
+   "planarLengthMetres": 7.1,
    "passable": true
   },
   {
@@ -8147,6 +8199,7 @@
    "to": "o-052",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8155,6 +8208,7 @@
    "to": "o-053",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8163,6 +8217,7 @@
    "to": "o-054",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8171,6 +8226,7 @@
    "to": "o-055",
    "kind": "ground",
    "lengthMetres": 6.0,
+   "planarLengthMetres": 6.0,
    "passable": true
   },
   {
@@ -8179,6 +8235,7 @@
    "to": "o-056",
    "kind": "ground",
    "lengthMetres": 6.0,
+   "planarLengthMetres": 6.0,
    "passable": true
   },
   {
@@ -8187,6 +8244,7 @@
    "to": "o-057",
    "kind": "ground",
    "lengthMetres": 7.7,
+   "planarLengthMetres": 7.7,
    "passable": true
   },
   {
@@ -8195,6 +8253,7 @@
    "to": "o-058",
    "kind": "ground",
    "lengthMetres": 7.7,
+   "planarLengthMetres": 7.7,
    "passable": true
   },
   {
@@ -8203,6 +8262,7 @@
    "to": "o-059",
    "kind": "ground",
    "lengthMetres": 8.9,
+   "planarLengthMetres": 8.9,
    "passable": true
   },
   {
@@ -8211,6 +8271,7 @@
    "to": "o-051",
    "kind": "ground",
    "lengthMetres": 8.9,
+   "planarLengthMetres": 8.9,
    "passable": true
   },
   {
@@ -8219,6 +8280,7 @@
    "to": "o-060",
    "kind": "ground",
    "lengthMetres": 6.0,
+   "planarLengthMetres": 6.0,
    "passable": true
   },
   {
@@ -8227,6 +8289,7 @@
    "to": "hq-exchange-bridge",
    "kind": "ground",
    "lengthMetres": 6.4,
+   "planarLengthMetres": 6.4,
    "passable": true
   },
   {
@@ -8235,6 +8298,7 @@
    "to": "o-009",
    "kind": "ground",
    "lengthMetres": 9.6,
+   "planarLengthMetres": 9.6,
    "passable": true
   },
   {
@@ -8243,6 +8307,7 @@
    "to": "o-061",
    "kind": "ground",
    "lengthMetres": 5.1,
+   "planarLengthMetres": 5.1,
    "passable": true
   },
   {
@@ -8251,6 +8316,7 @@
    "to": "o-062",
    "kind": "ground",
    "lengthMetres": 5.1,
+   "planarLengthMetres": 5.1,
    "passable": true
   },
   {
@@ -8259,6 +8325,7 @@
    "to": "o-063",
    "kind": "ground",
    "lengthMetres": 8.3,
+   "planarLengthMetres": 8.3,
    "passable": true
   },
   {
@@ -8267,6 +8334,7 @@
    "to": "o-064",
    "kind": "ground",
    "lengthMetres": 8.3,
+   "planarLengthMetres": 8.3,
    "passable": true
   },
   {
@@ -8275,6 +8343,7 @@
    "to": "o-065",
    "kind": "ground",
    "lengthMetres": 7.9,
+   "planarLengthMetres": 7.9,
    "passable": true
   },
   {
@@ -8283,6 +8352,7 @@
    "to": "o-060",
    "kind": "ground",
    "lengthMetres": 7.9,
+   "planarLengthMetres": 7.9,
    "passable": true
   },
   {
@@ -8291,6 +8361,7 @@
    "to": "o-066",
    "kind": "ground",
    "lengthMetres": 7.1,
+   "planarLengthMetres": 7.1,
    "passable": true
   },
   {
@@ -8299,6 +8370,7 @@
    "to": "o-067",
    "kind": "ground",
    "lengthMetres": 7.1,
+   "planarLengthMetres": 7.1,
    "passable": true
   },
   {
@@ -8307,6 +8379,7 @@
    "to": "classroom-entrance",
    "kind": "ground",
    "lengthMetres": 7.4,
+   "planarLengthMetres": 7.4,
    "passable": true
   },
   {
@@ -8315,6 +8388,7 @@
    "to": "o-067",
    "kind": "ground",
    "lengthMetres": 6.0,
+   "planarLengthMetres": 6.0,
    "passable": true
   },
   {
@@ -8323,6 +8397,7 @@
    "to": "o-068",
    "kind": "ground",
    "lengthMetres": 7.6,
+   "planarLengthMetres": 7.6,
    "passable": true
   },
   {
@@ -8331,6 +8406,7 @@
    "to": "grand-stairs-bottom",
    "kind": "ground",
    "lengthMetres": 7.6,
+   "planarLengthMetres": 7.6,
    "passable": true
   },
   {
@@ -8339,6 +8415,7 @@
    "to": "o-069",
    "kind": "ground",
    "lengthMetres": 7.6,
+   "planarLengthMetres": 7.6,
    "passable": true
   },
   {
@@ -8347,6 +8424,7 @@
    "to": "o-070",
    "kind": "ground",
    "lengthMetres": 7.6,
+   "planarLengthMetres": 7.6,
    "passable": true
   },
   {
@@ -8355,6 +8433,7 @@
    "to": "o-071",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8363,6 +8442,7 @@
    "to": "o-072",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8371,6 +8451,7 @@
    "to": "o-073",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8379,6 +8460,7 @@
    "to": "o-074",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8387,6 +8469,7 @@
    "to": "classroom-research-corner",
    "kind": "ground",
    "lengthMetres": 9.0,
+   "planarLengthMetres": 9.0,
    "passable": true
   },
   {
@@ -8395,6 +8478,7 @@
    "to": "o-075",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8403,6 +8487,7 @@
    "to": "o-076",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8411,6 +8496,7 @@
    "to": "grand-stairs-bottom",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8419,6 +8505,7 @@
    "to": "o-077",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8427,6 +8514,7 @@
    "to": "o-078",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8435,6 +8523,7 @@
    "to": "o-079",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8443,6 +8532,7 @@
    "to": "o-080",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8451,6 +8541,7 @@
    "to": "o-081",
    "kind": "ground",
    "lengthMetres": 6.1,
+   "planarLengthMetres": 6.1,
    "passable": true
   },
   {
@@ -8459,6 +8550,7 @@
    "to": "koryu-plaza",
    "kind": "ground",
    "lengthMetres": 6.1,
+   "planarLengthMetres": 6.1,
    "passable": true
   },
   {
@@ -8467,6 +8559,7 @@
    "to": "o-082",
    "kind": "ground",
    "lengthMetres": 7.1,
+   "planarLengthMetres": 7.1,
    "passable": true
   },
   {
@@ -8475,6 +8568,7 @@
    "to": "o-083",
    "kind": "ground",
    "lengthMetres": 7.1,
+   "planarLengthMetres": 7.1,
    "passable": true
   },
   {
@@ -8483,6 +8577,7 @@
    "to": "o-080",
    "kind": "ground",
    "lengthMetres": 7.1,
+   "planarLengthMetres": 7.1,
    "passable": true
   },
   {
@@ -8491,6 +8586,7 @@
    "to": "o-084",
    "kind": "ground",
    "lengthMetres": 8.4,
+   "planarLengthMetres": 8.4,
    "passable": true
   },
   {
@@ -8499,6 +8595,7 @@
    "to": "o-085",
    "kind": "ground",
    "lengthMetres": 8.4,
+   "planarLengthMetres": 8.4,
    "passable": true
   },
   {
@@ -8507,6 +8604,7 @@
    "to": "o-086",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8515,6 +8613,7 @@
    "to": "o-087",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8523,6 +8622,7 @@
    "to": "o-088",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8531,6 +8631,7 @@
    "to": "research-south",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8539,6 +8640,7 @@
    "to": "o-089",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -8547,6 +8649,7 @@
    "to": "o-090",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -8555,6 +8658,7 @@
    "to": "o-091",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -8563,6 +8667,7 @@
    "to": "o-092",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -8571,6 +8676,7 @@
    "to": "o-093",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -8579,6 +8685,7 @@
    "to": "o-094",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -8587,6 +8694,7 @@
    "to": "research-road",
    "kind": "ground",
    "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
    "passable": true
   },
   {
@@ -8595,6 +8703,7 @@
    "to": "o-095",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8603,6 +8712,7 @@
    "to": "o-096",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8611,6 +8721,7 @@
    "to": "o-097",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8619,6 +8730,7 @@
    "to": "o-098",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8627,6 +8739,7 @@
    "to": "o-099",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8635,6 +8748,7 @@
    "to": "o-100",
    "kind": "ground",
    "lengthMetres": 8.7,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8643,6 +8757,7 @@
    "to": "o-101",
    "kind": "ground",
    "lengthMetres": 8.8,
+   "planarLengthMetres": 8.8,
    "passable": true
   },
   {
@@ -8651,6 +8766,7 @@
    "to": "o-102",
    "kind": "ground",
    "lengthMetres": 8.8,
+   "planarLengthMetres": 8.8,
    "passable": true
   },
   {
@@ -8659,6 +8775,7 @@
    "to": "o-103",
    "kind": "ground",
    "lengthMetres": 8.8,
+   "planarLengthMetres": 8.8,
    "passable": true
   },
   {
@@ -8667,6 +8784,7 @@
    "to": "o-104",
    "kind": "ground",
    "lengthMetres": 8.8,
+   "planarLengthMetres": 8.8,
    "passable": true
   },
   {
@@ -8675,6 +8793,7 @@
    "to": "o-105",
    "kind": "ground",
    "lengthMetres": 8.8,
+   "planarLengthMetres": 8.8,
    "passable": true
   },
   {
@@ -8683,6 +8802,7 @@
    "to": "research-south",
    "kind": "ground",
    "lengthMetres": 8.8,
+   "planarLengthMetres": 8.8,
    "passable": true
   },
   {
@@ -8691,6 +8811,7 @@
    "to": "o-106",
    "kind": "ground",
    "lengthMetres": 3.0,
+   "planarLengthMetres": 3.0,
    "passable": true
   },
   {
@@ -8698,7 +8819,8 @@
    "from": "o-106",
    "to": "o-107",
    "kind": "stairs",
-   "lengthMetres": 8.7,
+   "lengthMetres": 9.1,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8706,7 +8828,8 @@
    "from": "o-107",
    "to": "o-108",
    "kind": "stairs",
-   "lengthMetres": 8.7,
+   "lengthMetres": 9.1,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8714,7 +8837,8 @@
    "from": "o-108",
    "to": "o-109",
    "kind": "stairs",
-   "lengthMetres": 8.7,
+   "lengthMetres": 9.1,
+   "planarLengthMetres": 8.7,
    "passable": true
   },
   {
@@ -8723,6 +8847,7 @@
    "to": "sit-lawn",
    "kind": "ground",
    "lengthMetres": 8.6,
+   "planarLengthMetres": 8.6,
    "passable": true
   },
   {
@@ -8731,6 +8856,7 @@
    "to": "o-110",
    "kind": "ground",
    "lengthMetres": 7.8,
+   "planarLengthMetres": 7.8,
    "passable": true
   },
   {
@@ -8739,6 +8865,7 @@
    "to": "o-111",
    "kind": "ground",
    "lengthMetres": 7.8,
+   "planarLengthMetres": 7.8,
    "passable": true
   },
   {
@@ -8747,6 +8874,7 @@
    "to": "o-112",
    "kind": "ground",
    "lengthMetres": 7.8,
+   "planarLengthMetres": 7.8,
    "passable": true
   },
   {
@@ -8755,6 +8883,7 @@
    "to": "research-gate",
    "kind": "ground",
    "lengthMetres": 7.8,
+   "planarLengthMetres": 7.8,
    "passable": true
   },
   {
@@ -8763,6 +8892,7 @@
    "to": "o-113",
    "kind": "ground",
    "lengthMetres": 7.7,
+   "planarLengthMetres": 7.7,
    "passable": true
   },
   {
@@ -8771,6 +8901,7 @@
    "to": "o-114",
    "kind": "ground",
    "lengthMetres": 7.7,
+   "planarLengthMetres": 7.7,
    "passable": true
   },
   {
@@ -8779,6 +8910,7 @@
    "to": "o-115",
    "kind": "ground",
    "lengthMetres": 7.7,
+   "planarLengthMetres": 7.7,
    "passable": true
   },
   {
@@ -8786,7 +8918,8 @@
    "from": "o-115",
    "to": "research-road",
    "kind": "stairs",
-   "lengthMetres": 7.9,
+   "lengthMetres": 11.3,
+   "planarLengthMetres": 7.9,
    "passable": true
   },
   {
@@ -8795,6 +8928,7 @@
    "to": "o-116",
    "kind": "ground",
    "lengthMetres": 7.2,
+   "planarLengthMetres": 7.2,
    "passable": true
   },
   {
@@ -8803,6 +8937,7 @@
    "to": "o-117",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8811,6 +8946,7 @@
    "to": "o-118",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8819,6 +8955,7 @@
    "to": "o-119",
    "kind": "ground",
    "lengthMetres": 10.0,
+   "planarLengthMetres": 10.0,
    "passable": true
   },
   {
@@ -8827,6 +8964,7 @@
    "to": "hq-piloti",
    "kind": "ground",
    "lengthMetres": 6.8,
+   "planarLengthMetres": 6.8,
    "passable": true
   },
   {
@@ -8835,6 +8973,7 @@
    "to": "o-120",
    "kind": "ground",
    "lengthMetres": 6.9,
+   "planarLengthMetres": 6.9,
    "passable": true
   },
   {
@@ -8843,6 +8982,7 @@
    "to": "o-121",
    "kind": "ground",
    "lengthMetres": 6.9,
+   "planarLengthMetres": 6.9,
    "passable": true
   },
   {
@@ -8851,6 +8991,7 @@
    "to": "o-037",
    "kind": "ground",
    "lengthMetres": 6.9,
+   "planarLengthMetres": 6.9,
    "passable": true
   },
   {
@@ -8859,6 +9000,7 @@
    "to": "o-122",
    "kind": "ground",
    "lengthMetres": 6.0,
+   "planarLengthMetres": 6.0,
    "passable": true
   },
   {
@@ -8867,6 +9009,7 @@
    "to": "o-123",
    "kind": "ground",
    "lengthMetres": 6.0,
+   "planarLengthMetres": 6.0,
    "passable": true
   },
   {
@@ -8875,6 +9018,7 @@
    "to": "o-124",
    "kind": "ground",
    "lengthMetres": 8.3,
+   "planarLengthMetres": 8.3,
    "passable": true
   },
   {
@@ -8883,6 +9027,7 @@
    "to": "o-125",
    "kind": "ground",
    "lengthMetres": 8.3,
+   "planarLengthMetres": 8.3,
    "passable": true
   },
   {
@@ -8891,6 +9036,7 @@
    "to": "o-056",
    "kind": "ground",
    "lengthMetres": 8.3,
+   "planarLengthMetres": 8.3,
    "passable": true
   },
   {
@@ -8899,6 +9045,7 @@
    "to": "k1-001",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -8907,6 +9054,7 @@
    "to": "k1-002",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -8915,6 +9063,7 @@
    "to": "k1-003",
    "kind": "indoor",
    "lengthMetres": 4.1,
+   "planarLengthMetres": 4.1,
    "passable": true
   },
   {
@@ -8923,6 +9072,7 @@
    "to": "k1-004",
    "kind": "indoor",
    "lengthMetres": 4.1,
+   "planarLengthMetres": 4.1,
    "passable": true
   },
   {
@@ -8931,6 +9081,7 @@
    "to": "k1-005",
    "kind": "indoor",
    "lengthMetres": 4.1,
+   "planarLengthMetres": 4.1,
    "passable": true
   },
   {
@@ -8939,6 +9090,7 @@
    "to": "k1-006",
    "kind": "indoor",
    "lengthMetres": 5.2,
+   "planarLengthMetres": 5.2,
    "passable": true
   },
   {
@@ -8946,7 +9098,8 @@
    "from": "k1-005",
    "to": "k1-007",
    "kind": "escalator",
-   "lengthMetres": 12.8,
+   "lengthMetres": 14.1,
+   "planarLengthMetres": 12.8,
    "passable": true
   },
   {
@@ -8955,6 +9108,7 @@
    "to": "k1-008",
    "kind": "indoor",
    "lengthMetres": 2.5,
+   "planarLengthMetres": 2.5,
    "passable": true
   },
   {
@@ -8962,7 +9116,8 @@
    "from": "k1-008",
    "to": "k1-009",
    "kind": "escalator",
-   "lengthMetres": 11.1,
+   "lengthMetres": 12.2,
+   "planarLengthMetres": 11.1,
    "passable": true
   },
   {
@@ -8971,6 +9126,7 @@
    "to": "k2-002",
    "kind": "indoor",
    "lengthMetres": 2.0,
+   "planarLengthMetres": 2.0,
    "passable": true
   },
   {
@@ -8979,6 +9135,7 @@
    "to": "k2-003",
    "kind": "indoor",
    "lengthMetres": 1.6,
+   "planarLengthMetres": 1.6,
    "passable": true
   },
   {
@@ -8987,6 +9144,7 @@
    "to": "k2-004",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -8995,6 +9153,7 @@
    "to": "k2-005",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -9003,6 +9162,7 @@
    "to": "k2-006",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -9011,6 +9171,7 @@
    "to": "k2-007",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -9019,6 +9180,7 @@
    "to": "k2-008",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -9027,6 +9189,7 @@
    "to": "k1-007",
    "kind": "indoor",
    "lengthMetres": 3.1,
+   "planarLengthMetres": 3.1,
    "passable": true
   },
   {
@@ -9035,6 +9198,7 @@
    "to": "k2-009",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9043,6 +9207,7 @@
    "to": "k2-010",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9051,6 +9216,7 @@
    "to": "k3-002",
    "kind": "indoor",
    "lengthMetres": 1.6,
+   "planarLengthMetres": 1.6,
    "passable": true
   },
   {
@@ -9059,6 +9225,7 @@
    "to": "k3-003",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9067,6 +9234,7 @@
    "to": "k3-004",
    "kind": "indoor",
    "lengthMetres": 5.1,
+   "planarLengthMetres": 5.1,
    "passable": true
   },
   {
@@ -9075,6 +9243,7 @@
    "to": "k3-005",
    "kind": "indoor",
    "lengthMetres": 4.8,
+   "planarLengthMetres": 4.8,
    "passable": true
   },
   {
@@ -9083,6 +9252,7 @@
    "to": "k3-006",
    "kind": "indoor",
    "lengthMetres": 4.8,
+   "planarLengthMetres": 4.8,
    "passable": true
   },
   {
@@ -9091,6 +9261,7 @@
    "to": "k3-007",
    "kind": "indoor",
    "lengthMetres": 4.8,
+   "planarLengthMetres": 4.8,
    "passable": true
   },
   {
@@ -9099,6 +9270,7 @@
    "to": "k3-008",
    "kind": "indoor",
    "lengthMetres": 4.8,
+   "planarLengthMetres": 4.8,
    "passable": true
   },
   {
@@ -9107,6 +9279,7 @@
    "to": "k3-009",
    "kind": "indoor",
    "lengthMetres": 4.8,
+   "planarLengthMetres": 4.8,
    "passable": true
   },
   {
@@ -9115,6 +9288,7 @@
    "to": "k3-010",
    "kind": "indoor",
    "lengthMetres": 4.8,
+   "planarLengthMetres": 4.8,
    "passable": true
   },
   {
@@ -9123,6 +9297,7 @@
    "to": "k3-011",
    "kind": "indoor",
    "lengthMetres": 4.9,
+   "planarLengthMetres": 4.9,
    "passable": true
   },
   {
@@ -9131,6 +9306,7 @@
    "to": "k3-012",
    "kind": "indoor",
    "lengthMetres": 4.8,
+   "planarLengthMetres": 4.8,
    "passable": true
   },
   {
@@ -9139,6 +9315,7 @@
    "to": "k3-013",
    "kind": "indoor",
    "lengthMetres": 4.8,
+   "planarLengthMetres": 4.8,
    "passable": true
   },
   {
@@ -9147,6 +9324,7 @@
    "to": "k3-014",
    "kind": "indoor",
    "lengthMetres": 4.4,
+   "planarLengthMetres": 4.4,
    "passable": true
   },
   {
@@ -9155,6 +9333,7 @@
    "to": "k3-015",
    "kind": "indoor",
    "lengthMetres": 4.4,
+   "planarLengthMetres": 4.4,
    "passable": true
   },
   {
@@ -9163,6 +9342,7 @@
    "to": "k3-016",
    "kind": "indoor",
    "lengthMetres": 4.3,
+   "planarLengthMetres": 4.3,
    "passable": true
   },
   {
@@ -9171,6 +9351,7 @@
    "to": "k3-017",
    "kind": "indoor",
    "lengthMetres": 3.5,
+   "planarLengthMetres": 3.5,
    "passable": true
   },
   {
@@ -9179,6 +9360,7 @@
    "to": "k3-018",
    "kind": "indoor",
    "lengthMetres": 3.5,
+   "planarLengthMetres": 3.5,
    "passable": true
   },
   {
@@ -9187,6 +9369,7 @@
    "to": "k3-019",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9195,6 +9378,7 @@
    "to": "shibalab",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9203,6 +9387,7 @@
    "to": "k3-020",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9211,6 +9396,7 @@
    "to": "k3-021",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9219,6 +9405,7 @@
    "to": "k3-022",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9227,6 +9414,7 @@
    "to": "k3-023",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9235,6 +9423,7 @@
    "to": "k3-024",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9243,6 +9432,7 @@
    "to": "k3-025",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9251,6 +9441,7 @@
    "to": "k3-026",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9259,6 +9450,7 @@
    "to": "k3-027",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9267,6 +9459,7 @@
    "to": "classroom-3f-lobby",
    "kind": "indoor",
    "lengthMetres": 3.1,
+   "planarLengthMetres": 3.1,
    "passable": true
   },
   {
@@ -9275,6 +9468,7 @@
    "to": "k3-028",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9283,6 +9477,7 @@
    "to": "k3-029",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9291,6 +9486,7 @@
    "to": "k4-002",
    "kind": "indoor",
    "lengthMetres": 2.0,
+   "planarLengthMetres": 2.0,
    "passable": true
   },
   {
@@ -9299,6 +9495,7 @@
    "to": "k4-003",
    "kind": "indoor",
    "lengthMetres": 1.6,
+   "planarLengthMetres": 1.6,
    "passable": true
   },
   {
@@ -9307,6 +9504,7 @@
    "to": "k4-004",
    "kind": "indoor",
    "lengthMetres": 4.7,
+   "planarLengthMetres": 4.7,
    "passable": true
   },
   {
@@ -9315,6 +9513,7 @@
    "to": "k4-005",
    "kind": "indoor",
    "lengthMetres": 4.7,
+   "planarLengthMetres": 4.7,
    "passable": true
   },
   {
@@ -9323,6 +9522,7 @@
    "to": "k4-006",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9331,6 +9531,7 @@
    "to": "k4-007",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9339,6 +9540,7 @@
    "to": "k4-008",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9347,6 +9549,7 @@
    "to": "k4-009",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9355,6 +9558,7 @@
    "to": "k4-010",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9363,6 +9567,7 @@
    "to": "k4-011",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9371,6 +9576,7 @@
    "to": "k4-012",
    "kind": "indoor",
    "lengthMetres": 5.4,
+   "planarLengthMetres": 5.4,
    "passable": true
   },
   {
@@ -9379,6 +9585,7 @@
    "to": "k4-013",
    "kind": "indoor",
    "lengthMetres": 5.4,
+   "planarLengthMetres": 5.4,
    "passable": true
   },
   {
@@ -9387,6 +9594,7 @@
    "to": "k4-014",
    "kind": "indoor",
    "lengthMetres": 0.8,
+   "planarLengthMetres": 0.8,
    "passable": true
   },
   {
@@ -9395,6 +9603,7 @@
    "to": "k4-015",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9403,6 +9612,7 @@
    "to": "k4-016",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9411,6 +9621,7 @@
    "to": "k4-017",
    "kind": "indoor",
    "lengthMetres": 3.5,
+   "planarLengthMetres": 3.5,
    "passable": true
   },
   {
@@ -9419,6 +9630,7 @@
    "to": "k4-018",
    "kind": "indoor",
    "lengthMetres": 3.5,
+   "planarLengthMetres": 3.5,
    "passable": true
   },
   {
@@ -9427,6 +9639,7 @@
    "to": "k4-019",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9435,6 +9648,7 @@
    "to": "k4-020",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9443,6 +9657,7 @@
    "to": "k4-021",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9451,6 +9666,7 @@
    "to": "k4-022",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9459,6 +9675,7 @@
    "to": "k4-023",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9467,6 +9684,7 @@
    "to": "k4-024",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9475,6 +9693,7 @@
    "to": "k4-025",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9483,6 +9702,7 @@
    "to": "k4-026",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9491,6 +9711,7 @@
    "to": "k4-027",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9499,6 +9720,7 @@
    "to": "k4-028",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9507,6 +9729,7 @@
    "to": "k4-029",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9515,6 +9738,7 @@
    "to": "k4-030",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9523,6 +9747,7 @@
    "to": "classroom-4f-lobby",
    "kind": "indoor",
    "lengthMetres": 3.1,
+   "planarLengthMetres": 3.1,
    "passable": true
   },
   {
@@ -9531,6 +9756,7 @@
    "to": "k4-031",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9539,6 +9765,7 @@
    "to": "k4-032",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9547,6 +9774,7 @@
    "to": "k5-002",
    "kind": "indoor",
    "lengthMetres": 1.6,
+   "planarLengthMetres": 1.6,
    "passable": true
   },
   {
@@ -9555,6 +9783,7 @@
    "to": "k5-003",
    "kind": "indoor",
    "lengthMetres": 3.7,
+   "planarLengthMetres": 3.7,
    "passable": true
   },
   {
@@ -9563,6 +9792,7 @@
    "to": "k5-004",
    "kind": "indoor",
    "lengthMetres": 3.7,
+   "planarLengthMetres": 3.7,
    "passable": true
   },
   {
@@ -9571,6 +9801,7 @@
    "to": "k5-005",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9579,6 +9810,7 @@
    "to": "k5-006",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9587,6 +9819,7 @@
    "to": "k5-007",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9595,6 +9828,7 @@
    "to": "k5-008",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9603,6 +9837,7 @@
    "to": "k5-009",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9611,6 +9846,7 @@
    "to": "k5-010",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9619,6 +9855,7 @@
    "to": "k5-011",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9627,6 +9864,7 @@
    "to": "k5-012",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9635,6 +9873,7 @@
    "to": "k5-013",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9643,6 +9882,7 @@
    "to": "k5-014",
    "kind": "indoor",
    "lengthMetres": 3.9,
+   "planarLengthMetres": 3.9,
    "passable": true
   },
   {
@@ -9651,6 +9891,7 @@
    "to": "k5-015",
    "kind": "indoor",
    "lengthMetres": 3.4,
+   "planarLengthMetres": 3.4,
    "passable": true
   },
   {
@@ -9659,6 +9900,7 @@
    "to": "k5-016",
    "kind": "indoor",
    "lengthMetres": 3.4,
+   "planarLengthMetres": 3.4,
    "passable": true
   },
   {
@@ -9667,6 +9909,7 @@
    "to": "k5-017",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9675,6 +9918,7 @@
    "to": "k5-018",
    "kind": "indoor",
    "lengthMetres": 4.7,
+   "planarLengthMetres": 4.7,
    "passable": true
   },
   {
@@ -9683,6 +9927,7 @@
    "to": "k5-019",
    "kind": "indoor",
    "lengthMetres": 1.1,
+   "planarLengthMetres": 1.1,
    "passable": true
   },
   {
@@ -9691,6 +9936,7 @@
    "to": "k5-020",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9699,6 +9945,7 @@
    "to": "k5-021",
    "kind": "indoor",
    "lengthMetres": 4.1,
+   "planarLengthMetres": 4.1,
    "passable": true
   },
   {
@@ -9707,6 +9954,7 @@
    "to": "k5-022",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9715,6 +9963,7 @@
    "to": "k5-023",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9723,6 +9972,7 @@
    "to": "k5-024",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9731,6 +9981,7 @@
    "to": "k5-025",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9739,6 +9990,7 @@
    "to": "k5-026",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9747,6 +9999,7 @@
    "to": "k5-027",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9755,6 +10008,7 @@
    "to": "k5-028",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9763,6 +10017,7 @@
    "to": "k5-029",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9771,6 +10026,7 @@
    "to": "k5-030",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9779,6 +10035,7 @@
    "to": "k5-031",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9787,6 +10044,7 @@
    "to": "k5-032",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9795,6 +10053,7 @@
    "to": "k5-033",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9803,6 +10062,7 @@
    "to": "k5-034",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9811,6 +10071,7 @@
    "to": "k5-035",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9819,6 +10080,7 @@
    "to": "k5-036",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9827,6 +10089,7 @@
    "to": "k5-037",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9835,6 +10098,7 @@
    "to": "k5-038",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9843,6 +10107,7 @@
    "to": "k5-039",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9851,6 +10116,7 @@
    "to": "k5-040",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9859,6 +10125,7 @@
    "to": "k5-041",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9867,6 +10134,7 @@
    "to": "classroom-5f-lobby",
    "kind": "indoor",
    "lengthMetres": 3.1,
+   "planarLengthMetres": 3.1,
    "passable": true
   },
   {
@@ -9875,6 +10143,7 @@
    "to": "k5-042",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9883,6 +10152,7 @@
    "to": "k5-043",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -9891,6 +10161,7 @@
    "to": "classroom-6f-bridge",
    "kind": "indoor",
    "lengthMetres": 2.0,
+   "planarLengthMetres": 2.0,
    "passable": true
   },
   {
@@ -9899,6 +10170,7 @@
    "to": "k6-002",
    "kind": "indoor",
    "lengthMetres": 1.6,
+   "planarLengthMetres": 1.6,
    "passable": true
   },
   {
@@ -9907,6 +10179,7 @@
    "to": "k6-003",
    "kind": "indoor",
    "lengthMetres": 5.7,
+   "planarLengthMetres": 5.7,
    "passable": true
   },
   {
@@ -9915,6 +10188,7 @@
    "to": "k6-004",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9923,6 +10197,7 @@
    "to": "k6-005",
    "kind": "indoor",
    "lengthMetres": 5.7,
+   "planarLengthMetres": 5.7,
    "passable": true
   },
   {
@@ -9931,6 +10206,7 @@
    "to": "k6-006",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9939,6 +10215,7 @@
    "to": "k6-007",
    "kind": "indoor",
    "lengthMetres": 5.7,
+   "planarLengthMetres": 5.7,
    "passable": true
   },
   {
@@ -9947,6 +10224,7 @@
    "to": "k6-008",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9955,6 +10233,7 @@
    "to": "k6-009",
    "kind": "indoor",
    "lengthMetres": 5.7,
+   "planarLengthMetres": 5.7,
    "passable": true
   },
   {
@@ -9963,6 +10242,7 @@
    "to": "k6-010",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9971,6 +10251,7 @@
    "to": "k6-011",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9979,6 +10260,7 @@
    "to": "k6-012",
    "kind": "indoor",
    "lengthMetres": 5.7,
+   "planarLengthMetres": 5.7,
    "passable": true
   },
   {
@@ -9987,6 +10269,7 @@
    "to": "k6-013",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -9995,6 +10278,7 @@
    "to": "k6-014",
    "kind": "indoor",
    "lengthMetres": 5.7,
+   "planarLengthMetres": 5.7,
    "passable": true
   },
   {
@@ -10003,6 +10287,7 @@
    "to": "k6-015",
    "kind": "indoor",
    "lengthMetres": 5.5,
+   "planarLengthMetres": 5.5,
    "passable": true
   },
   {
@@ -10011,6 +10296,7 @@
    "to": "k6-016",
    "kind": "indoor",
    "lengthMetres": 3.1,
+   "planarLengthMetres": 3.1,
    "passable": true
   },
   {
@@ -10019,6 +10305,7 @@
    "to": "k6-017",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -10027,6 +10314,7 @@
    "to": "k6-018",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -10035,6 +10323,7 @@
    "to": "k3-030",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10043,6 +10332,7 @@
    "to": "classroom-3f-lobby",
    "kind": "indoor",
    "lengthMetres": 1.2,
+   "planarLengthMetres": 1.2,
    "passable": true
   },
   {
@@ -10051,6 +10341,7 @@
    "to": "k3-031",
    "kind": "indoor",
    "lengthMetres": 1.3,
+   "planarLengthMetres": 1.3,
    "passable": true
   },
   {
@@ -10059,6 +10350,7 @@
    "to": "classroom-4f-lobby",
    "kind": "indoor",
    "lengthMetres": 2.9,
+   "planarLengthMetres": 2.9,
    "passable": true
   },
   {
@@ -10067,6 +10359,7 @@
    "to": "k4-034",
    "kind": "indoor",
    "lengthMetres": 2.8,
+   "planarLengthMetres": 2.8,
    "passable": true
   },
   {
@@ -10075,6 +10368,7 @@
    "to": "classroom-5f-lobby",
    "kind": "indoor",
    "lengthMetres": 5.5,
+   "planarLengthMetres": 5.5,
    "passable": true
   },
   {
@@ -10083,6 +10377,7 @@
    "to": "k5-045",
    "kind": "indoor",
    "lengthMetres": 5.6,
+   "planarLengthMetres": 5.6,
    "passable": true
   },
   {
@@ -10090,7 +10385,8 @@
    "from": "k3-031",
    "to": "k4-033",
    "kind": "escalator",
-   "lengthMetres": 11.1,
+   "lengthMetres": 12.1,
+   "planarLengthMetres": 11.1,
    "passable": true
   },
   {
@@ -10098,7 +10394,8 @@
    "from": "k4-034",
    "to": "k5-044",
    "kind": "escalator",
-   "lengthMetres": 11.1,
+   "lengthMetres": 12.2,
+   "planarLengthMetres": 11.1,
    "passable": true
   },
   {
@@ -10106,7 +10403,8 @@
    "from": "k5-045",
    "to": "k6-016",
    "kind": "escalator",
-   "lengthMetres": 11.1,
+   "lengthMetres": 12.2,
+   "planarLengthMetres": 11.1,
    "passable": true
   },
   {
@@ -10114,7 +10412,8 @@
    "from": "k1-006",
    "to": "k2-010",
    "kind": "stairs",
-   "lengthMetres": 0.0,
+   "lengthMetres": 6.0,
+   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -10122,7 +10421,8 @@
    "from": "k2-010",
    "to": "k3-029",
    "kind": "stairs",
-   "lengthMetres": 0.0,
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -10130,7 +10430,8 @@
    "from": "k3-029",
    "to": "k4-032",
    "kind": "stairs",
-   "lengthMetres": 0.0,
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -10138,7 +10439,8 @@
    "from": "k4-032",
    "to": "k5-043",
    "kind": "stairs",
-   "lengthMetres": 0.0,
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -10146,7 +10448,8 @@
    "from": "k5-043",
    "to": "k6-018",
    "kind": "stairs",
-   "lengthMetres": 0.0,
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -10155,6 +10458,7 @@
    "to": "x4-002",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10163,6 +10467,7 @@
    "to": "x4-003",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10171,6 +10476,7 @@
    "to": "x4-004",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10179,6 +10485,7 @@
    "to": "x4-005",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10187,6 +10494,7 @@
    "to": "x4-006",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10195,6 +10503,7 @@
    "to": "x4-007",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -10203,6 +10512,7 @@
    "to": "exchange-4f",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -10211,6 +10521,7 @@
    "to": "x4-008",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -10219,6 +10530,7 @@
    "to": "x4-009",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -10227,6 +10539,7 @@
    "to": "x4-010",
    "kind": "indoor",
    "lengthMetres": 3.5,
+   "planarLengthMetres": 3.5,
    "passable": true
   },
   {
@@ -10235,6 +10548,7 @@
    "to": "x4-011",
    "kind": "indoor",
    "lengthMetres": 3.5,
+   "planarLengthMetres": 3.5,
    "passable": true
   },
   {
@@ -10243,6 +10557,7 @@
    "to": "x4-012",
    "kind": "indoor",
    "lengthMetres": 3.7,
+   "planarLengthMetres": 3.7,
    "passable": true
   },
   {
@@ -10251,6 +10566,7 @@
    "to": "x4-013",
    "kind": "indoor",
    "lengthMetres": 3.8,
+   "planarLengthMetres": 3.8,
    "passable": true
   },
   {
@@ -10259,6 +10575,7 @@
    "to": "x4-014",
    "kind": "indoor",
    "lengthMetres": 5.5,
+   "planarLengthMetres": 5.5,
    "passable": true
   },
   {
@@ -10267,6 +10584,7 @@
    "to": "x4-015",
    "kind": "indoor",
    "lengthMetres": 5.5,
+   "planarLengthMetres": 5.5,
    "passable": true
   },
   {
@@ -10275,6 +10593,7 @@
    "to": "x4-016",
    "kind": "indoor",
    "lengthMetres": 5.5,
+   "planarLengthMetres": 5.5,
    "passable": true
   },
   {
@@ -10283,6 +10602,7 @@
    "to": "x4-017",
    "kind": "indoor",
    "lengthMetres": 5.5,
+   "planarLengthMetres": 5.5,
    "passable": true
   },
   {
@@ -10291,6 +10611,7 @@
    "to": "x4-018",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -10299,6 +10620,7 @@
    "to": "x4-019",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10307,6 +10629,7 @@
    "to": "x4-020",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10315,6 +10638,7 @@
    "to": "x4-021",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10323,6 +10647,7 @@
    "to": "x4-022",
    "kind": "indoor",
    "lengthMetres": 5.2,
+   "planarLengthMetres": 5.2,
    "passable": true
   },
   {
@@ -10331,6 +10656,7 @@
    "to": "k4-001",
    "kind": "bridge",
    "lengthMetres": 13.7,
+   "planarLengthMetres": 13.7,
    "passable": true
   },
   {
@@ -10339,6 +10665,7 @@
    "to": "x4-023",
    "kind": "indoor",
    "lengthMetres": 3.6,
+   "planarLengthMetres": 3.6,
    "passable": true
   },
   {
@@ -10347,6 +10674,7 @@
    "to": "hq-4f-bridge",
    "kind": "bridge",
    "lengthMetres": 27.5,
+   "planarLengthMetres": 27.5,
    "passable": true
   },
   {
@@ -10355,6 +10683,7 @@
    "to": "x6-002",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10363,6 +10692,7 @@
    "to": "x6-003",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10371,6 +10701,7 @@
    "to": "x6-004",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10379,6 +10710,7 @@
    "to": "x6-005",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10387,6 +10719,7 @@
    "to": "x6-006",
    "kind": "indoor",
    "lengthMetres": 5.0,
+   "planarLengthMetres": 5.0,
    "passable": true
   },
   {
@@ -10395,6 +10728,7 @@
    "to": "x6-007",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -10403,6 +10737,7 @@
    "to": "x6-008",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -10411,6 +10746,7 @@
    "to": "x6-009",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -10419,6 +10755,7 @@
    "to": "x6-010",
    "kind": "indoor",
    "lengthMetres": 3.2,
+   "planarLengthMetres": 3.2,
    "passable": true
   },
   {
@@ -10427,6 +10764,7 @@
    "to": "x6-011",
    "kind": "indoor",
    "lengthMetres": 3.5,
+   "planarLengthMetres": 3.5,
    "passable": true
   },
   {
@@ -10435,6 +10773,7 @@
    "to": "x6-012",
    "kind": "indoor",
    "lengthMetres": 3.5,
+   "planarLengthMetres": 3.5,
    "passable": true
   },
   {
@@ -10443,6 +10782,7 @@
    "to": "x6-013",
    "kind": "indoor",
    "lengthMetres": 3.7,
+   "planarLengthMetres": 3.7,
    "passable": true
   },
   {
@@ -10451,6 +10791,7 @@
    "to": "x6-014",
    "kind": "indoor",
    "lengthMetres": 3.8,
+   "planarLengthMetres": 3.8,
    "passable": true
   },
   {
@@ -10459,6 +10800,7 @@
    "to": "x6-015",
    "kind": "indoor",
    "lengthMetres": 5.6,
+   "planarLengthMetres": 5.6,
    "passable": true
   },
   {
@@ -10467,6 +10809,7 @@
    "to": "exchange-6f-hall",
    "kind": "indoor",
    "lengthMetres": 5.6,
+   "planarLengthMetres": 5.6,
    "passable": true
   },
   {
@@ -10475,6 +10818,7 @@
    "to": "x6-016",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -10483,6 +10827,7 @@
    "to": "x6-017",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10491,6 +10836,7 @@
    "to": "x6-018",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10499,6 +10845,7 @@
    "to": "x6-019",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10507,6 +10854,7 @@
    "to": "x6-020",
    "kind": "indoor",
    "lengthMetres": 5.2,
+   "planarLengthMetres": 5.2,
    "passable": true
   },
   {
@@ -10515,6 +10863,7 @@
    "to": "k6-001",
    "kind": "bridge",
    "lengthMetres": 13.7,
+   "planarLengthMetres": 13.7,
    "passable": true
   },
   {
@@ -10523,6 +10872,7 @@
    "to": "x6-021",
    "kind": "indoor",
    "lengthMetres": 3.6,
+   "planarLengthMetres": 3.6,
    "passable": true
   },
   {
@@ -10531,6 +10881,7 @@
    "to": "hq-6f-bridge",
    "kind": "bridge",
    "lengthMetres": 27.5,
+   "planarLengthMetres": 27.5,
    "passable": true
   },
   {
@@ -10539,6 +10890,7 @@
    "to": "x2-002",
    "kind": "indoor",
    "lengthMetres": 4.0,
+   "planarLengthMetres": 4.0,
    "passable": true
   },
   {
@@ -10547,6 +10899,7 @@
    "to": "x2-003",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10555,6 +10908,7 @@
    "to": "x2-004",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10563,6 +10917,7 @@
    "to": "x2-005",
    "kind": "indoor",
    "lengthMetres": 5.8,
+   "planarLengthMetres": 5.8,
    "passable": true
   },
   {
@@ -10571,6 +10926,7 @@
    "to": "x2-006",
    "kind": "indoor",
    "lengthMetres": 5.2,
+   "planarLengthMetres": 5.2,
    "passable": true
   },
   {
@@ -10579,6 +10935,7 @@
    "to": "k2-001",
    "kind": "bridge",
    "lengthMetres": 13.7,
+   "planarLengthMetres": 13.7,
    "passable": true
   },
   {
@@ -10586,7 +10943,8 @@
    "from": "x2-001",
    "to": "x4-013",
    "kind": "stairs",
-   "lengthMetres": 0.0,
+   "lengthMetres": 10.0,
+   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -10594,7 +10952,8 @@
    "from": "x4-013",
    "to": "x6-014",
    "kind": "stairs",
-   "lengthMetres": 0.0,
+   "lengthMetres": 10.0,
+   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -10602,7 +10961,8 @@
    "from": "hq-4f-bridge",
    "to": "hq-6f-bridge",
    "kind": "stairs",
-   "lengthMetres": 0.0,
+   "lengthMetres": 10.0,
+   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -10610,7 +10970,8 @@
    "from": "hq-4f-bridge",
    "to": "h4-001",
    "kind": "stairs",
-   "lengthMetres": 0.1,
+   "lengthMetres": 16.0,
+   "planarLengthMetres": 0.1,
    "passable": true
   },
   {
@@ -10619,6 +10980,7 @@
    "to": "h1-001",
    "kind": "indoor",
    "lengthMetres": 5.2,
+   "planarLengthMetres": 5.2,
    "passable": true
   },
   {
@@ -10627,6 +10989,7 @@
    "to": "h1-002",
    "kind": "indoor",
    "lengthMetres": 5.2,
+   "planarLengthMetres": 5.2,
    "passable": true
   },
   {
@@ -10635,6 +10998,7 @@
    "to": "h1-003",
    "kind": "indoor",
    "lengthMetres": 5.2,
+   "planarLengthMetres": 5.2,
    "passable": true
   },
   {
@@ -10643,6 +11007,7 @@
    "to": "h1-004",
    "kind": "indoor",
    "lengthMetres": 3.1,
+   "planarLengthMetres": 3.1,
    "passable": true
   },
   {
@@ -10651,6 +11016,7 @@
    "to": "o-123",
    "kind": "indoor",
    "lengthMetres": 3.1,
+   "planarLengthMetres": 3.1,
    "passable": true
   }
  ]
