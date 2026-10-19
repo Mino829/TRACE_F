@@ -1,15 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-import { useLayer } from "./layer";
-import { Phrases, PxButton, Sentences, Window, clock } from "./ui";
-
 /**
- * The end of every answer: "CLEAR!". A photo, a skipped reminder and an
- * accuracy record all end on it, so leaving the camera closed is never the
- * losing choice. Nothing is handed out as a reward, so the number of photos
- * never reads as a score.
+ * The developer screen's accuracy record ends on "CLEAR!", in the pixel
+ * look. The participant's own clear screens are RAY's (ray/photo.tsx and
+ * ray/screens.tsx). Nothing is handed out as a reward, so the number of
+ * records never reads as a score.
  */
 
 export function ClearTitle() {
@@ -54,42 +49,6 @@ export function Confetti() {
           }}
         />
       ))}
-    </div>
-  );
-}
-
-/** The clear screen for a reminder answered with "スキップ". */
-export function SkipClear({ nextReminderAt, onClose }: { nextReminderAt: number | null; onClose: () => void }) {
-  const close = useLayer("#clear", onClose);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-
-  useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
-
-  return (
-    <div className="px-stage fixed inset-0 z-40 flex flex-col" role="dialog" aria-modal="true" aria-labelledby="skip-title">
-      <div className="relative grid min-h-0 flex-1 place-items-center overflow-hidden px-4 pt-[env(safe-area-inset-top)] text-center">
-        <Confetti />
-        <div className="relative w-full space-y-6">
-          <ClearTitle />
-          <Window className="text-left">
-            <div role="status" className="space-y-2">
-              <h2 id="skip-title" ref={titleRef} tabIndex={-1} className="text-[19px] outline-none">
-                <Phrases text="今回はスキップしました" />
-              </h2>
-              <p className="text-[15px] text-(--px-ink-2)">
-                <Sentences text={`撮りたいものがあるときだけ撮れば十分です。${nextReminderAt !== null ? `次のリマインダーは ${clock(nextReminderAt)} ごろです。` : ""}`} />
-              </p>
-            </div>
-          </Window>
-        </div>
-      </div>
-      <div className="px-actionbar">
-        <PxButton block onClick={close}>
-          ホームへもどる
-        </PxButton>
-      </div>
     </div>
   );
 }

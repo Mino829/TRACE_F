@@ -1036,13 +1036,6 @@ html:has(.px-root) body {
   box-shadow: 0 0 0 4px var(--px-k);
 }
 
-/* A participant's symbol: a dark pixel outline keeps it clear on any ground. */
-.px-symbol {
-  filter:
-    drop-shadow(3px 0 0 var(--px-k)) drop-shadow(-3px 0 0 var(--px-k))
-    drop-shadow(0 3px 0 var(--px-k)) drop-shadow(0 -3px 0 var(--px-k));
-}
-
 /* The story's timeline: photos on the left, the minutes between them on a line. */
 .px-timeline {
   margin: 0;
