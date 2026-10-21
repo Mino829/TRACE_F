@@ -132,16 +132,32 @@ export function randomIndoorStops(random: () => number = Math.random): string[] 
     .filter((n) => n.id !== "shibalab")
     .map((n) => n.id);
   const stops = [pick(entrances)];
-  while (stops.length < 1 + 2 + Math.floor(random() * 2)) {
+  const chosen: string[] = [];
+  const count = 2 + Math.floor(random() * 2);
+  while (chosen.length < count) {
     const id = pick(upstairs);
-    if (!stops.includes(id)) stops.push(id);
+    if (!chosen.includes(id)) chosen.push(id);
+  }
+  // Visit them nearest first, so the walk keeps going instead of crossing back and forth.
+  while (chosen.length) {
+    const here = NODES.get(stops[stops.length - 1])!.threeD;
+    const far = (id: string) => {
+      const p = NODES.get(id)!.threeD;
+      return Math.hypot(p.x - here.x, p.y - here.y, (p.z - here.z) * 3);
+    };
+    chosen.sort((a, b) => far(a) - far(b));
+    stops.push(chosen.shift()!);
   }
   return [...stops, "shibalab"];
 }
 
-/** Big tree (Toyosu station side) up through the buildings to ShibaLab, 3F room 301. */
+/**
+ * Big tree (Toyosu station side) up through the buildings to ShibaLab, 3F room 301,
+ * always moving on: under the head office, up the exchange building, over to the
+ * classroom building on 6F and down its escalators. (It used to dart back and
+ * forth between the plaza and the head office, which spun the cameras round.)
+ */
 export const SAMPLE_STOPS = [
-  "big-tree", "hq-piloti", "koryu-plaza", "grand-stairs-bottom", "hq-exchange-bridge", "hq-entrance",
-  "hq-4f-bridge", "exchange-4f", "exchange-6f-hall", "classroom-6f-bridge", "classroom-5f-lobby",
-  "classroom-4f-lobby", "classroom-3f-lobby", "shibalab",
+  "big-tree", "hq-piloti", "hq-exchange-bridge", "exchange-4f", "exchange-6f-hall",
+  "classroom-6f-bridge", "classroom-5f-lobby", "classroom-4f-lobby", "classroom-3f-lobby", "shibalab",
 ] as const;

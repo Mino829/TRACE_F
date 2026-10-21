@@ -13,7 +13,9 @@ import {
   lookAheadAt,
   placeAt,
   pointAt,
+  roundedPointAt,
   stopAt,
+  travelDirection,
   type RoutePath,
   type Timeline,
 } from "./route-path";
@@ -69,6 +71,23 @@ const FOLLOW_DISTANCE = 100;
 const FOLLOW_PITCH = THREE.MathUtils.degToRad(48);
 /** Anything closer to the drone than this is clipped, so it never flies into a wall. */
 const FOLLOW_NEAR = 55;
+/**
+ * The drone faces the general way of the walk (a window behind and ahead, so
+ * grid corners and quick steps into a room and back mostly cancel out) and
+ * swings at most FOLLOW_TURN per second.
+ */
+const FOLLOW_WINDOW = { back: 12, ahead: 35 };
+const FOLLOW_TURN = THREE.MathUtils.degToRad(35);
+/**
+ * The walk films like a phone held up while walking: the line's corners are
+ * rounded off by WALK_ROUND metres, the eye faces the rounded line WALK_AHEAD
+ * metres on, turns at up to WALK_TURN per second and looks a little down. It
+ * glides without any step bob or sway: on the big projector that made people dizzy.
+ */
+const WALK_ROUND = 2;
+const WALK_AHEAD = 4.5;
+const WALK_TURN = THREE.MathUtils.degToRad(240);
+const WALK_TILT = THREE.MathUtils.degToRad(6);
 const FACE_OPACITY = 0.05;
 const EYE = 1.6;
 const SKY = new THREE.Color(0xa9c3dd);
@@ -163,6 +182,8 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   const followPos = new THREE.Vector3();
   const followLook = new THREE.Vector3();
   const heading = new THREE.Vector3();
+  let followYaw = 0;
+  let walkYaw = 0;
   const walkLook = new THREE.Vector3();
   let frames = 0;
   let fps = 0;
@@ -192,7 +213,9 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     last = start;
     // Start the follow camera already in place instead of flying in.
     const p = new THREE.Vector3(...pointAt(next, 0));
-    heading.copy(headingAt(next, 0));
+    followYaw = yawOf(travelDirection(next, 0, 0, FOLLOW_WINDOW.ahead), headingAt(next, 0));
+    walkYaw = yawOf(travelDirection(next, 0, 0, WALK_AHEAD * 2), headingAt(next, 0));
+    heading.copy(fromYaw(followYaw));
     followLook.copy(p);
     followPos.copy(droneSpot(p, heading));
     walkLook.set(...lookAheadAt(next, 0, 6)).y += EYE;
@@ -214,21 +237,29 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     const pulse = 1 + 0.25 * Math.sin(now / 300);
     goal.scale.set(pulse, 1, pulse);
 
-    // Follow: ease the heading and the camera so the grid's square corners
-    // become a slow swing around the head instead of a snap.
-    heading.lerp(headingAt(path, s), 1 - Math.exp(-dt * 2)).normalize();
+    // Follow: turn toward the general way of the walk, slowly and never faster
+    // than FOLLOW_TURN, so corners and back-and-forth don't spin the drone round.
+    followYaw = turnToward(followYaw, travelDirection(path, s, FOLLOW_WINDOW.back, FOLLOW_WINDOW.ahead), dt, 0.8, FOLLOW_TURN);
+    heading.copy(fromYaw(followYaw));
     followPos.lerp(droneSpot(p, heading), 1 - Math.exp(-dt * 3));
     followLook.lerp(p, 1 - Math.exp(-dt * 6));
     followCamera.position.copy(followPos);
     followCamera.lookAt(followLook);
 
-    // Walk: eye on the line, gaze eased toward a point a few metres ahead,
-    // or, on an escalator, out of the window at the flower beds.
-    walkCamera.position.set(p.x, p.y + EYE, p.z);
-    const ahead = lookAheadAt(path, s, 6);
-    const forward = new THREE.Vector3(ahead[0], ahead[1] + EYE, ahead[2]);
+    // Walk: like someone filming on their phone as they go. The eye keeps to the
+    // line with its corners rounded off and faces where it is about to walk;
+    // riding an escalator it looks out of the window at the flower beds over the
+    // middle of the ride.
+    const body = new THREE.Vector3(...roundedPointAt(path, s, WALK_ROUND));
+    const aim = new THREE.Vector3(...roundedPointAt(path, Math.min(path.length, s + WALK_AHEAD), WALK_ROUND)).sub(body);
+    walkYaw = turnToward(walkYaw, aim.x * aim.x + aim.z * aim.z > 0.25 ? [aim.x, 0, aim.z] : null, dt, 6, WALK_TURN);
+    const dir = fromYaw(walkYaw);
+    walkCamera.position.set(body.x, body.y + EYE, body.z);
+    const rise = lookAheadAt(path, s, 6)[1] - p.y;          // up a stair or escalator, look up it
+    const forward = walkCamera.position.clone().addScaledVector(dir, 6);
+    forward.y += rise - 6 * Math.tan(WALK_TILT);
     const out = outOfWindow(walkCamera.position, 8);
-    walkLook.lerp(forward.lerp(out, escalatorWeight(path, s)), 1 - Math.exp(-dt * 3));
+    walkLook.lerp(forward.lerp(out, escalatorWeight(path, s)), 1 - Math.exp(-dt * 8));
     walkCamera.lookAt(walkLook);
 
     const place = placeAt(path, s);
@@ -445,6 +476,25 @@ function droneSpot(head: THREE.Vector3, heading: THREE.Vector3): THREE.Vector3 {
     .clone()
     .addScaledVector(heading, -FOLLOW_DISTANCE * Math.cos(FOLLOW_PITCH))
     .add(new THREE.Vector3(0, FOLLOW_DISTANCE * Math.sin(FOLLOW_PITCH), 0));
+}
+
+/** Angle about the vertical of a level direction (0 = +z). */
+function yawOf(d: Vec3 | null, fallback: THREE.Vector3): number {
+  return d ? Math.atan2(d[0], d[2]) : Math.atan2(fallback.x, fallback.z);
+}
+
+function fromYaw(yaw: number): THREE.Vector3 {
+  return new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+}
+
+/** Eases `yaw` toward `target` (the short way round) at `rate`, but no faster than `maxPerSecond`. */
+function turnToward(yaw: number, target: Vec3 | null, dt: number, rate: number, maxPerSecond: number): number {
+  if (!target) return yaw;
+  let diff = Math.atan2(target[0], target[2]) - yaw;
+  diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+  const step = diff * (1 - Math.exp(-dt * rate));
+  const limit = maxPerSecond * dt;
+  return yaw + Math.max(-limit, Math.min(limit, step));
 }
 
 /** Horizontal direction of travel a few metres ahead of s. */
