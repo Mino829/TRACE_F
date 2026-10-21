@@ -103,12 +103,20 @@ path("エスカレーター 1F→3F", "k1", "in", [(-26.2, -5.6, 0), (-13.4, -5.
 
 # 教室棟 3F〜6F：廊下（v -2.5）、教室（v 5.4）、ロビー（v -5.6）、交流棟側の端の階段（u -38.4）
 U = 2.9
-ROOMS = {
-    3: [("301", -27.55), ("302", -13.05), ("303", 1.45), ("304", 15.95), ("305", 29.0)],
-    4: [(str(403 + i), -29.0 + 11.6 * i) for i in range(6)],
-    5: [(str(502 + i), -30.93 + 7.733 * i) for i in range(6)] + [(str(508 + i), 14.5 + 5.8 * i) for i in range(4)],
-    6: [],
-}
+# 教室の幅（build_kyoshitsu_interior.py の NORTH と同じ比。3F・4F は公式の図の比、2026-10-21 TRACE_F #32）
+RX0, RX1 = -34.8, 34.8
+
+
+def scaled(ws):
+    k = (RX1 - RX0) / sum(ws)
+    return [w * k for w in ws]
+
+
+ROOM_W = {3: scaled([22.6, 23.6, 19.7, 19.7, 14.5]), 4: scaled([150, 145, 125, 120, 125, 125]),
+          5: [46.4 / 6] * 6 + [2 * U] * 4}
+ROOM_NAMES = {3: ["301", "302", "303", "304", "305"], 4: [str(n) for n in range(403, 409)], 5: [str(n) for n in range(502, 512)]}
+ROOMS = {f: [(n, round(RX0 + sum(ROOM_W[f][:i]) + ROOM_W[f][i] / 2, 2)) for i, n in enumerate(ROOM_NAMES[f])] for f in ROOM_W}
+ROOMS[6] = []
 FZ = {3: 11.0, 4: 16.0, 5: 21.0, 6: 26.0}
 # 5F・6F は 4F→5F・5F→6F のエスカレーター（u 19.4〜30.5）の降り口のすぐ先（u 31.3）。前は 5F の点がエスカレーターの上にあった
 LOBBY = {3: ("@classroom-3f-lobby", 1.4), 4: ("@classroom-4f-lobby", 16.6), 5: ("@classroom-5f-lobby", 31.3),
@@ -117,8 +125,6 @@ LOBBY = {3: ("@classroom-3f-lobby", 1.4), 4: ("@classroom-4f-lobby", 16.6), 5: (
 
 # 教室の扉の位置（build_kyoshitsu_interior.py の room_row と同じ決め方：幅を約 1.45m の区画に分け、n-2 番目の区画が扉）。
 # 前は教室の真ん中から入っていて、間仕切りのガラスや柱を突き抜けていた（2026-10-21）
-RX0 = -34.8
-ROOM_W = {3: [5 * U] * 4 + [4 * U], 4: [4 * U] * 6, 5: [46.4 / 6] * 6 + [2 * U] * 4}
 
 
 COLS = [RX0 + 5.8 * k for k in range(13)]     # 廊下側の柱（5.8m おき。半径 約 0.42m）
