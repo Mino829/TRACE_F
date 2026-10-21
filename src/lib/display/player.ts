@@ -10,7 +10,6 @@ import { EDGES, GRID_THETA, NODES, toScene, type Vec3 } from "./campus-graph";
 import {
   buildTimeline,
   escalatorWeight,
-  kindAt,
   lookAheadAt,
   placeAt,
   pointAt,
@@ -82,17 +81,13 @@ const FOLLOW_TURN = THREE.MathUtils.degToRad(35);
 /**
  * The walk films like a phone held up while walking: the line's corners are
  * rounded off by WALK_ROUND metres, the eye faces the rounded line WALK_AHEAD
- * metres on, turns at up to WALK_TURN per second, looks a little down, and bobs
- * and sways with the steps (WALK_STEPS a second; still on an escalator).
+ * metres on, turns at up to WALK_TURN per second and looks a little down. It
+ * glides without any step bob or sway: on the big projector that made people dizzy.
  */
 const WALK_ROUND = 2;
 const WALK_AHEAD = 4.5;
 const WALK_TURN = THREE.MathUtils.degToRad(240);
 const WALK_TILT = THREE.MathUtils.degToRad(6);
-const WALK_STEPS = 1.9;
-const WALK_BOB = 0.045;
-const WALK_SWAY = 0.025;
-const WALK_ROLL = THREE.MathUtils.degToRad(0.8);
 const FACE_OPACITY = 0.05;
 const EYE = 1.6;
 const SKY = new THREE.Color(0xa9c3dd);
@@ -252,25 +247,19 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     followCamera.lookAt(followLook);
 
     // Walk: like someone filming on their phone as they go. The eye keeps to the
-    // line with its corners rounded off, faces where it is about to walk, and
-    // bobs with the steps; riding an escalator it stands still and looks out of
-    // the window at the flower beds over the middle of the ride.
+    // line with its corners rounded off and faces where it is about to walk;
+    // riding an escalator it looks out of the window at the flower beds over the
+    // middle of the ride.
     const body = new THREE.Vector3(...roundedPointAt(path, s, WALK_ROUND));
     const aim = new THREE.Vector3(...roundedPointAt(path, Math.min(path.length, s + WALK_AHEAD), WALK_ROUND)).sub(body);
     walkYaw = turnToward(walkYaw, aim.x * aim.x + aim.z * aim.z > 0.25 ? [aim.x, 0, aim.z] : null, dt, 6, WALK_TURN);
     const dir = fromYaw(walkYaw);
-    const side = new THREE.Vector3(dir.z, 0, -dir.x);
-    const stepping = done || kindAt(path, s) === "escalator" ? 0 : 1;
-    const phase = elapsed * WALK_STEPS * Math.PI;
-    const bob = stepping * WALK_BOB * (Math.abs(Math.sin(phase)) - 0.5);
-    const sway = stepping * WALK_SWAY * Math.sin(phase / 2);
-    walkCamera.position.set(body.x, body.y + EYE + bob, body.z).addScaledVector(side, sway);
+    walkCamera.position.set(body.x, body.y + EYE, body.z);
     const rise = lookAheadAt(path, s, 6)[1] - p.y;          // up a stair or escalator, look up it
     const forward = walkCamera.position.clone().addScaledVector(dir, 6);
     forward.y += rise - 6 * Math.tan(WALK_TILT);
     const out = outOfWindow(walkCamera.position, 8);
     walkLook.lerp(forward.lerp(out, escalatorWeight(path, s)), 1 - Math.exp(-dt * 8));
-    walkCamera.up.set(0, 1, 0).addScaledVector(side, stepping * Math.sin(WALK_ROLL) * Math.sin(phase / 2)).normalize();
     walkCamera.lookAt(walkLook);
 
     const place = placeAt(path, s);
