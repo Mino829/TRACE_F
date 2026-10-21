@@ -139,6 +139,46 @@ export function lookAheadAt(path: RoutePath, s: number, ahead: number): Vec3 {
   return pointAt(path, path.length);
 }
 
+/**
+ * The general way the walk is heading around s: the level line from `back`
+ * metres behind to `ahead` metres in front. Over a long enough window the
+ * grid's corners and the step into a room and back out cancel out, so a camera
+ * that follows this turns only where the walk really changes direction.
+ * null where the window covers less than 2m of level ground (e.g. a stair).
+ */
+export function travelDirection(path: RoutePath, s: number, back: number, ahead: number): Vec3 | null {
+  const a = pointAt(path, s - back);
+  const b = pointAt(path, s + ahead);
+  const dx = b[0] - a[0];
+  const dz = b[2] - a[2];
+  const len = Math.hypot(dx, dz);
+  return len < 2 ? null : [dx / len, 0, dz / len];
+}
+
+/**
+ * Where someone walking the route would actually be at s: the line averaged
+ * over `radius` metres either way, so grid corners become short curves (people
+ * cut corners) while the straight runs stay on the line.
+ */
+export function roundedPointAt(path: RoutePath, s: number, radius = 1.5): Vec3 {
+  const n = 6;
+  const sum: Vec3 = [0, 0, 0];
+  for (let i = 0; i <= n; i++) {
+    const p = pointAt(path, s - radius + (2 * radius * i) / n);
+    sum[0] += p[0];
+    sum[1] += p[1];
+    sum[2] += p[2];
+  }
+  return [sum[0] / (n + 1), sum[1] / (n + 1), sum[2] / (n + 1)];
+}
+
+/** The kind of edge being walked at s. */
+export function kindAt(path: RoutePath, s: number): EdgeKind {
+  let i = 0;
+  while (i + 1 < path.at.length - 1 && path.at[i + 1] <= s) i++;
+  return path.kinds[i] ?? "ground";
+}
+
 /** Where the walk is at s (the place of the last point passed). */
 export function placeAt(path: RoutePath, s: number): string {
   let i = 0;
