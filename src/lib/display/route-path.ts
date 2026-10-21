@@ -172,13 +172,6 @@ export function roundedPointAt(path: RoutePath, s: number, radius = 1.5): Vec3 {
   return [sum[0] / (n + 1), sum[1] / (n + 1), sum[2] / (n + 1)];
 }
 
-/** The kind of edge being walked at s. */
-export function kindAt(path: RoutePath, s: number): EdgeKind {
-  let i = 0;
-  while (i + 1 < path.at.length - 1 && path.at[i + 1] <= s) i++;
-  return path.kinds[i] ?? "ground";
-}
-
 /** Where the walk is at s (the place of the last point passed). */
 export function placeAt(path: RoutePath, s: number): string {
   let i = 0;
