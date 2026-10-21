@@ -597,3 +597,26 @@ html:has(.dsp) body {
   color: var(--ink);
   background: var(--paper);
 }
+
+/* Sound (#27): the one click the browser needs before it makes sound, and the ?sound=1 readout. */
+.dsp-sound {
+  position: absolute;
+  left: 40px;
+  bottom: 80px;
+  z-index: 46;
+  color: var(--ink);
+  background: var(--paper) !important;
+}
+
+.dsp-sound-sources {
+  position: absolute;
+  right: 40px;
+  bottom: 80px;
+  z-index: 45;
+  margin: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  background: var(--paper);
+}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Player } from "@/lib/display/player";
 import type { RoutePath } from "@/lib/display/route-path";
+import { createSound, type Cue, type SoundEngine } from "@/lib/display/sound";
 
 import { ArrivalQr } from "./arrival-qr";
 
@@ -22,6 +23,12 @@ import { ArrivalQr } from "./arrival-qr";
  * until 終了する (or Esc). Query: ?speed=1.5 (pace; 1 walks at WALK_SPEED),
  * ?duration=30 (fit every walk into that many seconds instead), ?fps=1
  * (frames per second in the corner, to check the booth PC keeps up).
+ *
+ * Sound (issue #27, src/lib/display/sound.ts): music while waiting and while
+ * replaying, a cue as a walk starts and one at ShibaLab. The browser needs one
+ * click before it makes sound, so 音を出す shows until then (the test buttons
+ * count too). ?volume=0.6 sets the level, ?mute=1 silences it, ?sound=1 shows
+ * which sounds are the real files and which are still placeholders.
  */
 type Screen = "loading" | "top" | "playback" | "arrived";
 
@@ -44,6 +51,33 @@ export function DisplayClient() {
   const [status, setStatus] = useState({ stop: "", place: "", progress: 0 });
   const [arrivedAt, setArrivedAt] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const soundRef = useRef<SoundEngine | null>(null);
+  const [sound, setSound] = useState<{ unlocked: boolean; sources: Record<Cue, string> } | null>(null);
+  const [showSources, setShowSources] = useState(false);
+
+  // Sound: made on mount, told which screen is up, unlocked by the first click or key.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const volume = params.has("volume") ? Number(params.get("volume")) : 1;
+    const engine = createSound({ volume: Number.isFinite(volume) ? volume : 1, muted: params.get("mute") === "1" });
+    soundRef.current = engine;
+    const sync = () => setSound({ unlocked: engine.unlocked, sources: { ...engine.sources } });
+    const off = engine.subscribe(sync);
+    const first = window.setTimeout(() => {
+      sync();
+      setShowSources(params.get("sound") === "1");
+    }, 0);
+    return () => {
+      window.clearTimeout(first);
+      off();
+      engine.dispose();
+      soundRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (screen !== "loading") soundRef.current?.scene(screen);
+  }, [screen]);
 
   useEffect(() => {
     let disposed = false;
@@ -98,6 +132,7 @@ export function DisplayClient() {
     const player = playerRef.current;
     const routes = routesRef.current;
     if (!player || !routes) return;
+    void soundRef.current?.unlock();
     testRef.current = which;
     setStatus({ stop: "", place: "", progress: 0 });
     playingRef.current = true;
@@ -236,6 +271,16 @@ export function DisplayClient() {
         </div>
       )}
 
+      {sound && !sound.unlocked && (
+        <button type="button" className="dsp-test dsp-sound" onClick={() => void soundRef.current?.unlock()}>
+          ♪ 音を出す
+        </button>
+      )}
+      {sound && showSources && (
+        <p className="dsp-mono dsp-sound-sources">
+          SOUND {Object.entries(sound.sources).map(([cue, src]) => `${cue}:${src}`).join(" / ")}
+        </p>
+      )}
       <Hud screen={screen} />
       {fps !== null && screen !== "top" && <p className="dsp-fps">{fps} FPS</p>}
     </div>
