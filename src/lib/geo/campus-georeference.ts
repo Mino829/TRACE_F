@@ -12,7 +12,9 @@ import coordinates from "@/lib/map/toyosu-campus.coordinates.json";
  * Frames, in the order the transform walks them:
  *
  *   plan px      per building, origin = crop top-left, +y = plan down
- *   plan metres  campus-wide, origin = centre of the classroom master rect
+ *   plan metres  campus-wide, origin = centre of the classroom master rect;
+ *                each building is placed as the drawing places it and then
+ *                moved by its planPlacement correction
  *   local ENU    metres east/north about the georeference origin
  *   WGS84        lat/lon
  *
@@ -45,6 +47,8 @@ export interface Wgs84 {
 }
 
 export const COORDINATE_VERSION = coordinates.coordinateVersion;
+/** Which per-building correction a plan position went through. Separate from COORDINATE_VERSION, which the 3D map shares. */
+export const PLAN_PLACEMENT_VERSION = coordinates.planPlacement.version;
 export const NORTH_BEARING_DEG = coordinates.planToLocal.northBearingDeg;
 export const ORIGIN: Wgs84 = { lat: coordinates.origin.lat, lon: coordinates.origin.lon };
 export const ORIGIN_PLAN_POINT: PlanPoint = {
@@ -79,13 +83,59 @@ function planFor(buildingId: string) {
   return building.plan;
 }
 
-/** Normalized plan coordinates (±0.5, the space walls and footprints live in). */
-export function planNormToMetres(buildingId: string, nx: number, nz: number): PlanMetres {
+interface PlacementCorrection {
+  scale: number[];
+  shiftMetres: number[];
+}
+
+/**
+ * The drawing gets each building's interior right and its size and position
+ * on the block wrong by up to 7 m (Mino829/TRACE_F#32), so a building listed
+ * in planPlacement is scaled along its own axes and moved, as a whole, after
+ * the drawing has placed it. u and v are plan metres from the georeference
+ * origin; they run along the building axes, so the correction never rotates.
+ */
+const corrections = new Map<string, PlacementCorrection>(Object.entries(coordinates.planPlacement.buildings));
+
+function correct(buildingId: string, metres: PlanMetres): PlanMetres {
+  const correction = corrections.get(buildingId);
+  if (!correction) return metres;
+  return {
+    x: PLAN_ORIGIN.x + correction.scale[0] * (metres.x - PLAN_ORIGIN.x) + correction.shiftMetres[0],
+    z: PLAN_ORIGIN.z + correction.scale[1] * (metres.z - PLAN_ORIGIN.z) + correction.shiftMetres[1],
+  };
+}
+
+function uncorrect(buildingId: string, metres: PlanMetres): PlanMetres {
+  const correction = corrections.get(buildingId);
+  if (!correction) return metres;
+  return {
+    x: PLAN_ORIGIN.x + (metres.x - PLAN_ORIGIN.x - correction.shiftMetres[0]) / correction.scale[0],
+    z: PLAN_ORIGIN.z + (metres.z - PLAN_ORIGIN.z - correction.shiftMetres[1]) / correction.scale[1],
+  };
+}
+
+/**
+ * Move a position from where the drawing alone put a building to where
+ * planPlacement puts it. Only for marks placed before planPlacement existed,
+ * whose sheet still had every building at its master rectangle.
+ */
+export function correctDrawnPlacement(buildingId: string, metres: PlanMetres): PlanMetres {
+  return correct(buildingId, metres);
+}
+
+/** Where the drawing alone puts a normalized plan position, before planPlacement. */
+function drawnPlanNormToMetres(buildingId: string, nx: number, nz: number): PlanMetres {
   const placement = placementFor(buildingId);
   return {
     x: (placement.offsetX + nx * placement.transform.width) * METRES_PER_UNIT,
     z: (placement.offsetZ + nz * placement.transform.depth) * METRES_PER_UNIT,
   };
+}
+
+/** Normalized plan coordinates (±0.5, the space walls and footprints live in). */
+export function planNormToMetres(buildingId: string, nx: number, nz: number): PlanMetres {
+  return correct(buildingId, drawnPlanNormToMetres(buildingId, nx, nz));
 }
 
 export function planPxToMetres(point: PlanPoint): PlanMetres {
@@ -96,8 +146,9 @@ export function planPxToMetres(point: PlanPoint): PlanMetres {
 export function metresToPlanPx(buildingId: string, metres: PlanMetres): { x: number; y: number } {
   const placement = placementFor(buildingId);
   const plan = planFor(buildingId);
-  const nx = (metres.x / METRES_PER_UNIT - placement.offsetX) / placement.transform.width;
-  const nz = (metres.z / METRES_PER_UNIT - placement.offsetZ) / placement.transform.depth;
+  const drawn = uncorrect(buildingId, metres);
+  const nx = (drawn.x / METRES_PER_UNIT - placement.offsetX) / placement.transform.width;
+  const nz = (drawn.z / METRES_PER_UNIT - placement.offsetZ) / placement.transform.depth;
   return { x: (nx + 0.5) * plan.widthPx, y: (nz + 0.5) * plan.heightPx };
 }
 
@@ -198,11 +249,29 @@ function assertConsistentWithJson(): void {
   if (Math.abs(METRES_PER_UNIT - coordinates.scale.metresPerUnit) > 1e-9) {
     throw new Error(`georeference: METRES_PER_UNIT ${METRES_PER_UNIT} != coordinates.json ${coordinates.scale.metresPerUnit}`);
   }
-  const originLocal = planPxToLocal(ORIGIN_PLAN_POINT);
+  // origin.planPx belongs to coordinateVersion, which predates planPlacement,
+  // so it is checked against the drawing's own placement. Where the corrected
+  // placement puts the same pixel is planPlacement.residuals.originDoor.
+  const originPlan = planFor(ORIGIN_PLAN_POINT.buildingId);
+  const originLocal = planMetresToLocal(
+    drawnPlanNormToMetres(
+      ORIGIN_PLAN_POINT.buildingId,
+      ORIGIN_PLAN_POINT.x / originPlan.widthPx - 0.5,
+      ORIGIN_PLAN_POINT.y / originPlan.heightPx - 0.5,
+    ),
+  );
   if (Math.hypot(originLocal.east, originLocal.north) > 0.05) {
     throw new Error(
       `georeference: origin planPx maps to (${originLocal.east.toFixed(3)}, ${originLocal.north.toFixed(3)}) instead of (0, 0)`,
     );
+  }
+  for (const [buildingId, correction] of corrections) {
+    if (!buildings.some((building) => building.id === buildingId)) {
+      throw new Error(`georeference: planPlacement corrects unknown building "${buildingId}"`);
+    }
+    if (correction.scale.length !== 2 || correction.shiftMetres.length !== 2 || !correction.scale.every((value) => value > 0)) {
+      throw new Error(`georeference: planPlacement for "${buildingId}" needs two positive scales and two shifts`);
+    }
   }
 }
 
@@ -216,10 +285,12 @@ assertConsistentWithJson();
  * point at, and a fix taken there lands outside every plan. The sheet frame is
  * the campus-wide pixel space that fixes both: the PDF page space the master
  * rectangles are already registered in, which every building's crop is a
- * window onto. One sheet pixel is METRES_PER_PLAN_PX on the ground, the same
- * as one classroom plan pixel, because the classroom crop is 1:1 with its
- * master rectangle (asserted below, along with the same property for every
- * other building — a rescaled crop would silently shear the composite).
+ * window onto. One sheet pixel is METRES_PER_PLAN_PX on the ground in both
+ * directions. Every crop is 1:1 with its master rectangle (asserted below — a
+ * rescaled crop would silently shear the composite), so a building's plan
+ * pixel is one sheet pixel too, except where planPlacement scales that
+ * building: there the image is drawn stretched to its corrected rectangle,
+ * and the sheet stays true to the ground.
  * ------------------------------------------------------------------ */
 
 /** Pixels on the campus sheet: origin = SHEET top-left, +y = plan down. */
@@ -279,11 +350,11 @@ export function planNormToCampusPx(buildingId: string, nx: number, nz: number): 
   return metresToCampusPx(planNormToMetres(buildingId, nx, nz));
 }
 
-/** Where a building's plan image belongs on the sheet. */
+/** Where a building's plan image belongs on the sheet, after planPlacement. */
 export function buildingSheetRect(buildingId: string): CampusRect {
-  const rect = buildings.find((candidate) => candidate.id === buildingId)?.masterRect;
-  if (!rect) throw new Error(`georeference: unknown building "${buildingId}"`);
-  return { x: rect.x, y: rect.y, width: rect.w, height: rect.h };
+  const topLeft = planNormToCampusPx(buildingId, -0.5, -0.5);
+  const bottomRight = planNormToCampusPx(buildingId, 0.5, 0.5);
+  return { x: topLeft.x, y: topLeft.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y };
 }
 
 /**
@@ -314,9 +385,9 @@ export const CAMPUS_SHEET: CampusRect = (() => {
   };
   const margin = SHEET_MARGIN_METRES / METRES_PER_PLAN_PX;
   for (const building of buildings) {
-    const rect = building.masterRect;
+    const rect = buildingSheetRect(building.id);
     grow(rect.x - margin, rect.y - margin);
-    grow(rect.x + rect.w + margin, rect.y + rect.h + margin);
+    grow(rect.x + rect.width + margin, rect.y + rect.height + margin);
   }
   for (const vertex of GEOFENCE_HULL) {
     const px = localToCampusPx(vertex);
@@ -391,11 +462,15 @@ function assertSheetFrame(): void {
       );
     }
     const corner = { buildingId: building.id, x: building.plan.widthPx, y: building.plan.heightPx };
-    const viaPlan = planPxToMetres(corner);
+    const viaPlan = drawnPlanNormToMetres(building.id, 0.5, 0.5);
     const viaSheet = campusPxToMetres({
       x: building.masterRect.x + building.masterRect.w,
       y: building.masterRect.y + building.masterRect.h,
     });
+    const roundTrip = metresToPlanPx(building.id, planPxToMetres(corner));
+    if (Math.abs(roundTrip.x - corner.x) > 1e-6 || Math.abs(roundTrip.y - corner.y) > 1e-6) {
+      throw new Error(`georeference: planPlacement does not invert for ${building.id}`);
+    }
     // Not exact: the sheet works in the JSON's published metres-per-pixel,
     // which is rounded, while the plan frame carries the pipeline's full
     // precision. That is a fifth of a millimetre across the whole campus. The
