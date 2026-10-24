@@ -2,12 +2,15 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import { PlacePicker } from "@/components/place-picker/place-picker";
 import type { Consent } from "@/lib/ping-log/consent";
 import type { PushSupport } from "@/lib/ping-log/environment";
 import { preparePhoto } from "@/lib/ping-log/photo";
 import { photoEntry, type Shot } from "@/lib/ping-log/photo-entry";
 import type { PhotoMeta } from "@/lib/ping-log/record";
 import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
+import { PLACES } from "@/lib/places/places";
+import type { PhotoPlace } from "@/lib/places/types";
 import { reducedMotion } from "@/lib/ray/fx";
 
 import { useLayer } from "../layer";
@@ -17,10 +20,10 @@ import { REMINDER_NOTE, useReminderSwitch } from "./screens";
 import { ClearWord, DAY, Dock, Icon, NoteBar, Phrases, Screen, Seg, Sentences, SWAP, useField, useRay } from "./stage";
 
 /**
- * A photo from the camera to the day's memory: a look at it, then
- * "メモリーに追加", then CLEAR!. Adding waits for the photo's one fix, then
- * the photo tears once and the screen flashes negative into the clear
- * screen. The screen never shows the place: that waits for the exhibition.
+ * A photo from the camera to the day's memory: a look at it, the choice of
+ * the checkpoint it was taken at (place-picker), then CLEAR!. Saving tears
+ * the photo once and flashes the screen negative into the clear screen. The
+ * phone's position is never read: the place is the participant's own word.
  */
 
 type Props = {
@@ -28,6 +31,9 @@ type Props = {
   consent: Consent;
   /** After the day's first photo while the reminder is off: its switch, once, on the clear screen. */
   offerReminder: boolean;
+  /** The place chosen for the photo before this one, where the picker opens. */
+  lastPlace: PhotoPlace | null;
+  maxPhotos: number;
   support: PushSupport;
   reminderOn: boolean;
   busy: boolean;
@@ -42,7 +48,7 @@ type Props = {
   onClose: () => void;
 };
 
-type Step = "preview" | "saving" | "done";
+type Step = "preview" | "place" | "saving" | "done";
 
 /** Only a photo still waiting is worth a word; a sent one needs none. */
 const OUTCOME: Record<SaveOutcome, string> = {
@@ -60,7 +66,18 @@ export function PhotoScreen(props: Props) {
   const [error, setError] = useState("");
   // Decided when the photo arrives, so switching it on here keeps the switch in view.
   const [offer] = useState(props.offerReminder);
-  const close = useLayer("#photo", props.onClose);
+  // The phone's back button steps back inside the flow (place -> photo) instead of dropping the photo; while saving it waits.
+  const close = useLayer("#photo", () => {
+    if (step === "place" || step === "saving") {
+      window.history.pushState(null, "", "#photo");
+      if (step === "place") {
+        setError("");
+        setStep("preview");
+      }
+      return;
+    }
+    props.onClose();
+  });
   const photoRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
   const reminder = useReminderSwitch(props.reminderOn, props.support, props.onReminder, props.onInstall);
@@ -83,16 +100,16 @@ export function PhotoScreen(props: Props) {
 
   const ratio = photo && photo.meta.width > 0 && photo.meta.height > 0 ? photo.meta.width / photo.meta.height : 3 / 4;
 
-  const add = async () => {
+  const add = async (place: PhotoPlace) => {
     if (!photo) return;
     setStep("saving");
     setError("");
     let saved: SaveOutcome;
     try {
-      saved = await props.onSave(await photoEntry(shot, photo, props.consent));
+      saved = await props.onSave(await photoEntry(shot, photo, props.consent, place));
     } catch (problem) {
       setError(problem instanceof Error ? problem.message : "保存できませんでした。");
-      setStep("preview");
+      setStep("place");
       return;
     }
     navigator.vibrate?.(40);
@@ -107,12 +124,32 @@ export function PhotoScreen(props: Props) {
     setStep("done");
   };
 
+  if (step === "place" || step === "saving") {
+    return (
+      <PlacePicker
+        data={PLACES}
+        photo={photo?.blob ?? null}
+        last={props.lastPlace}
+        number={shot.number}
+        maxPhotos={props.maxPhotos}
+        saving={step === "saving"}
+        error={error}
+        inert={props.inert}
+        onBack={() => {
+          setError("");
+          setStep("preview");
+        }}
+        onConfirm={(place) => void add(place)}
+      />
+    );
+  }
+
   if (step !== "done") {
     return (
       <Screen key="preview" inert={props.inert}>
         <div className="topbar">
           <span>
-            <button type="button" className="link" disabled={step === "saving"} onClick={() => void go(close)}>
+            <button type="button" className="link" onClick={() => void go(close)}>
               <Icon name="close" />
               やめる
             </button>
@@ -140,18 +177,12 @@ export function PhotoScreen(props: Props) {
         </div>
         <div className="actionbar">
           <NoteBar text={error} alert />
-          <button type="button" className="btn btn--line" disabled={step === "saving"} onClick={props.onRetake}>
+          <button type="button" className="btn btn--line" onClick={props.onRetake}>
             撮り直す
           </button>
-          <button type="button" className="btn" disabled={!photo || step === "saving"} onClick={() => void add()}>
-            {step === "saving" ? (
-              "保存しています…"
-            ) : (
-              <>
-                <Icon name="check" />
-                メモリーに追加
-              </>
-            )}
+          <button type="button" className="btn" disabled={!photo} onClick={() => setStep("place")}>
+            <Icon name="arrow" />
+            場所を選ぶ
           </button>
         </div>
       </Screen>

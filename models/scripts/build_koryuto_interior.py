@@ -1,4 +1,4 @@
-# 交流棟の内装（4F〜6F）：廊下・教室の間仕切りと扉・柱と黒い板・番号札・エレベーターホール・床と天井
+# 交流棟の内装（2F〜6F）：廊下・教室の間仕切りと扉・柱と黒い板・番号札・エレベーターホール・床と天井
 # buildings/交流棟.blend を開いて exec(open(path, encoding="utf-8").read()) で実行する。
 # 先に外観スクリプト（build_koryuto_exterior.py）を実行して、その寸法（FLOORS, BX, CW, WP など）を使う。
 # 何度実行しても、コレクション「04_交流棟_内装」の中身を作り直すだけ。
@@ -8,7 +8,7 @@
 #   4F：402・401 教室、教職員組合室   5F：501 教室、女子学生・女性教職員休憩室   6F：大講義室
 #   道路側の端（-X）は机が置いてある広い場所（写真 6662）
 # 間仕切りは写真 6659〜6661：白いパネル（下・上）＋目の高さのガラス、白い枠の扉、柱ごとに廊下へ出る黒い板
-import os
+import os, sys
 import bpy, math
 
 HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else \
@@ -26,11 +26,13 @@ LOUNGE_X = COLX[2]      # ここから -X が広い場所
 
 # 部屋：(名前, 番号札, -X 端の柱の番号, +X 端の柱の番号, 間仕切りにガラスがあるか)
 ROOMS = {
+    0: [("202教室", "202", 5, 7, True), ("201教室", "201", 3, 5, True), ("203", "203", 2, 3, False)],   # 2F・3F は 4F と同じ並び（ユーザーの指示）
+    1: [("302教室", "302", 5, 7, True), ("301教室", "301", 3, 5, True), ("303", "303", 2, 3, False)],
     2: [("402教室", "402", 5, 7, True), ("401教室", "401", 3, 5, True), ("教職員組合室", "SIT Union", 2, 3, False)],
     3: [("501教室", "501", 3, 7, True), ("女子学生・女性教職員休憩室", "Ladies' Lounge", 2, 3, False)],
     4: [("大講義室", "Lecture Hall", 2, 7, True)],
 }
-FLOOR_NAME = {2: "4F", 3: "5F", 4: "6F"}
+FLOOR_NAME = {0: "2F", 1: "3F", 2: "4F", 3: "5F", 4: "6F"}
 
 # ---------- マテリアル ----------
 IM = dict(
@@ -39,6 +41,9 @@ IM = dict(
     ceil=mat("交流棟内装_天井", (0.78, 0.77, 0.74), 0.9),
     light=mat("交流棟内装_照明", (1.0, 1.0, 0.97), 0.3),
     vent=mat("交流棟内装_空調の吹き出し", (0.45, 0.45, 0.44), 0.6),
+    wood=mat("交流棟内装_売り場の木", (0.55, 0.40, 0.25), 0.5),
+    shelf=mat("交流棟内装_棚", (0.75, 0.75, 0.73), 0.5),
+    table=mat("交流棟内装_食堂のテーブル", (0.70, 0.60, 0.45), 0.5),
     wall=mat("交流棟内装_白い壁", (0.80, 0.79, 0.76), 0.6),
     panel=mat("交流棟内装_間仕切りパネル", (0.84, 0.83, 0.80), 0.4),
     pglass=mat("交流棟内装_間仕切りのガラス", (0.60, 0.68, 0.70), 0.05, alpha=0.25),
@@ -56,6 +61,20 @@ IM = dict(
 )
 MAT.update(IM)
 
+
+def emit_mat(name, rgb, strength):
+    """発光する白（エレベーターの中の明かり）。glTF にも Emission として出る"""
+    m = mat(name, rgb, 0.4)
+    b = bsdf(m)
+    b.inputs["Emission Color"].default_value = (*rgb, 1)
+    b.inputs["Emission Strength"].default_value = strength
+    return m
+
+
+MAT["evlight"] = emit_mat("交流棟内装_エレベーターの明かり", (1.0, 0.98, 0.92), 6.0)
+MAT["evcab"] = mat("交流棟内装_エレベーターのかご", (0.80, 0.80, 0.78), 0.35, 0.4)
+MAT["evfloor"] = mat("交流棟内装_エレベーターの床", (0.55, 0.55, 0.53), 0.5)
+
 # ---------- 準備 ----------
 icol = bpy.data.collections.get(IN_COL)
 if icol is None:
@@ -63,10 +82,14 @@ if icol is None:
     scene.collection.children.link(icol)
 for o in list(bpy.data.objects):
     if o.get(IN_GEN):
-        me = o.data
+        me, is_light = o.data, o.type == 'LIGHT'
         bpy.data.objects.remove(o)
         if me is not None and me.users == 0:
-            bpy.data.meshes.remove(me)
+            (bpy.data.lights if is_light else bpy.data.meshes).remove(me)
+
+
+for lt in [l for l in bpy.data.lights if l.name.startswith("交流棟_EV")]:
+    bpy.data.lights.remove(lt)
 
 
 def build_in(mb, name):
@@ -194,19 +217,23 @@ for k in range(IN_FROM, NF):
 
     # 床・天井・照明
     fc = MB()
-    fc.box(X0, X1, Y0, Y1, z, z + 0.02, "carpet")
-    fc.box(X0, X1, Y0, Y1, z + CEIL, z + CEIL + 0.05, "ceil")
+    fc.boxh(X0, X1, Y0, Y1, z, z + 0.02, "carpet", [SHAFT])
+    fc.boxh(X0, X1, Y0, Y1, z + CEIL, z + CEIL + 0.05, "ceil", [SHAFT] if k < NF - 1 else [])   # 6F の天井はかごの天井
     for x in COLX:                                    # 柱の列ごとの床の白い線（廊下を横切る、2 本）
         for dx in (-0.25, 0.25):
-            fc.box(x + dx - 0.06, x + dx + 0.06, Y0, PY - 0.5, z + 0.02, z + 0.025, "stripe")
+            fc.boxh(x + dx - 0.06, x + dx + 0.06, Y0, PY - 0.5, z + 0.02, z + 0.025, "stripe", [SHAFT])
     x = X0 + 1.6
     while x < X1 - 1.0:                               # ダウンライト（廊下は 1 列、部屋は 3 列）
         for y in (CW + 3.5, PY + 3.0, PY + 7.5, PY + 12.0):
+            if not rect_minus((x - 0.12, x + 0.12, y - 0.12, y + 0.12), [SHAFT]) == [(x - 0.12, x + 0.12, y - 0.12, y + 0.12)]:
+                continue
             fc.box(x - 0.12, x + 0.12, y - 0.12, y + 0.12, z + CEIL - 0.005, z + CEIL, "light")
         x += 3.175
     for x in COLX[:-1]:                               # 空調の吹き出し
         xm = x + 3.175
         for y in (CW + 2.2, PY + 5.0, PY + 10.5):
+            if rect_minus((xm - 0.3, xm + 0.3, y - 0.3, y + 0.3), [SHAFT]) != [(xm - 0.3, xm + 0.3, y - 0.3, y + 0.3)]:
+                continue
             fc.box(xm - 0.3, xm + 0.3, y - 0.3, y + 0.3, z + CEIL - 0.006, z + CEIL - 0.001, "vent")
     build_in(fc, f"交流棟_{fl}_床と天井")
 
@@ -258,13 +285,21 @@ for k in range(IN_FROM, NF):
     # 402 の +X 側の壁（教室とホールの間）は上の部屋の壁で作ってある
     # エレベーターとトイレのかたまり：廊下側の面は黒い壁、エレベーターの扉 2 つ
     bx0, bx1, by0, by1 = CORE_X + 5.0, CORE_X + 10.5, -7.5, 6.0
-    cr.box(bx0, bx1, by0, by1, z, z + CEIL, "wall", keys6=["wall", "wall", "wall", "wall", "wall", "evwall"])
-    for ya in (-6.6, -4.6):
-        cr.box(bx0 - 0.03, bx0, ya, ya + 1.1, z, z + 2.3, "evdoor")
-        cr.box(bx0 - 0.05, bx0, ya - 0.08, ya + 1.18, z + 2.3, z + 2.38, "trim")
-        cr.box(bx0 - 0.031, bx0, ya + 0.545, ya + 0.555, z, z + 2.3, "trim")     # 扉の合わせ目
+    cr.boxh(bx0, bx1, by0, by1, z, z + CEIL, "wall", [SHAFT], keys6=["wall", "wall", "wall", "wall", "wall", "evwall"])
+    ya = -4.6                                                                   # 2 台目：閉じた扉（飾り）
+    cr.box(bx0 - 0.03, bx0, ya, ya + 1.1, z, z + 2.3, "evdoor")
+    cr.box(bx0 - 0.05, bx0, ya - 0.08, ya + 1.18, z + 2.3, z + 2.38, "trim")
+    cr.box(bx0 - 0.031, bx0, ya + 0.545, ya + 0.555, z, z + 2.3, "trim")         # 扉の合わせ目
+    # 1 台目（かご）：扉は開いたまま。枠と、壁の中へ引き込んだ扉の 2 枚（開いている所だけ見える）
+    da, db = SHAFT_DOOR
+    cr.box(bx0 - 0.05, bx0, da - 0.08, db + 0.08, z + 2.3, z + 2.38, "trim")
+    cr.box(bx0 - 0.05, bx0, da - 0.08, da, z, z + 2.3, "trim")
+    cr.box(bx0 - 0.05, bx0, db, db + 0.08, z, z + 2.3, "trim")
+    cr.box(bx0 - 0.03, bx0, da - 0.3, da - 0.08, z, z + 2.3, "evdoor")            # 開いた扉（左右の袖）
+    cr.box(bx0 - 0.03, bx0, db + 0.08, db + 0.3, z, z + 2.3, "evdoor")
     cr.box(bx0 - 0.04, bx0, -3.0, -2.6, z + 1.0, z + 1.4, "trim")              # 呼びボタン
     add_text(cr, fl[0], (bx0 - 0.002, -2.0, z + 2.0), (-1, 0), 0.9)          # 階数の大きな数字（写真 6653）
+    add_text(cr, fl, (bx0 - 0.002, (da + db) / 2, z + 2.62), (-1, 0), 0.22)  # 開いた扉の上の階数の札（かごの階が分かる）
     for ya, yb in ((-0.5, 1.4), (3.2, 5.1)):                                # トイレの入口（男・女）
         cr.box(bx0 - 0.02, bx0, ya, yb, z, z + 2.4, "wc")
     # 階段室（本部棟側の角）
@@ -274,6 +309,70 @@ for k in range(IN_FROM, NF):
     cr.box(sx0 - 0.02, sx0, -8.6, -7.2, z, z + 2.3, "evdoor")                 # 階段の扉（鉄の扉）
     build_in(cr, f"交流棟_{fl}_エレベーターホール")
 
+    # 2F 購買・3F 食堂：道路側の端（-X）の広い場所に、カウンターと棚・テーブルを数個だけ置く（写真なし。最小限）
+    if k in (0, 1):
+        sh = MB()
+        ax0, ax1 = X0 + 1.0, LOUNGE_X - 1.0
+        ay0, ay1 = Y0 + 1.0, WP - 1.6
+        if k == 0:                                             # 購買：奥の壁に棚 3 本、手前にレジのカウンター
+            for i in range(3):
+                ya = ay0 + 1.0 + i * 3.6
+                sh.box(ax0, ax0 + 0.5, ya, ya + 3.0, z, z + 1.9, "shelf")
+            sh.box(ax1 - 2.0, ax1 - 1.0, ay0 + 1.0, ay1 - 1.0, z, z + 1.0, "wood")
+            sh.box(ax1 - 2.0, ax1 - 1.0, ay0 + 1.0, ay1 - 1.0, z + 1.0, z + 1.04, "trim")
+            add_text(sh, "Shop", (ax1 - 2.001, (ay0 + ay1) / 2, z + 2.3), (-1, 0), 0.7)
+        else:                                                  # 食堂：カウンター 1 つと長いテーブル 4 本
+            sh.box(ax0, ax0 + 1.2, ay0 + 1.0, ay1 - 1.0, z, z + 1.0, "wood")
+            sh.box(ax0, ax0 + 1.2, ay0 + 1.0, ay1 - 1.0, z + 1.0, z + 1.04, "trim")
+            add_text(sh, "Cafeteria", (ax0 + 1.201, (ay0 + ay1) / 2, z + 2.3), (1, 0), 0.5)
+            for i in range(4):
+                xa = ax0 + 3.5 + i * 2.6
+                sh.box(xa, xa + 1.0, ay0 + 1.0, ay1 - 1.0, z + 0.7, z + 0.75, "table")
+                for ya in (ay0 + 1.2, ay1 - 1.2):
+                    sh.box(xa + 0.4, xa + 0.6, ya - 0.1, ya + 0.1, z, z + 0.7, "table")
+        build_in(sh, f"交流棟_{fl}_{'購買' if k == 0 else '食堂'}")
+
     total_in += sum(len(o.data.vertices) for o in icol.objects if o.name.startswith(f"交流棟_{fl}"))
 
+# ---------- エレベーターのかご（縦穴）：1F〜6F を貫く。中は明るい。扉は各階で開いている ----------
+ex0, ex1, ey0, ey1 = SHAFT
+T = 0.1
+ztop = FLOORS[-1] + CEIL + 0.05
+sf = MB()
+da, db = SHAFT_DOOR
+sf.box(ex1 - T, ex1, ey0, ey1, 0.0, ztop, "evcab")                              # 奥の壁
+sf.box(ex0, ex1, ey0, ey0 + T, 0.0, ztop, "evcab")                              # 側の壁
+sf.box(ex0, ex1, ey1 - T, ey1, 0.0, ztop, "evcab")
+sf.box(ex0, ex0 + T, ey0, da, 0.0, ztop, "evcab")                               # 手前の壁（ホール側）：扉の両わき
+sf.box(ex0, ex0 + T, db, ey1, 0.0, ztop, "evcab")
+stops = [0.0] + list(FLOORS)
+for za, zb in zip(stops, stops[1:] + [ztop]):                                   # 扉の上の壁（各階の扉の上端 2.3m から次の階の床まで）
+    sf.box(ex0, ex0 + T, da, db, za + 2.3, zb, "evcab")
+sf.box(ex0, ex1, ey0, ey1, 0.0, 0.03, "evfloor")                                 # 1F のかごの床
+sf.box(ex0 + T, ex1 - T, ey0 + T, ey1 - T, ztop - 0.09, ztop - 0.06, "evlight")  # てっぺんの明かり（6F の天井スラブ 29.0〜29.05 の下）
+sf.box(ex1 - T - 0.02, ex1 - T, (ey0 + ey1) / 2 - 0.25, (ey0 + ey1) / 2 + 0.25, 0.3, ztop - 0.3, "evlight")   # 奥の壁の縦の明かり
+for z in FLOORS:                                                                # 各階の扉の位置：床の高さの目印（床の縁の板）
+    sf.box(ex0 + T, ex0 + T + 0.03, da, db, z, z + 0.02, "trim")
+build_in(sf, "交流棟_エレベーターのかご")
+
+vs = MB()                                                                       # 1F の前室（床・扉の前の空間だけ。体育館の中は作らない）
+vx0, vx1, vy0, vy1 = VEST
+vs.box(vx0, vx1, vy0, vy1, 0.0, 0.03, "carpet")
+vs.box(vx0 + 0.3, vx1 - 0.3, (vy0 + vy1) / 2 - 0.4, (vy0 + vy1) / 2 + 0.4, VEST_H - 0.02, VEST_H, "evlight")
+add_text(vs, "1F", (vx1 - 0.002, (SHAFT_DOOR[0] + SHAFT_DOOR[1]) / 2, 2.62), (-1, 0), 0.22)   # 扉の上（前室の奥の壁。前室の面を向く）
+build_in(vs, "交流棟_1F_エレベーター前室")
+
+for nm, loc, power in (("交流棟_EV下", ((ex0 + ex1) / 2, (ey0 + ey1) / 2, 4.0), 200), ("交流棟_EV中", ((ex0 + ex1) / 2, (ey0 + ey1) / 2, 15.0), 200),
+                       ("交流棟_EV上", ((ex0 + ex1) / 2, (ey0 + ey1) / 2, 26.0), 200), ("交流棟_EV前室", ((vx0 + vx1) / 2, (vy0 + vy1) / 2, 2.4), 80)):
+    ld = bpy.data.lights.new(nm, 'POINT')
+    ld.energy = power
+    ld.shadow_soft_size = 0.2
+    lo = bpy.data.objects.new(nm, ld)
+    lo.location = loc
+    lo[IN_GEN] = True
+    icol.objects.link(lo)
+total_in += sum(len(o.data.vertices) for o in icol.objects if o.type == 'MESH' and (o.name.startswith("交流棟_エレベーター") or o.name.startswith("交流棟_1F_")))
+
 print("交流棟 内装 DONE verts", total_in)
+if "--save" in sys.argv:
+    bpy.ops.wm.save_mainfile()

@@ -151,6 +151,8 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
         shot={props.shot}
         consent={props.consent}
         offerReminder={props.shot.number === 1 && !props.reminderOn}
+        lastPlace={props.photos.at(-1)?.record.place ?? null}
+        maxPhotos={props.maxPhotos}
         support={props.support}
         reminderOn={props.reminderOn}
         busy={props.busy}

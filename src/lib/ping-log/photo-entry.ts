@@ -1,7 +1,9 @@
 import type { Consent } from "./consent";
 import { deviceContext, networkInfo, type NetworkInfo } from "./context";
+import { emptyCapture } from "./capture";
 import { deviceId } from "./push";
-import { COORDINATE_VERSION, RECORD_SCHEMA, guessSource, nearCampus, type Capture, type PhotoMeta } from "./record";
+import { COORDINATE_VERSION, RECORD_SCHEMA, type PhotoMeta } from "./record";
+import type { PhotoPlace } from "@/lib/places/types";
 import type { LogEntry } from "./store";
 
 /** A photo the camera just handed over. */
@@ -12,20 +14,17 @@ export type Shot = {
   receivedAt: number;
   /** The reminder it answers, if it was taken from one. */
   promptedAt: string | null;
-  location: Promise<Capture>;
   network: NetworkInfo | null;
   /** Which of the day's photos it would be, counted when it was taken. */
   number: number;
 };
 
 /**
- * The record of a photo added to the day's memory. It waits for the photo's
- * one fix, asked for the moment the camera handed the photo over (ten
- * seconds at most), and keeps the photo without a place if none came.
+ * The record of a photo added to the day's memory. Where it was taken is the
+ * checkpoint the participant chose for it: the phone's position is never asked
+ * for, and the photo's own EXIF is dropped when it is shrunk.
  */
-export async function photoEntry(shot: Shot, photo: { blob: Blob; meta: PhotoMeta }, consent: Consent): Promise<LogEntry> {
-  const final = await shot.location;
-  const first = final.fixes[0] ?? null;
+export async function photoEntry(shot: Shot, photo: { blob: Blob; meta: PhotoMeta }, consent: Consent, place: PhotoPlace): Promise<LogEntry> {
   const id = crypto.randomUUID();
   return {
     id,
@@ -42,10 +41,10 @@ export async function photoEntry(shot: Shot, photo: { blob: Blob; meta: PhotoMet
       consentedAt: consent.at,
       promptedAt: shot.promptedAt,
       takenAt: new Date(shot.receivedAt).toISOString(),
-      capture: final,
-      sourceGuess: first ? guessSource(first) : null,
+      capture: emptyCapture(),
+      sourceGuess: null,
       coordinateVersion: COORDINATE_VERSION,
-      insideCampus: first ? nearCampus(first) : false,
+      insideCampus: false,
       reportedLevel: null,
       truth: null,
       truthSkipped: false,
@@ -56,6 +55,7 @@ export async function photoEntry(shot: Shot, photo: { blob: Blob; meta: PhotoMet
       networkAtSend: networkInfo(),
       orientation: null,
       photo: photo.meta,
+      place,
     },
   };
 }

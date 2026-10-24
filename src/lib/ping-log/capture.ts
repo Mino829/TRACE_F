@@ -50,6 +50,12 @@ export function geolocationMessage(code: number): string {
   return "位置情報を取得できませんでした。";
 }
 
+/** A capture with nothing in it: what a record holds where no position was asked for. */
+export function emptyCapture(): Capture {
+  const now = Date.now();
+  return { startedAt: now, endedAt: now, options: {}, fixes: [], coarse: null, coarseError: null, errors: [] };
+}
+
 /** One high-accuracy fix, or none; it never rejects, since the photo is kept either way. */
 export function captureOnce(): Promise<Capture> {
   const capture: Capture = { startedAt: Date.now(), endedAt: null, options: ONCE_OPTIONS, fixes: [], coarse: null, coarseError: null, errors: [] };

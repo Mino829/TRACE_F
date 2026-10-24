@@ -379,6 +379,15 @@ body.build("本部棟_本体")
 # ---------- 2. ルーバー（横の羽根と、縦の受け材） ----------
 lv = MB()
 OFF0, OFF1, TH = 0.5, 0.85, 0.05   # 壁からの距離（内側・外側）と羽根の厚み
+# 交流棟への渡り廊下が付く所（下の「8.」の BX0〜BX1、4F のデッキ・6F の廊下の扉）はルーバーを切る
+# （2026-10-21 ユーザー：扉の前をルーバーが柵のようにふさいでいて邪魔）
+BR_HOLE_X = (48.3 - 0.3, 52.3 + 0.3)
+BR_HOLE_Z = [(FL[4] - 0.2, FL[4] + 3.0), (FL[6] - 0.2, FL[6] + 3.4)]
+BR_FACE_Y = MB_BY["M"]["y1"]
+
+
+def in_br_hole(side, c, z):
+    return side == "+y" and abs(c - BR_FACE_Y) < 0.6 and any(z0 <= z <= z1 for z0, z1 in BR_HOLE_Z)
 for m in MASSES:
     if m["kind"] != "louver":
         continue
@@ -397,7 +406,12 @@ for m in MASSES:
                 for k in range(n):
                     z = za + (k + 0.5) * (zb_ - za) / n
                     if side in ("-y", "+y"):
-                        lv.box(a2, b2, w0, w1, z - TH / 2, z + TH / 2, "louver")
+                        if in_br_hole(side, c, z):
+                            for x0, x1 in ((a2, min(b2, BR_HOLE_X[0])), (max(a2, BR_HOLE_X[1]), b2)):
+                                if x1 - x0 > 0.05:
+                                    lv.box(x0, x1, w0, w1, z - TH / 2, z + TH / 2, "louver")
+                        else:
+                            lv.box(a2, b2, w0, w1, z - TH / 2, z + TH / 2, "louver")
                     else:
                         lv.box(w0, w1, a2, b2, z - TH / 2, z + TH / 2, "louver")
                 # 受け材（縦）2.4m おき
@@ -406,7 +420,13 @@ for m in MASSES:
                 for k in range(cnt + 1):
                     p = a + (b - a) * k / cnt
                     if side in ("-y", "+y"):
-                        lv.box(p - 0.04, p + 0.04, q0, q1, za, zb_, "bracket")
+                        if side == "+y" and abs(c - BR_FACE_Y) < 0.6 and BR_HOLE_X[0] < p < BR_HOLE_X[1]:
+                            cuts = sorted([za, zb_] + [max(za, min(zb_, v)) for h in BR_HOLE_Z for v in h])
+                            for z0, z1 in zip(cuts[:-1], cuts[1:]):
+                                if z1 - z0 > 0.05 and not any(h0 <= (z0 + z1) / 2 <= h1 for h0, h1 in BR_HOLE_Z):
+                                    lv.box(p - 0.04, p + 0.04, q0, q1, z0, z1, "bracket")
+                        else:
+                            lv.box(p - 0.04, p + 0.04, q0, q1, za, zb_, "bracket")
                     else:
                         lv.box(q0, q1, p - 0.04, p + 0.04, za, zb_, "bracket")
 lv.build("本部棟_ルーバー")
@@ -636,6 +656,15 @@ for x in (BX0 - 0.15, BX1 + 0.15):
     for (ya, za), (yb, zb_) in (((BY0 + 1.5, ZL), (ym, ZU - 0.6)), ((BY1 - 1.5, ZL), (ym, ZU - 0.6))):
         d = 0.14
         br.prism_x([(ya - d, za), (ya + d, za), (yb + d, zb_), (yb - d, zb_)], x - 0.1, x + 0.1, "bracket")
+# 渡り廊下の付け根（本部棟の壁 Y = BY0）の扉。4F のデッキと 6F の廊下（2026-10-21：前は扉がなく、TRACE の線が窓ガラスを抜けていた）
+for zf in (ZL, ZU):
+    y = BY0 + 0.03
+    br.box(BX0 + 0.2, BX1 - 0.2, y, y + 0.03, zf, zf + 2.6, "entglass")               # ガラスの両開き扉
+    br.box(BX0 + 0.05, BX0 + 0.2, y, y + 0.12, zf, zf + 2.75, "steel")                # 黒い枠
+    br.box(BX1 - 0.2, BX1 - 0.05, y, y + 0.12, zf, zf + 2.75, "steel")
+    br.box(BX0 + 0.05, BX1 - 0.05, y, y + 0.12, zf + 2.6, zf + 2.75, "steel")
+    xm = (BX0 + BX1) / 2
+    br.box(xm - 0.03, xm + 0.03, y, y + 0.08, zf, zf + 2.6, "steel")                  # 扉の合わせ目
 br.build("本部棟_渡り廊下")
 
 # ---------- 9. 高層棟の入口（1F ロビーの西側の面、自動ドア） ----------

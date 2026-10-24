@@ -22,7 +22,7 @@ NF = 5                  # 2F〜6F
 RZ = F1 + FH * NF       # 屋上 31.0
 TOP = RZ + 0.4          # パラペットの上端
 FLOORS = [F1 + FH * k for k in range(NF)]
-IN_FROM = 2             # 4F から上は中を空ける（内装を入れる）
+IN_FROM = 0             # 2F から上は中を空ける（内装を入れる。2026-10-24：前は 4F から。2F=購買、3F=食堂を作った）
 
 EX = 32.4               # 妻壁の内側の面（妻壁の厚さ 0.8）
 # 道路側（+Y）の格子
@@ -128,6 +128,31 @@ for o in list(bpy.data.objects):
             bpy.data.meshes.remove(me)
 
 
+# エレベーターのかご（交流棟の座標）。教室棟側の端の EV・トイレのかたまり（CORE_X + 5.0〜）の 1 台目の扉の奥（2026-10-24）
+#   かごは 1F〜6F を貫く縦穴。床・天井のスラブと、1F の塊に穴をあける。1F は小さな前室（床と扉の前の空間だけ）
+SHAFT = (20.875, 23.2, -6.9, -5.2)       # x0, x1, y0, y1（扉は -X 側のホールに面する。扉の幅 1.1m は y -6.6〜-5.5）
+SHAFT_DOOR = (-6.6, -5.5)
+VEST = (17.9, 20.875, -7.55, -4.55)      # 1F の前室
+VEST_H = 3.0
+
+
+def rect_minus(r, holes):
+    """長方形 r=(x0,x1,y0,y1) から長方形の穴をくり抜いた残りの長方形のリスト"""
+    out = [r]
+    for hx0, hx1, hy0, hy1 in holes:
+        nxt = []
+        for x0, x1, y0, y1 in out:
+            if hx1 <= x0 or hx0 >= x1 or hy1 <= y0 or hy0 >= y1:
+                nxt.append((x0, x1, y0, y1))
+                continue
+            cx0, cx1, cy0, cy1 = max(x0, hx0), min(x1, hx1), max(y0, hy0), min(y1, hy1)
+            for piece in ((x0, cx0, y0, y1), (cx1, x1, y0, y1), (cx0, cx1, y0, cy0), (cx0, cx1, cy1, y1)):
+                if piece[1] - piece[0] > 1e-6 and piece[3] - piece[2] > 1e-6:
+                    nxt.append(piece)
+        out = nxt
+    return out
+
+
 class MB:
     def __init__(self):
         self.v, self.f, self.mi, self.keys = [], [], [], []
@@ -159,6 +184,11 @@ class MB:
         for i, f in enumerate(fs):
             if i not in skip:
                 self.face(f, k[i])
+
+    def boxh(self, x0, x1, y0, y1, z0, z1, key, holes, keys6=None):
+        """box に、上下に抜ける長方形の穴をあける（穴の壁もできる）"""
+        for px0, px1, py0, py1 in rect_minus((min(x0, x1), max(x0, x1), min(y0, y1), max(y0, y1)), holes):
+            self.box(px0, px1, py0, py1, z0, z1, key, keys6=keys6)
 
     def prism_x(self, prof, x0, x1, key):
         """YZ 平面の多角形 prof を X 方向に押し出す"""
@@ -230,15 +260,17 @@ def joints(axis, c, sign, u0, u1, v0, v1, du=1.95, dv=2.4):
 
 # ---------- 1. 本体（中の塊・2F の床・屋上・パラペット） ----------
 body = MB()
-# 2F・3F の中の塊（窓の奥）。4〜6F は内装（build_koryuto_interior.py）を入れるので空けて、床のスラブだけ置く
-body.box(-EX, EX, CW + 0.25, WP - 0.3, F1, FLOORS[IN_FROM], "inner")
+# 窓の奥の塊。IN_FROM から上は内装（build_koryuto_interior.py）を入れるので空けて、床のスラブだけ置く
+if IN_FROM > 0:
+    body.box(-EX, EX, CW + 0.25, WP - 0.3, F1, FLOORS[IN_FROM], "inner")
 for z0 in FLOORS[IN_FROM + 1:]:
-    body.box(-EX, EX, CW + 0.02, WP - 0.3, z0 - 0.45, z0, "inner")
+    body.boxh(-EX, EX, CW + 0.02, WP - 0.3, z0 - 0.45, z0, "inner", [SHAFT])
 body.box(-EX, EX, CW + 0.02, WP - 0.3, RZ - 0.6, RZ, "inner", keys6=["inner", "roof", "inner", "inner", "inner", "inner"])
 # 1F の中の塊（ガラスの奥）
-body.box(-EX, 32.1, -GF + 0.1, GF - 0.1, 0, SLAB0, "inner")
+body.boxh(-EX, 32.1, -GF + 0.1, GF - 0.1, 0, VEST_H, "inner", [SHAFT, VEST])             # 下の層：かごと前室
+body.boxh(-EX, 32.1, -GF + 0.1, GF - 0.1, VEST_H, SLAB0, "inner", [SHAFT])
 # 2F の床（上の階が 1F より張り出した部分の天井）
-body.box(-EX, EX, CW - 0.1, W2, SLAB0, F1, "soffit", keys6=["soffit", "soffit", "cw_band", "soffit", "stone", "soffit"])
+body.boxh(-EX, EX, CW - 0.1, W2, SLAB0, F1, "soffit", [SHAFT], keys6=["soffit", "soffit", "cw_band", "soffit", "stone", "soffit"])
 # パラペット（本部棟側）
 body.box(-EX, EX, -W2, CW + 0.25, RZ, TOP, "cw_band")
 body.box(-EX, EX, WP - 0.3, WP, RZ, TOP, "fin")
@@ -267,8 +299,15 @@ for s in (-1, 1):
     joints('y', W2, 1, min(x0, x1), max(x0, x1), 0.45, TOP, du=1.45)
     joints('x', s * L2, s, RX[1], W2, 0.45, TOP, du=1.3)
 
-# 本部棟側の石の壁（渡り廊下がつく。地面まで）
-body.box(CORE[0], CORE[1], -W2, -GF + 0.1, 0, TOP, "stone")
+# 本部棟側の石の壁（渡り廊下がつく。地面まで）。4F・6F は渡り廊下の口（BRIDGE_X）から中の廊下まで通り抜けをあける
+# （2026-10-21：前は口のガラス扉の奥が石の塊でふさがっていて、TRACE の線が石を突き抜けていた）
+zc = sorted({0.0, TOP} | {FLOORS[k] for k in BRIDGE_FLOORS} | {FLOORS[k] + 3.0 for k in BRIDGE_FLOORS})
+for za, zb in zip(zc[:-1], zc[1:]):
+    if any(abs(za - FLOORS[k]) < 1e-6 for k in BRIDGE_FLOORS):
+        body.box(CORE[0], BRIDGE_X[0], -W2, -GF + 0.1, za, zb, "stone")
+        body.box(BRIDGE_X[1], CORE[1], -W2, -GF + 0.1, za, zb, "stone")
+    else:
+        body.box(CORE[0], CORE[1], -W2, -GF + 0.1, za, zb, "stone")
 joints('y', -W2, -1, CORE[0], CORE[1], 0.45, TOP)
 
 # 石の足元の御影石
@@ -426,7 +465,13 @@ RY0, RY1 = RX
 DY = KYO_DOOR            # 渡り廊下の口の Y の範囲（教室棟の廊下の正面。下の「教室棟への渡り廊下」を見る）
 for k, z0 in enumerate(FLOORS):
     z1 = top_of(k)
-    rc.box(EX, EX + 0.3, RY0, RY1, z0 - 0.5 if k else SLAB0, z0 + 0.9, "stone")  # 床の帯
+    zb = z0 - 0.5 if k else SLAB0
+    if k in XBRIDGE_FLOORS:     # 渡り廊下の口の所は床の高さで止める（2026-10-21：前は扉の下 0.9m を石の帯がふさいでいた）
+        rc.box(EX, EX + 0.3, RY0, RY1, zb, z0, "stone")
+        for ya, yb in ((RY0, KYO_DOOR[0] - 0.15), (KYO_DOOR[1] + 0.15, RY1)):
+            rc.box(EX, EX + 0.3, ya, yb, z0, z0 + 0.9, "stone")
+    else:
+        rc.box(EX, EX + 0.3, RY0, RY1, zb, z0 + 0.9, "stone")  # 床の帯
     rc.box(EX, EX + 0.3, RY0, RY1, z0 + HEAD, z1 if k < NF - 1 else TOP, "stone")
     if k in XBRIDGE_FLOORS:
         # 渡り廊下の口：黒い鉄の枠＋ガラスの扉（扉の下端は床）

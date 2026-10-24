@@ -29,10 +29,15 @@ import { levelLabel, toyosuClassroom } from "@/lib/map/buildings";
 import coordinates from "@/lib/map/toyosu-campus.coordinates.json";
 
 import type { DeviceContext, NetworkInfo, OrientationSample } from "./context";
+import type { PhotoPlace } from "@/lib/places/types";
+
 import type { ExifSummary } from "./exif";
 
-/** 2 added `purpose`. Schema 1 records come from before the photo memory and were all accuracy runs. */
-export const RECORD_SCHEMA = 2;
+/**
+ * 2 added `purpose`. Schema 1 records come from before the photo memory and were all accuracy runs.
+ * 3 added `place`: where the participant says a photo was taken. A photo's record no longer carries a position fix.
+ */
+export const RECORD_SCHEMA = 3;
 
 export type RecordPurpose = "photo-memory" | "accuracy";
 
@@ -134,7 +139,7 @@ export type PhotoMeta = {
 export type SourceGuess = "gnss" | "wifi" | "cell";
 
 export type LogRecord = {
-  schema: 1 | typeof RECORD_SCHEMA;
+  schema: 1 | 2 | typeof RECORD_SCHEMA;
   /** Absent on schema 1; read it through purposeOf(). */
   purpose?: RecordPurpose;
   id: string;
@@ -163,6 +168,8 @@ export type LogRecord = {
   networkAtSend: NetworkInfo | null;
   orientation: OrientationSample | null;
   photo: PhotoMeta | null;
+  /** The checkpoint the participant chose for this photo (schema 3, photos). Never read from the phone. */
+  place?: PhotoPlace | null;
 };
 
 export function purposeOf(record: LogRecord): RecordPurpose {
