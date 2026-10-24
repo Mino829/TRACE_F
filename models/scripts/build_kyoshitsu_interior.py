@@ -46,6 +46,22 @@ def run(rise):
     return rise / TAN + 2 * FLAT
 
 
+# 交流棟側の階段室（道路側の端の部屋）の階段：1F〜6F を折り返しの階段でつなぐ（2026-10-24。TRACE の点 k1-006〜k5-043 が通る所）
+#   行き（A）は X が小さい側、戻り（B）は X が大きい側。どちらも Y = SY0 → SY1 へ上り、SY1〜の踊り場で折り返す。
+#   各階の床は B の真上に穴をあける（A の上は床がある）。階の乗り降りは Y = SY0 の側（部屋の扉の側）
+STAIR_A = (-41.45, -38.55)
+STAIR_B = (-38.30, -35.40)
+SY0, SY1, SY_LAND = 2.5, 8.6, 11.35
+STAIR_FLIGHTS = [(1, 2), (2, 3), (3, 4), (4, 5), (5, 6)]
+
+
+def stair_hole(f):
+    """f 階の床（と下の階の天井）に、階段の戻り（B）が抜ける穴"""
+    if 2 <= f <= 6:
+        return (STAIR_B[0], STAIR_B[1], SY0, SY1)
+    return None
+
+
 # エスカレーター：(下の階, 上の階, 下の端の X, 上の端の X)。端 = 水平部分の外側
 # 4F→5F（と真上の 5F→6F・6F→7F）は案内図で X = 19〜31。4F の乗り継ぎは 5.7m 歩く
 E4_TOP = 30.5
@@ -76,8 +92,9 @@ def scaled(rooms, total=RX1 - RX0):
 NORTH = {
     2: scaled([("Intl. Programs", 6.4), ("SGU", 6.4), ("Career Support", 6.4), ("Admin. Office", 14.7),
                ("Student Affairs", 9.6), ("Academic Planning", 9.5), ("Admissions", 14.7)]),
-    3: [("301", 5 * U), ("302", 5 * U), ("303", 5 * U), ("304", 5 * U), ("305", 4 * U)],
-    4: [(str(n), 4 * U) for n in range(403, 409)],
+    # 3F・4F は公式の図の部屋の幅の比（2026-10-21、TRACE_F #32）。3F は /log の平面図（CAD の図）と案内図 6711、4F は案内図 6679
+    3: scaled([("301", 22.6), ("302", 23.6), ("303", 19.7), ("304", 19.7), ("305", 14.5)]),
+    4: scaled([("403", 150), ("404", 145), ("405", 125), ("406", 120), ("407", 125), ("408", 125)]),
     5: [(str(n), 46.4 / 6) for n in range(502, 508)] + [(str(n), 2 * U) for n in range(508, 512)],
     6: scaled([("601", 13.4), ("602", 8.6), ("603", 11.3), ("604", 5.7), ("605", 5.3), ("606", 5.2),
                ("607", 5.4), ("608", 5.3), ("609", 10.2)]),
@@ -184,7 +201,13 @@ MAT = dict(
     trunk=mat("教室棟庭園_幹", (0.20, 0.14, 0.10), 0.9),
     leaf=mat("教室棟庭園_木の葉", (0.16, 0.30, 0.10), 0.9),
     canopy=mat("教室棟庭園_屋根", (0.45, 0.46, 0.47), 0.5, 0.5),
+    # EV A のかごの中（2026-10-24：暗くて怖いので明るく）
+    evwall=mat("教室棟EV_壁", (0.90, 0.90, 0.88), 0.5),
+    evglow=mat("教室棟EV_照明", (1.0, 1.0, 0.95), 0.3),
 )
+_g = bsdf(MAT["evglow"])
+_g.inputs["Emission Color"].default_value = (1.0, 0.98, 0.9, 1)
+_g.inputs["Emission Strength"].default_value = 4.0
 
 # ---------- 準備 ----------
 scene = bpy.context.scene
@@ -366,6 +389,8 @@ def floor_rects(f):
         rects = sub(rects, h)
     if f == 2:
         rects = sub(rects, VB2)
+    if stair_hole(f):
+        rects = sub(rects, stair_hole(f))
     return rects
 
 
@@ -379,6 +404,8 @@ def ceil_rects(f):
         rects = sub(rects, h)
     if f == 1:
         rects = sub(rects, VB2)
+    if 1 <= f <= 5:                 # 階段室：行き・戻り・踊り場の頭の上は天井をあける（踊り場は天井から 0.5m しか空かない）
+        rects = sub(rects, (STAIR_A[0], STAIR_B[1], SY0, SY_LAND))
     return rects
 
 
@@ -608,8 +635,11 @@ for f in range(1, 7):
                    keys6=["soffit", "carpet", "fascia", "fascia", "fascia", "fascia"])
     zc = z + (CEIL if f > 1 else FZ[2] - SLAB - 0.15)
     crs = ceil_rects(f)
+    # 天井から上の階の床の裏までを詰める（2026-10-21：前は厚さ 4cm の板だけで、吹き抜けやエスカレーターの穴の縁から
+    # 天井と床の間の空洞が見えていた）。下の面が天井、横の面は床の縁と同じグレー
+    ztop = FZ[f + 1] - SLAB if f + 1 in FZ else zc + 0.04
     for x0, x1, y0, y1 in crs:
-        fc.box(x0, x1, y0, y1, zc, zc + 0.04, "ceil")
+        fc.box(x0, x1, y0, y1, zc, max(zc + 0.04, ztop), "ceil", keys6=["ceil", "ceil", "fascia", "fascia", "fascia", "fascia"])
     downlights(fc, crs, zc)
     if f == 2:
         # ピロティの屋根（2F の床の南東の外。歩けない）
@@ -659,6 +689,10 @@ for f in range(1, 7):
     # 吹き抜け・エスカレーターの穴の手すり。2F は南東の床の端も
     rl = MB()
     void_railings(rl, f, z)
+    sh = stair_hole(f)
+    if sh:                                      # 階段室の穴：A との間と、踊り場側に手すり（乗り降りの側はあける）
+        railing(rl, (sh[0], sh[2]), (sh[0], sh[3]), z)
+        railing(rl, (sh[0], sh[3]), (sh[1], sh[3]), z)
     if f == 2:
         railing(rl, (-L2 + 0.3, YG1), (LX0, YG1), z)
     rl.build(f"教室棟_{tag}_吹き抜けの手すり")
@@ -686,6 +720,37 @@ def e8_hole(top):
     yh = E8_SB - (top - 2.3 - FZ[7]) / TAN
     return (E8X[0] - 0.15, E8X[1] + 0.15, E8_ST, yh)
 
+
+# 階段室の階段（コンクリートの踏み面・斜めの裏・踊り場）。写真がないので簡素な作り
+def prism_x(mb, prof, x0, x1, key):
+    """YZ 平面の多角形 prof を X 方向に押し出す"""
+    n = len(prof)
+    mb.face([(x0, y, z) for y, z in prof][::-1], key)
+    mb.face([(x1, y, z) for y, z in prof], key)
+    for i in range(n):
+        (ya, za), (yb, zb) = prof[i], prof[(i + 1) % n]
+        mb.face([(x0, ya, za), (x0, yb, zb), (x1, yb, zb), (x1, ya, za)], key)
+
+
+def stair_run(mb, xr, z0, z1, key):
+    """1 本の直線階段。Y = SY0 の端の高さ z0 → SY1 の端の高さ z1 へ、踏み面が 0.18m ずつ変わる（z1 < z0 なら下り）"""
+    n = max(2, round(abs(z1 - z0) / 0.18))
+    dy, r = (SY1 - SY0) / n, (z1 - z0) / n
+    top = [(SY0, z0)]
+    for i in range(n):
+        z = z0 + (i + 1) * r
+        top += [(SY0 + i * dy, z), (SY0 + (i + 1) * dy, z)]
+    prism_x(mb, top + [(SY1, z1 - 0.25), (SY0, z0 + r - 0.25)], xr[0], xr[1], key)
+
+
+st = MB()
+for fb, ft in STAIR_FLIGHTS:
+    zb, zt = FZ[fb], FZ[ft]
+    zm = (zb + zt) / 2
+    stair_run(st, STAIR_A, zb, zm, "col")                     # 行き：SY0 で floor fb → SY1 で中段
+    stair_run(st, STAIR_B, zt, zm, "col")                     # 戻り：SY1 で中段 → SY0 で floor ft
+    st.box(STAIR_A[0], STAIR_B[1], SY1, SY_LAND, zm - 0.25, zm, "col")      # 踊り場
+st.build("教室棟_階段室の階段")
 
 # ピロティの柱（1F は外、2F から上は南東のガラスの内側に立つ高い柱。写真 6716）
 tc = MB()
@@ -873,7 +938,9 @@ WING_WC = {
     6: [(46.0, 50.5, -12.0, -3.0), (46.0, 50.5, -17.0, -13.0)],
     7: [(44.3, 47.4, -24.0, -15.3)],
 }
-EVA = (33.0, 39.0, WY1, -28.6)        # EV A（2 台、扉は道路側を向く）
+EVA = (33.26, 38.98, WY1, -28.45)     # EV A（2 台、扉は道路側を向く）。研究棟.blend の EV A（9F〜）の真下にそろえた（2026-10-24）：
+#   かご（内側）の中心 X は (34.62, 37.62)、前の壁は Y -28.45。TRACE の点 world (-115.49, 41.7) = (34.62, -28.69) が左のかごの中（扉の 0.2m 奥）に入る
+EVA_HOLE = (EVA[0], EVA[1], EVA[2], EVA[3])     # かごの筒の内側（床・天井の穴）
 STAIR_L = (25.5, WX0 - 0.1, -29.8, -25.5)   # 脚の階段
 
 
@@ -892,6 +959,8 @@ for f in range(1, 8):
     fl = rects
     if f == 2:
         fl = [r for rr in rects for r in sub([rr], VB2)]
+    if f >= 2:          # EV A のかごは階をまたぐ縦の筒。床に穴をあける
+        fl = [r for rr in fl for r in sub([rr], EVA_HOLE)]
     # 床
     for x0, x1, y0, y1 in fl:
         if f == 1:
@@ -905,8 +974,10 @@ for f in range(1, 8):
         cr = [r for rr in rects for r in sub([rr], VB2)]
     if f == 7:
         cr = [r for rr in cr for r in sub([rr], e8_hole(H7T))]
+    cr = [r for rr in cr for r in sub([rr], EVA_HOLE)]
+    ztop = FZ[f + 1] - SLAB if (f + 1 in FZ and f < 7) else z + h + 0.04     # 上の階の床の裏まで詰める（上と同じ）
     for x0, x1, y0, y1 in cr:
-        wg.box(x0, x1, y0, y1, z + h, z + h + 0.04, "ceil")
+        wg.box(x0, x1, y0, y1, z + h, max(z + h + 0.04, ztop), "ceil", keys6=["ceil", "ceil", "fascia", "fascia", "fascia", "fascia"])
     downlights(wg, cr, z + h)
     # 部屋・トイレ・EV A・階段
     for label, x0, x1, y0, y1, face in WING_ROOMS[f]:
@@ -914,16 +985,53 @@ for f in range(1, 8):
     for x0, x1, y0, y1 in WING_WC.get(f, []):
         room_box(wg, "WC", x0, x1, y0, y1, z, "-x" if x0 < 42 else "+x", h=h)
     room_box(wg, "", *STAIR_L, z, "+y", h=h, door_key="steeldoor")
-    ex0, ex1, ey0, ey1 = EVA
-    room_box(wg, "", ex0, ex1, ey0, ey1, z, "+y", h=h, with_door=False)
-    for xc in (ex0 + 1.5, ex1 - 1.5):
-        wg.box(xc - 0.55, xc + 0.55, ey1 + 0.06, ey1 + 0.09, z, z + 2.3, "steeldoor")
-    add_text(wg, "A", ((ex0 + ex1) / 2, ey1 + 0.1, z + 2.6), (0, 1), 0.4)
     if f == 1:      # 玄関の床の白い石
         wg.box(LX0 + 1.0, LX0 + 6.0, -18.0, -10.0, 0.02, 0.025, "granite_l")
     if f == 2:      # 2F の床の、ピロティ側の端
         railing(wg, (LX0, YG1), (LX0, YS), z)
 wg.build("研究棟側_曲がり角_床と部屋")
+
+# ---------- EV A：1F〜8F をつなぐ縦の筒（2 台）。TRACE の点（world (-115.5, 41.7) = ここの (34.6, -28.7)）が真上に通る ----------
+#   かごは動かさない。通り抜ける人に、各階の開いた扉が見えて階が変わったと分かるようにする。中は明るい（発光する帯）。
+#   筒は 8F の天井（FZ8 + 3m）まで。その上（9F 以上）は研究棟.blend の EV A が続く
+ev = MB()
+ex0, ex1, ey0, ey1 = EVA
+exm = (ex0 + ex1) / 2
+EV_TOP = FZ8 + 3.0
+EV_CARS = (34.62, 37.62)                    # 2 台の扉の中心 X（研究棟.blend の EV A のかごの中心 y=0・y=3 の真下）
+EV_DW, EV_DH = 0.55, 2.2                    # 開口の半幅・高さ
+EV_Z = [FZ[k] for k in range(1, 8)] + [FZ8]
+t = 0.06
+ev.box(ex0 - t, ex1 + t, ey0 - t, ey0 + t, 0, EV_TOP, "evwall")                # 奥
+ev.box(ex0 - t, ex0 + t, ey0, ey1, 0, EV_TOP, "evwall")                        # 交流棟側
+ev.box(ex1 - t, ex1 + t, ey0, ey1, 0, EV_TOP, "evwall")                        # 研究棟側
+ev.box(exm - t, exm + t, ey0, ey1, 0, EV_TOP, "evwall")                        # 2 台の仕切り
+# 手前（道路側）の壁：階ごとに 2 つの開口。開口の上と、階と階の間は壁
+ev.box(ex0 - t, ex1 + t, ey1 - t, ey1 + t, 0, 0.02, "evwall")
+for zk in EV_Z:
+    ev.box(ex0 - t, ex1 + t, ey1 - t, ey1 + t, zk + EV_DH, zk + EV_DH + 0.02, "evwall")
+for za, zb in zip(EV_Z, EV_Z[1:] + [EV_TOP]):
+    ev.box(ex0 - t, ex1 + t, ey1 - t, ey1 + t, za + EV_DH, zb, "evwall")        # 開口の上から次の階の床まで
+    px = [ex0 - t] + [x for xc in EV_CARS for x in (xc - EV_DW, xc + EV_DW)] + [ex1 + t]
+    for xa, xb in ((px[0], px[1]), (px[2], px[3]), (px[4], px[5])):
+        ev.box(xa, xb, ey1 - t, ey1 + t, za, za + EV_DH, "evwall")              # 開口の脇
+# 開いた扉（左右に引き込んだ 2 枚）・枠・階の札
+for zk, name in zip(EV_Z, ("1F", "2F", "3F", "4F", "5F", "6F", "7F", "8F")):
+    for xc in EV_CARS:
+        for sgn in (-1, 1):
+            xa, xb = sorted((xc + sgn * EV_DW, xc + sgn * (EV_DW + 0.5)))
+            ev.box(xa, xb, ey1 + t, ey1 + t + 0.03, zk, zk + EV_DH - 0.05, "steeldoor")
+        ev.box(xc - EV_DW - 0.05, xc + EV_DW + 0.05, ey1 + t, ey1 + t + 0.02, zk + EV_DH - 0.05, zk + EV_DH + 0.1, "trim")
+        ev.box(xc - EV_DW, xc + EV_DW, ey1 - t - 0.01, ey1 + t + 0.01, zk - 0.02, zk + 0.02, "trim")   # 敷居
+    add_text(ev, name, (exm, ey1 + t + 0.03, zk + 1.55), (0, 1), 0.28)
+    add_text(ev, "A", (exm, ey1 + t + 0.03, zk + 2.5), (0, 1), 0.3)
+# 発光する帯（奥の壁・仕切り・両端の壁の内側）。筒の全高
+for xc in EV_CARS:
+    for dx in (-0.9, 0.9):
+        ev.box(xc + dx - 0.07, xc + dx + 0.07, ey0 + t, ey0 + t + 0.02, 0.2, EV_TOP - 0.2, "evglow")
+for xw, side in ((ex0 + t, 1), (exm - t, -1), (exm + t, 1), (ex1 - t, -1)):
+    ev.box(xw, xw + side * 0.02, (ey0 + ey1) / 2 - 0.07, (ey0 + ey1) / 2 + 0.07, 0.2, EV_TOP - 0.2, "evglow")
+ev.build("EV_A_かごの筒")
 
 # 外壁（窓の帯）。p0→p1 の線、out = 外向き（+1/-1 で X か Y）、z0〜z1 の高さ
 ow = MB()
@@ -989,8 +1097,22 @@ while zz < ZL:
     ow.box(LX0 - 0.42, LX0 - 0.3, WY1 - 0.3, LY0 + 0.3, zz, zz + 0.25, "rib")
     zz += 0.6
 # 1F・2F の脚の交流棟側の手前（玄関：ガラスと扉、2F：窓）と、玄関の庇（写真 6715）
-glass_wall(ow, (LX0, YG1), (LX0, LY0 + 0.3), 0, FZ[2] - SLAB)
-ow.box(LX0 - 0.05, LX0 + 0.05, -15.5, -12.5, 0, 2.6, "ext_frame")
+# 研究棟の入口（案内図 6730 のエントランスホール＝ここの玄関ホール）：黒い枠のガラスの両開き扉（2026-10-24）。
+#   扉の所（Y -15.5〜-12.5）だけガラスの壁をあけ、扉の上はガラス。前は壁の面に枠の板が貼ってあるだけで、扉がなかった
+DOOR_Y = (-15.5, -12.5)
+glass_wall(ow, (LX0, YG1), (LX0, DOOR_Y[1]), 0, FZ[2] - SLAB)
+glass_wall(ow, (LX0, DOOR_Y[0]), (LX0, LY0 + 0.3), 0, FZ[2] - SLAB)
+DH_E, DC = 2.6, sum(DOOR_Y) / 2
+ow.box(LX0 - 0.01, LX0 + 0.01, DOOR_Y[0], DOOR_Y[1], DH_E, FZ[2] - SLAB, "ext_glass")           # 扉の上のガラス
+ow.box(LX0 - 0.07, LX0 + 0.07, DOOR_Y[0], DOOR_Y[1], DH_E - 0.1, DH_E, "dark")                  # 扉の上の枠
+for ya, yb in ((DOOR_Y[0], DOOR_Y[0] + 0.1), (DOOR_Y[1] - 0.1, DOOR_Y[1]), (DC - 0.03, DC + 0.03)):
+    ow.box(LX0 - 0.07, LX0 + 0.07, ya, yb, 0, DH_E, "dark")                                       # 両側の柱と真ん中の召し合わせ
+for la, lb in ((DOOR_Y[0] + 0.1, DC - 0.03), (DC + 0.03, DOOR_Y[1] - 0.1)):                      # 扉 2 枚：下と上の枠、ガラス
+    ow.box(LX0 - 0.05, LX0 + 0.05, la, lb, 0, 0.2, "dark")
+    ow.box(LX0 - 0.05, LX0 + 0.05, la, lb, DH_E - 0.3, DH_E - 0.1, "dark")
+    ow.box(LX0 - 0.005, LX0 + 0.005, la, lb, 0.2, DH_E - 0.3, "dglass")
+for yh in (DC - 0.12, DC + 0.12):                                                                 # 取っ手
+    ow.box(LX0 - 0.1, LX0 - 0.06, yh - 0.015, yh + 0.015, 0.85, 1.35, "steel")
 ow.box(LX0 - 3.8, LX0, -18.8, -10.2, 4.3, 4.7, "dark")
 wing_wall((LX0, LY0 + 0.3), (LX0, YS - 0.3), FZ[2], FZ[3], -1)
 # 3F の脚の手前の屋根（外。歩けない）
@@ -1000,7 +1122,7 @@ ow.box(LX0, WX0, LY0, YS, FZ[3] - SLAB, FZ[3] - 0.1, "roofgray",
 ow.box(LX0 - 0.3, WX0, WY1 - 0.3, LY0 + 0.3, H7T, ZL, "roofgray",
        keys6=["ceil", "roofgray", "ext_wall", "ext_wall", "ext_wall", "ext_wall"])
 ow.box(WX0 - 0.3, WX0, WY1 - 0.3, LY0, ZL, FZ8, "ext_wall")      # 脚の屋上と 8F の床の段差
-for r in sub([(WX0 - 0.3, HX1 + 0.3, WY1 - 0.3, YS - 0.3)], e8_hole(FZ8 - SLAB)) +         [(L2 - 0.3, HX1 + 0.3, YS - 0.3, HY0 + 0.3)]:
+for r in sub(sub([(WX0 - 0.3, HX1 + 0.3, WY1 - 0.3, YS - 0.3)], e8_hole(FZ8 - SLAB)), EVA_HOLE) +         [(L2 - 0.3, HX1 + 0.3, YS - 0.3, HY0 + 0.3)]:
     ow.box(*r, FZ8 - SLAB, FZ8 + 0.02, "carpet",
            keys6=["ceil", "carpet", "ext_wall", "ext_wall", "ext_wall", "ext_wall"])
 ow.build("研究棟側_曲がり角_外壁")
@@ -1041,6 +1163,8 @@ downlights(br, [(bx0, bx1, by0, by1)], z6 + 2.9)
 # 南棟側の端：ガラスの両開き扉（その先は研究棟.blend のゲートの東の壁）
 door(br, bx0 + 0.2, bx1 - 0.2, by0 + 0.2, z6)
 br.box(bx0, bx1, by0, by0 + 0.1, z6, z6 + 2.9, "ext_wall")
+# 教室棟側の口（曲がり角の帯の南東の壁）：ガラスの両開き扉（2026-10-24。口に扉が無かった）
+door(br, bx0 + 0.2, bx1 - 0.2, WY1 - 0.15, z6)
 br.build("研究棟側_6Fの渡り廊下")
 
 # ---------- 外壁：南東面は写真 6716 から。道路側と妻壁は「仮の外壁」のまま ----------
@@ -1082,7 +1206,21 @@ for f in range(1, 8):
 # 妻壁（±X）。研究棟側は道路側の階段室の所だけ（廊下から南東は曲がり角の頭へつながる）。
 # 交流棟側は 1F のガラスまで、渡り廊下のガラス扉（2F・4F・6F）
 z7t = FZ[7] + H7 + 0.4
-ex.box(-L2, -L2 + 0.3, YG1, W2, 0, FZ[2], "ext_wall")
+# 1F：交流棟側の入口（ユーザーの指摘 2026-10-21：軌跡が通るのに扉がなかった）。TRACE の原点（Y 0.2）の所に
+# ガラスの両開き扉をあける。交流棟 6648 の入口と向かい合う。黒い庇つき
+DY = (-1.3, 1.7)
+ex.box(-L2, -L2 + 0.3, YG1, DY[0], 0, FZ[2], "ext_wall")
+ex.box(-L2, -L2 + 0.3, DY[1], W2, 0, FZ[2], "ext_wall")
+ex.box(-L2, -L2 + 0.3, DY[0], DY[1], 3.0, FZ[2], "ext_wall")
+ex.box(-L2 + 0.14, -L2 + 0.16, DY[0], DY[1], 0, 2.9, "dglass")
+for yy in (DY[0] + 0.05, sum(DY) / 2 - 0.03, sum(DY) / 2 + 0.03, DY[1] - 0.05):
+    ex.box(-L2 + 0.1, -L2 + 0.2, yy - 0.04, yy + 0.04, 0, 2.9, "ext_frame")
+ex.box(-L2 + 0.1, -L2 + 0.2, DY[0], DY[1], 2.9, 3.0, "ext_frame")
+for z in (1.0,):                                            # 押し板の横桟
+    ex.box(-L2 + 0.1, -L2 + 0.2, DY[0], DY[1], z, z + 0.05, "ext_frame")
+ex.box(-L2 - 1.6, -L2, DY[0] - 0.8, DY[1] + 0.8, 3.1, 3.3, "dark")      # 庇
+ex.box(-L2 - 0.05, -L2 + 0.1, DY[0] - 0.8, DY[0] - 0.7, 0, 3.1, "dark")
+ex.box(-L2 - 0.05, -L2 + 0.1, DY[1] + 0.7, DY[1] + 0.8, 0, 3.1, "dark")
 # 交流棟側の妻壁：2F・4F・6F は渡り廊下の口をあける（交流棟.blend の渡り廊下がここにつく。2026-10-12 ユーザーの説明）
 KD = (YCOR, YCOR + 2.7)         # 口の Y の範囲（廊下の幅のうち 2.7m。交流棟のスクリプトの KYO_COR と同じ）
 KF = (2, 4, 6)                  # 渡り廊下のある階（写真 6758）
