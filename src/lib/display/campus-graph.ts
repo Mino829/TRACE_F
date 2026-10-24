@@ -8,7 +8,7 @@ import graph from "../../../models/trace/campus_graph.json";
  * numbers place a point in campus.glb.
  */
 export type NodeRole = "checkpoint" | "room" | "waypoint";
-export type EdgeKind = "ground" | "stairs" | "escalator" | "indoor" | "bridge";
+export type EdgeKind = "ground" | "stairs" | "escalator" | "elevator" | "indoor" | "bridge";
 
 export interface GraphNode {
   id: string;
@@ -67,7 +67,7 @@ const adjacency = (() => {
 export type EdgeCost = Record<EdgeKind, number>;
 
 /** Plain shortest walk in metres. */
-export const METRES: EdgeCost = { ground: 1, stairs: 1, escalator: 1, indoor: 1, bridge: 1 };
+export const METRES: EdgeCost = { ground: 1, stairs: 1, escalator: 1, elevator: 1, indoor: 1, bridge: 1 };
 
 /**
  * For test walks: most visitors ride the escalators and stay indoors, so
@@ -75,7 +75,7 @@ export const METRES: EdgeCost = { ground: 1, stairs: 1, escalator: 1, indoor: 1,
  * ground is dear. Stairs are dearer still, so in the classroom building the
  * walk goes round to the escalators instead of up the end stair next to the door.
  */
-export const INDOOR_FIRST: EdgeCost = { ground: 2.5, stairs: 5, escalator: 0.15, indoor: 0.6, bridge: 0.5 };
+export const INDOOR_FIRST: EdgeCost = { ground: 2.5, stairs: 5, escalator: 0.15, elevator: 0.3, indoor: 0.6, bridge: 0.5 };
 
 /** Cheapest walk between two nodes (Dijkstra; metres times the edge kind's cost). */
 export function shortestPath(from: string, to: string, cost: EdgeCost = METRES): string[] {
