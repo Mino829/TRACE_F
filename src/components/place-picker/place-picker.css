@@ -1,0 +1,256 @@
+/*
+ * The place screen of the photo flow, in RAY's paper and ink. Everything sits
+ * under .ray .pp, so no other screen changes.
+ *
+ * The screen is one column that never scrolls as a page: the map takes what
+ * the sheet leaves, and only the list of checkpoints scrolls, inside the sheet.
+ */
+
+.ray .pp {
+  --pp-line: color-mix(in srgb, var(--ink) 22%, transparent);
+  --pp-line-strong: var(--ink);
+  --pp-row: 56px;
+
+  /* The map takes what the sheet leaves; on a very small phone the page scrolls as a last resort and the save button stays in reach. */
+  padding-bottom: 0;
+
+  & .pp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+
+  & .pp-thumb {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border: 1px solid var(--pp-line-strong);
+  }
+
+  /* The wireframe map: a window cut in the paper, as tall as the sheet allows. */
+  & .pp-map {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 150px;
+    margin: 0 -20px;
+    border-top: 1px solid var(--pp-line-strong);
+    border-bottom: 1px solid var(--pp-line);
+    touch-action: none;
+    overflow: hidden;
+  }
+
+  & .pp-map[data-off] {
+    flex: none;
+    min-height: 0;
+    touch-action: auto;
+  }
+
+  & .pp-map__canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  & .pp-map__wait {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  & .pp-map__note {
+    padding: 10px 20px;
+    opacity: 0.72;
+  }
+
+  /* The sheet: the three steps and the button, under the thumb. */
+  & .pp-sheet {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 12px;
+    min-height: 0;
+  }
+
+  & .pp-again {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 12px;
+    text-align: left;
+    background-image: repeating-linear-gradient(-45deg, var(--pp-line) 0 2px, transparent 2px 6px);
+    box-shadow: inset 0 0 0 1px var(--pp-line-strong);
+  }
+
+  & .pp-again .mono {
+    flex: none;
+    font-size: 0.72rem;
+    opacity: 0.8;
+  }
+
+  & .pp-again__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+
+  & .pp-again svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Building and floor: two rails of chips that scroll sideways and fade at the edges; the chosen one is inked in. */
+  & .pp-rail {
+    margin: 0 -20px;
+    padding: 0 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    mask-image: linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+  }
+
+  & .pp-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  & .pp-chips {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: max-content;
+  }
+
+  & .pp-chip {
+    min-height: 44px;
+    min-width: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--pp-line-strong);
+    background: transparent;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    scroll-snap-align: center;
+    transition:
+      background 140ms,
+      color 140ms,
+      transform 90ms;
+  }
+
+  & .pp-chip--mono {
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    padding: 0 10px;
+  }
+
+  & .pp-chip:active {
+    transform: scale(0.96);
+  }
+
+  & .pp-chip[aria-checked="true"] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* The checkpoints of this floor: three rows and a bit of the fourth, so the list shows it can scroll. */
+  & .pp-points {
+    list-style: none;
+    margin: 0 -20px;
+    padding: 0 20px;
+    min-height: 0;
+    max-height: clamp(var(--pp-row), 22dvh, calc(var(--pp-row) * 3.4));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    border-top: 1px solid var(--pp-line);
+  }
+
+  & .pp-points::-webkit-scrollbar {
+    display: none;
+  }
+
+  & .pp-point {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: var(--pp-row);
+    padding: 8px 2px;
+    text-align: left;
+    border-bottom: 1px solid var(--pp-line);
+  }
+
+  & .pp-point__mark {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--pp-line-strong);
+    transition: background 140ms;
+  }
+
+  & .pp-point[aria-checked="true"] .pp-point__mark {
+    background: var(--ink);
+    box-shadow:
+      0 0 0 3px var(--paper),
+      0 0 0 4px var(--ink);
+  }
+
+  & .pp-point__name {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
+  }
+
+  & .pp-point[aria-checked="true"] .pp-point__name {
+    font-weight: 700;
+  }
+
+  & .pp-point__tag {
+    flex: none;
+    font-size: 0.72rem;
+    opacity: 0.72;
+  }
+
+  /* The save button stays put at the foot, in the thumb's reach, with what it will save above it. */
+  & .pp-foot {
+    flex: none;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: 0 -20px;
+    padding: 8px 20px calc(var(--safe-bottom) + 14px);
+    background: var(--bg);
+    box-shadow: 0 -1px 0 var(--rule);
+  }
+
+  & .pp-summary {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    min-height: 1.2em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.85;
+  }
+
+  & .pp-foot .note-bar {
+    margin: 0 0 8px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    & .pp-chip,
+    & .pp-point__mark {
+      transition: none;
+    }
+  }
+}

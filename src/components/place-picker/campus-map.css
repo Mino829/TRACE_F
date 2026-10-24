@@ -1,0 +1,115 @@
+/*
+ * The campus map's labels. The lines and dots are drawn on the canvas; the
+ * names are buttons laid over it so they are easy to tap and readable by
+ * screen readers. Colours come from the screen they sit in (RAY's --fg), with
+ * RAY's day colours as the fallback.
+ */
+
+.cm {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  --cm-ink: var(--fg, #0c0c0d);
+  --cm-paper: var(--bg, #d3d5d3);
+}
+
+.cm__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.cm__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cm__label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+  min-height: 28px;
+  padding: 0 8px;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+  white-space: nowrap;
+  font: 500 10px/1 var(--mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  letter-spacing: 0.08em;
+  color: var(--cm-ink);
+  background: color-mix(in srgb, var(--cm-paper) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cm-ink) 32%, transparent);
+  cursor: pointer;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cm__label[data-on="true"] {
+  display: inline-flex;
+}
+
+.cm__label--building {
+  min-height: 22px;
+  padding: 0 6px;
+  font-family: var(--jp, "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cm__label--floor {
+  min-height: 21px;
+  padding: 0 6px;
+  min-width: 34px;
+  justify-content: center;
+}
+
+.cm__label[aria-pressed="true"] {
+  color: var(--cm-paper);
+  background: var(--cm-ink);
+  border-color: var(--cm-ink);
+}
+
+.cm__label[data-dim="true"] {
+  opacity: 0.55;
+}
+
+.cm__label:focus-visible {
+  outline: 2px solid var(--cm-ink);
+  outline-offset: 2px;
+}
+
+/* A checkpoint's name, shown beside the selected dot. */
+.cm__tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+  max-width: 62%;
+  padding: 5px 8px;
+  pointer-events: none;
+  font: 700 11px/1.25 var(--jp, "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif);
+  color: var(--cm-paper);
+  background: var(--cm-ink);
+  will-change: transform;
+}
+
+.cm__tag[data-on="true"] {
+  display: block;
+}
+
+/* The labels are small to look at but kept 44px to tap: an invisible margin round each one. */
+.cm__label::after {
+  content: "";
+  position: absolute;
+  inset: -11px -6px;
+}
