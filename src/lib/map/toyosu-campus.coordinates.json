@@ -163,12 +163,78 @@
       "OSM ways 1427091482 and 1427091484 lie 100 m or more north of every modelled structure and are outside the modelled area."
     ]
   },
+  "planPlacement": {
+    "$comment": "Per-building correction of where the campus diary draws a building, applied in plan metres before planToLocal. The diary is an illustration: drawn to one scale it still places the classroom and exchange buildings several metres from where they stand, and draws the classroom 15% too wide (Mino829/TRACE_F#32). u and v are plan metres from planOriginMetres (u = plan right, v = plan down, which are also the building axes on the ground), and each listed building is moved by u' = scale[0] * u + shiftMetres[0], v' = scale[1] * v + shiftMetres[1]. Buildings not listed keep the drawing's placement. The WGS84 <-> local formula, the origin and planToLocal are those of coordinateVersion and do not change with this version.",
+    "version": "toyosu-plan-2026-10-22.1",
+    "reference": "The building boxes in models/buildings/配置.json (PLATEAU plane rectangular coordinates, zone IX, fitted to local through models/trace/campus_graph.json with a 0.34 m maximum residual), checked against OSM way 1254229349 and GSI seamlessphoto aerial imagery at z18.",
+    "buildings": {
+      "toyosu-classroom": {
+        "scale": [
+          0.862,
+          1
+        ],
+        "shiftMetres": [
+          4.26,
+          0.4
+        ],
+        "basis": "u from the 3F northwest and southeast outer walls (-18.4 and 9.1 m as drawn; -11.6 and 12.1 m in the model, the northwest wall also within 1 m of OSM). v is shifted only, putting the 1F south face (0.1 m as drawn) on the model's 0.5 m: the model is a single box whose northeast end is schematic, so it gives no length to scale against."
+      },
+      "toyosu-roof-garden": {
+        "scale": [
+          0.862,
+          1
+        ],
+        "shiftMetres": [
+          4.26,
+          0.4
+        ],
+        "basis": "The classroom building's roof, drawn over the same outline, so it moves with the classroom."
+      },
+      "toyosu-exchange": {
+        "scale": [
+          1,
+          1
+        ],
+        "shiftMetres": [
+          2.5,
+          9.0
+        ],
+        "basis": "Drawn at the right size (24.0 x 66.0 m against the model's 23.9 x 66.6 m) and moved only: both outer walls are 2.5 m short in u, both ends 8.8-9.4 m short in v."
+      },
+      "toyosu-west-connector": {
+        "scale": [
+          1,
+          1.614
+        ],
+        "shiftMetres": [
+          3.3,
+          1.38
+        ],
+        "basis": "Each end moves with the building it lands in: the classroom end (-1.6 m as drawn) by the classroom's 0.4 m, the exchange end (12.4 m as drawn) by the exchange's 9.0 m, so the bridge spans the 13.7 m between the buildings instead of the drawing's 5.3 m. u takes the mean of the two buildings' shifts there (4.1 and 2.5 m)."
+      },
+      "toyosu-east-connector": {
+        "scale": [
+          0.842,
+          1
+        ],
+        "shiftMetres": [
+          5.82,
+          0
+        ],
+        "basis": "The exchange end (21.0 m as drawn) moves with the exchange's 2.5 m in u; the headquarters end (36.8 m) stays, as the headquarters is not corrected. v is left as drawn: the model has no box for this bridge and the aerial imagery does not show where it meets the exchange, so it may sit up to the exchange's 9.0 m off in v."
+      }
+    },
+    "residuals": {
+      "originDoor": "The door marked at origin.planPx now falls 4.3 m along the south wall and 0.4 m out from the origin. The origin stays where coordinateVersion puts it, since the 3D model and campus graph are tied to that latitude and longitude. The door was marked by hand on the 1F plan with 2.5 m along-wall uncertainty, on top of a georeference whose own placement of the classroom was what this version corrects."
+    }
+  },
   "attribution": {
     "openStreetMap": "Contains information from OpenStreetMap, which is made available under the Open Database License (ODbL). https://www.openstreetmap.org/copyright",
     "$comment": "Required wherever this transform or anything derived from it is published. Tracked as R-18 in trace-campus-installation/docs/risk-register.md."
   },
   "openQuestions": [
     "The origin is not on the drawing. A single on-site measurement of the door would replace the 2.5 m along-wall uncertainty with a survey figure.",
-    "coordinate-mapping.md asks for three or more validation points with per-point error and a p95. This version has two, both from OSM outlines rather than ground truth."
+    "coordinate-mapping.md asks for three or more validation points with per-point error and a p95. This version has two, both from OSM outlines rather than ground truth.",
+    "planPlacement: the classroom's length (v) is not corrected, because no reference gives the northeast end. The door's position along the south wall disagrees by 4.3 m between the hand-marked plan and the walls; one on-site measurement of the door would settle both this and the first question."
   ]
 }

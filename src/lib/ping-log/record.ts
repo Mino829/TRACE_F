@@ -14,6 +14,7 @@
 
 import {
   COORDINATE_VERSION,
+  PLAN_PLACEMENT_VERSION,
   campusPxToLocal,
   campusPxToPlanPx,
   insideGeofence,
@@ -94,6 +95,12 @@ export type Truth =
   | (TruthBase & {
       method: "campus-plan";
       coordinateVersion: string;
+      /**
+       * Which planPlacement the drawings were laid out with when the mark was
+       * placed. Absent before toyosu-plan-2026-10-22.1, when the buildings sat
+       * where the drawing put them; scripts/reproject-campus-truth.ts moves those.
+       */
+      planPlacementVersion?: string;
       campusPx: CampusPx;
       /** The classroom building's 912x1552 plan frame, the frame the georeference is fitted in. */
       planPx: { x: number; y: number };
@@ -209,6 +216,7 @@ export function campusTruth(mark: CampusPx, level: number, markedAt: number, vie
   return {
     method: "campus-plan",
     coordinateVersion: COORDINATE_VERSION,
+    planPlacementVersion: PLAN_PLACEMENT_VERSION,
     campusPx: mark,
     planPx: campusPxToPlanPx(toyosuClassroom.id, mark),
     local,
