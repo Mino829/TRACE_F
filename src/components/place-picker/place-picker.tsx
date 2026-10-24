@@ -5,24 +5,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BlobImage } from "@/components/ping-log/blob-image";
 import { Icon, NoteBar, Phrases, Screen, useRay } from "@/components/ping-log/ray/stage";
-import { buildingName, buildingsWithPlaces, checkpointsOn, findCheckpoint, floorsOf, placeOf, startAt } from "@/lib/places/select";
+import { buildingName, buildingsWithPlaces, checkpointsOn, findCheckpoint, floorsOf, placeOf } from "@/lib/places/select";
 import type { BuildingId, Checkpoint, PhotoPlace, PlacesData } from "@/lib/places/types";
 
 import "./place-picker.css";
 
 /**
- * "Where was this photo taken?": building, then floor, then one checkpoint.
+ * "Where was this photo taken?", answered on the map.
  *
- * The screen never scrolls as a page. The map fills what is left on top, so
- * what was chosen is always in view; under it a sheet holds the three steps,
- * all reachable with the thumb: two rails of chips (building, floor), the
- * checkpoints of that floor, and the save button. The same three steps are
- * all there is when the map cannot run.
+ * The map is most of the screen. It opens on the whole campus, every building
+ * drawn as a wire model of its floors, so a building is recognised by its
+ * shape rather than its name: tap one, the map comes close and offers its
+ * floors; on a floor its checkpoints light up, and one tap picks one. The
+ * checkpoints outside are on the ground of the whole view. Under the map a
+ * thin bar says what was picked and saves it.
  *
- * Fewer taps: it opens on the last photo's building and floor, "さっきと同じ"
- * picks the last photo's place in one tap, and a floor with a single
- * checkpoint selects it. A place has to be chosen; the same one may be chosen
- * for any number of photos.
+ * Without the map (no WebGL, or the participant would rather) the same choice
+ * is a list: building, floor, checkpoint. A place has to be chosen; the same
+ * one may be chosen for any number of photos.
  */
 
 const CampusMap = dynamic(() => import("./campus-map").then((module) => module.CampusMap), {
@@ -38,7 +38,7 @@ type Props = {
   data: PlacesData;
   /** The photo, for the thumbnail that says which one this is. */
   photo: Blob | null;
-  /** The place of the photo before this one, where the picker opens. */
+  /** The place of the photo before this one: "さっきと同じ" picks it in one tap. */
   last: PhotoPlace | null;
   /** Which photo of the day this is. */
   number: number;
@@ -52,6 +52,7 @@ type Props = {
 
 /** "研究棟9F" already says where it is; "大階段の下" needs the building and floor in front of it. */
 function placeLabel(data: PlacesData, point: Checkpoint): string {
+  if (point.building === "outdoor") return point.name;
   const building = buildingName(data, point.building);
   return point.name.includes(building) ? point.name : `${building} ${point.floor} ・ ${point.name}`;
 }
@@ -63,27 +64,22 @@ function tick(): void {
 
 export function PlacePicker({ data, photo, last, number, maxPhotos, saving, error, inert = false, onBack, onConfirm }: Props) {
   const { go } = useRay();
-  const initial = useMemo(() => startAt(data, last), [data, last]);
-  const [building, setBuilding] = useState<BuildingId>(initial.building);
-  const [floor, setFloor] = useState(initial.floor);
+  // The map: null is the whole campus. Outside checkpoints are picked there, so "outdoor" is never a building on the map.
+  const [building, setBuilding] = useState<BuildingId | null>(null);
+  const [floor, setFloor] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapOff, setMapOff] = useState(false);
+  const [listMode, setListMode] = useState(false);
 
-  const buildings = useMemo(() => buildingsWithPlaces(data), [data]);
-  const floors = useMemo(() => floorsOf(data, building), [data, building]);
-  const points = useMemo(() => checkpointsOn(data, building, floor), [data, building, floor]);
   const selected = selectedId ? findCheckpoint(data, selectedId) : undefined;
-  const sameAsLast = useMemo(() => {
-    const point = last && last.graphVersion === data.graphVersion ? findCheckpoint(data, last.checkpointId) : undefined;
-    return point && point.id !== selectedId ? point : undefined;
-  }, [data, last, selectedId]);
+  const lastPoint = useMemo(() => (last && last.graphVersion === data.graphVersion ? findCheckpoint(data, last.checkpointId) : undefined), [data, last]);
+  const showList = mapOff || listMode;
 
-  /** Shows a floor; when it has one checkpoint only, that is the choice. */
-  const show = useCallback(
-    (nextBuilding: BuildingId, nextFloor: string) => {
-      setBuilding(nextBuilding);
-      setFloor(nextFloor);
-      const only = checkpointsOn(data, nextBuilding, nextFloor);
+  /** Opens a floor; when it has one checkpoint only, that is the choice. */
+  const openFloor = useCallback(
+    (nextBuilding: BuildingId, label: string) => {
+      setFloor(label);
+      const only = checkpointsOn(data, nextBuilding, label);
       if (only.length === 1) setSelectedId(only[0].id);
     },
     [data],
@@ -91,22 +87,28 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
 
   const chooseBuilding = useCallback(
     (id: BuildingId | null) => {
-      if (id === null || id === building) return;
       tick();
-      const options = floorsOf(data, id);
-      // Stay on the same floor label when the next building has it: a run of photos is usually on one level.
-      show(id, options.some((option) => option.label === floor) ? floor : (options[0]?.label ?? ""));
+      if (id === null || id === "outdoor") {
+        setBuilding(null);
+        setFloor(null);
+        return;
+      }
+      setBuilding(id);
+      // Open on the floor of what is already chosen in this building, else its lowest floor.
+      const here = selected && (selected.building === id || selected.joins === id) ? selected.floor : floorsOf(data, id)[0]?.label;
+      if (here) openFloor(id, here);
+      else setFloor(null);
     },
-    [data, building, floor, show],
+    [data, selected, openFloor],
   );
 
   const chooseFloor = useCallback(
     (label: string) => {
-      if (label === floor) return;
+      if (building === null || label === floor) return;
       tick();
-      show(building, label);
+      openFloor(building, label);
     },
-    [building, floor, show],
+    [building, floor, openFloor],
   );
 
   const choosePoint = useCallback(
@@ -115,8 +117,10 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
       if (!point) return;
       tick();
       setSelectedId(id);
-      // A point picked on the map, or "same as last", is shown in its own building and floor.
-      if (!(point.building === building || point.joins === building) || point.floor !== floor) {
+      if (point.building === "outdoor") {
+        setBuilding(null);
+        setFloor(null);
+      } else if (!(point.building === building || point.joins === building) || point.floor !== floor) {
         setBuilding(point.building);
         setFloor(point.floor);
       }
@@ -127,6 +131,12 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
   const confirm = () => {
     if (selected && !saving) onConfirm(placeOf(data, selected));
   };
+
+  const hint = selected
+    ? placeLabel(data, selected)
+    : building === null
+      ? "建物をタップ。外で撮ったときは地面の点を選ぶ"
+      : `${buildingName(data, building)}：階を選んで、場所の点をタップ`;
 
   return (
     <Screen key="place" className="screen--flex pp" inert={inert}>
@@ -150,8 +160,10 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
         {photo && <BlobImage blob={photo} alt="選ぶ写真" className="pp-thumb" />}
       </header>
 
-      <div className="pp-map" data-off={mapOff || undefined}>
-        {!mapOff && (
+      {showList ? (
+        <ListPicker data={data} selectedId={selectedId} onPick={choosePoint} note={mapOff ? "地図を表示できないので、一覧から選びます。" : null} />
+      ) : (
+        <div className="pp-map">
           <CampusMap
             data={data}
             building={building}
@@ -163,59 +175,80 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
             onUnavailable={() => setMapOff(true)}
             className="pp-map__canvas"
           />
-        )}
-        {mapOff && <p className="pp-map__note small">地図を表示できないので、一覧から選びます。</p>}
-      </div>
-
-      <div className="pp-sheet">
-        {sameAsLast && (
-          <button type="button" className="pp-again" onClick={() => choosePoint(sameAsLast.id)}>
-            <span className="mono">さっきと同じ</span>
-            <span className="pp-again__name">{placeLabel(data, sameAsLast)}</span>
-            <Icon name="arrow" />
-          </button>
-        )}
-
-        <Rail label="建物">
-          {buildings.map((item) => (
-            <Chip key={item.id} active={item.id === building} onPick={() => chooseBuilding(item.id)}>
-              {item.name}
-            </Chip>
-          ))}
-        </Rail>
-
-        <Rail label="階">
-          {floors.map((item) => (
-            <Chip key={item.label} active={item.label === floor} onPick={() => chooseFloor(item.label)} mono>
-              {item.label}
-            </Chip>
-          ))}
-        </Rail>
-
-        <ul className="pp-points" role="radiogroup" aria-label="場所">
-          {points.map((point) => (
-            <PointRow key={point.id} point={point} data={data} active={point.id === selectedId} onPick={() => choosePoint(point.id)} />
-          ))}
-        </ul>
-
-        <div className="pp-foot">
-          <NoteBar text={error} alert />
-          <p className="pp-summary mono" aria-live="polite">
-            {selected ? placeLabel(data, selected) : "場所を選んでください"}
-          </p>
-          <button type="button" className="btn" disabled={!selected || saving} onClick={confirm}>
-            {saving ? (
-              "保存しています…"
-            ) : (
-              <>
-                <Icon name="check" />
-                ここで保存
-              </>
-            )}
-          </button>
         </div>
+      )}
+
+      <div className="pp-foot">
+        <NoteBar text={error} alert />
+        <div className="pp-foot__row">
+          <p className="pp-summary" aria-live="polite" data-picked={selected ? "" : undefined}>
+            {hint}
+          </p>
+          {!mapOff && (
+            <button type="button" className="pp-mode mono" onClick={() => setListMode((value) => !value)}>
+              {listMode ? "地図で選ぶ" : "一覧で選ぶ"}
+            </button>
+          )}
+        </div>
+        {lastPoint && lastPoint.id !== selectedId && (
+          <button type="button" className="pp-again" onClick={() => choosePoint(lastPoint.id)}>
+            <span className="mono">さっきと同じ</span>
+            <span className="pp-again__name">{placeLabel(data, lastPoint)}</span>
+          </button>
+        )}
+        <button type="button" className="btn" disabled={!selected || saving} onClick={confirm}>
+          {saving ? (
+            "保存しています…"
+          ) : (
+            <>
+              <Icon name="check" />
+              ここで保存
+            </>
+          )}
+        </button>
       </div>
     </Screen>
+  );
+}
+
+/** The same choice without the map: building, floor, checkpoint. */
+function ListPicker({ data, selectedId, onPick, note }: { data: PlacesData; selectedId: string | null; onPick: (id: string) => void; note: string | null }) {
+  const start = selectedId ? findCheckpoint(data, selectedId) : undefined;
+  const [building, setBuilding] = useState<BuildingId>(start?.building ?? "outdoor");
+  const [floor, setFloor] = useState(start?.floor ?? floorsOf(data, start?.building ?? "outdoor")[0]?.label ?? "");
+  const buildings = useMemo(() => buildingsWithPlaces(data), [data]);
+  const floors = useMemo(() => floorsOf(data, building), [data, building]);
+  const points = useMemo(() => checkpointsOn(data, building, floor), [data, building, floor]);
+
+  const chooseBuilding = (id: BuildingId) => {
+    setBuilding(id);
+    const options = floorsOf(data, id);
+    setFloor(options.some((option) => option.label === floor) ? floor : (options[0]?.label ?? ""));
+  };
+
+  return (
+    <div className="pp-list">
+      {note && <p className="pp-list__note small">{note}</p>}
+      <Rail label="建物">
+        {buildings.map((item) => (
+          <Chip key={item.id} active={item.id === building} onPick={() => chooseBuilding(item.id)}>
+            {item.name}
+          </Chip>
+        ))}
+      </Rail>
+      <Rail label="階">
+        {floors.map((item) => (
+          <Chip key={item.label} active={item.label === floor} onPick={() => setFloor(item.label)} mono>
+            {item.label}
+          </Chip>
+        ))}
+      </Rail>
+      <ul className="pp-points" role="radiogroup" aria-label="場所">
+        {points.map((point) => (
+          <PointRow key={point.id} point={point} data={data} active={point.id === selectedId} onPick={() => onPick(point.id)} />
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -246,14 +279,9 @@ function Chip({ active, onPick, mono = false, children }: { active: boolean; onP
 }
 
 function PointRow({ point, data, active, onPick }: { point: Checkpoint; data: PlacesData; active: boolean; onPick: () => void }) {
-  const ref = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    // A point chosen on the map comes into the list's view.
-    if (active) ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [active]);
   return (
     <li>
-      <button ref={ref} type="button" role="radio" aria-checked={active} className="pp-point" onClick={onPick}>
+      <button type="button" role="radio" aria-checked={active} className="pp-point" onClick={onPick}>
         <span className="pp-point__mark" aria-hidden="true" />
         <span className="pp-point__name">{point.name}</span>
         {point.joins && <span className="pp-point__tag mono">{buildingName(data, point.joins)}へ</span>}

@@ -29,6 +29,11 @@ async function takePhoto(page: Page) {
   await expect(page.getByRole("heading", { name: /どこで撮りましたか/ })).toBeVisible();
 }
 
+/** The map is tapped by eye; the tests choose through the list, which offers the same choice. */
+async function useList(page: Page) {
+  await page.getByRole("button", { name: "一覧で選ぶ" }).click();
+}
+
 test("a photo is saved with the checkpoint chosen for it, and the phone's position is never asked for", async ({ page }) => {
   const asked: string[] = [];
   await page.addInitScript(() => {
@@ -43,7 +48,9 @@ test("a photo is saved with the checkpoint chosen for it, and the phone's positi
   });
   await join(page);
   await takePhoto(page);
+  await page.waitForTimeout(1500);
   await shoot(page, "01-opened");
+  await useList(page);
 
   const save = page.getByRole("button", { name: "ここで保存" });
   await expect(save).toBeDisabled();
@@ -83,6 +90,7 @@ test("a photo is saved with the checkpoint chosen for it, and the phone's positi
 test("the next photo opens on the last place and can take it again in one tap", async ({ page }) => {
   await join(page);
   await takePhoto(page);
+  await useList(page);
   await page.getByRole("radio", { name: "本部棟", exact: true }).click();
   await page.getByRole("radio", { name: "5F", exact: true }).click();
   await page.getByRole("radio", { name: /本部棟5F/ }).click();
@@ -92,8 +100,6 @@ test("the next photo opens on the last place and can take it again in one tap", 
 
   await page.getByRole("button", { name: "写真を撮る" }).first().click({ trial: true }).catch(() => undefined);
   await takePhoto(page);
-  await expect(page.getByRole("radio", { name: "本部棟", exact: true })).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByRole("radio", { name: "5F", exact: true })).toHaveAttribute("aria-checked", "true");
   await shoot(page, "05-second-photo");
   await page.getByRole("button", { name: /さっきと同じ/ }).click();
   await expect(page.getByRole("button", { name: "ここで保存" })).toBeEnabled();
@@ -101,11 +107,15 @@ test("the next photo opens on the last place and can take it again in one tap", 
   await expect(page.getByText("2枚目のメモリーを残しました")).toBeVisible();
 });
 
-test("going back to the photo keeps nothing chosen and a floor with one checkpoint selects it", async ({ page }) => {
+test("the list offers every building, floor and checkpoint without the map", async ({ page }) => {
   await join(page);
   await takePhoto(page);
+  await useList(page);
   await page.getByRole("radio", { name: "交流棟", exact: true }).click();
   await page.getByRole("radio", { name: "3F", exact: true }).click();
+  await page.getByRole("radio", { name: /交流棟3F/ }).click();
+  await expect(page.getByRole("button", { name: "ここで保存" })).toBeEnabled();
+  await page.getByRole("button", { name: "地図で選ぶ" }).click();
   await expect(page.getByRole("button", { name: "ここで保存" })).toBeEnabled();
   await page.getByRole("button", { name: "写真にもどる" }).click();
   await expect(page.getByRole("button", { name: "場所を選ぶ" })).toBeVisible();
