@@ -719,16 +719,17 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
     const open = p.building ? parts.get(p.building) : undefined;
     const openIndex = open ? open.floors.findIndex((f) => f.label === p.floor) : -1;
 
-    // Buildings: the whole campus in light ink; one chosen in full ink, the rest faded back; a chosen floor cut away above.
+    // Buildings: the whole campus in light ink; one chosen in full ink, the rest faded back but still readable;
+    // with a floor open, the floors above and below stay visible in lighter ink so the building keeps its shape.
     for (const part of parts.values()) {
       const chosen = part === open;
       const faded = open !== undefined && !chosen;
-      part.roof.opacity = faded ? 0.08 : chosen ? (openIndex >= 0 ? 0.04 : 0.9) : 0.62;
+      part.roof.opacity = faded ? 0.26 : chosen ? (openIndex >= 0 ? 0.3 : 0.9) : 0.62;
       for (const f of part.floors) {
         f.fill.opacity = 0;
         if (faded) {
-          f.ring.opacity = 0.07;
-          f.posts.opacity = 0.05;
+          f.ring.opacity = 0.26;
+          f.posts.opacity = 0.2;
         } else if (!chosen) {
           f.ring.opacity = 0.42;
           f.posts.opacity = 0.34;
@@ -736,19 +737,19 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
           f.ring.opacity = 0.8;
           f.posts.opacity = 0.55;
         } else if (f.index < openIndex) {
-          f.ring.opacity = 0.3;
-          f.posts.opacity = 0.22;
+          f.ring.opacity = 0.55;
+          f.posts.opacity = 0.42;
         } else if (f.index === openIndex) {
           f.ring.opacity = 1;
-          f.posts.opacity = 0.18;
-          f.fill.opacity = 0.13;
+          f.posts.opacity = 0.5;
+          f.fill.opacity = 0.18;
         } else {
-          f.ring.opacity = 0.04;
-          f.posts.opacity = 0.03;
+          f.ring.opacity = 0.3;
+          f.posts.opacity = 0.24;
         }
       }
     }
-    ground.opacity = open ? 0.08 : 0.16;
+    ground.opacity = open ? 0.14 : 0.16;
 
     // The floor buttons and the way back, only inside a building.
     back.dataset.on = open ? "true" : "false";
