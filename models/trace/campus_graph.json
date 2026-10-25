@@ -1,9 +1,9 @@
 {
  "schemaVersion": 1,
- "campusGraphVersion": "toyosu-graph-2026-10-24.2.draft",
+ "campusGraphVersion": "toyosu-graph-2026-10-25.1.draft",
  "coordinateVersion": "toyosu-2026-08-28.1",
- "threeDMapVersion": "キャンパス全体.blend 2026-10-24",
- "exportedAt": "2026-10-24",
+ "threeDMapVersion": "キャンパス全体.blend 2026-10-25",
+ "exportedAt": "2026-10-25",
  "coordinates": {
   "local": "アプリのローカル ENU（原点 = 教室棟1F南面の自動ドア, east/north はメートル）。coordinateVersion の式で緯度経度から計算",
   "threeD": "キャンパス全体.blend の座標（1 = 1m, Z 上, 地面 = 0）。平面直角座標系 第IX系 (X=-37645, Y=-3322) を原点にずらしたもの",
@@ -45,7 +45,7 @@
    },
    "radiusMetres": 15,
    "gpsSnap": true,
-   "selectable": true,
+   "selectable": false,
    "note": "アプリの原点＝教室棟1F南側の自動ドア。交流棟の入口(6648)は約18mしか離れていないのでまとめた"
   },
   {
@@ -326,7 +326,7 @@
   },
   {
    "id": "classroom-3f-lobby",
-   "name": "教室棟3F ロビー（エスカレーター）",
+   "name": "教室棟3F エスカレーター",
    "role": "checkpoint",
    "building": "教室棟",
    "floor": "3F",
@@ -349,7 +349,7 @@
   },
   {
    "id": "shibalab",
-   "name": "ShibaLab（教室棟3F 301）",
+   "name": "教室棟3F 交流棟側（301 ShibaLab）",
    "role": "checkpoint",
    "building": "教室棟",
    "floor": "3F",
@@ -367,7 +367,7 @@
    },
    "radiusMetres": 15,
    "gpsSnap": false,
-   "selectable": false,
+   "selectable": true,
    "note": "第54回芝浦祭（2026/10/31〜11/1）の展示会場。301 は 3F 道路側の一番交流棟寄り（build_kyoshitsu_interior.py の NORTH[3]）。床 11m"
   },
   {
@@ -395,7 +395,7 @@
   },
   {
    "id": "classroom-4f-lobby",
-   "name": "教室棟4F ロビー（403〜408）",
+   "name": "教室棟4F エスカレーター",
    "role": "checkpoint",
    "building": "教室棟",
    "floor": "4F",
@@ -418,7 +418,7 @@
   },
   {
    "id": "classroom-5f-lobby",
-   "name": "教室棟5F ロビー（502〜511）",
+   "name": "教室棟5F エスカレーター",
    "role": "checkpoint",
    "building": "教室棟",
    "floor": "5F",
@@ -459,7 +459,7 @@
    },
    "radiusMetres": 15,
    "gpsSnap": false,
-   "selectable": true,
+   "selectable": false,
    "note": "交流棟側の端。芝浦祭のフロアマップでは 6F から交流棟の大講義室へ行く。床 26m"
   },
   {
@@ -3776,7 +3776,7 @@
   },
   {
    "id": "k1-005",
-   "name": "教室棟1F 5",
+   "name": "教室棟1F エスカレーター",
    "role": "waypoint",
    "building": "教室棟",
    "floor": "1F",
@@ -3794,7 +3794,7 @@
    },
    "radiusMetres": 3,
    "gpsSnap": false,
-   "selectable": false,
+   "selectable": true,
    "note": ""
   },
   {
@@ -3845,7 +3845,7 @@
   },
   {
    "id": "k1-008",
-   "name": "エスカレーター 1F→3F 2",
+   "name": "教室棟2F エスカレーター",
    "role": "waypoint",
    "building": "教室棟",
    "floor": "2F",
@@ -3863,7 +3863,7 @@
    },
    "radiusMetres": 3,
    "gpsSnap": false,
-   "selectable": false,
+   "selectable": true,
    "note": ""
   },
   {
@@ -4093,7 +4093,7 @@
    },
    "radiusMetres": 3,
    "gpsSnap": false,
-   "selectable": true,
+   "selectable": false,
    "note": "2F は事務室の階。1F→2F のエスカレーターの先"
   },
   {
@@ -7364,7 +7364,7 @@
   },
   {
    "id": "k6-019",
-   "name": "教室棟6F 降り口 1",
+   "name": "教室棟6F エスカレーター",
    "role": "waypoint",
    "building": "教室棟",
    "floor": "6F",
@@ -7382,7 +7382,7 @@
    },
    "radiusMetres": 3,
    "gpsSnap": false,
-   "selectable": false,
+   "selectable": true,
    "note": ""
   },
   {
@@ -8606,7 +8606,7 @@
   },
   {
    "id": "classroom-7f",
-   "name": "教室棟7F 屋上庭園",
+   "name": "教室棟7F エスカレーター",
    "role": "waypoint",
    "building": "教室棟",
    "floor": "7F",
@@ -9157,29 +9157,6 @@
    "note": "EV A の橋の位置"
   },
   {
-   "id": "classroom-research-6f-bridge",
-   "name": "渡り廊下 教室棟〜研究棟 6F",
-   "role": "waypoint",
-   "building": "教室棟",
-   "floor": "6F",
-   "lat": 35.6611383,
-   "lon": 139.7952616,
-   "local": {
-    "east": 63.67,
-    "north": 44.99
-   },
-   "heightMetres": 26.0,
-   "threeD": {
-    "x": -124.97,
-    "y": 50.73,
-    "z": 26.0
-   },
-   "radiusMetres": 15,
-   "gpsSnap": false,
-   "selectable": true,
-   "note": "6F の渡り廊下（教室棟 6F の廊下の先〜研究棟南棟）の真ん中"
-  },
-  {
    "id": "hq-10f",
    "name": "本部棟10F",
    "role": "waypoint",
@@ -9479,21 +9456,90 @@
    "note": ""
   },
   {
+   "id": "classroom-research-6f-mouth",
+   "name": "渡り廊下 教室棟〜研究棟 6F 教室棟側の口",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "6F",
+   "lat": 35.6609712,
+   "lon": 139.7953055,
+   "local": {
+    "east": 67.64,
+    "north": 26.4
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -121.0,
+    "y": 32.2,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "脚の南東の口。階段室の部屋をよけて y≈-30.5（教室棟座標）を通る"
+  },
+  {
+   "id": "classroom-research-6f-bridge",
+   "name": "渡り廊下 教室棟〜研究棟 6F",
+   "role": "waypoint",
+   "building": "研究棟",
+   "floor": "6F",
+   "lat": 35.6608793,
+   "lon": 139.7954259,
+   "local": {
+    "east": 78.54,
+    "north": 16.17
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -110.1,
+    "y": 22.0,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "6F の渡り廊下の真ん中（屋根のない通路。両側ガラス）"
+  },
+  {
+   "id": "research-6f-bridge-end",
+   "name": "渡り廊下 教室棟〜研究棟 6F 研究棟側の端",
+   "role": "waypoint",
+   "building": "研究棟",
+   "floor": "6F",
+   "lat": 35.6607874,
+   "lon": 139.7955458,
+   "local": {
+    "east": 89.38,
+    "north": 5.94
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -99.25,
+    "y": 11.8,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "南棟の東端（研究棟座標 (7.35, -10.9)）"
+  },
+  {
    "id": "classroom-7f-e8",
    "name": "教室棟7F 乗り口（7F→8F）",
    "role": "waypoint",
    "building": "教室棟",
    "floor": "7F",
-   "lat": 35.6611749,
-   "lon": 139.7952502,
+   "lat": 35.6612264,
+   "lon": 139.795211,
    "local": {
-    "east": 62.64,
-    "north": 49.07
+    "east": 59.09,
+    "north": 54.8
    },
    "heightMetres": 31.0,
    "threeD": {
-    "x": -126.0,
-    "y": 54.8,
+    "x": -129.55,
+    "y": 60.51,
     "z": 31.0
    },
    "radiusMetres": 15,
@@ -9503,26 +9549,831 @@
   },
   {
    "id": "classroom-8f",
-   "name": "教室棟8F 降り口（研究棟8Fへ）",
+   "name": "教室棟8F エスカレーター",
    "role": "waypoint",
    "building": "教室棟",
    "floor": "8F",
-   "lat": 35.6611804,
-   "lon": 139.7953054,
+   "lat": 35.6611583,
+   "lon": 139.7953001,
    "local": {
-    "east": 67.64,
-    "north": 49.68
+    "east": 67.16,
+    "north": 47.22
    },
    "heightMetres": 36.0,
    "threeD": {
-    "x": -121.0,
-    "y": 55.4,
+    "x": -121.48,
+    "y": 52.95,
     "z": 36.0
    },
    "radiusMetres": 15,
    "gpsSnap": false,
-   "selectable": false,
+   "selectable": true,
    "note": ""
+  },
+  {
+   "id": "hq-1f-car",
+   "name": "本部棟1F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "1F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-2f-car",
+   "name": "本部棟2F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "2F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 6.0,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 6.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-3f-car",
+   "name": "本部棟3F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "3F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 11.0,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 11.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-4f-car",
+   "name": "本部棟4F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "4F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 16.0,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 16.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-5f-car",
+   "name": "本部棟5F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "5F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 21.0,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 21.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-6f-car",
+   "name": "本部棟6F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "6F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-7f-car",
+   "name": "本部棟7F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "7F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 30.4,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 30.4
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-8f-car",
+   "name": "本部棟8F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "8F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 34.8,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 34.8
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-9f-car",
+   "name": "本部棟9F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "9F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 39.2,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 39.2
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-10f-car",
+   "name": "本部棟10F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "10F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 43.6,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 43.6
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-11f-car",
+   "name": "本部棟11F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "11F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 48.0,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 48.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-12f-car",
+   "name": "本部棟12F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "12F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 52.4,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 52.4
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-13f-car",
+   "name": "本部棟13F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "13F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 56.8,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 56.8
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "hq-14f-car",
+   "name": "本部棟14F かごの中",
+   "role": "waypoint",
+   "building": "本部棟",
+   "floor": "14F",
+   "lat": 35.6601538,
+   "lon": 139.7951089,
+   "local": {
+    "east": 49.86,
+    "north": -64.6
+   },
+   "heightMetres": 61.2,
+   "threeD": {
+    "x": -138.84,
+    "y": -58.48,
+    "z": 61.2
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中（EV B の中央の区画）"
+  },
+  {
+   "id": "exchange-1f-car",
+   "name": "交流棟1F かごの中",
+   "role": "waypoint",
+   "building": "交流棟",
+   "floor": "1F",
+   "lat": 35.6604574,
+   "lon": 139.7945105,
+   "local": {
+    "east": -4.26,
+    "north": -30.8
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -193.0,
+    "y": -24.78,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中"
+  },
+  {
+   "id": "exchange-2f-car",
+   "name": "交流棟2F かごの中",
+   "role": "waypoint",
+   "building": "交流棟",
+   "floor": "2F",
+   "lat": 35.6604574,
+   "lon": 139.7945105,
+   "local": {
+    "east": -4.26,
+    "north": -30.8
+   },
+   "heightMetres": 6.0,
+   "threeD": {
+    "x": -193.0,
+    "y": -24.78,
+    "z": 6.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中"
+  },
+  {
+   "id": "exchange-3f-car",
+   "name": "交流棟3F かごの中",
+   "role": "waypoint",
+   "building": "交流棟",
+   "floor": "3F",
+   "lat": 35.6604574,
+   "lon": 139.7945105,
+   "local": {
+    "east": -4.26,
+    "north": -30.8
+   },
+   "heightMetres": 11.0,
+   "threeD": {
+    "x": -193.0,
+    "y": -24.78,
+    "z": 11.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中"
+  },
+  {
+   "id": "exchange-4f-car",
+   "name": "交流棟4F かごの中",
+   "role": "waypoint",
+   "building": "交流棟",
+   "floor": "4F",
+   "lat": 35.6604574,
+   "lon": 139.7945105,
+   "local": {
+    "east": -4.26,
+    "north": -30.8
+   },
+   "heightMetres": 16.0,
+   "threeD": {
+    "x": -193.0,
+    "y": -24.78,
+    "z": 16.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中"
+  },
+  {
+   "id": "exchange-5f-car",
+   "name": "交流棟5F かごの中",
+   "role": "waypoint",
+   "building": "交流棟",
+   "floor": "5F",
+   "lat": 35.6604574,
+   "lon": 139.7945105,
+   "local": {
+    "east": -4.26,
+    "north": -30.8
+   },
+   "heightMetres": 21.0,
+   "threeD": {
+    "x": -193.0,
+    "y": -24.78,
+    "z": 21.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中"
+  },
+  {
+   "id": "exchange-6f-car",
+   "name": "交流棟6F かごの中",
+   "role": "waypoint",
+   "building": "交流棟",
+   "floor": "6F",
+   "lat": 35.6604574,
+   "lon": 139.7945105,
+   "local": {
+    "east": -4.26,
+    "north": -30.8
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -193.0,
+    "y": -24.78,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "エレベーターのかごの中"
+  },
+  {
+   "id": "research-1f-door",
+   "name": "研究棟1F 入口の扉（エントランスホール）",
+   "role": "waypoint",
+   "building": "研究棟",
+   "floor": "1F",
+   "lat": 35.6610053,
+   "lon": 139.7950846,
+   "local": {
+    "east": 47.66,
+    "north": 30.19
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -141.0,
+    "y": 35.99,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": false,
+   "note": "教室棟座標 (13, -14)。扉のあるのは教室棟.blend の曲がり角の壁"
+  },
+  {
+   "id": "classroom-1f-koryu",
+   "name": "教室棟1F 交流棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "1F",
+   "lat": 35.6608625,
+   "lon": 139.7946265,
+   "local": {
+    "east": 6.23,
+    "north": 14.29
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -182.48,
+    "y": 20.16,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端"
+  },
+  {
+   "id": "classroom-1f-kenkyu",
+   "name": "教室棟1F 研究棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "1F",
+   "lat": 35.6612585,
+   "lon": 139.7952545,
+   "local": {
+    "east": 63.03,
+    "north": 58.38
+   },
+   "heightMetres": 0.0,
+   "threeD": {
+    "x": -125.61,
+    "y": 64.07,
+    "z": 0.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く"
+  },
+  {
+   "id": "classroom-2f-koryu",
+   "name": "教室棟2F 交流棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "2F",
+   "lat": 35.6608625,
+   "lon": 139.7946265,
+   "local": {
+    "east": 6.23,
+    "north": 14.29
+   },
+   "heightMetres": 6.0,
+   "threeD": {
+    "x": -182.48,
+    "y": 20.16,
+    "z": 6.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端"
+  },
+  {
+   "id": "classroom-2f-kenkyu",
+   "name": "教室棟2F 研究棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "2F",
+   "lat": 35.6612585,
+   "lon": 139.7952545,
+   "local": {
+    "east": 63.03,
+    "north": 58.38
+   },
+   "heightMetres": 6.0,
+   "threeD": {
+    "x": -125.61,
+    "y": 64.07,
+    "z": 6.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く"
+  },
+  {
+   "id": "classroom-3f-kenkyu",
+   "name": "教室棟3F 研究棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "3F",
+   "lat": 35.6612585,
+   "lon": 139.7952545,
+   "local": {
+    "east": 63.03,
+    "north": 58.38
+   },
+   "heightMetres": 11.0,
+   "threeD": {
+    "x": -125.61,
+    "y": 64.07,
+    "z": 11.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く"
+  },
+  {
+   "id": "classroom-4f-koryu",
+   "name": "教室棟4F 交流棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "4F",
+   "lat": 35.6608625,
+   "lon": 139.7946265,
+   "local": {
+    "east": 6.23,
+    "north": 14.29
+   },
+   "heightMetres": 16.0,
+   "threeD": {
+    "x": -182.48,
+    "y": 20.16,
+    "z": 16.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端"
+  },
+  {
+   "id": "classroom-4f-kenkyu",
+   "name": "教室棟4F 研究棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "4F",
+   "lat": 35.6612585,
+   "lon": 139.7952545,
+   "local": {
+    "east": 63.03,
+    "north": 58.38
+   },
+   "heightMetres": 16.0,
+   "threeD": {
+    "x": -125.61,
+    "y": 64.07,
+    "z": 16.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く"
+  },
+  {
+   "id": "classroom-5f-koryu",
+   "name": "教室棟5F 交流棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "5F",
+   "lat": 35.6608625,
+   "lon": 139.7946265,
+   "local": {
+    "east": 6.23,
+    "north": 14.29
+   },
+   "heightMetres": 21.0,
+   "threeD": {
+    "x": -182.48,
+    "y": 20.16,
+    "z": 21.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端"
+  },
+  {
+   "id": "classroom-5f-kenkyu",
+   "name": "教室棟5F 研究棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "5F",
+   "lat": 35.6612585,
+   "lon": 139.7952545,
+   "local": {
+    "east": 63.03,
+    "north": 58.38
+   },
+   "heightMetres": 21.0,
+   "threeD": {
+    "x": -125.61,
+    "y": 64.07,
+    "z": 21.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く"
+  },
+  {
+   "id": "classroom-6f-koryu",
+   "name": "教室棟6F 交流棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "6F",
+   "lat": 35.6608625,
+   "lon": 139.7946265,
+   "local": {
+    "east": 6.23,
+    "north": 14.29
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -182.48,
+    "y": 20.16,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端"
+  },
+  {
+   "id": "classroom-6f-kenkyu",
+   "name": "教室棟6F 研究棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "6F",
+   "lat": 35.6612585,
+   "lon": 139.7952545,
+   "local": {
+    "east": 63.03,
+    "north": 58.38
+   },
+   "heightMetres": 26.0,
+   "threeD": {
+    "x": -125.61,
+    "y": 64.07,
+    "z": 26.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く"
+  },
+  {
+   "id": "classroom-7f-koryu",
+   "name": "教室棟7F 交流棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "7F",
+   "lat": 35.6608625,
+   "lon": 139.7946265,
+   "local": {
+    "east": 6.23,
+    "north": 14.29
+   },
+   "heightMetres": 31.0,
+   "threeD": {
+    "x": -182.48,
+    "y": 20.16,
+    "z": 31.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端"
+  },
+  {
+   "id": "classroom-7f-kenkyu",
+   "name": "教室棟7F 研究棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "7F",
+   "lat": 35.6612585,
+   "lon": 139.7952545,
+   "local": {
+    "east": 63.03,
+    "north": 58.38
+   },
+   "heightMetres": 31.0,
+   "threeD": {
+    "x": -125.61,
+    "y": 64.07,
+    "z": 31.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く"
+  },
+  {
+   "id": "classroom-8f-kenkyu",
+   "name": "教室棟8F 研究棟側",
+   "role": "waypoint",
+   "building": "教室棟",
+   "floor": "8F",
+   "lat": 35.6612585,
+   "lon": 139.7952545,
+   "local": {
+    "east": 63.03,
+    "north": 58.38
+   },
+   "heightMetres": 36.0,
+   "threeD": {
+    "x": -125.61,
+    "y": 64.07,
+    "z": 36.0
+   },
+   "radiusMetres": 15,
+   "gpsSnap": false,
+   "selectable": true,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く"
   }
  ],
  "edges": [
@@ -12956,51 +13807,6 @@
    "passable": true
   },
   {
-   "id": "exchange-1f--x2-001",
-   "from": "exchange-1f",
-   "to": "x2-001",
-   "kind": "elevator",
-   "lengthMetres": 6.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "x2-001--exchange-3f",
-   "from": "x2-001",
-   "to": "exchange-3f",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "exchange-3f--x4-013",
-   "from": "exchange-3f",
-   "to": "x4-013",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "x4-013--exchange-5f",
-   "from": "x4-013",
-   "to": "exchange-5f",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "exchange-5f--x6-014",
-   "from": "exchange-5f",
-   "to": "x6-014",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
    "id": "classroom-entrance--exchange-1f",
    "from": "classroom-entrance",
    "to": "exchange-1f",
@@ -13154,15 +13960,6 @@
    "passable": true
   },
   {
-   "id": "research-1f--research-road",
-   "from": "research-1f",
-   "to": "research-road",
-   "kind": "indoor",
-   "lengthMetres": 35.5,
-   "planarLengthMetres": 35.5,
-   "passable": true
-  },
-  {
    "id": "research-3f--k3-019",
    "from": "research-3f",
    "to": "k3-019",
@@ -13187,141 +13984,6 @@
    "kind": "indoor",
    "lengthMetres": 26.2,
    "planarLengthMetres": 26.2,
-   "passable": true
-  },
-  {
-   "id": "k6-015--classroom-research-6f-bridge",
-   "from": "k6-015",
-   "to": "classroom-research-6f-bridge",
-   "kind": "bridge",
-   "lengthMetres": 13.1,
-   "planarLengthMetres": 13.1,
-   "passable": true
-  },
-  {
-   "id": "classroom-research-6f-bridge--research-6f",
-   "from": "classroom-research-6f-bridge",
-   "to": "research-6f",
-   "kind": "bridge",
-   "lengthMetres": 13.1,
-   "planarLengthMetres": 13.1,
-   "passable": true
-  },
-  {
-   "id": "hq-1f-ev--hq-2f-ev",
-   "from": "hq-1f-ev",
-   "to": "hq-2f-ev",
-   "kind": "elevator",
-   "lengthMetres": 6.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-2f-ev--hq-3f-ev",
-   "from": "hq-2f-ev",
-   "to": "hq-3f-ev",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-3f-ev--hq-4f-ev",
-   "from": "hq-3f-ev",
-   "to": "hq-4f-ev",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-4f-ev--hq-5f",
-   "from": "hq-4f-ev",
-   "to": "hq-5f",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-5f--hq-6f-hall",
-   "from": "hq-5f",
-   "to": "hq-6f-hall",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-6f-hall--hq-7f",
-   "from": "hq-6f-hall",
-   "to": "hq-7f",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-7f--hq-8f",
-   "from": "hq-7f",
-   "to": "hq-8f",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-8f--hq-9f",
-   "from": "hq-8f",
-   "to": "hq-9f",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-9f--hq-10f",
-   "from": "hq-9f",
-   "to": "hq-10f",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-10f--hq-11f",
-   "from": "hq-10f",
-   "to": "hq-11f",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-11f--hq-12f",
-   "from": "hq-11f",
-   "to": "hq-12f",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-12f--hq-13f",
-   "from": "hq-12f",
-   "to": "hq-13f",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-13f--hq-14f",
-   "from": "hq-13f",
-   "to": "hq-14f",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
    "passable": true
   },
   {
@@ -13388,33 +14050,6 @@
    "passable": true
   },
   {
-   "id": "classroom-7f--classroom-7f-e8",
-   "from": "classroom-7f",
-   "to": "classroom-7f-e8",
-   "kind": "indoor",
-   "lengthMetres": 9.1,
-   "planarLengthMetres": 9.1,
-   "passable": true
-  },
-  {
-   "id": "classroom-7f-e8--classroom-8f",
-   "from": "classroom-7f-e8",
-   "to": "classroom-8f",
-   "kind": "escalator",
-   "lengthMetres": 7.1,
-   "planarLengthMetres": 5.0,
-   "passable": true
-  },
-  {
-   "id": "classroom-8f--research-8f",
-   "from": "classroom-8f",
-   "to": "research-8f",
-   "kind": "indoor",
-   "lengthMetres": 14.8,
-   "planarLengthMetres": 14.8,
-   "passable": true
-  },
-  {
    "id": "research-2f--research-gate",
    "from": "research-2f",
    "to": "research-gate",
@@ -13430,6 +14065,636 @@
    "kind": "indoor",
    "lengthMetres": 53.6,
    "planarLengthMetres": 53.6,
+   "passable": true
+  },
+  {
+   "id": "k6-015--research-6f",
+   "from": "k6-015",
+   "to": "research-6f",
+   "kind": "indoor",
+   "lengthMetres": 26.2,
+   "planarLengthMetres": 26.2,
+   "passable": true
+  },
+  {
+   "id": "research-6f--classroom-research-6f-mouth",
+   "from": "research-6f",
+   "to": "classroom-research-6f-mouth",
+   "kind": "indoor",
+   "lengthMetres": 11.0,
+   "planarLengthMetres": 11.0,
+   "passable": true
+  },
+  {
+   "id": "classroom-research-6f-mouth--classroom-research-6f-bridge",
+   "from": "classroom-research-6f-mouth",
+   "to": "classroom-research-6f-bridge",
+   "kind": "bridge",
+   "lengthMetres": 14.9,
+   "planarLengthMetres": 14.9,
+   "passable": true
+  },
+  {
+   "id": "classroom-research-6f-bridge--research-6f-bridge-end",
+   "from": "classroom-research-6f-bridge",
+   "to": "research-6f-bridge-end",
+   "kind": "bridge",
+   "lengthMetres": 14.9,
+   "planarLengthMetres": 14.9,
+   "passable": true
+  },
+  {
+   "id": "research-6f-bridge-end--research-6f",
+   "from": "research-6f-bridge-end",
+   "to": "research-6f",
+   "kind": "indoor",
+   "lengthMetres": 34.1,
+   "planarLengthMetres": 34.1,
+   "passable": true
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8",
+   "from": "classroom-7f",
+   "to": "classroom-7f-e8",
+   "kind": "indoor",
+   "lengthMetres": 8.2,
+   "planarLengthMetres": 8.2,
+   "passable": true
+  },
+  {
+   "id": "classroom-7f-e8--classroom-8f",
+   "from": "classroom-7f-e8",
+   "to": "classroom-8f",
+   "kind": "escalator",
+   "lengthMetres": 12.1,
+   "planarLengthMetres": 11.1,
+   "passable": true
+  },
+  {
+   "id": "classroom-8f--research-8f",
+   "from": "classroom-8f",
+   "to": "research-8f",
+   "kind": "indoor",
+   "lengthMetres": 12.8,
+   "planarLengthMetres": 12.8,
+   "passable": true
+  },
+  {
+   "id": "hq-1f-car--hq-1f-ev",
+   "from": "hq-1f-car",
+   "to": "hq-1f-ev",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-2f-car--hq-2f-ev",
+   "from": "hq-2f-car",
+   "to": "hq-2f-ev",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-3f-car--hq-3f-ev",
+   "from": "hq-3f-car",
+   "to": "hq-3f-ev",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-4f-car--hq-4f-ev",
+   "from": "hq-4f-car",
+   "to": "hq-4f-ev",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-5f-car--hq-5f",
+   "from": "hq-5f-car",
+   "to": "hq-5f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-6f-car--hq-6f-hall",
+   "from": "hq-6f-car",
+   "to": "hq-6f-hall",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-7f-car--hq-7f",
+   "from": "hq-7f-car",
+   "to": "hq-7f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-8f-car--hq-8f",
+   "from": "hq-8f-car",
+   "to": "hq-8f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-9f-car--hq-9f",
+   "from": "hq-9f-car",
+   "to": "hq-9f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-10f-car--hq-10f",
+   "from": "hq-10f-car",
+   "to": "hq-10f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-11f-car--hq-11f",
+   "from": "hq-11f-car",
+   "to": "hq-11f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-12f-car--hq-12f",
+   "from": "hq-12f-car",
+   "to": "hq-12f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-13f-car--hq-13f",
+   "from": "hq-13f-car",
+   "to": "hq-13f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "hq-14f-car--hq-14f",
+   "from": "hq-14f-car",
+   "to": "hq-14f",
+   "kind": "indoor",
+   "lengthMetres": 2.1,
+   "planarLengthMetres": 2.1,
+   "passable": true
+  },
+  {
+   "id": "exchange-1f-car--exchange-1f",
+   "from": "exchange-1f-car",
+   "to": "exchange-1f",
+   "kind": "indoor",
+   "lengthMetres": 3.0,
+   "planarLengthMetres": 3.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-2f-car--x2-001",
+   "from": "exchange-2f-car",
+   "to": "x2-001",
+   "kind": "indoor",
+   "lengthMetres": 3.0,
+   "planarLengthMetres": 3.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-1f-car--exchange-2f-car",
+   "from": "exchange-1f-car",
+   "to": "exchange-2f-car",
+   "kind": "elevator",
+   "lengthMetres": 6.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-3f-car--exchange-3f",
+   "from": "exchange-3f-car",
+   "to": "exchange-3f",
+   "kind": "indoor",
+   "lengthMetres": 3.0,
+   "planarLengthMetres": 3.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-2f-car--exchange-3f-car",
+   "from": "exchange-2f-car",
+   "to": "exchange-3f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-4f-car--x4-013",
+   "from": "exchange-4f-car",
+   "to": "x4-013",
+   "kind": "indoor",
+   "lengthMetres": 3.0,
+   "planarLengthMetres": 3.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-3f-car--exchange-4f-car",
+   "from": "exchange-3f-car",
+   "to": "exchange-4f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-5f-car--exchange-5f",
+   "from": "exchange-5f-car",
+   "to": "exchange-5f",
+   "kind": "indoor",
+   "lengthMetres": 3.0,
+   "planarLengthMetres": 3.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-4f-car--exchange-5f-car",
+   "from": "exchange-4f-car",
+   "to": "exchange-5f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-6f-car--x6-014",
+   "from": "exchange-6f-car",
+   "to": "x6-014",
+   "kind": "indoor",
+   "lengthMetres": 3.0,
+   "planarLengthMetres": 3.0,
+   "passable": true
+  },
+  {
+   "id": "exchange-5f-car--exchange-6f-car",
+   "from": "exchange-5f-car",
+   "to": "exchange-6f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "research-1f--research-1f-door",
+   "from": "research-1f",
+   "to": "research-1f-door",
+   "kind": "indoor",
+   "lengthMetres": 26.1,
+   "planarLengthMetres": 26.1,
+   "passable": true
+  },
+  {
+   "id": "research-1f-door--classroom-research-corner",
+   "from": "research-1f-door",
+   "to": "classroom-research-corner",
+   "kind": "ground",
+   "lengthMetres": 2.9,
+   "planarLengthMetres": 2.9,
+   "passable": true
+  },
+  {
+   "id": "hq-1f-car--hq-2f-car",
+   "from": "hq-1f-car",
+   "to": "hq-2f-car",
+   "kind": "elevator",
+   "lengthMetres": 6.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-2f-car--hq-3f-car",
+   "from": "hq-2f-car",
+   "to": "hq-3f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-3f-car--hq-4f-car",
+   "from": "hq-3f-car",
+   "to": "hq-4f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-4f-car--hq-5f-car",
+   "from": "hq-4f-car",
+   "to": "hq-5f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-5f-car--hq-6f-car",
+   "from": "hq-5f-car",
+   "to": "hq-6f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-6f-car--hq-7f-car",
+   "from": "hq-6f-car",
+   "to": "hq-7f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-7f-car--hq-8f-car",
+   "from": "hq-7f-car",
+   "to": "hq-8f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-8f-car--hq-9f-car",
+   "from": "hq-8f-car",
+   "to": "hq-9f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-9f-car--hq-10f-car",
+   "from": "hq-9f-car",
+   "to": "hq-10f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-10f-car--hq-11f-car",
+   "from": "hq-10f-car",
+   "to": "hq-11f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-11f-car--hq-12f-car",
+   "from": "hq-11f-car",
+   "to": "hq-12f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-12f-car--hq-13f-car",
+   "from": "hq-12f-car",
+   "to": "hq-13f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-13f-car--hq-14f-car",
+   "from": "hq-13f-car",
+   "to": "hq-14f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "classroom-1f-koryu--k1-005",
+   "from": "classroom-1f-koryu",
+   "to": "k1-005",
+   "kind": "indoor",
+   "lengthMetres": 11.0,
+   "planarLengthMetres": 11.0,
+   "passable": true
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005",
+   "from": "classroom-1f-kenkyu",
+   "to": "k1-005",
+   "kind": "indoor",
+   "lengthMetres": 70.3,
+   "planarLengthMetres": 70.3,
+   "passable": true
+  },
+  {
+   "id": "classroom-1f-kenkyu--research-1f",
+   "from": "classroom-1f-kenkyu",
+   "to": "research-1f",
+   "kind": "indoor",
+   "lengthMetres": 24.6,
+   "planarLengthMetres": 24.6,
+   "passable": true
+  },
+  {
+   "id": "classroom-2f-koryu--k2-005",
+   "from": "classroom-2f-koryu",
+   "to": "k2-005",
+   "kind": "indoor",
+   "lengthMetres": 8.0,
+   "planarLengthMetres": 8.0,
+   "passable": true
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009",
+   "from": "classroom-2f-kenkyu",
+   "to": "k1-009",
+   "kind": "indoor",
+   "lengthMetres": 55.0,
+   "planarLengthMetres": 55.0,
+   "passable": true
+  },
+  {
+   "id": "classroom-2f-kenkyu--research-2f",
+   "from": "classroom-2f-kenkyu",
+   "to": "research-2f",
+   "kind": "indoor",
+   "lengthMetres": 24.6,
+   "planarLengthMetres": 24.6,
+   "passable": true
+  },
+  {
+   "id": "classroom-3f-kenkyu--k3-019",
+   "from": "classroom-3f-kenkyu",
+   "to": "k3-019",
+   "kind": "indoor",
+   "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
+   "passable": true
+  },
+  {
+   "id": "classroom-3f-kenkyu--research-3f",
+   "from": "classroom-3f-kenkyu",
+   "to": "research-3f",
+   "kind": "indoor",
+   "lengthMetres": 24.6,
+   "planarLengthMetres": 24.6,
+   "passable": true
+  },
+  {
+   "id": "classroom-4f-koryu--k4-022",
+   "from": "classroom-4f-koryu",
+   "to": "k4-022",
+   "kind": "indoor",
+   "lengthMetres": 1.2,
+   "planarLengthMetres": 1.2,
+   "passable": true
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019",
+   "from": "classroom-4f-kenkyu",
+   "to": "k4-019",
+   "kind": "indoor",
+   "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
+   "passable": true
+  },
+  {
+   "id": "classroom-4f-kenkyu--research-4f",
+   "from": "classroom-4f-kenkyu",
+   "to": "research-4f",
+   "kind": "indoor",
+   "lengthMetres": 24.6,
+   "planarLengthMetres": 24.6,
+   "passable": true
+  },
+  {
+   "id": "classroom-5f-koryu--k5-025",
+   "from": "classroom-5f-koryu",
+   "to": "k5-025",
+   "kind": "indoor",
+   "lengthMetres": 3.7,
+   "planarLengthMetres": 3.7,
+   "passable": true
+  },
+  {
+   "id": "classroom-5f-kenkyu--k5-021",
+   "from": "classroom-5f-kenkyu",
+   "to": "k5-021",
+   "kind": "indoor",
+   "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
+   "passable": true
+  },
+  {
+   "id": "classroom-5f-kenkyu--research-5f",
+   "from": "classroom-5f-kenkyu",
+   "to": "research-5f",
+   "kind": "indoor",
+   "lengthMetres": 24.6,
+   "planarLengthMetres": 24.6,
+   "passable": true
+  },
+  {
+   "id": "classroom-6f-koryu--k6-004",
+   "from": "classroom-6f-koryu",
+   "to": "k6-004",
+   "kind": "indoor",
+   "lengthMetres": 7.9,
+   "planarLengthMetres": 7.9,
+   "passable": true
+  },
+  {
+   "id": "classroom-6f-kenkyu--k6-015",
+   "from": "classroom-6f-kenkyu",
+   "to": "k6-015",
+   "kind": "indoor",
+   "lengthMetres": 9.8,
+   "planarLengthMetres": 9.8,
+   "passable": true
+  },
+  {
+   "id": "classroom-6f-kenkyu--research-6f",
+   "from": "classroom-6f-kenkyu",
+   "to": "research-6f",
+   "kind": "indoor",
+   "lengthMetres": 24.6,
+   "planarLengthMetres": 24.6,
+   "passable": true
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f",
+   "from": "classroom-7f-koryu",
+   "to": "classroom-7f",
+   "kind": "indoor",
+   "lengthMetres": 58.5,
+   "planarLengthMetres": 58.5,
+   "passable": true
+  },
+  {
+   "id": "classroom-7f-kenkyu--classroom-7f-e8",
+   "from": "classroom-7f-kenkyu",
+   "to": "classroom-7f-e8",
+   "kind": "indoor",
+   "lengthMetres": 5.3,
+   "planarLengthMetres": 5.3,
+   "passable": true
+  },
+  {
+   "id": "classroom-7f-kenkyu--research-7f",
+   "from": "classroom-7f-kenkyu",
+   "to": "research-7f",
+   "kind": "indoor",
+   "lengthMetres": 24.6,
+   "planarLengthMetres": 24.6,
+   "passable": true
+  },
+  {
+   "id": "classroom-8f-kenkyu--classroom-8f",
+   "from": "classroom-8f-kenkyu",
+   "to": "classroom-8f",
+   "kind": "indoor",
+   "lengthMetres": 11.9,
+   "planarLengthMetres": 11.9,
+   "passable": true
+  },
+  {
+   "id": "classroom-8f-kenkyu--research-8f",
+   "from": "classroom-8f-kenkyu",
+   "to": "research-8f",
+   "kind": "indoor",
+   "lengthMetres": 24.6,
+   "planarLengthMetres": 24.6,
    "passable": true
   }
  ]

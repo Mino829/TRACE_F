@@ -14,8 +14,7 @@
    "radius": 15,
    "note": "アプリの原点＝教室棟1F南側の自動ドア。交流棟の入口(6648)は約18mしか離れていないのでまとめた",
    "gpsSnap": true,
-   "role": "checkpoint",
-   "selectable": true
+   "role": "checkpoint"
   },
   {
    "id": "grand-stairs-bottom",
@@ -206,7 +205,7 @@
   },
   {
    "id": "classroom-3f-lobby",
-   "name": "教室棟3F ロビー（エスカレーター）",
+   "name": "教室棟3F エスカレーター",
    "building": "教室棟",
    "floor": "3F",
    "blender": [
@@ -222,7 +221,7 @@
   },
   {
    "id": "shibalab",
-   "name": "ShibaLab（教室棟3F 301）",
+   "name": "教室棟3F 交流棟側（301 ShibaLab）",
    "building": "教室棟",
    "floor": "3F",
    "blender": [
@@ -233,7 +232,8 @@
    "radius": 15,
    "note": "第54回芝浦祭（2026/10/31〜11/1）の展示会場。301 は 3F 道路側の一番交流棟寄り（build_kyoshitsu_interior.py の NORTH[3]）。床 11m",
    "gpsSnap": false,
-   "role": "checkpoint"
+   "role": "checkpoint",
+   "selectable": true
   },
   {
    "id": "big-tree",
@@ -253,7 +253,7 @@
   },
   {
    "id": "classroom-4f-lobby",
-   "name": "教室棟4F ロビー（403〜408）",
+   "name": "教室棟4F エスカレーター",
    "building": "教室棟",
    "floor": "4F",
    "blender": [
@@ -269,7 +269,7 @@
   },
   {
    "id": "classroom-5f-lobby",
-   "name": "教室棟5F ロビー（502〜511）",
+   "name": "教室棟5F エスカレーター",
    "building": "教室棟",
    "floor": "5F",
    "blender": [
@@ -296,8 +296,7 @@
    "radius": 15,
    "gpsSnap": false,
    "note": "交流棟側の端。芝浦祭のフロアマップでは 6F から交流棟の大講義室へ行く。床 26m",
-   "role": "checkpoint",
-   "selectable": true
+   "role": "checkpoint"
   },
   {
    "id": "exchange-4f",
@@ -2466,7 +2465,7 @@
   },
   {
    "id": "k1-005",
-   "name": "教室棟1F 5",
+   "name": "教室棟1F エスカレーター",
    "building": "教室棟",
    "floor": "1F",
    "blender": [
@@ -2477,7 +2476,8 @@
    "radius": 3,
    "gpsSnap": false,
    "role": "waypoint",
-   "note": ""
+   "note": "",
+   "selectable": true
   },
   {
    "id": "k1-006",
@@ -2511,7 +2511,7 @@
   },
   {
    "id": "k1-008",
-   "name": "エスカレーター 1F→3F 2",
+   "name": "教室棟2F エスカレーター",
    "building": "教室棟",
    "floor": "2F",
    "blender": [
@@ -2522,7 +2522,8 @@
    "radius": 3,
    "gpsSnap": false,
    "role": "waypoint",
-   "note": ""
+   "note": "",
+   "selectable": true
   },
   {
    "id": "k1-009",
@@ -2672,8 +2673,7 @@
    "radius": 3,
    "gpsSnap": false,
    "role": "waypoint",
-   "note": "2F は事務室の階。1F→2F のエスカレーターの先",
-   "selectable": true
+   "note": "2F は事務室の階。1F→2F のエスカレーターの先"
   },
   {
    "id": "k2-009",
@@ -4807,7 +4807,7 @@
   },
   {
    "id": "k6-019",
-   "name": "教室棟6F 降り口 1",
+   "name": "教室棟6F エスカレーター",
    "building": "教室棟",
    "floor": "6F",
    "blender": [
@@ -4818,7 +4818,8 @@
    "radius": 3,
    "gpsSnap": false,
    "role": "waypoint",
-   "note": ""
+   "note": "",
+   "selectable": true
   },
   {
    "id": "x4-001",
@@ -5621,7 +5622,7 @@
   },
   {
    "id": "classroom-7f",
-   "name": "教室棟7F 屋上庭園",
+   "name": "教室棟7F エスカレーター",
    "building": "教室棟",
    "floor": "7F",
    "blender": [
@@ -6221,7 +6222,7 @@
   {
    "id": "classroom-research-6f-bridge",
    "name": "渡り廊下 教室棟〜研究棟 6F",
-   "building": "教室棟",
+   "building": "研究棟",
    "floor": "6F",
    "blender": [
     -110.1,
@@ -6266,7 +6267,7 @@
   },
   {
    "id": "classroom-8f",
-   "name": "教室棟8F 降り口（研究棟8Fへ）",
+   "name": "教室棟8F エスカレーター",
    "building": "教室棟",
    "floor": "8F",
    "blender": [
@@ -6277,7 +6278,8 @@
    "radius": 15,
    "gpsSnap": false,
    "note": "",
-   "role": "waypoint"
+   "role": "waypoint",
+   "selectable": true
   },
   {
    "id": "hq-1f-car",
@@ -6593,6 +6595,230 @@
    "gpsSnap": false,
    "note": "教室棟座標 (13, -14)。扉のあるのは教室棟.blend の曲がり角の壁",
    "role": "waypoint"
+  },
+  {
+   "id": "classroom-1f-koryu",
+   "name": "教室棟1F 交流棟側",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -182.48,
+    20.16,
+    0.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-1f-kenkyu",
+   "name": "教室棟1F 研究棟側",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -125.61,
+    64.07,
+    0.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-2f-koryu",
+   "name": "教室棟2F 交流棟側",
+   "building": "教室棟",
+   "floor": "2F",
+   "blender": [
+    -182.48,
+    20.16,
+    6.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-2f-kenkyu",
+   "name": "教室棟2F 研究棟側",
+   "building": "教室棟",
+   "floor": "2F",
+   "blender": [
+    -125.61,
+    64.07,
+    6.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-3f-kenkyu",
+   "name": "教室棟3F 研究棟側",
+   "building": "教室棟",
+   "floor": "3F",
+   "blender": [
+    -125.61,
+    64.07,
+    11.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-4f-koryu",
+   "name": "教室棟4F 交流棟側",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -182.48,
+    20.16,
+    16.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-4f-kenkyu",
+   "name": "教室棟4F 研究棟側",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -125.61,
+    64.07,
+    16.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-5f-koryu",
+   "name": "教室棟5F 交流棟側",
+   "building": "教室棟",
+   "floor": "5F",
+   "blender": [
+    -182.48,
+    20.16,
+    21.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-5f-kenkyu",
+   "name": "教室棟5F 研究棟側",
+   "building": "教室棟",
+   "floor": "5F",
+   "blender": [
+    -125.61,
+    64.07,
+    21.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-6f-koryu",
+   "name": "教室棟6F 交流棟側",
+   "building": "教室棟",
+   "floor": "6F",
+   "blender": [
+    -182.48,
+    20.16,
+    26.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-6f-kenkyu",
+   "name": "教室棟6F 研究棟側",
+   "building": "教室棟",
+   "floor": "6F",
+   "blender": [
+    -125.61,
+    64.07,
+    26.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-7f-koryu",
+   "name": "教室棟7F 交流棟側",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -182.48,
+    20.16,
+    31.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "301（ShibaLab）の真上・真下。交流棟側の端",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-7f-kenkyu",
+   "name": "教室棟7F 研究棟側",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -125.61,
+    64.07,
+    31.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "classroom-8f-kenkyu",
+   "name": "教室棟8F 研究棟側",
+   "building": "教室棟",
+   "floor": "8F",
+   "blender": [
+    -125.61,
+    64.07,
+    36.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
   }
  ],
  "edges": [
@@ -9343,6 +9569,138 @@
    "from": "hq-13f-car",
    "to": "hq-14f-car",
    "kind": "elevator"
+  },
+  {
+   "id": "classroom-1f-koryu--k1-005",
+   "from": "classroom-1f-koryu",
+   "to": "k1-005",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005",
+   "from": "classroom-1f-kenkyu",
+   "to": "k1-005",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--research-1f",
+   "from": "classroom-1f-kenkyu",
+   "to": "research-1f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-2f-koryu--k2-005",
+   "from": "classroom-2f-koryu",
+   "to": "k2-005",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009",
+   "from": "classroom-2f-kenkyu",
+   "to": "k1-009",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-2f-kenkyu--research-2f",
+   "from": "classroom-2f-kenkyu",
+   "to": "research-2f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-3f-kenkyu--k3-019",
+   "from": "classroom-3f-kenkyu",
+   "to": "k3-019",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-3f-kenkyu--research-3f",
+   "from": "classroom-3f-kenkyu",
+   "to": "research-3f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-koryu--k4-022",
+   "from": "classroom-4f-koryu",
+   "to": "k4-022",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019",
+   "from": "classroom-4f-kenkyu",
+   "to": "k4-019",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-kenkyu--research-4f",
+   "from": "classroom-4f-kenkyu",
+   "to": "research-4f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-5f-koryu--k5-025",
+   "from": "classroom-5f-koryu",
+   "to": "k5-025",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-5f-kenkyu--k5-021",
+   "from": "classroom-5f-kenkyu",
+   "to": "k5-021",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-5f-kenkyu--research-5f",
+   "from": "classroom-5f-kenkyu",
+   "to": "research-5f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-6f-koryu--k6-004",
+   "from": "classroom-6f-koryu",
+   "to": "k6-004",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-6f-kenkyu--k6-015",
+   "from": "classroom-6f-kenkyu",
+   "to": "k6-015",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-6f-kenkyu--research-6f",
+   "from": "classroom-6f-kenkyu",
+   "to": "research-6f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f",
+   "from": "classroom-7f-koryu",
+   "to": "classroom-7f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-kenkyu--classroom-7f-e8",
+   "from": "classroom-7f-kenkyu",
+   "to": "classroom-7f-e8",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-kenkyu--research-7f",
+   "from": "classroom-7f-kenkyu",
+   "to": "research-7f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-8f-kenkyu--classroom-8f",
+   "from": "classroom-8f-kenkyu",
+   "to": "classroom-8f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-8f-kenkyu--research-8f",
+   "from": "classroom-8f-kenkyu",
+   "to": "research-8f",
+   "kind": "indoor"
   }
  ]
 }
