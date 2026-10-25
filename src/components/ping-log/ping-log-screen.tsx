@@ -24,6 +24,7 @@ import {
 import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
 import { dropPromptFromUrl } from "@/lib/ping-log/url";
 import { clearEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
+import { LockTimeout, onOtherTabs, withLock } from "@/lib/ping-log/tabs";
 import {
   TRACE_API_URL,
   TraceApiError,
@@ -35,6 +36,8 @@ import {
 } from "@/lib/trace-api/client";
 import {
   clearTabExperience,
+  experienceLapsed,
+  forgetLapsedExperience,
   loadTabExperience,
   memoryDeleteKey,
   saveTabExperience,
@@ -64,9 +67,10 @@ import "./developer.css";
  * clear screen.
  *
  * With NEXT_PUBLIC_TRACE_API_URL set, agreeing also creates the experience on
- * the work's backend (TRACE_B), and joining lasts as long as this tab keeps
- * its credential: the photo limit comes from the backend's config and counts
- * per memory session, and "参加をやめる" deletes the memory session too. Photos, the arrival QR, the
+ * the work's backend (TRACE_B), and joining lasts until its memory session
+ * expires, through reloads and in every tab of the browser (session.ts,
+ * tabs.ts): the photo limit comes from the backend's config and counts per
+ * memory session, and "参加をやめる" deletes the memory session too. Photos, the arrival QR, the
  * story and the reminder have no backend routes yet and stay on the phone and
  * the push worker, as everything does when the variable is unset.
  *
@@ -79,6 +83,10 @@ import "./developer.css";
 const PENDING_KEY = "trace-ping-pending";
 const VIEW_KEY = "trace-log-view";
 const PROMPT_MESSAGE = "trace-ping";
+const SEND_LOCK = "trace-log-send";
+/** How long a save waits for another tab that is sending; after that its photo waits for the next try. */
+const SEND_WAIT_MS = 10_000;
+const START_AGAIN = "続けるときは、もう一度「はじめる」から参加してください。";
 
 type View = "participant" | "developer";
 type AccuracyFlow = { kind: "ping" | "manual"; promptedAt: string | null };
@@ -115,9 +123,20 @@ function initialPending(): string | null {
   return stored && isToday(stored) ? stored : null;
 }
 
-/** Consent from an earlier tab, but no credential in this one: the backend's experience cannot be picked up again. */
-function initialMessage(): string {
-  return TRACE_API_URL && loadConsent() && !loadTabExperience() ? "前の参加は、このタブでは続けられません。もう一度「はじめる」から参加してください。" : "";
+/**
+ * Why there is no participation to continue although there was one: the
+ * backend deleted it at the end of its period, or this browser never had it
+ * although it agreed or a reminder opened it (another browser, or the other
+ * side of Safari and the home-screen app, started it; the wording is
+ * user-journey.md's, with this page's button).
+ */
+function initialLostNote(): string {
+  if (!TRACE_API_URL || initialView() !== "participant") return "";
+  if (experienceLapsed()) return `前の参加は、記録を残す期限が過ぎたので削除されました。${START_AGAIN}`;
+  const fromReminder = new URLSearchParams(window.location.search).has("prompt");
+  return (loadConsent() || fromReminder) && !loadTabExperience()
+    ? "この画面には、前の参加の記録がありません。参加を始めたブラウザか、ホーム画面のアプリで開いてください。開けないときは、もう一度「はじめる」から参加できます。"
+    : "";
 }
 
 function initialView(): View {
@@ -167,7 +186,9 @@ export function PingLogScreen() {
   const [permission, setPermission] = useState(notificationState);
   const [geolocation, setGeolocation] = useState<PermissionState | "unknown" | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(initialMessage);
+  const [message, setMessage] = useState("");
+  // Shown until this browser joins again, in this tab or another.
+  const [lostNote, setLostNote] = useState(initialLostNote);
   // The backend's side, while NEXT_PUBLIC_TRACE_API_URL is set.
   const [traceConfig, setTraceConfig] = useState<PublicConfig | null>(null);
   const [experience, setExperience] = useState<TabExperience | null>(() => (TRACE_API_URL ? loadTabExperience() : null));
@@ -188,22 +209,41 @@ export function PingLogScreen() {
     setPendingAt(value);
   }, []);
 
-  /** Sends every record the worker has not acknowledged yet; the rest wait for the next try. */
+  /**
+   * Sends every record the worker has not acknowledged yet; the rest wait for
+   * the next try. One tab sends at a time and reads the records afresh before
+   * each, so one that another tab sent meanwhile is not sent again, and one
+   * saved meanwhile goes in the same round.
+   */
   const sendUnsent = useCallback(async (): Promise<number> => {
-    let failed = 0;
     // Without a worker there is nothing to send, but a record just saved still has to show.
     if (!PUSH_API_URL) {
       setEntries(await listEntries());
-      return failed;
+      return 0;
     }
-    for (const entry of (await listEntries()).filter((item) => !item.sentAt)) {
-      try {
-        await uploadEntry(entry);
-        await putEntry({ ...entry, sentAt: new Date().toISOString() });
-      } catch {
-        failed += 1;
-      }
-    }
+    const failed = await withLock(
+      SEND_LOCK,
+      async () => {
+        let failures = 0;
+        const tried = new Set<string>();
+        for (;;) {
+          const entry = (await listEntries()).find((item) => !item.sentAt && !tried.has(item.id));
+          if (!entry) return failures;
+          tried.add(entry.id);
+          try {
+            await uploadEntry(entry);
+            await putEntry({ ...entry, sentAt: new Date().toISOString() });
+          } catch {
+            failures += 1;
+          }
+        }
+      },
+      { waitMs: SEND_WAIT_MS },
+    ).catch(async (error: unknown) => {
+      // Another tab is still sending; it takes the new records too, or the next try does.
+      if (!(error instanceof LockTimeout)) throw error;
+      return (await listEntries()).filter((item) => !item.sentAt).length;
+    });
     setEntries(await listEntries());
     return failed;
   }, []);
@@ -256,15 +296,45 @@ export function PingLogScreen() {
     if (!TRACE_API_URL) return;
     // Fetched again on agreeing when this fails.
     fetchPublicConfig().then(setTraceConfig, () => undefined);
+    // A participation that is gone takes its consent along: the next visit starts as a new one, without a note.
+    const forget = () => {
+      clearTabExperience();
+      clearConsent();
+      setExperience(null);
+      setConsent(null);
+    };
+    if (forgetLapsedExperience()) forget();
     const stored = loadTabExperience();
     if (!stored) return;
     getExperience(stored.experienceId, stored.memory)
       .then((status) => setExperience(updateTabExperience(stored, status)))
       .catch((error: unknown) => {
-        // A read failure does not prove deletion; keep the credential and its delete key.
+        // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
+        if (error instanceof TraceApiError && (error.code === "UNAUTHORIZED" || error.code === "NOT_FOUND")) {
+          forget();
+          setLostNote(`${error.message}${START_AGAIN}`);
+          return;
+        }
+        // Any other failure does not prove deletion; keep the credential and its delete key.
         setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
       });
   }, []);
+
+  // Another tab joined, withdrew, or saved or sent a photo: this one shows the same participation.
+  useEffect(
+    () =>
+      onOtherTabs(() => {
+        setConsent(loadConsent());
+        if (TRACE_API_URL) {
+          const next = loadTabExperience();
+          setExperience(next);
+          // Joined there: the note about the old participation no longer applies here.
+          if (next) setLostNote("");
+        }
+        listEntries().then(setEntries, () => undefined);
+      }),
+    [],
+  );
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -349,6 +419,7 @@ export function PingLogScreen() {
       }
     }
     setConsent(saveConsent());
+    setLostNote("");
     setConsentOpen(false);
     setMessage("");
   };
@@ -477,7 +548,8 @@ export function PingLogScreen() {
   // The arrival demo is the participant's, in their look, wherever it was opened from.
   if (view === "participant" || demo !== null) {
     const notes = [
-      ...(!joined && consent && sessionExpired ? ["参加の期限が切れました。続けるときは、もう一度「はじめる」から参加してください。"] : []),
+      ...(!joined && lostNote ? [lostNote] : []),
+      ...(!joined && consent && sessionExpired ? [`参加の期限が切れました。${START_AGAIN}`] : []),
       ...(message ? [message] : []),
     ];
     return (

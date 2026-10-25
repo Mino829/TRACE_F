@@ -8,8 +8,12 @@
  *
  * /log joins memory-only: it never starts a live presence session, so the
  * create response carries neither a live token nor an experience link token.
- * The memory participant token is the only credential, and it never goes into
- * a URL, a log, localStorage or IndexedDB (frontend-design.md 4.1).
+ * The memory participant token is the only credential. It never goes into a
+ * URL, a log or IndexedDB; session.ts keeps it in localStorage until the
+ * memory session's deleteAfter, so that every tab of the browser continues
+ * the same participation (privacy.md and api.md in trace-campus-installation,
+ * decided in its #13; the earlier frontend-design.md 4.1 kept it in the tab's
+ * sessionStorage).
  */
 
 export const TRACE_API_URL = (process.env.NEXT_PUBLIC_TRACE_API_URL ?? "").replace(/\/$/, "");
