@@ -5780,7 +5780,7 @@
   },
   {
    "id": "research-1f",
-   "name": "研究棟1F",
+   "name": "研究棟1F 教室棟側",
    "building": "研究棟",
    "floor": "1F",
    "blender": [
@@ -5796,7 +5796,7 @@
   },
   {
    "id": "research-2f",
-   "name": "研究棟2F",
+   "name": "研究棟2F 教室棟側",
    "building": "研究棟",
    "floor": "2F",
    "blender": [
@@ -5812,7 +5812,7 @@
   },
   {
    "id": "research-3f",
-   "name": "研究棟3F",
+   "name": "研究棟3F 教室棟側",
    "building": "研究棟",
    "floor": "3F",
    "blender": [
@@ -5828,7 +5828,7 @@
   },
   {
    "id": "research-4f",
-   "name": "研究棟4F",
+   "name": "研究棟4F 教室棟側",
    "building": "研究棟",
    "floor": "4F",
    "blender": [
@@ -5844,7 +5844,7 @@
   },
   {
    "id": "research-5f",
-   "name": "研究棟5F",
+   "name": "研究棟5F 教室棟側",
    "building": "研究棟",
    "floor": "5F",
    "blender": [
@@ -5860,7 +5860,7 @@
   },
   {
    "id": "research-6f",
-   "name": "研究棟6F",
+   "name": "研究棟6F 教室棟側",
    "building": "研究棟",
    "floor": "6F",
    "blender": [
@@ -5876,7 +5876,7 @@
   },
   {
    "id": "research-7f",
-   "name": "研究棟7F",
+   "name": "研究棟7F 教室棟側",
    "building": "研究棟",
    "floor": "7F",
    "blender": [
@@ -5892,7 +5892,7 @@
   },
   {
    "id": "research-8f",
-   "name": "研究棟8F",
+   "name": "研究棟8F 教室棟側",
    "building": "研究棟",
    "floor": "8F",
    "blender": [
@@ -5908,7 +5908,7 @@
   },
   {
    "id": "research-9f",
-   "name": "研究棟9F",
+   "name": "研究棟9F 教室棟側",
    "building": "研究棟",
    "floor": "9F",
    "blender": [
@@ -5924,7 +5924,7 @@
   },
   {
    "id": "research-10f",
-   "name": "研究棟10F",
+   "name": "研究棟10F 教室棟側",
    "building": "研究棟",
    "floor": "10F",
    "blender": [
@@ -5940,7 +5940,7 @@
   },
   {
    "id": "research-11f",
-   "name": "研究棟11F",
+   "name": "研究棟11F 教室棟側",
    "building": "研究棟",
    "floor": "11F",
    "blender": [
@@ -5956,7 +5956,7 @@
   },
   {
    "id": "research-12f",
-   "name": "研究棟12F",
+   "name": "研究棟12F 教室棟側",
    "building": "研究棟",
    "floor": "12F",
    "blender": [
@@ -5972,7 +5972,7 @@
   },
   {
    "id": "research-13f",
-   "name": "研究棟13F",
+   "name": "研究棟13F 教室棟側",
    "building": "研究棟",
    "floor": "13F",
    "blender": [
@@ -5988,7 +5988,7 @@
   },
   {
    "id": "research-14f",
-   "name": "研究棟14F",
+   "name": "研究棟14F 教室棟側",
    "building": "研究棟",
    "floor": "14F",
    "blender": [
@@ -6816,6 +6816,230 @@
    "radius": 15,
    "gpsSnap": false,
    "note": "曲がり角の帯の中（教室棟座標 (44, -6)）。研究棟の EV A へ続く",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-1f-east",
+   "name": "研究棟1F 運河側",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -85.48,
+    13.91,
+    0.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-2f-east",
+   "name": "研究棟2F 運河側",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -85.48,
+    13.91,
+    6.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-3f-east",
+   "name": "研究棟3F 運河側",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -85.48,
+    13.91,
+    11.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-4f-east",
+   "name": "研究棟4F 運河側",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -85.48,
+    13.91,
+    16.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-5f-east",
+   "name": "研究棟5F 運河側",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -85.48,
+    13.91,
+    21.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-6f-east",
+   "name": "研究棟6F 運河側",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -85.48,
+    13.91,
+    26.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-7f-east",
+   "name": "研究棟7F 運河側",
+   "building": "研究棟",
+   "floor": "7F",
+   "blender": [
+    -85.48,
+    13.91,
+    31.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-8f-east",
+   "name": "研究棟8F 運河側",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -85.48,
+    13.91,
+    36.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-9f-east",
+   "name": "研究棟9F 運河側",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -85.48,
+    13.91,
+    40.5
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-10f-east",
+   "name": "研究棟10F 運河側",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -85.48,
+    13.91,
+    44.4
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-11f-east",
+   "name": "研究棟11F 運河側",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -85.48,
+    13.91,
+    48.3
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-12f-east",
+   "name": "研究棟12F 運河側",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -85.48,
+    13.91,
+    52.2
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-13f-east",
+   "name": "研究棟13F 運河側",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -85.48,
+    13.91,
+    56.1
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
+   "role": "waypoint",
+   "selectable": true
+  },
+  {
+   "id": "research-14f-east",
+   "name": "研究棟14F 運河側",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -85.48,
+    13.91,
+    60.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
    "role": "waypoint",
    "selectable": true
   }
@@ -9306,12 +9530,6 @@
    "kind": "bridge"
   },
   {
-   "id": "research-6f-bridge-end--research-6f",
-   "from": "research-6f-bridge-end",
-   "to": "research-6f",
-   "kind": "indoor"
-  },
-  {
    "id": "classroom-7f--classroom-7f-e8",
    "from": "classroom-7f",
    "to": "classroom-7f-e8",
@@ -9700,6 +9918,144 @@
    "from": "hq-13f-car",
    "to": "hq-14f-car",
    "kind": "elevator"
+  },
+  {
+   "id": "research-1f--research-1f-east",
+   "from": "research-1f",
+   "to": "research-1f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-east--research-2f-east",
+   "from": "research-1f-east",
+   "to": "research-2f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-2f-east--research-3f-east",
+   "from": "research-2f-east",
+   "to": "research-3f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-3f-east--research-4f-east",
+   "from": "research-3f-east",
+   "to": "research-4f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-4f-east--research-5f-east",
+   "from": "research-4f-east",
+   "to": "research-5f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-5f-east--research-6f-east",
+   "from": "research-5f-east",
+   "to": "research-6f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-6f-east--research-7f-east",
+   "from": "research-6f-east",
+   "to": "research-7f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-7f-east--research-8f-east",
+   "from": "research-7f-east",
+   "to": "research-8f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-8f--research-8f-east",
+   "from": "research-8f",
+   "to": "research-8f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east--research-9f-east",
+   "from": "research-8f-east",
+   "to": "research-9f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-9f--research-9f-east",
+   "from": "research-9f",
+   "to": "research-9f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east--research-10f-east",
+   "from": "research-9f-east",
+   "to": "research-10f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-10f--research-10f-east",
+   "from": "research-10f",
+   "to": "research-10f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east--research-11f-east",
+   "from": "research-10f-east",
+   "to": "research-11f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-11f--research-11f-east",
+   "from": "research-11f",
+   "to": "research-11f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east--research-12f-east",
+   "from": "research-11f-east",
+   "to": "research-12f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-12f--research-12f-east",
+   "from": "research-12f",
+   "to": "research-12f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east--research-13f-east",
+   "from": "research-12f-east",
+   "to": "research-13f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-13f--research-13f-east",
+   "from": "research-13f",
+   "to": "research-13f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east--research-14f-east",
+   "from": "research-13f-east",
+   "to": "research-14f-east",
+   "kind": "elevator"
+  },
+  {
+   "id": "research-14f--research-14f-east",
+   "from": "research-14f",
+   "to": "research-14f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-bridge-end--research-6f-east",
+   "from": "research-6f-bridge-end",
+   "to": "research-6f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-gate--research-2f-east",
+   "from": "research-gate",
+   "to": "research-2f-east",
+   "kind": "indoor"
   }
  ]
 }

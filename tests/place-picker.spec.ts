@@ -58,7 +58,7 @@ test("a photo is saved with the checkpoint chosen for it, and the phone's positi
   await page.getByRole("radio", { name: "研究棟", exact: true }).click();
   await page.getByRole("radio", { name: "9F", exact: true }).click();
   await shoot(page, "02-kenkyu-9f");
-  await page.getByRole("radio", { name: /研究棟9F/ }).click();
+  await page.getByRole("radio", { name: /研究棟9F 教室棟側/ }).click();
   await expect(save).toBeEnabled();
   await shoot(page, "03-selected");
   await save.click();
