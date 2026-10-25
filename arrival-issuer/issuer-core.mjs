@@ -50,6 +50,22 @@ export function readConfig(env) {
   if (!(refreshSeconds >= 5 && refreshSeconds <= 20)) {
     throw new Error("REFRESH_SECONDS は 5〜20 にしてください。");
   }
+  // The display relay is optional: without its key, /display-ws answers 503.
+  const displayIssuerKey = env.TRACE_DISPLAY_ISSUER_KEY ?? "";
+  let versions = null;
+  if (displayIssuerKey) {
+    if (displayIssuerKey.length < 32 || displayIssuerKey === issuerKey) {
+      throw new Error("TRACE_DISPLAY_ISSUER_KEY に、TRACE_B と同じ32文字以上の値を書いてください（到着用の鍵とは別の値です）。");
+    }
+    versions = {
+      coordinate: env.TRACE_COORDINATE_VERSION ?? "",
+      campusGraph: env.TRACE_CAMPUS_GRAPH_VERSION ?? "",
+      threeDMap: env.TRACE_THREE_D_MAP_VERSION ?? "",
+    };
+    if (Object.values(versions).some((value) => !value || /\s/.test(value))) {
+      throw new Error("展示画面の中継には TRACE_COORDINATE_VERSION、TRACE_CAMPUS_GRAPH_VERSION、TRACE_THREE_D_MAP_VERSION が要ります。TRACE_B の設定と同じ値を書いてください。");
+    }
+  }
   return {
     origin: url.origin,
     issuerKey,
@@ -57,6 +73,8 @@ export function readConfig(env) {
     port,
     displayOrigins,
     refreshMs: refreshSeconds * 1000,
+    displayIssuerKey,
+    versions,
   };
 }
 
