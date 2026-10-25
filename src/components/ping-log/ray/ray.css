@@ -1414,6 +1414,20 @@ html:has(.ray) body {
     min-height: 330px;
     margin: 0 -20px;
   }
+  /* The real camera (arrival.tsx). The field draws its picture; the video shows only where WebGL is missing, in grey. */
+  & .scan__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    filter: grayscale(1) contrast(1.2);
+    pointer-events: none;
+  }
+  & .scan__video.is-shown {
+    opacity: 1;
+  }
   & .scan__target {
     position: absolute;
     left: 50%;

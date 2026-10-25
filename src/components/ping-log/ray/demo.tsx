@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { flushSync } from "react-dom";
 
 import { reducedMotion } from "@/lib/ray/fx";
@@ -143,6 +143,61 @@ function drawCamera(context: CanvasRenderingContext2D, width: number, height: nu
 const LOCK_AT = 1.6;
 const ARRIVE_AFTER_MS = 900;
 
+/**
+ * Moves the four trackers onto a code's corners: top left, top right, bottom
+ * left, bottom right, each as a fraction of the camera picture, which fills
+ * the window as `cover` crops it.
+ */
+export function placeTrackers(trackers: (HTMLDivElement | null)[], rect: DOMRect, corners: [number, number][], cover: readonly [number, number]) {
+  trackers.forEach((tracker, index) => {
+    if (!tracker) return;
+    const x = ((corners[index][0] - 0.5) / cover[0] + 0.5) * rect.width;
+    const y = ((corners[index][1] - 0.5) / cover[1] + 0.5) * rect.height;
+    tracker.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+    const label = tracker.lastElementChild;
+    if (label) label.textContent = `x: ${String(Math.round(x)).padStart(4, "0")} y: ${String(Math.round(y)).padStart(4, "0")}`;
+  });
+}
+
+/** The camera's window: the aiming frame, the cross, and the trackers that find the code's corners. */
+export function ScanWindow({
+  windowRef,
+  trackers,
+  locked,
+  children,
+}: {
+  windowRef: RefObject<HTMLDivElement | null>;
+  trackers: RefObject<(HTMLDivElement | null)[]>;
+  locked: boolean;
+  children?: ReactNode;
+}) {
+  return (
+    <div ref={windowRef} className="scan__window">
+      {children}
+      <div className="scan__target" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+        <i />
+      </div>
+      <div className="scan__cross" aria-hidden="true" />
+      {[0, 1, 2, 3].map((index) => (
+        <div
+          key={index}
+          ref={(element) => {
+            trackers.current[index] = element;
+          }}
+          className={`trk${locked ? " is-on" : ""}`}
+          aria-hidden="true"
+        >
+          <i />
+          <span>x: 0000 y: 0000</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Scan({ inert, onCancel, onRead }: { inert: boolean; onCancel: () => void; onRead: () => void }) {
   const { field, fx } = useRay();
   const windowRef = useRef<HTMLDivElement>(null);
@@ -204,22 +259,8 @@ function Scan({ inert, onCancel, onRead }: { inert: boolean; onCancel: () => voi
         timer = window.setTimeout(() => void arrive(), ARRIVE_AFTER_MS);
       }
       // The four corners, from the camera's pixels to the window's.
-      const rect = box.getBoundingClientRect();
-      const [cx, cy] = field.u.cover;
-      const corners = [
-        [code.x0, code.y0],
-        [code.x1, code.y0],
-        [code.x0, code.y1],
-        [code.x1, code.y1],
-      ];
-      trackers.current.forEach((tracker, index) => {
-        if (!tracker) return;
-        const x = ((corners[index][0] / camera.width - 0.5) / cx + 0.5) * rect.width;
-        const y = ((corners[index][1] / camera.height - 0.5) / cy + 0.5) * rect.height;
-        tracker.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
-        const label = tracker.lastElementChild;
-        if (label) label.textContent = `x: ${String(Math.round(x)).padStart(4, "0")} y: ${String(Math.round(y)).padStart(4, "0")}`;
-      });
+      const [x0, y0, x1, y1] = [code.x0 / camera.width, code.y0 / camera.height, code.x1 / camera.width, code.y1 / camera.height];
+      placeTrackers(trackers.current, box.getBoundingClientRect(), [[x0, y0], [x1, y0], [x0, y1], [x1, y1]], field.u.cover);
     });
 
     return () => {
@@ -246,28 +287,7 @@ function Scan({ inert, onCancel, onRead }: { inert: boolean; onCancel: () => voi
       <h1 className="h2 scan__head">
         <Phrases text="ASYNC のブースの QR コードを、枠に入れてください" />
       </h1>
-      <div ref={windowRef} className="scan__window">
-        <div className="scan__target" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-          <i />
-        </div>
-        <div className="scan__cross" aria-hidden="true" />
-        {[0, 1, 2, 3].map((index) => (
-          <div
-            key={index}
-            ref={(element) => {
-              trackers.current[index] = element;
-            }}
-            className={`trk${locked ? " is-on" : ""}`}
-            aria-hidden="true"
-          >
-            <i />
-            <span>x: 0000 y: 0000</span>
-          </div>
-        ))}
-      </div>
+      <ScanWindow windowRef={windowRef} trackers={trackers} locked={locked} />
       <div className="scan__status">
         <p className="h3" role="status">
           {locked ? "読み取りました" : "読み取っています…"}
@@ -283,13 +303,12 @@ function Scan({ inert, onCancel, onRead }: { inert: boolean; onCancel: () => voi
 
 /* ---------------------------------------------------------------- arrived */
 
-function Arrived({ inert, onLeave, onHome, onStory }: { inert: boolean; onLeave: () => void; onHome: () => void; onStory: () => void }) {
+/**
+ * The beam that leaves the phone upward, toward the room's screen, while the
+ * replay is ahead or playing. It goes out once `played`.
+ */
+export function useBeam(stageRef: RefObject<HTMLDivElement | null>, played: boolean) {
   const { field } = useRay();
-  const stageRef = useRef<HTMLDivElement>(null);
-  const [arrivedAt] = useState(() => clock(Date.now()));
-  const [progress, setProgress] = useState(0);
-  const played = progress >= 1;
-  // The beam leaves the phone upward, toward the room's screen.
   useField("room", { scene: 1, splitOn: 0, invert: 0, beam: 1, grow: 1, flow: 16, pool: 1, poolAt: 0, poolR: [0.085, 0.02] });
 
   // The beam starts low in the stage, on the right, and runs straight up past the top edge. It follows the page.
@@ -313,7 +332,7 @@ function Arrived({ inert, onLeave, onHome, onStory }: { inert: boolean; onLeave:
       scroll?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, [field, scroller]);
+  }, [field, scroller, stageRef]);
 
   // A point of light comes on, then the beam shoots up out of the top of the screen.
   useEffect(() => {
@@ -330,6 +349,19 @@ function Arrived({ inert, onLeave, onHome, onStory }: { inert: boolean; onLeave:
     };
   }, [field]);
 
+  // The beam has done its job: it goes out, and the field stops redrawing.
+  useEffect(() => {
+    if (played) void field?.to({ beam: 0, pool: 0.35 }, 900, "inOut");
+  }, [played, field]);
+}
+
+function Arrived({ inert, onLeave, onHome, onStory }: { inert: boolean; onLeave: () => void; onHome: () => void; onStory: () => void }) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [arrivedAt] = useState(() => clock(Date.now()));
+  const [progress, setProgress] = useState(0);
+  const played = progress >= 1;
+  useBeam(stageRef, played);
+
   // The replay runs on the room's screen; the phone shows how far along it is.
   useEffect(() => {
     const t0 = performance.now();
@@ -342,11 +374,6 @@ function Arrived({ inert, onLeave, onHome, onStory }: { inert: boolean; onLeave:
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, []);
-
-  // The beam has done its job: it goes out, and the field stops redrawing.
-  useEffect(() => {
-    if (played) void field?.to({ beam: 0, pool: 0.35 }, 900, "inOut");
-  }, [played, field]);
 
   return (
     <Screen inert={inert}>
