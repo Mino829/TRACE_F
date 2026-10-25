@@ -401,7 +401,7 @@ export function HomeScreen(props: HomeProps) {
         <p className="home__meta mono">
           <span>Memory</span>
           <span aria-hidden="true">
-            {String(count).padStart(2, "0")} / {maxPhotos}
+            {count} / {maxPhotos}
           </span>
           <span className="sr-only">{`${count}枚（${maxPhotos}枚まで）`}</span>
         </p>
