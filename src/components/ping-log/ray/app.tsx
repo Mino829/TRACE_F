@@ -9,6 +9,7 @@ import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
 import { TRACE_API_URL } from "@/lib/trace-api/client";
 import { reducedMotion } from "@/lib/ray/fx";
 
+import { ArrivalFlow, type ArrivalTarget } from "./arrival";
 import { DemoFlow } from "./demo";
 import { ConsentLayer, HowToLayer, InstallLayer, MenuLayer, WithdrawLayer, type MenuItem, type OverlayName } from "./overlays";
 import { PhotoScreen } from "./photo";
@@ -56,6 +57,8 @@ export type RayAppProps = {
   onCloseSkip: () => void;
   /** Where the arrival demo was opened from, while it is up. */
   demo: "home" | "developer" | null;
+  /** The experience on TRACE_B, while /log works with it: home's QR button then reads the booth's real code instead of opening the demo. */
+  arrival: ArrivalTarget | null;
   onArrive: () => void;
   onCloseDemo: () => void;
   onTakePhoto: () => void;
@@ -121,6 +124,10 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
     }
     props.onSkip();
   };
+
+  if (props.demo === "home" && props.arrival) {
+    return <ArrivalFlow target={props.arrival} inert={inert} onClose={props.onCloseDemo} />;
+  }
 
   if (props.demo) {
     return <DemoFlow closeLabel={props.demo === "home" ? "ホームへもどる" : "開発者の画面にもどる"} inert={inert} onClose={props.onCloseDemo} onHome={props.onHome} />;

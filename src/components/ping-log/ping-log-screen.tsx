@@ -66,9 +66,10 @@ import "./developer.css";
  * With NEXT_PUBLIC_TRACE_API_URL set, agreeing also creates the experience on
  * the work's backend (TRACE_B), and joining lasts as long as this tab keeps
  * its credential: the photo limit comes from the backend's config and counts
- * per memory session, and "参加をやめる" deletes the memory session too. Photos, the arrival QR, the
- * story and the reminder have no backend routes yet and stay on the phone and
- * the push worker, as everything does when the variable is unset.
+ * per memory session, and "参加をやめる" deletes the memory session too. The
+ * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx).
+ * Photos, the story and the reminder have no backend routes yet and stay on
+ * the phone and the push worker, as everything does when the variable is unset.
  *
  * The developer screen, behind the button left of the menu, is the team's
  * accuracy test: the ten-minute ping answered by pointing at where one
@@ -515,7 +516,8 @@ export function PingLogScreen() {
           skipped={skipped}
           onCloseSkip={() => setSkipped(null)}
           demo={demo}
-          // The booth's QR code and the replay wait for the work's backend; until then the button opens the demo.
+          // With the backend, home's button reads the booth's real QR code and follows the replay; without it, the button opens the demo.
+          arrival={experience}
           onArrive={() => setDemo("home")}
           onCloseDemo={() => setDemo(null)}
           onTakePhoto={() => openCamera(pendingAt)}
