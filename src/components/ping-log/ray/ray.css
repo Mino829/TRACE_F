@@ -809,6 +809,45 @@ html:has(.ray) body {
     background: var(--paper);
     color: var(--ink);
   }
+  /* Where this phone or browser cannot join (EntryCta): the reason above a button that cannot be pressed, or in its place. */
+  & .title__cta .btn[disabled] {
+    background: transparent;
+    color: var(--paper);
+    box-shadow: inset 0 0 0 1px rgba(211, 213, 211, 0.5);
+    opacity: 0.55;
+  }
+  & .title__why {
+    margin-bottom: 12px;
+    color: var(--paper);
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 600;
+  }
+  & .title__more {
+    margin-top: 4px;
+    text-align: center;
+  }
+  & .title__more .link {
+    color: var(--paper);
+    font-size: 13.5px;
+  }
+  & .title__stop {
+    padding: 14px 16px 15px;
+    box-shadow: inset 0 0 0 1.5px var(--paper);
+    color: var(--paper);
+  }
+  & .title__stop h2 {
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+  & .title__stop p {
+    margin-top: 6px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    font-weight: 500;
+    color: #b4b6b9;
+  }
   & .title :is(.btn, .icon-btn, .info, .link, .mast__dev):focus-visible {
     outline-color: var(--paper);
   }

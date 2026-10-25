@@ -6,7 +6,7 @@ import type { PushSupport } from "@/lib/ping-log/environment";
 import { REMINDER_PLAN } from "@/lib/ping-log/push";
 
 import { ConsentBody } from "./screens";
-import { Icon, Phrases, Sentences, type IconName } from "./stage";
+import { Icon, Phrases, Sentences, useRay, type IconName } from "./stage";
 
 /**
  * The layers over a screen: the menu, how to play, the install guide, the
@@ -153,9 +153,22 @@ export function HowToLayer({ maxPhotos, onClose }: { maxPhotos: number; onClose:
 /**
  * What to do when this browser cannot receive the optional reminder, with
  * the exact taps. Before joining, the home-screen app keeps its own storage,
- * so the advice is to move first.
+ * so the advice is to move first. From the title in an iPhone's tab it also
+ * offers to join here without notifications (onContinue); from the title in
+ * an in-app browser it is the way to Safari or Chrome, where joining has to start.
  */
-export function InstallLayer({ support, beforeJoining, onClose }: { support: PushSupport; beforeJoining: boolean; onClose: () => void }) {
+export function InstallLayer({
+  support,
+  beforeJoining,
+  onContinue,
+  onClose,
+}: {
+  support: PushSupport;
+  beforeJoining: boolean;
+  onContinue?: () => void;
+  onClose: () => void;
+}) {
+  const { go } = useRay();
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -177,15 +190,16 @@ export function InstallLayer({ support, beforeJoining, onClose }: { support: Pus
         : "ホーム画面にできた TRACE のアイコンから開き直すと、リマインダーをオンにできます。",
     },
   ];
+  const heading = ios ? "iPhone で通知を受け取るには" : support === "in-app" ? "アプリの中で開いています" : "このブラウザでは通知を受け取れません";
 
   return (
-    <Layer kind="full" label="通知を受け取るには" onClose={onClose}>
+    <Layer kind="full" label={heading} onClose={onClose}>
       <div className="full">
         <CloseBar label={ios ? "iPhone" : "Notice"} onClose={onClose} />
         {ios ? (
           <>
             <h1 className="h2">
-              <Phrases text="iPhone で通知を受け取るには" />
+              <Phrases text={heading} />
             </h1>
             <p className="body" style={{ marginTop: 10 }}>
               <Sentences text="iPhone では、このページをホーム画面に追加すると、撮影のリマインダーを通知で受け取れます（iOS 16.4 以降）。" />
@@ -213,14 +227,16 @@ export function InstallLayer({ support, beforeJoining, onClose }: { support: Pus
         ) : (
           <>
             <h1 className="h2">
-              <Phrases text={support === "in-app" ? "アプリの中で開いています" : "このブラウザでは通知を受け取れません"} />
+              <Phrases text={heading} />
             </h1>
             <p className="body" style={{ marginTop: 10 }}>
               <Sentences
                 text={
-                  support === "in-app"
-                    ? "LINE などのアプリの中で開いたページでは、通知を受け取れません。リマインダーを使う場合は、アプリのメニューの「ブラウザで開く」を選ぶか、リンクをコピーして Safari か Chrome で開いてください。"
-                    : "リマインダーを使う場合は、リンクをコピーして Safari か Chrome で開いてください。"
+                  support !== "in-app"
+                    ? "リマインダーを使う場合は、リンクをコピーして Safari か Chrome で開いてください。"
+                    : beforeJoining
+                      ? "アプリの中で開いたページの記録は、Safari や Chrome に引き継げません。アプリのメニューの「ブラウザで開く」を選ぶか、リンクをコピーして Safari か Chrome で開いてから、参加してください。"
+                      : "LINE などのアプリの中で開いたページでは、通知を受け取れません。リマインダーを使う場合は、アプリのメニューの「ブラウザで開く」を選ぶか、リンクをコピーして Safari か Chrome で開いてください。"
                 }
               />
             </p>
@@ -230,9 +246,20 @@ export function InstallLayer({ support, beforeJoining, onClose }: { support: Pus
             </button>
           </>
         )}
-        <button type="button" className="btn btn--line" style={{ marginTop: 18 }} onClick={onClose}>
-          閉じる
-        </button>
+        {onContinue ? (
+          <>
+            <button type="button" className="btn btn--line" style={{ marginTop: 18 }} onClick={() => void go(onContinue)}>
+              通知なしでこのまま参加する
+            </button>
+            <p className="small" style={{ marginTop: 8 }}>
+              <Sentences text="プライベートブラウズでは記録が正常に保存されません。通常のタブで開いてください。" />
+            </p>
+          </>
+        ) : (
+          <button type="button" className="btn btn--line" style={{ marginTop: 18 }} onClick={onClose}>
+            閉じる
+          </button>
+        )}
       </div>
     </Layer>
   );
