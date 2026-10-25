@@ -84,6 +84,18 @@
   will-change: transform;
 }
 
+/* Before it is tapped, an outdoor checkpoint's name is short and small, so eight of them fit round the buildings. */
+.cm .cm__tag[data-small="true"] {
+  min-height: 20px;
+  max-width: 9.5em;
+  padding: 3px 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  border-color: color-mix(in srgb, var(--cm-ink) 60%, transparent);
+}
+
 .cm .cm__tag[aria-pressed="true"] {
   color: var(--cm-paper);
   background: var(--cm-ink);
@@ -177,4 +189,9 @@
 
 .cm .cm__floor[hidden] {
   display: none;
+}
+
+.cm .cm__tag[data-small="true"][data-on="true"] {
+  display: inline-block;
+  line-height: 14px;
 }

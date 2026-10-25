@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 撮影場所の輪郭を作るための中間ファイル（Blender で作り直せる。1.6MB）
+/models/trace/places_heightfield.json

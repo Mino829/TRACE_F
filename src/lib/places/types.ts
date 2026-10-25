@@ -49,6 +49,17 @@ export type Checkpoint = {
   joins?: BuildingId;
 };
 
+/** Something drawn on the map to find one's way, not chosen: the classroom building's escalators. */
+export type Landmark = {
+  kind: "escalator";
+  building: BuildingId;
+  /** Foot and head of the escalator, (x, y, z) in the same frame as the checkpoints. */
+  from: [number, number, number];
+  to: [number, number, number];
+  /** Width of the escalator (both lanes), in metres. */
+  width: number;
+};
+
 export type PlacesData = {
   /** campus_graph.json's campusGraphVersion; stored with every photo's place. */
   graphVersion: string;
@@ -56,6 +67,8 @@ export type PlacesData = {
   origin: [number, number];
   buildings: Building[];
   checkpoints: Checkpoint[];
+  /** Ways to find one's bearings on the map (optional). */
+  landmarks?: Landmark[];
 };
 
 /** What is stored with a photo: enough to put it back on the graph, and to notice a graph that has since changed. */

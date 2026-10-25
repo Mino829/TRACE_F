@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import type { Building, BuildingId, Checkpoint, PlacePoint, PlacesData } from "@/lib/places/types";
+import type { Building, BuildingId, Checkpoint, Landmark, PlacePoint, PlacesData } from "@/lib/places/types";
 import { LINE_FRAGMENT, LINE_VERTEX, POINT_FRAGMENT, POINT_VERTEX, compileProgram, getContext } from "@/lib/places/webgl";
 
 import "./campus-map.css";
@@ -49,8 +49,6 @@ const FAR = 4000;
 const TAP_SLOP = 8;
 /** A checkpoint takes a tap within this many px of its dot: a 48px target round a dot drawn smaller. */
 const PICK_RADIUS = 24;
-/** On the whole campus, a dot right under the finger (this close, px) wins over the building behind it. */
-const NEAR_DOT = 12;
 const TWEEN_MS = 350;
 const PULSE_INTERVAL = 50;
 /** Room kept round the whole campus, and round a building, as a share of the frame. */
@@ -96,6 +94,9 @@ type BuildingPart = {
   box: Box;
   tag: HTMLButtonElement;
 };
+
+/** An escalator drawn inside its building: a slanted band (two handrails, the lanes' divide and a few steps). */
+type EscalatorPart = { layer: Layer; building: BuildingId; foot: number; head: number };
 
 type Engine = {
   apply: () => void;
@@ -196,6 +197,45 @@ function insidePolygon(p: PlacePoint, loop: PlacePoint[]): boolean {
     if (yi > p[1] !== yj > p[1] && p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;
+}
+
+/** Inside an outline made of several loops, counting a loop inside another as a hole (even-odd), like a light well or a gate. */
+function insideLoops(p: PlacePoint, loops: PlacePoint[][]): boolean {
+  let inside = false;
+  for (const loop of loops) if (insidePolygon(p, loop)) inside = !inside;
+  return inside;
+}
+
+/** A loop lying inside another of the same outline: a hole. */
+function hasHoles(loops: PlacePoint[][]): boolean {
+  return loops.some((loop, i) => loop.length > 0 && loops.some((other, j) => i !== j && insidePolygon(loop[0], other)));
+}
+
+/** A checkpoint's name without its bracketed note, for the small label shown before it is tapped. */
+function shortName(name: string): string {
+  return name.replace(/[（(][^）)]*[）)]/g, "").trim() || name;
+}
+
+/** An escalator as lines: both handrails, the line between its two lanes, and a few steps across. */
+function escalatorLines(e: Landmark): number[] {
+  const [fx, fy, fz] = e.from;
+  const [tx, ty, tz] = e.to;
+  const len = Math.hypot(tx - fx, ty - fy) || 1;
+  // Across the run, on the ground.
+  const ax = (-(ty - fy) / len) * (e.width / 2);
+  const ay = ((tx - fx) / len) * (e.width / 2);
+  const out: number[] = [];
+  const line = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) => out.push(x0, z0, -y0, x1, z1, -y1);
+  for (const k of [-1, 0, 1]) line(fx + ax * k, fy + ay * k, fz + (k === 0 ? 0 : 0.9), tx + ax * k, ty + ay * k, tz + (k === 0 ? 0 : 0.9));
+  const steps = Math.max(4, Math.min(9, Math.round(len / 1.6)));
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps;
+    const x = fx + (tx - fx) * t;
+    const y = fy + (ty - fy) * t;
+    const z = fz + (tz - fz) * t;
+    line(x - ax, y - ay, z, x + ax, y + ay, z);
+  }
+  return out;
 }
 
 function bounds(loops: PlacePoint[][]): Box {
@@ -400,7 +440,8 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
       loopSegments(loops, f.z, ringVertices);
       const postVertices: number[] = [];
       for (const loop of loops) for (const [x, y] of loop) postVertices.push(x, f.z, -y, x, top, -y);
-      const fill = layer(makeMesh(loops.flatMap((loop) => triangulate(loop))), gl.TRIANGLES);
+      // An outline with a hole (a light well, a gate) is drawn as outline only: ear clipping would fill the hole in.
+      const fill = layer(makeMesh(hasHoles(loops) ? [] : loops.flatMap((loop) => triangulate(loop))), gl.TRIANGLES);
       fill.offset = [0, f.z, 0];
       const floorButton = button(panel, "cm__floor", f.label, () => getProps().onFloor(f.label));
       floorButton.setAttribute("aria-label", `${b.name} ${f.label}`);
@@ -416,7 +457,12 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
     parts.set(b.id, { data: b, floors, roof: layer(makeMesh(roofVertices), gl.LINES), box: bounds(loops.length > 0 ? loops : b.footprint), tag });
   }
 
-  // Checkpoint names, shown beside their dots on an open floor (and the chosen outdoor one).
+  // Landmarks that tell a building from inside: the classroom building's escalators.
+  const escalators: EscalatorPart[] = (data.landmarks ?? [])
+    .filter((e) => e.kind === "escalator" && parts.has(e.building))
+    .map((e) => ({ layer: layer(makeMesh(escalatorLines(e)), gl.LINES), building: e.building, foot: Math.min(e.from[2], e.to[2]), head: Math.max(e.from[2], e.to[2]) }));
+
+  // Checkpoint names: beside their dots on an open floor, and beside the outdoor ones on the whole campus.
   const tags = new Map<string, HTMLButtonElement>();
   for (const c of data.checkpoints) {
     const tag = button(overlay, "cm__tag", c.name, () => getProps().onSelect(c.id));
@@ -632,23 +678,53 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
     return size;
   };
 
-  type Slot = { el: HTMLElement; cx: number; cy: number; w: number; h: number };
+  /** A label to place: its size, and the places it may go (beside its dot or roof), tried in order. */
+  type Slot = { el: HTMLElement; w: number; h: number; options: [number, number][] };
+  type Rect = { cx: number; cy: number; w: number; h: number };
 
-  const settle = (slots: Slot[], area: Box) => {
-    const placed: Slot[] = [];
+  const clashes = (a: Rect, b: Rect) => Math.abs(a.cx - b.cx) < (a.w + b.w) / 2 + 2 && Math.abs(a.cy - b.cy) < (a.h + b.h) / 2 + 1;
+
+  /**
+   * Puts each label at the first of its places that is inside the frame and clear of the labels already placed
+   * and of every dot (a name never covers a checkpoint). When none is clear, the least crowded one is used.
+   */
+  const settle = (slots: Slot[], area: Box, dots: Rect[]) => {
+    const placed: Rect[] = [...dots];
     for (const slot of slots) {
-      for (let pass = 0; pass < 10; pass++) {
-        const clash = placed.find((o) => Math.abs(o.cx - slot.cx) < (o.w + slot.w) / 2 + 2 && Math.abs(o.cy - slot.cy) < (o.h + slot.h) / 2 + 1);
-        if (!clash) break;
-        slot.cy = clash.cy + (clash.h + slot.h) / 2 + 2;
+      let best: Rect | null = null;
+      let fewest = Infinity;
+      for (const [x, y] of slot.options) {
+        const r: Rect = {
+          cx: Math.min(area.x1 - slot.w / 2, Math.max(area.x0 + slot.w / 2, x)),
+          cy: Math.min(area.y1 - slot.h / 2, Math.max(area.y0 + slot.h / 2, y)),
+          w: slot.w,
+          h: slot.h,
+        };
+        const crowd = placed.filter((o) => clashes(o, r)).length + (r.cx !== x || r.cy !== y ? 0.5 : 0);
+        if (crowd < fewest) {
+          fewest = crowd;
+          best = r;
+        }
+        if (crowd === 0) break;
       }
-      slot.cx = Math.min(area.x1 - slot.w / 2, Math.max(area.x0 + slot.w / 2, slot.cx));
-      slot.cy = Math.min(area.y1 - slot.h / 2, Math.max(area.y0 + slot.h / 2, slot.cy));
-      placed.push(slot);
+      if (!best) continue;
+      placed.push(best);
       slot.el.dataset.on = "true";
-      slot.el.style.transform = `translate3d(${(slot.cx - slot.w / 2).toFixed(1)}px,${(slot.cy - slot.h / 2).toFixed(1)}px,0)`;
+      slot.el.style.transform = `translate3d(${(best.cx - best.w / 2).toFixed(1)}px,${(best.cy - best.h / 2).toFixed(1)}px,0)`;
     }
   };
+
+  /** Places round a point for a label of this size: right, left, above, below, then the corners. */
+  const around8 = (x: number, y: number, w: number, h: number, gap: number): [number, number][] => [
+    [x + gap + w / 2, y],
+    [x - gap - w / 2, y],
+    [x, y - gap - h / 2],
+    [x, y + gap + h / 2],
+    [x + gap + w / 2, y - h - 2],
+    [x + gap + w / 2, y + h + 2],
+    [x - gap - w / 2, y - h - 2],
+    [x - gap - w / 2, y + h + 2],
+  ];
 
   const updateLabels = () => {
     const p = getProps();
@@ -663,24 +739,38 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
       const q = project(at(part.data.labelAt[0], part.data.labelAt[1], part.data.roofZ + 3));
       if (!q.ok) continue;
       const size = sizeOf(part.tag);
-      slots.push({ el: part.tag, cx: q.x, cy: q.y - size.h / 2 - 2, ...size });
+      // Above the roof first; the building's name may move round it but stays by its building.
+      slots.push({ el: part.tag, ...size, options: [[q.x, q.y - size.h / 2 - 2], ...around8(q.x, q.y, size.w, size.h, 6)] });
     }
+    const dots: Rect[] = [];
     for (const tag of tags.values()) tag.dataset.on = "false";
+    const named: Slot[] = [];
     for (const item of shown) {
-      const named = open ? p.floor !== null : item.checkpoint.id === p.selectedId;
-      if (!named) continue;
-      const tag = tags.get(item.checkpoint.id);
-      if (!tag) continue;
       const q = project(item.position);
       if (!q.ok) continue;
-      tag.setAttribute("aria-pressed", String(item.checkpoint.id === p.selectedId));
+      dots.push({ cx: q.x, cy: q.y, w: 18, h: 18 });
+      if (open && p.floor === null) continue;
+      const tag = tags.get(item.checkpoint.id);
+      if (!tag) continue;
+      const chosen = item.checkpoint.id === p.selectedId;
+      tag.setAttribute("aria-pressed", String(chosen));
+      // On the whole campus the outdoor names are short and small until one is chosen.
+      const small = !open && !chosen;
+      const text = small ? shortName(item.checkpoint.name) : item.checkpoint.name;
+      if (tag.textContent !== text || tag.dataset.small !== String(small)) {
+        tag.textContent = text;
+        tag.dataset.small = String(small);
+        sizes.delete(tag);
+      }
       const size = sizeOf(tag);
-      // Beside the dot, never over it: to the right if there is room, else to the left, else above.
-      if (q.x + 16 + size.w <= area.x1) slots.push({ el: tag, cx: q.x + 16 + size.w / 2, cy: q.y, ...size });
-      else if (q.x - 16 - size.w >= area.x0) slots.push({ el: tag, cx: q.x - 16 - size.w / 2, cy: q.y, ...size });
-      else slots.push({ el: tag, cx: q.x, cy: q.y - 18 - size.h / 2, ...size });
+      // Close beside the dot first; a little farther out when all the near places are taken.
+      const slot: Slot = { el: tag, ...size, options: [...around8(q.x, q.y, size.w, size.h, 14), ...around8(q.x, q.y, size.w, size.h, 34)] };
+      // The chosen one's name goes first, so it gets the best place.
+      if (chosen) named.unshift(slot);
+      else named.push(slot);
     }
-    settle(slots, area);
+    // On an open floor the checkpoints' names matter most; on the whole campus the buildings' do.
+    settle(open ? [...named, ...slots] : [...slots, ...named], area, dots);
   };
 
   const campusFrame = (): View => {
@@ -751,6 +841,16 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
     }
     ground.opacity = open ? 0.14 : 0.16;
 
+    // Escalators: seen on the whole campus; inside their building in full ink; with a floor open, the ones that reach it strongest.
+    const openFloor = open && openIndex >= 0 ? open.floors[openIndex] : null;
+    for (const e of escalators) {
+      if (!open) e.layer.opacity = 0.7;
+      else if (e.building !== open.data.id) e.layer.opacity = 0.22;
+      else if (!openFloor) e.layer.opacity = 0.9;
+      else if (Math.abs(e.foot - openFloor.z) < 0.8 || Math.abs(e.head - openFloor.z) < 0.8) e.layer.opacity = 1;
+      else e.layer.opacity = e.head <= openFloor.z ? 0.45 : 0.22;
+    }
+
     // The floor buttons and the way back, only inside a building.
     back.dataset.on = open ? "true" : "false";
     crumb.dataset.on = open ? "true" : "false";
@@ -790,7 +890,7 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
     gl.bindBuffer(gl.ARRAY_BUFFER, dotBuffer);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, positions);
     dotCount = list.length;
-    dotSize = open ? 16 : 11;
+    dotSize = 16;
 
     const chosen = list.find((item) => item.checkpoint.id === p.selectedId);
     chosenPosition = chosen ? chosen.position : null;
@@ -917,7 +1017,7 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
       for (const f of part.floors) levels.push({ z: (f.z + f.top) / 2, loops: f.loops, floor: f });
       for (const level of levels) {
         const r = rayAt(x, y, level.z);
-        if (!r || !level.loops.some((loop) => insidePolygon(r.point, loop))) continue;
+        if (!r || !insideLoops(r.point, level.loops)) continue;
         if (!best || r.d < best.d) best = { part, floor: level.floor, d: r.d };
       }
     }
@@ -936,10 +1036,13 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
     }
     const open = p.building ? parts.get(p.building) : undefined;
     if (!open) {
-      // On the whole campus a dot at a building's foot gives way to the building unless the finger is right on it.
+      // A dot within reach of the finger is chosen before the building behind it.
+      if (near) {
+        p.onSelect(near.id);
+        return;
+      }
       const hit = buildingAt(x, y);
-      if (near && (!hit || near.d <= NEAR_DOT)) p.onSelect(near.id);
-      else if (hit) p.onBuilding(hit.part.data.id);
+      if (hit) p.onBuilding(hit.part.data.id);
       return;
     }
     if (near) {
