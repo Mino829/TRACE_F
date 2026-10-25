@@ -62,7 +62,7 @@ const PITCH_CAMPUS = (44 * Math.PI) / 180;
 /** The whole campus is seen from about here (south-east), give or take a little to fill the frame. */
 const CAMPUS_YAW = 0.42;
 const PITCH_BUILDING = (30 * Math.PI) / 180;
-const PITCH_FLOOR = (52 * Math.PI) / 180;
+const PITCH_FLOOR = (40 * Math.PI) / 180;
 
 type V3 = [number, number, number];
 type View = { x: number; y: number; z: number; dist: number; yaw: number; pitch: number };
@@ -71,7 +71,7 @@ type Mesh = { buffer: WebGLBuffer; count: number };
 type Box = { x0: number; x1: number; y0: number; y1: number };
 
 /** Something drawn with the line program: a buffer, how, and how strongly. */
-type Layer = { mesh: Mesh; mode: number; offset: V3; opacity: number };
+type Layer = { mesh: Mesh; mode: number; offset: V3; opacity: number; color: V3 };
 
 type FloorPart = {
   label: string;
@@ -309,13 +309,14 @@ function triangulate(loop: PlacePoint[]): number[] {
   return out;
 }
 
-function readInk(host: HTMLElement): V3 {
+/** A colour of the screen the map sits in (a CSS variable), as 0..1 RGB. */
+function readColor(host: HTMLElement, variable: string, fallback: string, rgb: V3): V3 {
   const probe = document.createElement("span");
-  probe.style.cssText = "position:absolute;visibility:hidden;color:var(--fg,#0c0c0d)";
+  probe.style.cssText = `position:absolute;visibility:hidden;color:var(${variable},${fallback})`;
   host.appendChild(probe);
   const numbers = getComputedStyle(probe).color.match(/[\d.]+/g);
   host.removeChild(probe);
-  return numbers && numbers.length >= 3 ? [Number(numbers[0]) / 255, Number(numbers[1]) / 255, Number(numbers[2]) / 255] : [0.047, 0.047, 0.05];
+  return numbers && numbers.length >= 3 ? [Number(numbers[0]) / 255, Number(numbers[1]) / 255, Number(numbers[2]) / 255] : rgb;
 }
 
 function button(parent: HTMLElement, className: string, text: string, onTap: () => void): HTMLButtonElement {
@@ -340,7 +341,9 @@ function ease(t: number): number {
 // ---------------------------------------------------------------------------
 
 function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => CampusMapProps): Engine {
-  const ink = readInk(host);
+  const ink = readColor(host, "--fg", "#0c0c0d", [0.047, 0.047, 0.05]);
+  /** The paper the floors are laid with, so the light behind the map does not show through a building. */
+  const paper = readColor(host, "--bg", "#d3d5d3", [0.827, 0.835, 0.827]);
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
@@ -401,7 +404,7 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
   const lineLayers: Layer[] = [];
   const fillLayers: Layer[] = [];
   const layer = (mesh: Mesh, mode: number, opacity = 0): Layer => {
-    const l: Layer = { mesh, mode, offset: [0, 0, 0], opacity };
+    const l: Layer = { mesh, mode, offset: [0, 0, 0], opacity, color: ink };
     (mode === gl.TRIANGLES ? fillLayers : lineLayers).push(l);
     return l;
   };
@@ -604,7 +607,7 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
       gl.bindBuffer(gl.ARRAY_BUFFER, l.mesh.buffer);
       gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
       gl.uniform3f(lineUniform.off, l.offset[0], l.offset[1], l.offset[2]);
-      gl.uniform4f(lineUniform.color, ink[0], ink[1], ink[2], l.opacity);
+      gl.uniform4f(lineUniform.color, l.color[0], l.color[1], l.color[2], l.opacity);
       gl.drawArrays(l.mode, 0, l.mesh.count);
     };
     fillLayers.forEach(draw);
@@ -809,20 +812,22 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
     const open = p.building ? parts.get(p.building) : undefined;
     const openIndex = open ? open.floors.findIndex((f) => f.label === p.floor) : -1;
 
-    // Buildings: the whole campus in light ink; one chosen in full ink, the rest faded back but still readable;
-    // with a floor open, the floors above and below stay visible in lighter ink so the building keeps its shape.
+    // Buildings: the whole campus in dark enough ink to stand out from the paper; one chosen in full ink, the rest
+    // faded back but still readable; with a floor open, the floors above and below stay visible in lighter ink.
+    // Every floor is laid with a little paper, so the light and the grid behind the map do not show through.
     for (const part of parts.values()) {
       const chosen = part === open;
       const faded = open !== undefined && !chosen;
-      part.roof.opacity = faded ? 0.26 : chosen ? (openIndex >= 0 ? 0.3 : 0.9) : 0.62;
+      part.roof.opacity = faded ? 0.36 : chosen ? (openIndex >= 0 ? 0.3 : 0.9) : 0.85;
       for (const f of part.floors) {
-        f.fill.opacity = 0;
+        f.fill.color = paper;
+        f.fill.opacity = faded ? 0.22 : chosen && openIndex >= 0 && f.index > openIndex ? 0.12 : 0.32;
         if (faded) {
-          f.ring.opacity = 0.26;
-          f.posts.opacity = 0.2;
+          f.ring.opacity = 0.36;
+          f.posts.opacity = 0.28;
         } else if (!chosen) {
-          f.ring.opacity = 0.42;
-          f.posts.opacity = 0.34;
+          f.ring.opacity = 0.72;
+          f.posts.opacity = 0.6;
         } else if (openIndex < 0) {
           f.ring.opacity = 0.8;
           f.posts.opacity = 0.55;
@@ -832,6 +837,7 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
         } else if (f.index === openIndex) {
           f.ring.opacity = 1;
           f.posts.opacity = 0.5;
+          f.fill.color = ink;
           f.fill.opacity = 0.18;
         } else {
           f.ring.opacity = 0.3;

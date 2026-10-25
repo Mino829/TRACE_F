@@ -18,6 +18,8 @@
   -webkit-touch-callout: none;
   --cm-ink: var(--fg, #0c0c0d);
   --cm-paper: var(--bg, #d3d5d3);
+  /* Inside the map the light behind the page is toned down, so the buildings read against it. */
+  background: color-mix(in srgb, var(--cm-paper) 60%, transparent);
 
   & button {
     font: inherit;
