@@ -13,7 +13,7 @@ import { ArrivalFlow, type ArrivalTarget } from "./arrival";
 import { DemoFlow } from "./demo";
 import { ConsentLayer, HowToLayer, InstallLayer, MenuLayer, WithdrawLayer, type MenuItem, type OverlayName } from "./overlays";
 import { PhotoScreen } from "./photo";
-import { ConsentScreen, HomeScreen, PingScreen, SkipScreen, TitleScreen } from "./screens";
+import { ConsentScreen, HomeScreen, PingScreen, SkipScreen, TitleScreen, type ReminderTerms } from "./screens";
 import { RayStage, SWAP, useRay } from "./stage";
 
 import "./ray.css";
@@ -47,7 +47,9 @@ export type RayAppProps = {
   onClosePing: () => void;
   reminderOn: boolean;
   nextReminderAt: number | null;
+  reminderTerms: ReminderTerms;
   onReminder: (on: boolean) => Promise<string | null>;
+  onReminderInterval: (minutes: number) => Promise<string | null>;
   shot: Shot | null;
   onRetake: () => void;
   onSave: (entry: LogEntry) => Promise<SaveOutcome>;
@@ -87,7 +89,7 @@ export function RayApp(props: RayAppProps) {
     overlay === "menu" ? (
       <MenuLayer items={menuItems} onClose={close} />
     ) : overlay === "howto" ? (
-      <HowToLayer maxPhotos={props.maxPhotos} onClose={close} />
+      <HowToLayer maxPhotos={props.maxPhotos} reminderMinutes={props.reminderTerms.intervalMinutes} onClose={close} />
     ) : overlay === "install" ? (
       <InstallLayer
         support={entrance ? entry : props.support}
@@ -185,6 +187,7 @@ function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openO
         maxPhotos={props.maxPhotos}
         support={props.support}
         reminderOn={props.reminderOn}
+        reminderTerms={props.reminderTerms}
         busy={props.busy}
         nextReminderAt={props.nextReminderAt}
         inert={inert}
@@ -221,6 +224,7 @@ function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openO
       pendingAt={props.pendingAt}
       reminderOn={props.reminderOn}
       nextReminderAt={props.nextReminderAt}
+      reminderTerms={props.reminderTerms}
       support={props.support}
       busy={props.busy}
       message={props.notes.join("")}
@@ -228,6 +232,7 @@ function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openO
       onTakePhoto={props.onTakePhoto}
       onSkip={() => void skip()}
       onReminder={props.onReminder}
+      onReminderInterval={props.onReminderInterval}
       onResend={props.onResend}
       onArrive={() => void go(props.onArrive)}
       onDeveloper={props.onDeveloper}

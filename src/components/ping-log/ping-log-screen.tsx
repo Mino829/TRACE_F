@@ -47,7 +47,9 @@ import {
 
 import { DeveloperView } from "./developer-view";
 import { RayApp } from "./ray/app";
+import { WORKER_REMINDER } from "./ray/screens";
 import { RecordFlow } from "./record-flow";
+import { useTraceReminder } from "./use-trace-reminder";
 import { PxButton, Sentences } from "./ui";
 
 import "./developer.css";
@@ -71,9 +73,10 @@ import "./developer.css";
  * expires, through reloads and in every tab of the browser (session.ts,
  * tabs.ts): the photo limit comes from the backend's config and counts per
  * memory session, and "参加をやめる" deletes the memory session too. The
- * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx).
- * Photos, the story and the reminder have no backend routes yet and stay on
- * the phone and the push worker, as everything does when the variable is unset.
+ * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
+ * and the photo reminder goes through TRACE_B as well (trace-api/reminder.ts).
+ * Photos and the story have no backend routes yet and stay on the phone and
+ * the push worker, as everything does when the variable is unset.
  *
  * The developer screen, behind the button left of the menu, is the team's
  * accuracy test: the ten-minute ping answered by pointing at where one
@@ -200,6 +203,10 @@ export function PingLogScreen() {
   // The reminder the camera was opened for, read when the photo comes back.
   const cameraPromptRef = useRef<string | null>(null);
   const viewRef = useRef(view);
+  // While this tab holds a TRACE_B memory credential, the photo reminder is TRACE_B's (#17).
+  const trace = useTraceReminder({ experience, config: traceConfig, setConfig: setTraceConfig, subscription, setSubscription,
+    setWorkerExpiresAt: setExpiresAt, registration: registrationRef, now });
+  const { noteArrival } = trace;
 
   useEffect(() => {
     viewRef.current = view;
@@ -308,7 +315,10 @@ export function PingLogScreen() {
     const stored = loadTabExperience();
     if (!stored) return;
     getExperience(stored.experienceId, stored.memory)
-      .then((status) => setExperience(updateTabExperience(stored, status)))
+      .then((status) => {
+        setExperience(updateTabExperience(stored, status));
+        if (status.replayStatus) noteArrival(stored.memory.memorySessionId);
+      })
       .catch((error: unknown) => {
         // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
         if (error instanceof TraceApiError && (error.code === "UNAUTHORIZED" || error.code === "NOT_FOUND")) {
@@ -319,7 +329,7 @@ export function PingLogScreen() {
         // Any other failure does not prove deletion; keep the credential and its delete key.
         setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
       });
-  }, []);
+  }, [noteArrival]);
 
   // Another tab joined, withdrew, or saved or sent a photo: this one shows the same participation.
   useEffect(
@@ -342,12 +352,13 @@ export function PingLogScreen() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const subscribed = subscription !== null && (!expiresAt || Date.parse(expiresAt) > now);
+  const subscribed = subscription !== null && !trace.owned && (!expiresAt || Date.parse(expiresAt) > now);
   const activePlan = subscribed ? plan : null;
   const upcoming = activePlan ? nextMark(now, activePlan.intervalMinutes) : null;
   // The subscription ends at midnight: after the day's last ping there is no next one.
   const nextPingAt = upcoming !== null && (!expiresAt || upcoming < Date.parse(expiresAt)) ? upcoming : null;
-  const nextReminderAt = activePlan?.purpose === "photo" ? nextPingAt : null;
+  // Without a TRACE_B credential in the tab, the photo reminder is the push worker's, as before.
+  const reminder = trace.reminder ?? { on: activePlan?.purpose === "photo", nextAt: activePlan?.purpose === "photo" ? nextPingAt : null, terms: WORKER_REMINDER };
 
   // With the backend, joining lasts as long as this tab's memory session.
   const sessionExpired = experience !== null && Date.parse(experience.memory.expiresAt) <= now;
@@ -410,6 +421,10 @@ export function PingLogScreen() {
         const tab: TabExperience = { ...created, consentVersion: config.consent.version, createdAt: new Date().toISOString() };
         saveTabExperience(tab);
         setExperience(tab);
+        // A photo reminder through the push worker belonged to the participation before; TRACE_B's takes its place once switched on.
+        if (subscription && subscribed && plan.purpose === "photo") {
+          void unsubscribe(subscription).catch(() => dropExpired(subscription)).then(() => setSubscription(null));
+        }
       } catch (error) {
         // The text changed on the server: read the new versions before the next try.
         if (error instanceof TraceApiError && error.code === "CONSENT_VERSION_MISMATCH") fetchPublicConfig().then(setTraceConfig, () => setTraceConfig(null));
@@ -425,12 +440,17 @@ export function PingLogScreen() {
     setMessage("");
   };
 
-  /** One subscription per phone: the photo reminder and the accuracy ping replace each other. */
-  const subscribeTo = (next: PushPlan, consentVersion: string, done: string, silent = false) => run(async () => {
+  /** Asked only from a tap on a switch, once what it is for has been said. */
+  const askPermission = async () => {
     if (notificationState() === "unsupported") throw new Error("このブラウザでは通知を受け取れません。");
     const result = await Notification.requestPermission();
     setPermission(result);
     if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、このサイトの通知を許可してください。");
+  };
+
+  /** One subscription per phone: the photo reminder and the accuracy ping replace each other. */
+  const subscribeTo = (next: PushPlan, consentVersion: string, done: string, silent = false) => run(async () => {
+    await askPermission();
     const registration = registrationRef.current ?? (await navigator.serviceWorker.ready);
     setSubscription(await subscribe(registration, consentVersion, next));
     setExpiresAt(subscriptionExpiresAt());
@@ -440,6 +460,7 @@ export function PingLogScreen() {
 
   // The switch shows the result itself; an error goes beside it, not up in the note.
   const switchReminder = (on: boolean): Promise<string | null> => {
+    if (trace.reminder) return run(() => trace.switchTo(on, askPermission), { silent: true });
     if (!on) {
       return run(async () => {
         if (!subscription) return;
@@ -520,7 +541,10 @@ export function PingLogScreen() {
       clearTabExperience();
       setExperience(null);
     }
-    if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
+    // TRACE_B's subscription went with the memory session; only the push worker's own is sent to the push worker.
+    if (subscription && trace.owned) await subscription.unsubscribe().catch(() => undefined);
+    else if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
+    trace.forget();
     const deleted = PUSH_API_URL ? await forgetMe() : 0;
     await clearEntries();
     clearConsent();
@@ -575,9 +599,11 @@ export function PingLogScreen() {
           pendingAt={pendingAt}
           pingOpen={pingOpen}
           onClosePing={() => setPingOpen(false)}
-          reminderOn={activePlan?.purpose === "photo"}
-          nextReminderAt={nextReminderAt}
+          reminderOn={reminder.on}
+          nextReminderAt={reminder.nextAt}
+          reminderTerms={reminder.terms}
           onReminder={switchReminder}
+          onReminderInterval={(minutes) => run(() => trace.changeInterval(minutes), { silent: true })}
           shot={shot}
           onRetake={() => openCamera(shot?.promptedAt ?? null)}
           onSave={save}

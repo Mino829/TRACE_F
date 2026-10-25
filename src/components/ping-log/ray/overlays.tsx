@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { PushSupport } from "@/lib/ping-log/environment";
-import { REMINDER_PLAN } from "@/lib/ping-log/push";
 
 import { ConsentBody } from "./screens";
 import { Icon, Phrases, Sentences, useRay, type IconName } from "./stage";
@@ -106,11 +105,11 @@ const STEPS = [
   },
 ];
 
-export function HowToLayer({ maxPhotos, onClose }: { maxPhotos: number; onClose: () => void }) {
+export function HowToLayer({ maxPhotos, reminderMinutes, onClose }: { maxPhotos: number; reminderMinutes: number; onClose: () => void }) {
   const notes = [
     "撮った写真は、展示に出しません。",
     `撮影は${maxPhotos}枚までです。`,
-    `撮影のリマインダーは任意です。オンにすると、${REMINDER_PLAN.intervalMinutes}分ごとに届きます。`,
+    `撮影のリマインダーは任意です。オンにすると、${reminderMinutes}分ごとに届きます。`,
     "撮りたいものがないときは、リマインダーをスキップして構いません。",
   ];
   return (

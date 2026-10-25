@@ -266,21 +266,62 @@ export function ConsentScreen({ busy, error, inert, onAgree, onDecline }: { busy
 
 /* ------------------------------------------------------------------- home */
 
-/** The reminder's switch: where this browser cannot receive notifications, the tap opens the way to one that can. */
+/**
+ * The reminder's switch: where this browser cannot receive notifications, the
+ * tap opens the way to one that can. `settle` shows another change's problem
+ * (the interval's) in the same place.
+ */
 export function useReminderSwitch(on: boolean, support: PushSupport, onChange: (on: boolean) => Promise<string | null>, onInstall: () => void) {
   const [problem, setProblem] = useState("");
+  const settle = async (change: () => Promise<string | null>) => {
+    setProblem("");
+    setProblem((await change()) ?? "");
+  };
   const toggle = async () => {
     if (!on && support !== "supported") {
       onInstall();
       return;
     }
-    setProblem("");
-    setProblem((await onChange(!on)) ?? "");
+    await settle(() => onChange(!on));
   };
-  return { problem, toggle: () => void toggle() };
+  return { problem, toggle: () => void toggle(), settle: (change: () => Promise<string | null>) => void settle(change) };
 }
 
-export const REMINDER_NOTE = `オンにすると、${REMINDER_PLAN.intervalMinutes}分ごとに撮影のリマインダーが届きます。リマインダーは、オンにした日の24時に止まります。`;
+/**
+ * How the reminder runs: how often, what else may be chosen while it is on,
+ * and when it stops by itself. Through the push worker it is every 30
+ * minutes until midnight; through TRACE_B, as its config allows, until arrival.
+ */
+export type ReminderTerms = { intervalMinutes: number; choices: number[]; stops: "midnight" | "arrival" };
+
+export const WORKER_REMINDER: ReminderTerms = { intervalMinutes: REMINDER_PLAN.intervalMinutes, choices: [], stops: "midnight" };
+
+export function reminderNote({ intervalMinutes, stops }: ReminderTerms): string {
+  const often = `オンにすると、${intervalMinutes}分ごとに撮影のリマインダーが届きます。`;
+  return stops === "midnight"
+    ? `${often}リマインダーは、オンにした日の24時に止まります。`
+    : `${often}届くのが遅れることもあります。リマインダーは、ShibaLab で QR コードを読み取ったときか、参加の期限が来たときに止まります。`;
+}
+
+/** The interval, among what TRACE_B allows: the chosen one inverts, as on the switch. */
+function IntervalSeg(props: { value: number; choices: number[]; labelledBy: string; disabled: boolean; onChoose: (minutes: number) => void }) {
+  return (
+    <div className="seg" role="group" aria-labelledby={props.labelledBy} style={{ gridTemplateColumns: `repeat(${props.choices.length}, 1fr)` }}>
+      {props.choices.map((minutes) => (
+        <button
+          key={minutes}
+          type="button"
+          className={`seg__o${minutes === props.value ? " is-on" : ""}`}
+          aria-pressed={minutes === props.value}
+          disabled={props.disabled}
+          onClick={() => minutes !== props.value && props.onChoose(minutes)}
+        >
+          {minutes}分
+        </button>
+      ))}
+    </div>
+  );
+}
 
 type HomeProps = {
   /** This participation's photos, oldest first. */
@@ -290,6 +331,7 @@ type HomeProps = {
   pendingAt: string | null;
   reminderOn: boolean;
   nextReminderAt: number | null;
+  reminderTerms: ReminderTerms;
   support: PushSupport;
   busy: boolean;
   message: string;
@@ -297,6 +339,8 @@ type HomeProps = {
   onTakePhoto: () => void;
   onSkip: () => void;
   onReminder: (on: boolean) => Promise<string | null>;
+  /** Resolves to an error message, or null once the interval is changed. */
+  onReminderInterval: (minutes: number) => Promise<string | null>;
   onResend: () => void;
   onArrive: () => void;
   onDeveloper: () => void;
@@ -437,7 +481,21 @@ export function HomeScreen(props: HomeProps) {
         </div>
         <Seg on={props.reminderOn} labelledBy={labelId} disabled={props.busy} onToggle={reminder.toggle} />
       </div>
-      <Pop info={reminderInfo} text={REMINDER_NOTE} />
+      <Pop info={reminderInfo} text={reminderNote(props.reminderTerms)} />
+      {props.reminderOn && props.reminderTerms.choices.length > 1 && (
+        <div className="kv row-interval">
+          <p className="small" id={`${labelId}-interval`}>
+            届く間隔
+          </p>
+          <IntervalSeg
+            value={props.reminderTerms.intervalMinutes}
+            choices={props.reminderTerms.choices}
+            labelledBy={`${labelId}-interval`}
+            disabled={props.busy}
+            onChoose={(minutes) => reminder.settle(() => props.onReminderInterval(minutes))}
+          />
+        </div>
+      )}
       {reminder.problem && (
         <p className="problem" role="alert">
           <Sentences text={reminder.problem} />
