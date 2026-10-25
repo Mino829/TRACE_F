@@ -1,0 +1,10 @@
+{
+  "name": "trace-arrival-issuer",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node issuer.mjs",
+    "test": "node --test test/issuer.test.mjs"
+  }
+}
