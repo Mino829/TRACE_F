@@ -10,11 +10,31 @@ interface Fetcher {
 }
 
 const MAX_JSON_BODY = 16 * 1024;
+/** The participant routes of TRACE_B (internal/api/server.go). Operator and display routes stay closed. */
 const allowed: Record<string, RegExp[]> = {
-  GET: [/^health\/(live|ready)$/, /^v1\/public\/config$/, /^v1\/experiences\/exp_[A-Za-z0-9_-]+$/],
-  POST: [/^v1\/experiences$/, /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+\/(position|on-site|stop)$/],
-  DELETE: [/^v1\/experiences\/exp_[A-Za-z0-9_-]+$/, /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+$/, /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+$/],
+  GET: [
+    /^health\/(live|ready)$/,
+    /^v1\/public\/config$/,
+    /^v1\/experiences\/exp_[A-Za-z0-9_-]+$/,
+    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(photos|memory)$/,
+  ],
+  POST: [
+    /^v1\/experiences$/,
+    /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+\/(position|on-site|stop)$/,
+    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(photos|arrival|arrival\/skip)$/,
+    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/photos\/photo_[A-Za-z0-9_-]+\/(upload-url|complete)$/,
+  ],
+  PUT: [/^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/push-subscription$/],
+  PATCH: [/^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/push-subscription$/],
+  DELETE: [
+    /^v1\/experiences\/exp_[A-Za-z0-9_-]+$/,
+    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+$/,
+    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(photos\/photo_[A-Za-z0-9_-]+|push-subscription)$/,
+    /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+$/,
+  ],
 };
+/** Methods whose body is relayed. Each must say it is JSON, even when the body is empty (complete, upload-url, arrival/skip). */
+const WITH_BODY = new Set(["POST", "PUT", "PATCH"]);
 
 function failure(code: string, status: number): Response {
   return Response.json({ error: { code } }, { status, headers: { "Cache-Control": "no-store" } });
@@ -79,7 +99,7 @@ export async function handleSiteRequest(
   if (request.method !== "GET" && request.headers.get("Origin") && request.headers.get("Origin") !== url.origin) {
     return failure("ORIGIN_NOT_ALLOWED", 403);
   }
-  if (request.method === "POST" && !/^application\/json(?:\s*;|$)/i.test(request.headers.get("Content-Type") ?? "")) {
+  if (WITH_BODY.has(request.method) && !/^application\/json(?:\s*;|$)/i.test(request.headers.get("Content-Type") ?? "")) {
     return failure("UNSUPPORTED_MEDIA_TYPE", 415);
   }
   if (request.method === "DELETE" && request.body) return failure("BODY_NOT_ALLOWED", 400);
@@ -95,7 +115,7 @@ export async function handleSiteRequest(
     return failure("BACKEND_UNAVAILABLE", 503);
   }
 
-  const body = request.method === "POST" ? await limitedBody(request) : undefined;
+  const body = WITH_BODY.has(request.method) ? await limitedBody(request) : undefined;
   if (body === null) return failure("BODY_TOO_LARGE", 413);
   const headers = new Headers({ "X-Trace-Edge-Secret": env.TRACE_EDGE_SHARED_SECRET });
   for (const name of ["Authorization", "Content-Type", "Idempotency-Key"]) {

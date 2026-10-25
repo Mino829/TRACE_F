@@ -5,7 +5,9 @@
 //   npm run release            (from push-worker)
 //   npm --prefix push-worker run release   (from the repository root)
 //
-// The page is built against PUSH_API_URL from .env when it is set.
+// The page is built against PUSH_API_URL from .env when it is set. When .env
+// also sets TRACE_API_URL (/api/backend), /log joins on TRACE_B through this
+// site's relay; set trace-log's two backend secrets before that.
 
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -27,11 +29,14 @@ function fromEnvFile(name) {
 }
 
 const pushUrl = fromEnvFile("PUSH_API_URL") || "https://trace-push.async5855.workers.dev";
+// Unset, /log keeps everything on the phone and the push worker.
+const traceApiUrl = fromEnvFile("TRACE_API_URL");
+const pageEnv = { NEXT_STATIC_EXPORT: "1", NEXT_PUBLIC_PUSH_API_URL: pushUrl, ...(traceApiUrl ? { NEXT_PUBLIC_TRACE_API_URL: traceApiUrl } : {}) };
 
 const steps = [
   ["マイグレーションを本番の D1 に適用", [wrangler, "d1", "migrations", "apply", "DB", "--remote"], root, {}],
   ["通知サーバー（trace-push）をデプロイ", [wrangler, "deploy"], root, {}],
-  ["ページを静的に書き出し", [join(repo, "node_modules", "next", "dist", "bin", "next"), "build"], repo, { NEXT_STATIC_EXPORT: "1", NEXT_PUBLIC_PUSH_API_URL: pushUrl }],
+  ["ページを静的に書き出し", [join(repo, "node_modules", "next", "dist", "bin", "next"), "build"], repo, pageEnv],
   ["ページ（trace-log）をデプロイ", [wrangler, "deploy", "--config", "site.wrangler.jsonc"], root, {}],
 ];
 

@@ -65,6 +65,9 @@ npm install
 マイグレーションの適用、通知サーバーのデプロイ、ページの静的書き出し、ページのデプロイを、この順に行います。
 途中で失敗すると、その段階で止まります。
 ページは `.env` の `PUSH_API_URL` に向けて書き出します（書いていなければ `https://trace-push.async5855.workers.dev`）。
+`.env` に `TRACE_API_URL=/api/backend` を書くと、/log はこのサイトの `/api/backend` を通して、TRACE_B に参加を作るようになります。
+書いていなければ、/log は今までどおり端末と通知サーバーだけで動きます。
+この行を書くのは、下の2つの secret を `trace-log` に設定し、TRACE_B につながることを確かめてからにしてください。
 
 ```bash
 npm --prefix push-worker run release
@@ -83,6 +86,11 @@ npm run deploy:site
 ```
 
 参加者画面のAPI中継を使う場合、`trace-log`側へ`TRACE_BACKEND_URL`（Go APIのHTTPSオリジン）と`TRACE_EDGE_SHARED_SECRET`（Go側と同じ32バイト以上の値）をsecretとして設定します。設定されるまで`/api/backend/*`は503を返し、静的ページだけが表示されます。`trace-push`のVAPID secretとは別です。
+
+中継するのは、参加者画面が使う TRACE_B の API だけです（一覧は `src/site.ts` の `allowed`）。
+参加の作成・取得・削除、写真（作成、一覧、アップロード URL、完了、削除、記録の取得）、到着（`arrival`、`arrival/skip`）、撮影リマインダー（`push-subscription` の PUT、PATCH、DELETE）、ライブ位置を通します。
+運営用（`/v1/operator/*`）と展示画面用（`/v1/display/*`）の API には 404 を返します。
+POST、PUT、PATCH は、本文が空でも `Content-Type: application/json` を付けないと 415 になります。
 
 ```bash
 npm run wrangler -- secret put TRACE_BACKEND_URL --config site.wrangler.jsonc
