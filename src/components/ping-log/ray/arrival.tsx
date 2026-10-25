@@ -14,6 +14,7 @@ import {
   type MemoryCredential,
   type ReplayStatus,
 } from "@/lib/trace-api/client";
+import { sendOnce } from "@/lib/trace-api/session";
 
 import { useLayer } from "../layer";
 import { clock } from "../ui";
@@ -53,7 +54,18 @@ function isFinal(status: ReplayStatus | null): boolean {
 
 type ReadAnswer = { ok: true } | { ok: false; code: string; message: string; retryAfter: number | null };
 
-export function ArrivalFlow({ target, inert, onClose }: { target: ArrivalTarget; inert: boolean; onClose: () => void }) {
+/** onArrived: TRACE_B has the arrival, now or from before; it ends the photo reminder then. */
+export function ArrivalFlow({
+  target,
+  inert,
+  onClose,
+  onArrived,
+}: {
+  target: ArrivalTarget;
+  inert: boolean;
+  onClose: () => void;
+  onArrived: (memorySessionId: string) => void;
+}) {
   const { go } = useRay();
   const [step, setStep] = useState<"scan" | "replay">("scan");
   const [status, setStatus] = useState<ReplayStatus | null>(null);
@@ -66,6 +78,10 @@ export function ArrivalFlow({ target, inert, onClose }: { target: ArrivalTarget;
   const reading = useRef(false);
   const arrived = useRef(false);
   const { experienceId, memory } = target;
+  const onArrivedRef = useRef(onArrived);
+  useEffect(() => {
+    onArrivedRef.current = onArrived;
+  }, [onArrived]);
 
   // Arrived already (a reload, or the button pressed again): straight to where the replay stands.
   useEffect(() => {
@@ -74,6 +90,7 @@ export function ArrivalFlow({ target, inert, onClose }: { target: ArrivalTarget;
       .then((state) => {
         const known = replayStatus(state.replayStatus);
         if (!alive || !known || reading.current || arrived.current) return;
+        onArrivedRef.current(memory.memorySessionId);
         void go(() => {
           setStatus(known);
           setStep("replay");
@@ -89,11 +106,14 @@ export function ArrivalFlow({ target, inert, onClose }: { target: ArrivalTarget;
   const read = useCallback(
     async (code: string): Promise<ReadAnswer> => {
       reading.current = true;
-      // The same code read again resends the same try, so an answer lost on the way still counts once.
+      // The same code read again resends the same try with the same key, so an answer lost on the way
+      // still counts once; one tab sends at a time, and after an answer every tab gets that answer.
       if (attempt.current?.checkpointToken !== code) attempt.current = arrivalAttempt(code);
+      const current = attempt.current;
       try {
-        const result = await sendArrival(memory, attempt.current);
+        const result = await sendOnce(memory.memorySessionId, "arrival", current, (key) => sendArrival(memory, current, key));
         arrived.current = true;
+        onArrivedRef.current(memory.memorySessionId);
         setStatus(replayStatus(result.status) ?? "queued");
         setArrivedAt(clock(Date.now()));
         return { ok: true };

@@ -617,6 +617,8 @@ export function PingLogScreen() {
           // With the backend, home's button reads the booth's real QR code and follows the replay; without it, the button opens the demo.
           arrival={experience}
           onArrive={() => setDemo("home")}
+          // TRACE_B dropped the reminder's subscription on arrival: the switch stays off from now on.
+          onArrived={noteArrival}
           onCloseDemo={() => setDemo(null)}
           onTakePhoto={() => openCamera(pendingAt)}
           onSkip={skipReminder}

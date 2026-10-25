@@ -62,6 +62,8 @@ export type RayAppProps = {
   /** The experience on TRACE_B, while /log works with it: home's QR button then reads the booth's real code instead of opening the demo. */
   arrival: ArrivalTarget | null;
   onArrive: () => void;
+  /** TRACE_B has this memory session's arrival. */
+  onArrived: (memorySessionId: string) => void;
   onCloseDemo: () => void;
   onTakePhoto: () => void;
   onSkip: () => void;
@@ -143,7 +145,7 @@ function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openO
   };
 
   if (props.demo === "home" && props.arrival) {
-    return <ArrivalFlow target={props.arrival} inert={inert} onClose={props.onCloseDemo} />;
+    return <ArrivalFlow target={props.arrival} inert={inert} onClose={props.onCloseDemo} onArrived={props.onArrived} />;
   }
 
   if (props.demo) {

@@ -211,14 +211,14 @@ export async function getExperience(experienceId: string, credential: MemoryCred
 
 /**
  * One try at arriving: the code read from the booth's QR (a signed token that
- * lives 25 seconds, not a URL), the phone's time, and the key that makes a
- * resend of the same try count once. A resend must carry this same object, as
- * TRACE_B compares the body too.
+ * lives 25 seconds, not a URL) and the phone's time. A resend must carry this
+ * same body with the same idempotency key (sendOnce in session.ts), as TRACE_B
+ * compares the body too.
  */
-export type ArrivalAttempt = { checkpointToken: string; clientTime: string; idempotencyKey: string };
+export type ArrivalAttempt = { checkpointToken: string; clientTime: string };
 
 export function arrivalAttempt(checkpointToken: string): ArrivalAttempt {
-  return { checkpointToken, clientTime: new Date().toISOString(), idempotencyKey: crypto.randomUUID() };
+  return { checkpointToken, clientTime: new Date().toISOString() };
 }
 
 export type ArrivalResult = { arrivalId: string; status: ReplayStatus };
@@ -230,12 +230,12 @@ export type ArrivalResult = { arrivalId: string; status: ReplayStatus };
  * screen never plays one person twice. /log joins memory-only, so there is no
  * experience link token to send.
  */
-export async function sendArrival(credential: MemoryCredential, attempt: ArrivalAttempt): Promise<ArrivalResult> {
+export async function sendArrival(credential: MemoryCredential, attempt: ArrivalAttempt, idempotencyKey: string): Promise<ArrivalResult> {
   const result = await request<ArrivalResult>(`/v1/memory-sessions/${encodeURIComponent(credential.memorySessionId)}/arrival`, {
     method: "POST",
     body: { checkpointToken: attempt.checkpointToken, clientTime: attempt.clientTime },
     token: credential.participantToken,
-    idempotencyKey: attempt.idempotencyKey,
+    idempotencyKey,
   });
   if (!result?.arrivalId || typeof result.status !== "string") throw new TraceApiError(0, "UNKNOWN", null);
   return result;
