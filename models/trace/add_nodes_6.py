@@ -74,6 +74,10 @@ for f, z in FZ.items():
 
 for nid in UNSELECT:
     NODES[nid].pop("selectable", None)
+# 大学の入口と大樹は 1 つの「大学入口」にまとめ、少し大学の中へ（入口から本部棟の下へ行く直線の 2 つ目の点。入口の壁と屋台の間）（2026-10-25）
+for nid in ("o-125", "big-tree"):
+    NODES[nid].pop("selectable", None)
+select("o-126", "大学入口", "西の道路から入って約 10m。入口の壁（校名入り）と屋台の間。大樹もこの近く")
 # 6F の教室棟〜研究棟の渡り廊下は、研究棟の 6F で選ぶ
 NODES["classroom-research-6f-bridge"]["building"] = "研究棟"
 

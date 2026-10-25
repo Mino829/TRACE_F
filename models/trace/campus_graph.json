@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "campusGraphVersion": "toyosu-graph-2026-10-25.1.draft",
+ "campusGraphVersion": "toyosu-graph-2026-10-25.2.draft",
  "coordinateVersion": "toyosu-2026-08-28.1",
  "threeDMapVersion": "キャンパス全体.blend 2026-10-25",
  "exportedAt": "2026-10-25",
@@ -390,7 +390,7 @@
    },
    "radiusMetres": 15,
    "gpsSnap": true,
-   "selectable": true,
+   "selectable": false,
    "note": "要確認：第54回芝浦祭のキャンパス図（shibaurasai.jp/map54）から位置を推定。豊洲駅から来る人の入口"
   },
   {
@@ -3426,12 +3426,12 @@
    },
    "radiusMetres": 5,
    "gpsSnap": true,
-   "selectable": true,
+   "selectable": false,
    "note": "入口の壁（build_festival_props.py の ENT）の 5m 西。屋台の 2 列の手前"
   },
   {
    "id": "o-126",
-   "name": "入口から本部棟の下へ（まっすぐ） 2",
+   "name": "大学入口",
    "role": "waypoint",
    "building": null,
    "floor": "屋外",
@@ -3449,8 +3449,8 @@
    },
    "radiusMetres": 5,
    "gpsSnap": true,
-   "selectable": false,
-   "note": ""
+   "selectable": true,
+   "note": "西の道路から入って約 10m。入口の壁（校名入り）と屋台の間。大樹もこの近く"
   },
   {
    "id": "o-127",
@@ -14383,123 +14383,6 @@
    "passable": true
   },
   {
-   "id": "hq-1f-car--hq-2f-car",
-   "from": "hq-1f-car",
-   "to": "hq-2f-car",
-   "kind": "elevator",
-   "lengthMetres": 6.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-2f-car--hq-3f-car",
-   "from": "hq-2f-car",
-   "to": "hq-3f-car",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-3f-car--hq-4f-car",
-   "from": "hq-3f-car",
-   "to": "hq-4f-car",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-4f-car--hq-5f-car",
-   "from": "hq-4f-car",
-   "to": "hq-5f-car",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-5f-car--hq-6f-car",
-   "from": "hq-5f-car",
-   "to": "hq-6f-car",
-   "kind": "elevator",
-   "lengthMetres": 5.0,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-6f-car--hq-7f-car",
-   "from": "hq-6f-car",
-   "to": "hq-7f-car",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-7f-car--hq-8f-car",
-   "from": "hq-7f-car",
-   "to": "hq-8f-car",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-8f-car--hq-9f-car",
-   "from": "hq-8f-car",
-   "to": "hq-9f-car",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-9f-car--hq-10f-car",
-   "from": "hq-9f-car",
-   "to": "hq-10f-car",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-10f-car--hq-11f-car",
-   "from": "hq-10f-car",
-   "to": "hq-11f-car",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-11f-car--hq-12f-car",
-   "from": "hq-11f-car",
-   "to": "hq-12f-car",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-12f-car--hq-13f-car",
-   "from": "hq-12f-car",
-   "to": "hq-13f-car",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
-   "id": "hq-13f-car--hq-14f-car",
-   "from": "hq-13f-car",
-   "to": "hq-14f-car",
-   "kind": "elevator",
-   "lengthMetres": 4.4,
-   "planarLengthMetres": 0.0,
-   "passable": true
-  },
-  {
    "id": "classroom-1f-koryu--k1-005",
    "from": "classroom-1f-koryu",
    "to": "k1-005",
@@ -14695,6 +14578,123 @@
    "kind": "indoor",
    "lengthMetres": 24.6,
    "planarLengthMetres": 24.6,
+   "passable": true
+  },
+  {
+   "id": "hq-1f-car--hq-2f-car",
+   "from": "hq-1f-car",
+   "to": "hq-2f-car",
+   "kind": "elevator",
+   "lengthMetres": 6.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-2f-car--hq-3f-car",
+   "from": "hq-2f-car",
+   "to": "hq-3f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-3f-car--hq-4f-car",
+   "from": "hq-3f-car",
+   "to": "hq-4f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-4f-car--hq-5f-car",
+   "from": "hq-4f-car",
+   "to": "hq-5f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-5f-car--hq-6f-car",
+   "from": "hq-5f-car",
+   "to": "hq-6f-car",
+   "kind": "elevator",
+   "lengthMetres": 5.0,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-6f-car--hq-7f-car",
+   "from": "hq-6f-car",
+   "to": "hq-7f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-7f-car--hq-8f-car",
+   "from": "hq-7f-car",
+   "to": "hq-8f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-8f-car--hq-9f-car",
+   "from": "hq-8f-car",
+   "to": "hq-9f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-9f-car--hq-10f-car",
+   "from": "hq-9f-car",
+   "to": "hq-10f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-10f-car--hq-11f-car",
+   "from": "hq-10f-car",
+   "to": "hq-11f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-11f-car--hq-12f-car",
+   "from": "hq-11f-car",
+   "to": "hq-12f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-12f-car--hq-13f-car",
+   "from": "hq-12f-car",
+   "to": "hq-13f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
+   "passable": true
+  },
+  {
+   "id": "hq-13f-car--hq-14f-car",
+   "from": "hq-13f-car",
+   "to": "hq-14f-car",
+   "kind": "elevator",
+   "lengthMetres": 4.4,
+   "planarLengthMetres": 0.0,
    "passable": true
   }
  ]
