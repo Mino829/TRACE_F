@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
+    "test:unit": "node --experimental-strip-types --import ./tests/unit/register.mjs --test tests/unit/*.test.mjs",
     "test:e2e": "playwright test",
     "dev:local": "node scripts/dev-local.mjs"
   },
