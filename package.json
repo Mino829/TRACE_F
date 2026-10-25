@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test:e2e": "playwright test",
+    "test:unit": "node --experimental-strip-types --test \"src/**/*.test.mjs\"",
     "dev:local": "node scripts/dev-local.mjs"
   },
   "dependencies": {

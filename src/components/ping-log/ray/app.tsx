@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import type { Consent } from "@/lib/ping-log/consent";
-import type { PushSupport } from "@/lib/ping-log/environment";
+import { entryCheck, type EntryCheck, type PushSupport } from "@/lib/ping-log/environment";
 import type { Shot } from "@/lib/ping-log/photo-entry";
 import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
 import { TRACE_API_URL } from "@/lib/trace-api/client";
@@ -70,6 +70,9 @@ export type RayAppProps = {
 export function RayApp(props: RayAppProps) {
   const [overlay, setOverlay] = useState<OverlayName | null>(null);
   const close = () => setOverlay(null);
+  // Checked once, on the title: whether this phone and browser can join, and how.
+  const [entry] = useState<EntryCheck>(entryCheck);
+  const entrance = !props.joined && (entry === "in-app" || entry === "ios-browser");
 
   const menuItems: MenuItem[] = [
     { label: "遊び方", onSelect: () => setOverlay("howto") },
@@ -83,7 +86,19 @@ export function RayApp(props: RayAppProps) {
     ) : overlay === "howto" ? (
       <HowToLayer maxPhotos={props.maxPhotos} onClose={close} />
     ) : overlay === "install" ? (
-      <InstallLayer support={props.support} beforeJoining={!props.joined} onClose={close} />
+      <InstallLayer
+        support={entrance ? entry : props.support}
+        beforeJoining={!props.joined}
+        onContinue={
+          entrance && entry === "ios-browser"
+            ? () => {
+                close();
+                props.onOpenConsent();
+              }
+            : undefined
+        }
+        onClose={close}
+      />
     ) : overlay === "consent" ? (
       <ConsentLayer onClose={close} />
     ) : overlay === "withdraw" ? (
@@ -99,13 +114,13 @@ export function RayApp(props: RayAppProps) {
   return (
     <div className="ray">
       <RayStage overlay={layer}>
-        <Current {...props} inert={overlay !== null} openOverlay={setOverlay} />
+        <Current {...props} entry={entry} inert={overlay !== null} openOverlay={setOverlay} />
       </RayStage>
     </div>
   );
 }
 
-function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: OverlayName) => void }) {
+function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openOverlay: (name: OverlayName) => void }) {
   const { go, field, fx } = useRay();
   const { inert } = props;
   const full = props.photos.length >= props.maxPhotos;
@@ -140,7 +155,15 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
       );
     }
     return (
-      <TitleScreen notes={props.notes} inert={inert} onStart={() => void go(props.onOpenConsent)} onDeveloper={props.onDeveloper} onMenu={onMenu} />
+      <TitleScreen
+        notes={props.notes}
+        entry={props.entry}
+        inert={inert}
+        onStart={() => void go(props.onOpenConsent)}
+        onInstall={onInstall}
+        onDeveloper={props.onDeveloper}
+        onMenu={onMenu}
+      />
     );
   }
 

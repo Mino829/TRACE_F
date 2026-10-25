@@ -3,7 +3,7 @@
 import { useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 import { CONSENT_LEAD, CONSENT_SECTIONS } from "@/lib/ping-log/consent";
-import type { PushSupport } from "@/lib/ping-log/environment";
+import type { EntryCheck, PushSupport } from "@/lib/ping-log/environment";
 import { REMINDER_PLAN } from "@/lib/ping-log/push";
 import type { LogEntry } from "@/lib/ping-log/store";
 
@@ -64,20 +64,77 @@ function useSplit(top: RefObject<HTMLElement | null>): number {
   return split;
 }
 
+const ENTRY_STOP: Partial<Record<EntryCheck, { head: string; text: string }>> = {
+  old: {
+    head: "この端末では参加できません",
+    text: "iOS 16.4 以降の iPhone と、Chrome 111 以降の Android で参加できます。展示は ShibaLab（教室棟301）で見られます。",
+  },
+  "no-camera": {
+    head: "このブラウザでは参加できません",
+    text: "TRACE ではカメラで写真を撮り、ShibaLab で QR コードを読み取ります。このブラウザではカメラを使えないので、Safari か Chrome で開いてください。",
+  },
+};
+
+/**
+ * The title's foot: 「はじめる」, or why this phone or browser cannot join and
+ * what to do instead. In an iPhone's browser tab the button opens the
+ * home-screen guide first, which lets the person join here all the same.
+ */
+function EntryCta({ entry, onStart, onInstall }: { entry: EntryCheck; onStart: () => void; onInstall: () => void }) {
+  const stop = ENTRY_STOP[entry];
+  if (stop) {
+    return (
+      <div className="title__cta">
+        <div className="title__stop">
+          <h2>{stop.head}</h2>
+          <p>
+            <Sentences text={stop.text} />
+          </p>
+        </div>
+      </div>
+    );
+  }
+  const inApp = entry === "in-app";
+  return (
+    <div className="title__cta">
+      {inApp && (
+        <p className="title__why">
+          <Sentences text="LINE などのアプリの中で開いたページでは参加できません。Safari か Chrome で開いてください。" />
+        </p>
+      )}
+      <button type="button" className="btn" disabled={inApp} onClick={entry === "ios-browser" ? onInstall : onStart}>
+        はじめる
+        <Icon name="arrow" />
+      </button>
+      {inApp && (
+        <p className="title__more">
+          <button type="button" className="link" onClick={onInstall}>
+            Safari か Chrome で開くには
+          </button>
+        </p>
+      )}
+    </div>
+  );
+}
+
 /**
  * The title fits on one screen without scrolling: the black below the line
  * is the field's, fixed behind the page, and TRACE has to stay on the line.
  */
 export function TitleScreen({
   notes,
+  entry,
   inert,
   onStart,
+  onInstall,
   onDeveloper,
   onMenu,
 }: {
   notes: string[];
+  entry: EntryCheck;
   inert: boolean;
   onStart: () => void;
+  onInstall: () => void;
   onDeveloper: () => void;
   onMenu: () => void;
 }) {
@@ -131,12 +188,7 @@ export function TitleScreen({
           <Info info={info} label="写真の扱いについて" />
         </p>
         <Pop info={info} text="撮った写真は、展示に出しません。参加は任意です。" />
-        <div className="title__cta">
-          <button type="button" className="btn" onClick={onStart}>
-            はじめる
-            <Icon name="arrow" />
-          </button>
-        </div>
+        <EntryCta entry={entry} onStart={onStart} onInstall={onInstall} />
       </div>
     </Screen>
   );
