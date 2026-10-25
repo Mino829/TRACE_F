@@ -1,7 +1,11 @@
 // Service worker for /log.
-// It shows what the push worker sends (a participant's photo reminder or the
-// team's accuracy ping), even with the screen off and the page closed, and
-// routes a tap on it back to the page.
+// It shows what the push worker or TRACE_B sends (a participant's photo
+// reminder, or the team's accuracy ping), even with the screen off and the
+// page closed, and routes a tap on it back to the page.
+//
+// TRACE_B's reminder carries its own title and body, no time, and a url
+// ("/photo") this site has no page for; a tap opens /log as for the push
+// worker's, with the time the notification arrived.
 
 const PROMPT = "trace-ping";
 

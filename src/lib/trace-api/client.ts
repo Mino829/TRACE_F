@@ -1,7 +1,8 @@
 /**
  * Client for TRACE_B public config, memory-only experience creation and
- * status, and individual memory deletion. The /log demo does not create live
- * presence or upload photos to TRACE_B.
+ * status, individual memory deletion, and the photo reminder's push
+ * subscription. The /log demo does not create live presence or upload photos
+ * to TRACE_B.
  *
  * The backend's URL comes from NEXT_PUBLIC_TRACE_API_URL. Unset, /log keeps
  * everything on the phone and the push worker, as before.
@@ -26,11 +27,22 @@ export type AliasSymbol = "circle" | "triangle" | "diamond" | "star" | "wave" | 
  */
 export type DisplayAlias = { color: AliasColor | (string & {}); symbol: AliasSymbol | (string & {}) };
 
+/** The photo reminder's terms. The VAPID key is empty while TRACE_B cannot send. */
+export type NotificationConfig = {
+  enabled: boolean;
+  defaultIntervalMinutes: number;
+  allowedIntervalsMinutes: number[];
+  exactDeliveryGuaranteed: boolean;
+  vapidPublicKey: string;
+};
+
 export type PublicConfig = {
   registrationOpen: boolean;
   consent: { version: string; language: string; body: string };
   livePresenceConsentVersion: string;
   photo: { enabled: boolean; maxCount: number; maxUploadBytes: number; maxLongEdgePixels: number; publicDisplay: boolean };
+  /** Missing from a backend older than the reminder (TRACE_B #24). */
+  notification?: NotificationConfig;
   contact: string;
 };
 
@@ -49,7 +61,12 @@ export type ExperienceStatus = {
   livePresenceSession?: { sessionId: string; trackingStatus: string; presencePhase: string; expiresAt: string; deleteAfter: string };
   displayAlias: DisplayAlias;
   photoSummary: { ready: number; pending: number; failed: number; maxCount: number };
+  /** Empty until the participant arrives at ShibaLab. */
+  replayStatus?: string;
 };
+
+/** The photo reminder as TRACE_B holds it. nextSendAt is null while paused, and is never exact. */
+export type PushSubscriptionState = { intervalMinutes: number; status: "active" | "paused"; expiresAt: string; nextSendAt: string | null };
 
 /**
  * A failed request. `code` is the backend's error code, or NETWORK when the
@@ -81,12 +98,16 @@ function messageFor(code: string, requestId: string | null): string {
     case "UNAUTHORIZED":
     case "NOT_FOUND":
       return "参加の記録が見つかりませんでした。期限が切れたか、削除されています。";
+    case "PUSH_UNAVAILABLE":
+      return "いまはリマインダーを使えません。";
+    case "INVALID_SUBSCRIPTION":
+      return "このブラウザでは、リマインダーを受け取れません。";
     default:
       return `サーバーで問題が起きました。時間をおいて、もう一度試してください。${requestId ? `（問い合わせ番号 ${requestId}）` : ""}`;
   }
 }
 
-type RequestOptions = { method?: "GET" | "POST" | "DELETE"; body?: unknown; token?: string; idempotencyKey?: string };
+type RequestOptions = { method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown; token?: string; idempotencyKey?: string };
 
 async function request<T>(path: string, { method = "GET", body, token, idempotencyKey }: RequestOptions = {}): Promise<T | null> {
   const headers: Record<string, string> = {};
@@ -171,4 +192,43 @@ export async function deleteMemorySession(credential: MemoryCredential, idempote
     token: credential.participantToken,
     idempotencyKey,
   });
+}
+
+function pushPath(credential: MemoryCredential): string {
+  return `/v1/memory-sessions/${encodeURIComponent(credential.memorySessionId)}/push-subscription`;
+}
+
+function pushState(state: PushSubscriptionState | null): PushSubscriptionState {
+  if (!state || typeof state.intervalMinutes !== "number" || !state.expiresAt) throw new TraceApiError(0, "UNKNOWN", null);
+  return state;
+}
+
+/**
+ * Registers the browser's push subscription for the photo reminder, the tap
+ * on the switch being the consent; a repeat replaces the one before. The
+ * subscription carries the endpoint and the two keys only, since TRACE_B
+ * refuses any other field (PushSubscription.toJSON() adds expirationTime).
+ */
+export async function putPushSubscription(
+  credential: MemoryCredential,
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+  intervalMinutes: number,
+): Promise<PushSubscriptionState> {
+  return pushState(await request<PushSubscriptionState>(pushPath(credential), {
+    method: "PUT",
+    token: credential.participantToken,
+    body: { consent: true, subscription, intervalMinutes },
+  }));
+}
+
+export async function patchPushSubscription(
+  credential: MemoryCredential,
+  change: { intervalMinutes?: number; status?: "active" | "paused" },
+): Promise<PushSubscriptionState> {
+  return pushState(await request<PushSubscriptionState>(pushPath(credential), { method: "PATCH", token: credential.participantToken, body: change }));
+}
+
+/** Answers 204 whether or not TRACE_B still held one, even after arrival. */
+export async function deletePushSubscription(credential: MemoryCredential): Promise<void> {
+  await request(pushPath(credential), { method: "DELETE", token: credential.participantToken });
 }

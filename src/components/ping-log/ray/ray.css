@@ -567,6 +567,11 @@ html:has(.ray) body {
     background: var(--fg);
     color: var(--bg);
   }
+  /* A choice of several (the reminder's interval): each side is its own button. */
+  & .seg__o:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
 
   /* The "i" mark and its note. */
   & .info {
@@ -1159,6 +1164,9 @@ html:has(.ray) body {
   }
   & .next {
     margin-top: 2px;
+  }
+  & .row-interval {
+    margin-top: 10px;
   }
   & .problem {
     margin-top: 10px;

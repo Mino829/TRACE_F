@@ -16,7 +16,7 @@ import { reducedMotion } from "@/lib/ray/fx";
 import { useLayer } from "../layer";
 import { clock } from "../ui";
 import { Print, PrintPhoto, frameLabel, tearOne } from "./prints";
-import { REMINDER_NOTE, useReminderSwitch } from "./screens";
+import { reminderNote, useReminderSwitch, type ReminderTerms } from "./screens";
 import { ClearWord, DAY, Dock, Icon, NoteBar, Phrases, Screen, Seg, Sentences, SWAP, useField, useRay } from "./stage";
 
 /**
@@ -36,6 +36,7 @@ type Props = {
   maxPhotos: number;
   support: PushSupport;
   reminderOn: boolean;
+  reminderTerms: ReminderTerms;
   busy: boolean;
   /** While the photo reminder is on. */
   nextReminderAt: number | null;
@@ -230,7 +231,7 @@ export function PhotoScreen(props: Props) {
             <Seg on={props.reminderOn} labelledBy={labelId} disabled={props.busy} onToggle={reminder.toggle} />
           </div>
           <p className="small" style={{ marginTop: 6 }}>
-            <Sentences text={REMINDER_NOTE} />
+            <Sentences text={reminderNote(props.reminderTerms)} />
           </p>
           {reminder.problem && (
             <p className="problem" role="alert">
