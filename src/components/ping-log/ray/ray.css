@@ -43,6 +43,19 @@
   }
 }
 
+/* A picture coming up out of the dark, as a print does in the developer. */
+@keyframes ray-develop {
+  from {
+    filter: brightness(0) contrast(1.6);
+  }
+  55% {
+    filter: brightness(0.62) contrast(1.25);
+  }
+  to {
+    filter: none;
+  }
+}
+
 @keyframes ray-shear-in {
   from {
     transform: translateX(var(--dx));
@@ -942,7 +955,11 @@ html:has(.ray) body {
     --lead: 0px;
     --remain: 0px;
     --at: 0px;
-    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--remain) - var(--at)) * 0.75)));
+    --save: 0px;
+    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--remain) - var(--at) - var(--save)) * 0.75)));
+  }
+  & .home:has(.save-photo) {
+    --save: 38px;
   }
   & .home:has(.strip__at) {
     --at: 14px;
@@ -1101,11 +1118,12 @@ html:has(.ray) body {
   & .print__img {
     object-fit: cover;
   }
-  /* The pixel copy above the photo shows only while it tears. */
+  /* The pixel copy above the photo shows only while it tears; a long press reaches the photo under it, to save it by hand. */
   & .print__bits {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     opacity: 0;
+    pointer-events: none;
   }
   & .is-tear > .print__bits,
   & .is-tear .print__frame > .print__bits {
@@ -1591,6 +1609,77 @@ html:has(.ray) body {
     display: flex;
     justify-content: space-between;
   }
+  /* After the replay, the way on to the keepsake. */
+  & .play__next {
+    margin-top: 26px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--fg);
+  }
+  & .play__next .h3 {
+    margin-top: 4px;
+  }
+  & .play__next .btn {
+    margin-top: 16px;
+  }
+
+  /* One photo's save, under its caption. */
+  & .save-photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    font-size: 13px;
+  }
+  & .save-photo svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /*
+   * The keepsake: the picture as it is saved, coming up out of the dark;
+   * its button and the date the photos go; then each photo on its own.
+   */
+  & .keep__art {
+    position: relative;
+    margin: 22px 0 18px;
+    aspect-ratio: 9 / 16;
+    background: #000;
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  & .keep__img {
+    width: 100%;
+    height: 100%;
+    animation: ray-develop 1.8s cubic-bezier(0.3, 0, 0.2, 1) both;
+  }
+  & .keep__wait {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  & .keep__note {
+    margin-top: 12px;
+    color: var(--fg-2);
+  }
+  & .keep__photos {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--fg);
+  }
+  & .keep__photos ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+    gap: 18px 14px;
+    margin-top: 16px;
+    list-style: none;
+  }
+  & .keep__photos .print {
+    --w: 100%;
+  }
+  & .keep__home {
+    margin-top: 28px;
+  }
   & .float-note {
     margin-top: 22px;
     padding: 2px 14px;
@@ -1904,7 +1993,8 @@ html:has(.ray) body {
     & .toast {
       transition: none;
     }
-    & .daylight__drift {
+    & .daylight__drift,
+    & .keep__img {
       animation: none;
     }
   }

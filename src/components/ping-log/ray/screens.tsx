@@ -8,6 +8,7 @@ import { REMINDER_PLAN } from "@/lib/ping-log/push";
 import type { LogEntry } from "@/lib/ping-log/store";
 
 import { clock } from "../ui";
+import { SavePhoto } from "./keepsake";
 import { Print, Strip, frameLabel } from "./prints";
 import {
   ClearWord,
@@ -342,6 +343,8 @@ type HomeProps = {
   onReminder: (on: boolean) => Promise<string | null>;
   /** Resolves to an error message, or null once the interval is changed. */
   onReminderInterval: (minutes: number) => Promise<string | null>;
+  /** TRACE_B has the arrival: the foot leads to the keepsake instead of the QR code. */
+  arrived: boolean;
   onArrive: () => void;
   onDeveloper: () => void;
   onMenu: () => void;
@@ -350,9 +353,10 @@ type HomeProps = {
 
 /**
  * Home, where a participant lands every time after joining: a reminder
- * waiting for an answer, today's photos shown large under a ruled head, the
- * camera button, the reminder's switch, and at the foot, in the dark of the
- * room, the way into ShibaLab. Nothing here mentions where photos were taken.
+ * waiting for an answer, today's photos shown large under a ruled head, each
+ * of which can be saved to the phone, the camera button, the reminder's
+ * switch, and at the foot, in the dark of the room, the way into ShibaLab.
+ * Nothing here mentions where photos were taken.
  */
 export function HomeScreen(props: HomeProps) {
   const { photos, maxPhotos, pendingAt } = props;
@@ -437,6 +441,7 @@ export function HomeScreen(props: HomeProps) {
                   time={clock(entry.record.takenAt)}
                   ratio={meta && meta.width > 0 && meta.height > 0 ? meta.width / meta.height : 3 / 4}
                 />
+                <SavePhoto entry={entry} number={count - index} />
               </li>
             );
           })}
@@ -506,13 +511,27 @@ export function HomeScreen(props: HomeProps) {
           <span className="mono">ShibaLab</span>
           <span className="mono">Room 301</span>
         </div>
-        <p className="body">
-          <Sentences text={"写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。着いたら、ASYNC のブースにある\nQR コードを読み取ってください。"} />
-        </p>
-        <button type="button" className="btn" onClick={props.onArrive}>
-          <Icon name="qr" />
-          QR コードを読み取る
-        </button>
+        {props.arrived ? (
+          <>
+            <p className="body">
+              <Sentences text={"再生が終わったら、\n撮った写真を一枚の作品にして保存できます。"} />
+            </p>
+            <button type="button" className="btn" onClick={props.onArrive}>
+              <Icon name="arrow" />
+              作品を見る
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="body">
+              <Sentences text={"写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。着いたら、ASYNC のブースにある\nQR コードを読み取ってください。"} />
+            </p>
+            <button type="button" className="btn" onClick={props.onArrive}>
+              <Icon name="qr" />
+              QR コードを読み取る
+            </button>
+          </>
+        )}
       </section>
     </Screen>
   );

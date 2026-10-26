@@ -62,6 +62,8 @@ export type RayAppProps = {
   /** The experience on TRACE_B, while /log works with it: home's QR button then reads the booth's real code instead of opening the demo. */
   arrival: ArrivalTarget | null;
   onArrive: () => void;
+  /** TRACE_B has this participation's arrival: home leads to the keepsake. */
+  arrived: boolean;
   /** TRACE_B has this memory session's arrival. */
   onArrived: (memorySessionId: string) => void;
   onCloseDemo: () => void;
@@ -148,7 +150,16 @@ function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openO
   };
 
   if (props.demo === "home" && props.arrival) {
-    return <ArrivalFlow target={props.arrival} inert={inert} onClose={props.onCloseDemo} onArrived={props.onArrived} />;
+    return (
+      <ArrivalFlow
+        target={props.arrival}
+        photos={props.photos}
+        toKeepsake={props.arrived}
+        inert={inert}
+        onClose={props.onCloseDemo}
+        onArrived={props.onArrived}
+      />
+    );
   }
 
   if (props.demo) {
@@ -239,6 +250,7 @@ function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openO
       onSkip={() => void skip()}
       onReminder={props.onReminder}
       onReminderInterval={props.onReminderInterval}
+      arrived={props.arrived}
       onArrive={() => void go(props.onArrive)}
       onDeveloper={props.onDeveloper}
       onMenu={onMenu}
