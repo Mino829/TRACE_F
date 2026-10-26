@@ -13,7 +13,8 @@ import { Icon, Phrases, Sentences, useRay, type IconName } from "./stage";
  * Escape and its own close button; the screen behind is inert meanwhile.
  */
 
-export type OverlayName = "menu" | "howto" | "install" | "consent" | "withdraw";
+/** start: how to play between 「はじめる」 and the consent, leading on to it. */
+export type OverlayName = "menu" | "howto" | "start" | "install" | "consent" | "withdraw";
 
 function Layer({ kind, label, alert = false, onClose, children }: { kind: "full" | "sheet"; label: string; alert?: boolean; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
@@ -96,22 +97,20 @@ export function MenuLayer({ items, onClose }: { items: MenuItem[]; onClose: () =
   );
 }
 
-const STEPS = [
-  { title: "写真を撮る", text: "残したい瞬間を見つけたら、「写真を撮る」を押して撮影します。" },
-  { title: "学祭をめぐる", text: "撮影と撮影のあいだは、自由に学祭をめぐってください。" },
-  {
-    title: "ShibaLab で QR を読む",
-    text: "ShibaLab（教室棟301）には、好きなときに来てください。着いたら、ホームの「QR コードを読み取る」を押して、ASYNC のブースにある QR コードを読み取ってください。",
-  },
-];
-
-export function HowToLayer({ maxPhotos, reminderMinutes, onClose }: { maxPhotos: number; reminderMinutes: number; onClose: () => void }) {
-  const notes = [
-    "撮った写真は、展示に出しません。",
-    `撮影は${maxPhotos}枚までです。`,
-    `撮影のリマインダーは任意です。オンにすると、${reminderMinutes}分ごとに届きます。`,
-    "撮りたいものがないときは、リマインダーをスキップして構いません。",
+function steps(reminderMinutes: number) {
+  return [
+    { title: "芝浦祭を楽しむ", text: "第54回芝浦祭を、思いっきり楽しんでください。" },
+    { title: "写真を撮る", text: `${reminderMinutes}分毎にお使いの端末に通知が送られます。学祭の思い出を切り取りましょう。` },
+    {
+      title: "ShibaLab に行く",
+      text: "教室棟301で、あなたの歩んだ軌跡を元に演出が楽しめます。ぜひ、お帰りの前に ShibaLab に立ち寄ってください。",
+    },
   ];
+}
+
+/** Before joining (onNext), its button leads on to the consent instead of closing. */
+export function HowToLayer({ reminderMinutes, onNext, onClose }: { reminderMinutes: number; onNext?: () => void; onClose: () => void }) {
+  const { go } = useRay();
   return (
     <Layer kind="full" label="遊び方" onClose={onClose}>
       <div className="full">
@@ -120,7 +119,7 @@ export function HowToLayer({ maxPhotos, reminderMinutes, onClose }: { maxPhotos:
           遊び方
         </h1>
         <ol style={{ listStyle: "none" }}>
-          {STEPS.map((step, index) => (
+          {steps(reminderMinutes).map((step, index) => (
             <li key={step.title} className="howto__step">
               <span className="howto__n" aria-hidden="true">
                 {index + 1}
@@ -134,16 +133,16 @@ export function HowToLayer({ maxPhotos, reminderMinutes, onClose }: { maxPhotos:
             </li>
           ))}
         </ol>
-        <ul className="notes">
-          {notes.map((note) => (
-            <li key={note}>
-              <Sentences text={note} />
-            </li>
-          ))}
-        </ul>
-        <button type="button" className="btn" style={{ marginTop: 18 }} onClick={onClose}>
-          閉じる
-        </button>
+        {onNext ? (
+          <button type="button" className="btn" style={{ marginTop: 18 }} onClick={() => void go(onNext)}>
+            次へ
+            <Icon name="arrow" />
+          </button>
+        ) : (
+          <button type="button" className="btn" style={{ marginTop: 18 }} onClick={onClose}>
+            閉じる
+          </button>
+        )}
       </div>
     </Layer>
   );
@@ -185,7 +184,7 @@ export function InstallLayer({
     {
       icon: "bell",
       text: beforeJoining
-        ? "ホーム画面にできた TRACE のアイコンから開き、そこで「はじめる」を押してください。"
+        ? "ホーム画面にできた TRACE のアイコンからご参加ください。"
         : "ホーム画面にできた TRACE のアイコンから開き直すと、リマインダーをオンにできます。",
     },
   ];
@@ -201,14 +200,14 @@ export function InstallLayer({
               <Phrases text={heading} />
             </h1>
             <p className="body" style={{ marginTop: 10 }}>
-              <Sentences text="iPhone では、このページをホーム画面に追加すると、撮影のリマインダーを通知で受け取れます（iOS 16.4 以降）。" />
+              <Sentences text="通知を受け取るため、このページをホーム画面に追加してください。" />
             </p>
             <p className="small" style={{ marginTop: 8 }}>
               <Sentences
                 text={
                   beforeJoining
-                    ? "ホーム画面のアイコンから開いた TRACE は、このページとは別に記録を保存します。リマインダーを使う場合は、先に移ってから参加してください。"
-                    : "アイコンから開くと、参加の同意からやり直しになります。ここで撮った写真は、アイコンから開いた画面には表示されません。"
+                    ? "追加後、このタブは消去してください。"
+                    :"アイコンから開くと、参加の同意からやり直しになります。ここで撮った写真は、アイコンから開いた画面には表示されません。"
                 }
               />
             </p>

@@ -71,6 +71,7 @@ async function shoot(page: Page, name: string) {
 async function join(page: Page) {
   await page.goto("/log");
   await page.getByRole("button", { name: /はじめる/ }).click();
+  await page.getByRole("button", { name: /次へ/ }).click();
   await page.getByRole("button", { name: "同意して参加する" }).click();
   await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
 }
@@ -149,6 +150,7 @@ test("a participation the backend no longer knows is forgotten, with a note and 
   await expect(page.getByRole("status").filter({ hasText: /参加の記録|この画面には/ })).toHaveCount(0);
 
   await page.getByRole("button", { name: /はじめる/ }).click();
+  await page.getByRole("button", { name: /次へ/ }).click();
   await page.getByRole("button", { name: "同意して参加する" }).click();
   await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
 });

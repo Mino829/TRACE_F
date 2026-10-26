@@ -90,20 +90,24 @@ export function RayApp(props: RayAppProps) {
   const layer =
     overlay === "menu" ? (
       <MenuLayer items={menuItems} onClose={close} />
-    ) : overlay === "howto" ? (
-      <HowToLayer maxPhotos={props.maxPhotos} reminderMinutes={props.reminderTerms.intervalMinutes} onClose={close} />
-    ) : overlay === "install" ? (
-      <InstallLayer
-        support={entrance ? entry : props.support}
-        beforeJoining={!props.joined}
-        onContinue={
-          entrance && entry === "ios-browser"
+    ) : overlay === "howto" || overlay === "start" ? (
+      <HowToLayer
+        reminderMinutes={props.reminderTerms.intervalMinutes}
+        onNext={
+          overlay === "start"
             ? () => {
                 close();
                 props.onOpenConsent();
               }
             : undefined
         }
+        onClose={close}
+      />
+    ) : overlay === "install" ? (
+      <InstallLayer
+        support={entrance ? entry : props.support}
+        beforeJoining={!props.joined}
+        onContinue={entrance && entry === "ios-browser" ? () => setOverlay("start") : undefined}
         onClose={close}
       />
     ) : overlay === "consent" ? (
@@ -170,7 +174,8 @@ function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openO
         notes={props.notes}
         entry={props.entry}
         inert={inert}
-        onStart={() => void go(props.onOpenConsent)}
+        // How to play comes first, and its 「次へ」 opens the consent.
+        onStart={() => props.openOverlay("start")}
         onInstall={onInstall}
         onDeveloper={props.onDeveloper}
         onMenu={onMenu}

@@ -174,13 +174,13 @@ export function TitleScreen({
         </p>
         <ol className="steps" aria-label="参加の流れ">
           <li>
-            <span className="mono">1</span>写真を撮る
+            <span className="mono">1</span>芝浦祭を楽しむ
           </li>
           <li>
-            <span className="mono">2</span>学祭をめぐる
+            <span className="mono">2</span>写真を撮る
           </li>
           <li>
-            <span className="mono">3</span>ShibaLab&nbsp;へ
+            <span className="mono">3</span>ShibaLab&nbsp;に行く
           </li>
         </ol>
         <p className="title__note">
@@ -411,11 +411,11 @@ export function HomeScreen(props: HomeProps) {
         </h1>
         {count === 0 && (
           <p className="body home__lead">
-            <Sentences text="残したい瞬間を見つけたら、撮ってください。" />
+            <Sentences text="あなたの思い出を切り取りましょう。" />
           </p>
         )}
       </header>
-      <Pop info={memoryInfo} text={`撮影は${maxPhotos}枚までです。送信できていない写真は、電波の良い場所で送信してください。`} />
+      <Pop info={memoryInfo} text={`撮影は${maxPhotos}枚までです。`} />
       {unsent > 0 && (
         <div className="unsent">
           <span className="body">

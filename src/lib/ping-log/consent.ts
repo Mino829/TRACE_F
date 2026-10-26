@@ -16,12 +16,12 @@
  * given under.
  */
 
-export const CONSENT_VERSION = "2026-10-11-photo-draft-2";
+export const CONSENT_VERSION = "2026-10-26-photo-draft-3";
 
 /** What the developer screen's records and accuracy pings carry in place of a participant's consent. */
 export const DEVELOPER_CONSENT_VERSION = "developer-accuracy";
 
-export const CONSENT_LEAD = "参加は任意です。同意しなくても、不利益になることはありません。写真は撮りたいときだけ撮れば構いません。";
+export const CONSENT_LEAD = "参加は任意です。同意しなくても、不利益になることはありません。";
 
 export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
   {

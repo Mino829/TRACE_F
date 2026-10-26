@@ -563,9 +563,6 @@ function Replay({
       </header>
       <div ref={stageRef} className="arrived__stage" aria-hidden="true" />
       <p className="mono">Arrived {arrivedAt && <span className="latin">{arrivedAt}</span>}</p>
-      <h1 className="h1">
-        <Phrases text="ShibaLab に到着しました" />
-      </h1>
       <section className="play" aria-labelledby="ray-play" aria-live="polite">
         <p className="mono">
           {status === "playing" ? <><span className="blink">▶</span> </> : final ? "■ " : ""}

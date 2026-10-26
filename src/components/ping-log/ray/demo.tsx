@@ -388,9 +388,6 @@ function Arrived({ inert, onLeave, onHome, onStory }: { inert: boolean; onLeave:
       <p className="mono">
         Arrived <span className="latin">{arrivedAt}</span>
       </p>
-      <h1 className="h1">
-        <Phrases text="ShibaLab に到着しました" />
-      </h1>
       <section className="play" aria-labelledby="ray-play">
         <p className="mono">{played ? "■ Played" : <><span className="blink">▶</span> Playback</>}</p>
         <h2 className="h2" id="ray-play">
