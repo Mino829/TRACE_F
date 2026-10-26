@@ -180,7 +180,8 @@ export function TitleScreen({
             <span className="mono">2</span>写真を撮る
           </li>
           <li>
-            <span className="mono">3</span>ShibaLab&nbsp;に行く
+            <span className="mono">3</span>
+            <Phrases text="ShibaLab に行く" />
           </li>
         </ol>
         <p className="title__note">
