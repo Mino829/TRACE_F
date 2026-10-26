@@ -140,9 +140,9 @@ const FINAL_ERRORS = new Set(["UNAUTHORIZED", "NOT_FOUND", "STATE_CONFLICT", "NO
 type Camera = "starting" | "on" | "denied" | "missing" | "busy" | "failed" | "unsupported";
 
 const CAMERA_TROUBLE: Record<Exclude<Camera, "starting" | "on">, string> = {
-  denied: "カメラの使用が許可されていません。設定で、このサイトにカメラの使用を許可してから「もう一度試す」を押してください。",
+  denied: "カメラの使用が許可されていません。設定で、このサイトに\nカメラの使用を許可してから\n「もう一度試す」を押してください。",
   missing: "カメラが見つかりませんでした。",
-  busy: "カメラを起動できませんでした。ほかのアプリがカメラを使っていれば、閉じてから「もう一度試す」を押してください。",
+  busy: "カメラを起動できませんでした。ほかのアプリがカメラを使っていれば、\n閉じてから「もう一度試す」を\n押してください。",
   failed: "カメラを起動できませんでした。「もう一度試す」を押してください。",
   unsupported: "このブラウザではカメラを使えません。Safari か Chrome で開いてください。",
 };
@@ -315,7 +315,7 @@ function CameraScan({
       showCorners(code);
       const text = code.rawValue.trim();
       if (!isArrivalCode(text)) {
-        if (text !== noted) setNotice("これは到着用の QR コードではありません。ASYNC のブースに映っている QR コードを読み取ってください。");
+        if (text !== noted) setNotice("これは到着用の QR コードではありません。ASYNC のブースに映っている\nQR コードを読み取ってください。");
         noted = text;
         return;
       }
@@ -334,7 +334,7 @@ function CameraScan({
         } catch {
           // The reader could not load (on an iPhone it is fetched on first use), or a frame could not be read.
           if (!reader) {
-            setNotice("QR コードを読み取る準備ができませんでした。電波の良い場所で、少し待ってください。");
+            setNotice("QR コードを読み取る\n準備ができませんでした。電波の良い場所で、少し待ってください。");
             resumeAt = Date.now() + 3000;
           }
         }
@@ -404,7 +404,7 @@ function CameraScan({
         <span className="mono mono--dim">Live</span>
       </div>
       <h1 className="h2 scan__head">
-        <Phrases text="ASYNC のブースの QR コードを、枠に入れてください" />
+        <Phrases text={"ASYNC のブースの QR コードを、\n枠に入れてください"} />
       </h1>
       <ScanWindow windowRef={windowRef} trackers={trackers} locked={found || sending}>
         <video ref={videoRef} className={`scan__video${field && !field.ok ? " is-shown" : ""}`} muted playsInline autoPlay aria-hidden="true" />
@@ -431,7 +431,7 @@ function CameraScan({
         </button>
       )}
       <p className="small">
-        <Sentences text="カメラの映像は、QR コードを読み取るためだけに使います。映像は保存も送信もしません。" />
+        <Sentences text={"カメラの映像は、\nQR コードを読み取るためだけに使います。映像は保存も送信もしません。"} />
       </p>
     </Screen>
   );
@@ -440,7 +440,7 @@ function CameraScan({
 /* ----------------------------------------------------------------- replay */
 
 function replayText(status: ReplayStatus | null, skippedHere: boolean): { label: string; title: string; body: string } {
-  if (status === "playing") return { label: "Playback", title: "スクリーンを見てください", body: "あなたの軌跡を、スクリーンで再生しています。" };
+  if (status === "playing") return { label: "Playback", title: "スクリーンを見てください", body: "あなたの軌跡を、\nスクリーンで再生しています。" };
   if (status === "completed") return { label: "Played", title: "再生が終わりました", body: "撮った写真は、ホームでいつでも見られます。" };
   if (status === "skipped" && skippedHere) {
     return { label: "Skipped", title: "再生をやめました", body: "あなたの軌跡は、スクリーンには映りません。撮った写真は、ホームでいつでも見られます。" };
@@ -448,11 +448,11 @@ function replayText(status: ReplayStatus | null, skippedHere: boolean): { label:
   if (status === "skipped") {
     return {
       label: "Skipped",
-      title: "スクリーンでは再生できませんでした",
-      body: "展示の都合で、今回はスクリーンで再生できませんでした。撮った写真は、ホームでいつでも見られます。",
+      title: "スクリーンでは\n再生できませんでした",
+      body: "展示の都合で、\n今回はスクリーンで再生できませんでした。撮った写真は、ホームでいつでも見られます。",
     };
   }
-  return { label: "Standby", title: "スクリーンの前でお待ちください", body: "あなたの軌跡を、このあとスクリーンで再生します。" };
+  return { label: "Standby", title: "スクリーンの前でお待ちください", body: "あなたの軌跡を、\nこのあとスクリーンで再生します。" };
 }
 
 /** Network failures in a row before the screen says it cannot tell how the replay stands. */
@@ -572,7 +572,7 @@ function Replay({
           {text.label}
         </p>
         <h2 className="h2" id="ray-play">
-          {text.title}
+          <Phrases text={text.title} />
         </h2>
         <p className="body">
           <Sentences text={text.body} />
@@ -591,7 +591,7 @@ function Replay({
       {status === "queued" && confirming && (
         <section className="bracket" style={{ marginTop: 18 }}>
           <p className="body">
-            <Sentences text="再生をやめると、あなたの軌跡はスクリーンに映りません。あとから再生しなおすことはできません。" />
+            <Sentences text={"再生をやめると、\nあなたの軌跡はスクリーンに映りません。あとから再生しなおすことはできません。"} />
           </p>
           <div className="btns btns--2" style={{ marginTop: 12 }}>
             <button type="button" className="btn btn--line" onClick={() => setConfirming(false)}>

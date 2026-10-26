@@ -107,18 +107,18 @@ function messageFor(code: string, requestId: string | null): string {
     case "CONSENT_VERSION_MISMATCH":
       return "参加の説明が新しくなりました。もう一度読んで、同意してください。";
     case "INVALID_CLIENT_TIME":
-      return "スマホの時刻がずれています。時刻を合わせてから、もう一度試してください。";
+      return "スマホの時刻がずれています。時刻を合わせてから、\nもう一度試してください。";
     case "UNAUTHORIZED":
     case "NOT_FOUND":
       return "参加の記録が見つかりませんでした。期限が切れたか、削除されています。";
     case "INVALID_CHECKPOINT":
-      return "この QR コードでは到着を受け付けられませんでした。期限が切れたか、到着用の QR コードではありません。ブースにいま映っている QR コードを読み取ってください。";
+      return "この QR コードでは\n到着を受け付けられませんでした。期限が切れたか、\n到着用の QR コードではありません。ブースにいま映っている\nQR コードを読み取ってください。";
     case "NOT_AVAILABLE":
-      return "いまは到着を受け付けていません。ASYNC のブースのスタッフに声をかけてください。";
+      return "いまは到着を受け付けていません。ASYNC のブースのスタッフに\n声をかけてください。";
     case "STATE_CONFLICT":
       return "この参加では、もう受け付けられません。参加の期限が切れたか、削除の途中です。";
     case "RATE_LIMITED":
-      return "短いあいだに何度も送られたため、受け付けを止めています。少し待ってから、もう一度試してください。";
+      return "短いあいだに何度も送られたため、\n受け付けを止めています。少し待ってから、もう一度試してください。";
     case "PUSH_UNAVAILABLE":
       return "いまはリマインダーを使えません。";
     case "INVALID_SUBSCRIPTION":

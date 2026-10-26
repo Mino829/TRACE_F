@@ -99,11 +99,11 @@ export function MenuLayer({ items, onClose }: { items: MenuItem[]; onClose: () =
 
 function steps(reminderMinutes: number) {
   return [
-    { title: "芝浦祭を楽しむ", text: "第54回芝浦祭を、思いっきり楽しんでください。" },
-    { title: "写真を撮る", text: `${reminderMinutes}分毎にお使いの端末に通知が送られます。学祭の思い出を切り取りましょう。` },
+    { title: "芝浦祭を楽しむ", text: "第54回芝浦祭を、\n思いっきり楽しんでください。" },
+    { title: "写真を撮る", text: `${reminderMinutes}分毎にお使いの端末に\n通知が送られます。学祭の思い出を切り取りましょう。` },
     {
       title: "ShibaLab に行く",
-      text: "教室棟301で、あなたの歩んだ軌跡を元に演出が楽しめます。ぜひ、お帰りの前に ShibaLab に立ち寄ってください。",
+      text: "教室棟301で、\nあなたの歩んだ軌跡を元に\n演出が楽しめます。ぜひ、お帰りの前に\nShibaLab に立ち寄ってください。",
     },
   ];
 }
@@ -184,8 +184,8 @@ export function InstallLayer({
     {
       icon: "bell",
       text: beforeJoining
-        ? "ホーム画面にできた TRACE のアイコンからご参加ください。"
-        : "ホーム画面にできた TRACE のアイコンから開き直すと、リマインダーをオンにできます。",
+        ? "ホーム画面にできた TRACE の\nアイコンからご参加ください。"
+        : "ホーム画面にできた TRACE の\nアイコンから開き直すと、\nリマインダーをオンにできます。",
     },
   ];
   const heading = ios ? "iPhone で通知を受け取るには" : support === "in-app" ? "アプリの中で開いています" : "このブラウザでは通知を受け取れません";
@@ -200,14 +200,14 @@ export function InstallLayer({
               <Phrases text={heading} />
             </h1>
             <p className="body" style={{ marginTop: 10 }}>
-              <Sentences text="通知を受け取るため、このページをホーム画面に追加してください。" />
+              <Sentences text={"通知を受け取るため、\nこのページをホーム画面に追加してください。"} />
             </p>
             <p className="small" style={{ marginTop: 8 }}>
               <Sentences
                 text={
                   beforeJoining
                     ? "追加後、このタブは消去してください。"
-                    : "アイコンから開くと、参加の同意からやり直しになります。ここで撮った写真は、アイコンから開いた画面には表示されません。"
+                    : "アイコンから開くと、\n参加の同意からやり直しになります。ここで撮った写真は、\nアイコンから開いた画面には表示されません。"
                 }
               />
             </p>
@@ -231,10 +231,10 @@ export function InstallLayer({
               <Sentences
                 text={
                   support !== "in-app"
-                    ? "リマインダーを使う場合は、リンクをコピーして Safari か Chrome で開いてください。"
+                    ? "リマインダーを使う場合は、\nリンクをコピーして\nSafari か Chrome で開いてください。"
                     : beforeJoining
-                      ? "アプリの中で開いたページの記録は、Safari や Chrome に引き継げません。アプリのメニューの「ブラウザで開く」を選ぶか、リンクをコピーして Safari か Chrome で開いてから、参加してください。"
-                      : "LINE などのアプリの中で開いたページでは、通知を受け取れません。リマインダーを使う場合は、アプリのメニューの「ブラウザで開く」を選ぶか、リンクをコピーして Safari か Chrome で開いてください。"
+                      ? "アプリの中で開いたページの記録は、\nSafari や Chrome に引き継げません。アプリのメニューの「ブラウザで開く」を\n選ぶか、リンクをコピーして\nSafari か Chrome で開いてから、\n参加してください。"
+                      : "LINE などのアプリの中で開いたページでは、\n通知を受け取れません。リマインダーを使う場合は、\nアプリのメニューの「ブラウザで開く」を\n選ぶか、リンクをコピーして\nSafari か Chrome で開いてください。"
                 }
               />
             </p>
@@ -250,7 +250,7 @@ export function InstallLayer({
               通知なしでこのまま参加する
             </button>
             <p className="small" style={{ marginTop: 8 }}>
-              <Sentences text="プライベートブラウズでは記録が正常に保存されません。通常のタブで開いてください。" />
+              <Sentences text={"プライベートブラウズでは\n記録が正常に保存されません。通常のタブで開いてください。"} />
             </p>
           </>
         ) : (
@@ -292,7 +292,7 @@ export function WithdrawLayer({ onConfirm, onClose }: { onConfirm: () => Promise
           参加をやめますか？
         </h2>
         <p className="body">
-          <Sentences text="リマインダーを止め、この端末から送った写真と記録をすべて削除します。削除したものは元に戻せません。" />
+          <Sentences text={"リマインダーを止め、この端末から送った\n写真と記録をすべて削除します。削除したものは元に戻せません。"} />
         </p>
         <div className="btns" style={{ marginTop: 16 }}>
           <button type="button" className="btn btn--danger" disabled={working} onClick={() => void confirm()}>

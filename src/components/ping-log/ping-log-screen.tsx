@@ -90,7 +90,7 @@ const PROMPT_MESSAGE = "trace-ping";
 const SEND_LOCK = "trace-log-send";
 /** How long a save waits for another tab that is sending; after that its photo waits for the next try. */
 const SEND_WAIT_MS = 10_000;
-const START_AGAIN = "続けるときは、もう一度「はじめる」から参加してください。";
+const START_AGAIN = "続けるときは、\nもう一度「はじめる」から参加してください。";
 
 type View = "participant" | "developer";
 type AccuracyFlow = { kind: "ping" | "manual"; promptedAt: string | null };
@@ -136,10 +136,10 @@ function initialPending(): string | null {
  */
 function initialLostNote(): string {
   if (!TRACE_API_URL || initialView() !== "participant") return "";
-  if (experienceLapsed()) return `前の参加は、記録を残す期限が過ぎたので削除されました。${START_AGAIN}`;
+  if (experienceLapsed()) return `前の参加は、\n記録を残す期限が過ぎたので削除されました。${START_AGAIN}`;
   const fromReminder = new URLSearchParams(window.location.search).has("prompt");
   return (loadConsent() || fromReminder) && !loadTabExperience()
-    ? "この画面には、前の参加の記録がありません。参加を始めたブラウザか、ホーム画面のアプリで開いてください。開けないときは、もう一度「はじめる」から参加できます。"
+    ? "この画面には、前の参加の記録がありません。参加を始めたブラウザか、\nホーム画面のアプリで開いてください。開けないときは、\nもう一度「はじめる」から参加できます。"
     : "";
 }
 
@@ -445,7 +445,7 @@ export function PingLogScreen() {
     if (notificationState() === "unsupported") throw new Error("このブラウザでは通知を受け取れません。");
     const result = await Notification.requestPermission();
     setPermission(result);
-    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、このサイトの通知を許可してください。");
+    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、\nこのサイトの通知を許可してください。");
   };
 
   /** One subscription per phone: the photo reminder and the accuracy ping replace each other. */

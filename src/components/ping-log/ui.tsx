@@ -217,15 +217,21 @@ function solid(phrase: string): string {
 /**
  * A text that wraps only between phrases, so a line never starts in the
  * middle of a word or with a lone 。. A phrase too long for the line still
- * breaks rather than running out of its box.
+ * breaks rather than running out of its box. A "\n" in the copy is a line
+ * break placed by hand.
  */
 export function Phrases({ text }: { text: string }) {
   return (
     <span className="px-phrases">
-      {phrases(text).map((phrase, index) => (
-        <Fragment key={index}>
-          {index > 0 && <wbr />}
-          {phrase}
+      {text.split("\n").map((line, row) => (
+        <Fragment key={row}>
+          {row > 0 && <br />}
+          {phrases(line).map((phrase, index) => (
+            <Fragment key={index}>
+              {index > 0 && <wbr />}
+              {phrase}
+            </Fragment>
+          ))}
         </Fragment>
       ))}
     </span>
