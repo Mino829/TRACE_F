@@ -1,19 +1,15 @@
-import { readExif } from "./exif";
 import type { PhotoMeta } from "./record";
 
 const MAX_PHOTO_EDGE = 1280;
 
 /**
- * Phone photos are several MB; keep a JPEG small enough to send over a campus
- * connection. The re-encode drops the original's EXIF from the JPEG. An
- * accuracy run keeps what the EXIF said in the record, read before it is
- * lost; a participant's photo leaves it behind entirely (FR-022), so pass
- * `{ exif: false }` for those.
+ * Re-encode the participant's photo to a small JPEG. The original EXIF,
+ * including camera GPS tags, is neither parsed into the record nor copied
+ * into the output.
  */
-export async function preparePhoto(file: File, { exif: keepExif = true }: { exif?: boolean } = {}): Promise<{ blob: Blob; meta: PhotoMeta }> {
-  const exif = keepExif ? await readExif(file) : null;
+export async function preparePhoto(file: File): Promise<{ blob: Blob; meta: PhotoMeta }> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => createImageBitmap(file));
-  const meta: PhotoMeta = { type: file.type, bytes: file.size, width: bitmap.width, height: bitmap.height, lastModified: file.lastModified, exif };
+  const meta: PhotoMeta = { type: file.type, bytes: file.size, width: bitmap.width, height: bitmap.height, lastModified: file.lastModified, exif: null };
   const scale = Math.min(1, MAX_PHOTO_EDGE / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bitmap.width * scale);

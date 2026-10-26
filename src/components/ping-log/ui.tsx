@@ -1,7 +1,7 @@
 "use client";
 
 import { loadDefaultJapaneseParser } from "budoux";
-import { Fragment, useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { Fragment, type ButtonHTMLAttributes, type ReactNode } from "react";
 
 import { PixelIcon, type PixelIconName } from "./pixel-icon";
 
@@ -69,88 +69,6 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
   return <p className={`px-label ${className ?? ""}`}>{children}</p>;
 }
 
-/** A hint for the next step, behind a TIP chip. */
-export function Tip({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <p className={`px-note ${className ?? ""}`} data-tone="coach">
-      <span className="px-chip px-chip--tip mt-1">TIP</span>
-      <span>{typeof children === "string" ? <Sentences text={children} /> : children}</span>
-    </p>
-  );
-}
-
-/** The state behind an "i": whether its note is open, and the id that ties the two. Escape closes it. */
-export function useInfo() {
-  const [open, setOpen] = useState(false);
-  const id = useId();
-
-  useEffect(() => {
-    if (!open) return;
-    const key = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", key);
-    return () => document.removeEventListener("keydown", key);
-  }, [open]);
-
-  return { open, id, toggle: () => setOpen((value) => !value) };
-}
-
-export type Info = ReturnType<typeof useInfo>;
-
-/**
- * The "i" beside a label: a 20px square to see, a 44px square to tap. A word
- * joiner ties it to the word before, so it never wraps onto a line alone.
- */
-export function InfoButton({ info, label }: { info: Info; label: string }) {
-  return (
-    <>
-      {"\u2060"}
-      <button type="button" className="px-info__button" aria-label={label} aria-expanded={info.open} aria-controls={info.id} onClick={info.toggle}>
-        <span aria-hidden="true">i</span>
-      </button>
-    </>
-  );
-}
-
-/**
- * What an "i" holds. It opens in place below its row and pushes the rest of
- * the screen down, so it never covers a button or the next window.
- */
-export function InfoNote({ info, children }: { info: Info; children: ReactNode }) {
-  return (
-    <div id={info.id} role="note" className="px-info__note" hidden={!info.open}>
-      {children}
-    </div>
-  );
-}
-
-/**
- * Marks a scrolling box while more of it lies below, so its foot fades as a
- * hint that the text goes on.
- */
-export function useScrollHint<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const update = () => {
-      element.dataset.more = String(element.scrollTop + element.clientHeight < element.scrollHeight - 4);
-    };
-    update();
-    element.addEventListener("scroll", update, { passive: true });
-    // A dialog's box has no size until it opens.
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    return () => {
-      element.removeEventListener("scroll", update);
-      observer.disconnect();
-    };
-  }, []);
-
-  return ref;
-}
 
 const parser = loadDefaultJapaneseParser();
 
@@ -266,10 +184,4 @@ export function Sentences({ text }: { text: string }) {
 
 export function clock(value: number | string): string {
   return new Date(value).toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
-}
-
-/** Minutes and seconds left, from milliseconds. */
-export function remaining(ms: number): { minutes: number; seconds: number } {
-  const total = Math.max(0, Math.round(ms / 1000));
-  return { minutes: Math.floor(total / 60), seconds: total % 60 };
 }

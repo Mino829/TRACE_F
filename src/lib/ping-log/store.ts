@@ -1,9 +1,6 @@
 /**
- * Device-local store for the timed log (`/log`).
- *
- * Every record is written here first and sent to the push worker afterwards,
- * so one taken without signal is kept and sent later; `sentAt` marks the ones
- * the worker has acknowledged.
+ * Device-local log. Only new GPS-free checkpoint photos are eligible to send;
+ * older entries stay here until the participant deletes them.
  */
 
 import type { LogRecord } from "./record";
@@ -27,7 +24,7 @@ export type SaveOutcome = "sent" | "queued" | "local";
 
 const DB_NAME = "trace-ping-log";
 const STORE_NAME = "entries";
-/** 2: records replaced the photo-first entries of version 1, which are dropped. */
+/** Keep old object stores intact when opening an earlier database version. */
 const VERSION = 2;
 
 function openDb(): Promise<IDBDatabase> {
@@ -35,8 +32,7 @@ function openDb(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (db.objectStoreNames.contains(STORE_NAME)) db.deleteObjectStore(STORE_NAME);
-      db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "id" });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error("IndexedDBを開けませんでした。"));
@@ -47,7 +43,9 @@ export async function listEntries(): Promise<LogEntry[]> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();
-    request.onsuccess = () => resolve((request.result as LogEntry[]).sort((a, b) => b.record.takenAt.localeCompare(a.record.takenAt)));
+    request.onsuccess = () => resolve((request.result as LogEntry[])
+      .filter((entry) => typeof entry?.record?.takenAt === "string")
+      .sort((a, b) => b.record.takenAt.localeCompare(a.record.takenAt)));
     request.onerror = () => reject(request.error ?? new Error("記録を読み込めませんでした。"));
   });
 }

@@ -1,10 +1,6 @@
-/**
- * Client for the push worker (push-worker/): subscribing this phone to the
- * photo reminder or the accuracy ping, sending each record, and withdrawing.
- *
- * The worker's URL comes from NEXT_PUBLIC_PUSH_API_URL (e.g. in .env.local).
- */
+/** Photo reminders, GPS-free photo uploads, and deletion on the push worker. */
 
+import { CONSENT_VERSION } from "./consent";
 import type { LogEntry } from "./store";
 
 export const PUSH_API_URL = (process.env.NEXT_PUBLIC_PUSH_API_URL ?? "").replace(/\/$/, "");
@@ -13,18 +9,10 @@ const DEVICE_KEY = "trace-device-id";
 const EXPIRES_KEY = "trace-push-expires";
 const PLAN_KEY = "trace-push-plan";
 
-/**
- * What the phone's one subscription is for. A phone holds a single push
- * subscription, so turning on one plan replaces the other.
- *
- * - photo: the participants' optional reminder to take a photo, every 30 minutes.
- * - accuracy: the team's accuracy ping from the developer screen, every 10 minutes.
- */
+/** Older accuracy subscriptions remain readable so they can be stopped. */
 export type PushPlan = { purpose: "photo" | "accuracy"; intervalMinutes: number };
 
-/** The participants turn the reminder on or off, nothing more. The worker also takes 15 minutes, should the team want it. */
 export const REMINDER_PLAN: PushPlan = { purpose: "photo", intervalMinutes: 30 };
-export const ACCURACY_PLAN: PushPlan = { purpose: "accuracy", intervalMinutes: 10 };
 
 /** A random id per browser, so the worker can tell one phone's records from another's. Not tied to the hardware. */
 export function deviceId(): string {
@@ -77,7 +65,8 @@ export function subscriptionPlan(): PushPlan {
   } catch {
     // Unreadable: fall through.
   }
-  return ACCURACY_PLAN;
+  // A missing plan predates reminders and represents a legacy accuracy subscription.
+  return { purpose: "accuracy", intervalMinutes: 10 };
 }
 
 function savePlan(plan: PushPlan | null): void {
@@ -112,30 +101,30 @@ async function post(path: string, body: unknown): Promise<Response> {
   return response;
 }
 
-/** Subscribes this phone, or moves its subscription to another plan; the worker keeps one row per subscription. */
-export async function subscribe(registration: ServiceWorkerRegistration, consentVersion: string, plan: PushPlan): Promise<PushSubscription> {
+/** Only participant photo reminders can create or update a subscription. */
+export async function subscribe(registration: ServiceWorkerRegistration, consentVersion: string): Promise<PushSubscription> {
   const response = await reach("/vapid-public-key");
   if (!response.ok) throw new Error("通知サーバーに接続できませんでした。");
   const { publicKey } = (await response.json()) as { publicKey: string };
   const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(publicKey) });
-  const body = { subscription: subscription.toJSON(), deviceId: deviceId(), consentVersion, purpose: plan.purpose, intervalMinutes: plan.intervalMinutes };
+  const body = { subscription: subscription.toJSON(), deviceId: deviceId(), consentVersion, purpose: REMINDER_PLAN.purpose, intervalMinutes: REMINDER_PLAN.intervalMinutes };
   const { expiresAt } = (await (await post("/subscribe", body)).json()) as { expiresAt: string };
   saveExpiresAt(expiresAt);
-  savePlan(plan);
+  savePlan(REMINDER_PLAN);
   return subscription;
 }
 
 export async function unsubscribe(subscription: PushSubscription): Promise<void> {
   // Forget it on the server first: a phone that unsubscribed locally but not there would keep being pinged into the void.
   await post("/unsubscribe", { endpoint: subscription.endpoint });
-  await subscription.unsubscribe();
+  if (!(await subscription.unsubscribe())) throw new Error("端末の通知購読を停止できませんでした。");
   saveExpiresAt(null);
   savePlan(null);
 }
 
-/** The worker already dropped it at midnight; only the phone still holds it. */
+/** Remove an expired or legacy subscription locally; keep its plan when removal fails so a later visit can retry. */
 export async function dropExpired(subscription: PushSubscription): Promise<void> {
-  await subscription.unsubscribe().catch(() => undefined);
+  if (!(await subscription.unsubscribe())) throw new Error("端末の通知購読を停止できませんでした。");
   saveExpiresAt(null);
   savePlan(null);
 }
@@ -144,7 +133,24 @@ export async function sendTestPing(subscription: PushSubscription): Promise<void
   await post("/test", { endpoint: subscription.endpoint });
 }
 
+/** Only the GPS-free checkpoint photo format can leave this device. Keep older entries unchanged for withdrawal. */
+export function isUploadablePhoto(entry: LogEntry): boolean {
+  const { record } = entry;
+  return record.schema === 3 &&
+    record.purpose === "photo-memory" &&
+    record.consentVersion === CONSENT_VERSION &&
+    record.place != null &&
+    record.capture?.fixes?.length === 0 &&
+    record.capture.coarse == null &&
+    record.truth == null &&
+    record.sourceGuess == null &&
+    record.photo != null && record.photo.exif === null &&
+    record.device?.geolocationPermission == null &&
+    entry.photo instanceof Blob;
+}
+
 export async function uploadEntry(entry: LogEntry): Promise<void> {
+  if (!isUploadablePhoto(entry)) throw new Error("位置情報を含む旧記録は送信しません。");
   const form = new FormData();
   form.set("record", JSON.stringify(entry.record));
   if (entry.photo) form.set("photo", new File([entry.photo], `${entry.id}.jpg`, { type: "image/jpeg" }));

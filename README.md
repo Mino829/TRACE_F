@@ -1,6 +1,6 @@
 # TRACE Frontend
 
-`/`はGo APIに接続する参加者画面、`/log`は位置精度を調べる既存デモです。後者のWeb Pushと調査記録は`push-worker/`の`trace-push` Workerが扱い、参加者画面の正本データとは分離します。
+`/`は旧参加者の状態確認・停止・削除画面、`/log`は写真ごとに参加者がチェックポイントを選ぶ画面です。どちらも新しいGPS取得・送信は行いません。`/log`の写真記録とWeb Pushは`push-worker/`の`trace-push` Workerが扱い、Go APIの写真保存とは別です。
 
 ## ローカルで参加者画面を試す
 
@@ -28,7 +28,7 @@ npm run dev:local
 
 静的アセットはsecretなしでも配信できますが、参加者APIは503で閉じます。`trace-push`のD1/KVやWeb Pushのsecretとは別に管理してください。
 
-`/log`の通知と記録は、ビルド時の`NEXT_PUBLIC_PUSH_API_URL`が指す`trace-push`を使います。付けずにビルドすると、`/log`の通知と記録が使えません。
+`/log`の写真送信と通知は、ビルド時の`NEXT_PUBLIC_PUSH_API_URL`が指す`trace-push`を使います。未設定でも端末内には写真を保存できますが、Workerへの送信と通知は使えません。
 
 ```sh
 NEXT_STATIC_EXPORT=1 NEXT_PUBLIC_PUSH_API_URL=https://trace-push.async5855.workers.dev npm run build
@@ -40,7 +40,9 @@ npm run deploy:site
 
 ## 実装範囲と確認
 
-参加者画面は受付状態と同意文の取得、メモリー参加と任意の位置参加、最新位置送信、停止・削除を扱います。`on-site`への切り替えはサーバーの到着状態（`presencePhase: arrived`）を受け取った後だけ表示しますが、到着判定・到着QRは未実装です。通常GPSの履歴は端末へ保存・再送しません。メモリーと位置参加の期限は各セッションに属し、資格情報と削除操作キーはタブごとの`sessionStorage`に置きます。両方を削除する際は専用の二資格情報DELETEを使い、部分成功・通信失敗時も両資格情報と同じキーを保持して再試行します。写真保存、描画WebSocket、Go APIによる通知は未実装です。
+`/`の新規受付は、旧Backend同意文に位置情報の記述が残るため一時停止し、既存のMemorySession・LivePresenceSessionの状態確認、位置参加の停止、個別削除、両資格情報による全削除だけを維持します。既存の位置データや資格情報は自動削除しません。`/log`は写真の撮影場所をチェックポイントから選び、EXIFを引き継がないJPEGを保存します。開発者向け精度テストの新規取得と通知購読を廃止し、端末に残る旧GPS記録は保持して再送しません。削除操作は残します。
+
+**公開前の条件:** `/log`の位置情報なし同意文は未承認の草案です。設計 #23、Backend #26、およびプライバシー承認 #9 で同意版・既存Liveセッション・入口の扱いを確定するまで、新たな参加者への配信・受付は承認済みとは扱わないでください。Go APIの写真保存、描画WebSocket、Go APIによる通知はこの変更には含みません。
 
 ```sh
 npm run lint
