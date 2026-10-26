@@ -1697,6 +1697,150 @@ html:has(.ray) body {
   & .keep__home {
     margin-top: 28px;
   }
+  & .keep__trace {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--fg);
+  }
+  & .keep__trace .btn {
+    margin-top: 14px;
+  }
+
+  /*
+   * 振り返り3D: the way, still, across the phone's width; each photo stands
+   * over its place on a short stem. Below, the same places as a list.
+   */
+  & .trace__host {
+    position: relative;
+    height: max(300px, min(560px, 58cqh));
+    margin: 18px -20px 0;
+    border-block: 1px solid var(--rule);
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+  }
+  & .trace__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  & .trace__pins {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  & .trace__pin {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 32px;
+    height: 42px;
+    margin: -56px 0 0 -16px;
+    padding: 0;
+    pointer-events: auto;
+    background: var(--bg);
+    box-shadow: 0 0 0 1px var(--fg);
+  }
+  & .trace__pin img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* The stem down to the dot on the way. */
+  & .trace__pin::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 1px;
+    height: 14px;
+    background: var(--fg);
+  }
+  & .trace__pin.is-on {
+    z-index: 1;
+    box-shadow:
+      0 0 0 1px var(--bg),
+      0 0 0 3px var(--fg);
+  }
+  & .trace__wait {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  & .trace__tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 2px;
+  }
+  & .trace__pick {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  & .trace__pick .h3 {
+    padding-bottom: 26px;
+  }
+  & .trace__list {
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--fg);
+  }
+  & .trace__list ol {
+    margin-top: 8px;
+    list-style: none;
+  }
+  & .trace__row {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    column-gap: 14px;
+    align-items: center;
+    width: 100%;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+    text-align: left;
+  }
+  & .trace__row.is-on {
+    background: var(--faint);
+  }
+  & .trace__thumb,
+  & .trace__ring {
+    grid-row: span 2;
+    width: 44px;
+    height: 44px;
+  }
+  & .trace__thumb {
+    object-fit: cover;
+    box-shadow: inset 0 0 0 1px var(--fg);
+  }
+  /* ShibaLab, the end of the way: the ring the view draws there. */
+  & .trace__ring {
+    display: grid;
+    place-items: center;
+  }
+  & .trace__ring::before {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--fg);
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 5px var(--bg), inset 0 0 0 9px var(--fg);
+  }
+  & .trace__when {
+    color: var(--fg-2);
+  }
+  & .trace__where {
+    font-size: 14.5px;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  & .trace__back {
+    margin-top: 28px;
+  }
   & .float-note {
     margin-top: 22px;
     padding: 2px 14px;

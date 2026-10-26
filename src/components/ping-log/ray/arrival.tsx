@@ -22,6 +22,7 @@ import { useLayer } from "../layer";
 import { clock } from "../ui";
 import { ScanWindow, placeTrackers, useBeam } from "./demo";
 import { KeepsakeScreen } from "./keepsake";
+import { TraceScreen } from "./trace";
 import { HomeMark, Icon, Phrases, Screen, Sentences, SWAP, useField, useRay } from "./stage";
 
 /**
@@ -29,7 +30,8 @@ import { HomeMark, Icon, Phrases, Screen, Sentences, SWAP, useField, useRay } fr
  * rear camera reads the QR code in the booth's projected picture, the arrival
  * goes to TRACE_B, and the phone follows the replay on the room's screen
  * until it has played or been skipped. Then the photos taken before arriving
- * become the keepsake (keepsake.tsx). Without the backend, the home's button
+ * become the keepsake (keepsake.tsx), and the way between their places
+ * 振り返り3D (trace.tsx). Without the backend, the home's button
  * opens the demo (demo.tsx) instead.
  *
  * As in the demo, the phone shows no queue, no wait and no symbol. The camera
@@ -85,7 +87,7 @@ export function ArrivalFlow({
   onDelete: (entry: LogEntry, number: number) => void;
 }) {
   const { go } = useRay();
-  const [step, setStep] = useState<"scan" | "replay" | "keepsake">("scan");
+  const [step, setStep] = useState<"scan" | "replay" | "keepsake" | "trace">("scan");
   const [status, setStatus] = useState<ReplayStatus | null>(null);
   // Unknown when the arrival was earlier than this screen.
   const [arrivedAt, setArrivedAt] = useState<string | null>(null);
@@ -147,8 +149,19 @@ export function ArrivalFlow({
 
   if (step === "scan") return <CameraScan inert={inert} onCancel={leave} onRead={read} onArrived={() => setStep("replay")} />;
   if (step === "keepsake") {
-    return <KeepsakeScreen photos={photos} deleteAfter={memory.deleteAfter} contact={contact} inert={inert} onDelete={onDelete} onLeave={leave} />;
+    return (
+      <KeepsakeScreen
+        photos={photos}
+        deleteAfter={memory.deleteAfter}
+        contact={contact}
+        inert={inert}
+        onDelete={onDelete}
+        onTrace={() => void go(() => setStep("trace"))}
+        onLeave={leave}
+      />
+    );
   }
+  if (step === "trace") return <TraceScreen photos={photos} inert={inert} onBack={() => void go(() => setStep("keepsake"))} />;
   return (
     <Replay
       target={target}

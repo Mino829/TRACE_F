@@ -4,7 +4,8 @@ import path from "node:path";
 
 /**
  * /log after arriving at ShibaLab (#14): the keepsake drawn from the photos
- * kept on the phone, and each photo saved or deleted (#51) on its own. Like log-tabs.spec.ts,
+ * kept on the phone, each photo saved or deleted (#51) on its own, and
+ * 振り返り3D (#50) from the keepsake. Like log-tabs.spec.ts,
  * the dev server runs with NEXT_PUBLIC_TRACE_API_URL=/api/backend and a
  * stand-in inside the test answers for TRACE_B. Chrome on a computer saves
  * by downloading, which is what is checked here; an iPhone's share sheet is not.
@@ -65,13 +66,14 @@ async function join(page: Page) {
   await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
 }
 
-async function savePhoto(page: Page, number: number) {
+/** Takes a photo and saves it at a place picked from the list: building, floor, place. */
+async function savePhoto(page: Page, number: number, [building, floor, place] = ["本部棟", "5F", "本部棟5F"]) {
   await page.locator('input[type="file"][capture]').setInputFiles(PHOTO);
   await page.getByRole("button", { name: "場所を選ぶ" }).click();
   await page.getByRole("button", { name: "一覧で選ぶ" }).click();
-  await page.getByRole("radio", { name: "本部棟", exact: true }).click();
-  await page.getByRole("radio", { name: "5F", exact: true }).click();
-  await page.getByRole("radio", { name: /本部棟5F/ }).click();
+  await page.getByRole("radio", { name: building, exact: true }).click();
+  await page.getByRole("radio", { name: floor, exact: true }).click();
+  await page.getByRole("radio", { name: place }).click();
   await page.getByRole("button", { name: "ここで保存" }).click();
   await expect(page.getByText(`${number}枚目のメモリーを残しました`)).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: "ホームへもどる" }).click();
@@ -201,4 +203,79 @@ test("a photo deletes after a question, from home before arriving and from the k
   await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
   // The title is up once TRACE_B has let go; the phone clears its photos just after.
   await expect.poll(() => kept(page)).toBe(0);
+});
+
+/** Where the photos' pins stand over the 3D view. */
+const pinsAt = (page: Page) => page.locator(".trace__pin:not([hidden])").evaluateAll((pins) => pins.map((pin) => (pin as HTMLElement).style.transform));
+
+test("振り返り3D draws the way from the photos' places to ShibaLab, turns by dragging, and lists the places in order", async ({ context, page }) => {
+  const problems: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") problems.push(message.text());
+  });
+  page.on("pageerror", (error) => problems.push(error.message));
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page, 1);
+  await savePhoto(page, 2, ["研究棟", "7F", "研究棟7F 運河側"]);
+  await savePhoto(page, 3, ["交流棟", "3F", "交流棟3F 食堂"]);
+  backend.replay = "completed";
+  await page.reload();
+  await page.getByRole("button", { name: "作品を見る" }).click();
+  await page.getByRole("button", { name: "軌跡を見る" }).click();
+  await expect(page.getByRole("heading", { name: "あなたの軌跡" })).toBeVisible();
+
+  // Each photo stands over the way, once the drawing code has loaded.
+  await expect(page.locator(".trace__pin:not([hidden])")).toHaveCount(3, { timeout: 15000 });
+  await expect(page.getByRole("status").filter({ hasText: "表示できないので" })).toHaveCount(0);
+  const rows = page.locator(".trace__list li");
+  await expect(rows).toHaveCount(4);
+  await expect(rows.nth(0)).toContainText("1枚目");
+  await expect(rows.nth(0)).toContainText("本部棟5F");
+  await expect(rows.nth(1)).toContainText("研究棟7F 運河側");
+  await expect(rows.nth(2)).toContainText("交流棟3F 食堂");
+  await expect(rows.nth(3)).toContainText("ShibaLab（教室棟301）");
+  await page.waitForTimeout(500);
+  await shoot(page, "trace");
+
+  // Dragging turns the view, and the pins move with it; 元の向きにもどす puts it back.
+  const first = await pinsAt(page);
+  const box = (await page.locator(".trace__canvas").boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.6);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.5, { steps: 8 });
+  await page.mouse.up();
+  expect(await pinsAt(page)).not.toEqual(first);
+  await page.getByRole("button", { name: "元の向きにもどす" }).click();
+  await expect.poll(() => pinsAt(page)).toEqual(first);
+
+  // A place in the list brings up its photo.
+  await rows.nth(1).getByRole("button").click();
+  await expect(page.locator(".trace__pick")).toContainText("研究棟7F 運河側");
+  await expect(rows.nth(1).getByRole("button")).toHaveAttribute("aria-pressed", "true");
+  await page.screenshot({ path: SHOTS ? path.join(SHOTS, "trace-pick.png") : undefined });
+
+  await page.getByRole("button", { name: "作品にもどる" }).click();
+  await expect(page.getByRole("heading", { name: "あなたの作品" })).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test("without WebGL, 振り返り3D says so and still lists the places", async ({ context, page }) => {
+  await page.addInitScript(() => {
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) {
+      return kind.includes("webgl") ? null : (getContext as (...args: unknown[]) => unknown).call(this, kind, ...rest);
+    } as typeof getContext;
+  });
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page, 1);
+  backend.replay = "completed";
+  await page.reload();
+  await page.getByRole("button", { name: "作品を見る" }).click();
+  await page.getByRole("button", { name: "軌跡を見る" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "表示できないので" })).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(".trace__canvas")).toHaveCount(0);
+  await expect(page.locator(".trace__list li")).toHaveCount(2);
+  await shoot(page, "trace-off");
 });
