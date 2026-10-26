@@ -6,6 +6,8 @@ import type { Player } from "@/lib/display/player";
 import type { RoutePath } from "@/lib/display/route-path";
 
 import { ArrivalQr } from "./arrival-qr";
+import { useRendererLink } from "./use-renderer-link";
+import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/renderer-link";
 
 /**
  * The booth projector (issue #24), in ShibaLab's RAY theme like the phone
@@ -17,7 +19,11 @@ import { ArrivalQr } from "./arrival-qr";
  *   (right) replay the visitor's walk.
  * - arrived: a short card, then back to the top.
  *
- * Prototype: nothing arrives from TRACE_B yet, so the top screen has test
+ * Arrivals: with a display WebSocket configured (?ws=… or
+ * NEXT_PUBLIC_DISPLAY_WS_URL, use-renderer-link.ts) the booth takes TRACE_B's
+ * arrivals one at a time as the primary renderer and reports each replay.
+ * TRACE_B sends no route yet (TRACE_B#7), so until it does an arrival plays a
+ * random indoor walk, marked DEMO ROUTE. The top screen keeps test
  * buttons (Space also plays). A test keeps going, one walk after another,
  * until 終了する (or Esc). Query: ?speed=1.5 (pace; 1 walks at WALK_SPEED),
  * ?duration=30 (fit every walk into that many seconds instead), ?fps=1
@@ -36,6 +42,12 @@ export function DisplayClient() {
   const labelsRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
   const routesRef = useRef<Record<TestRoute, () => RoutePath> | null>(null);
+  /** Builds an arrival's walk from graph node ids (its route, or test stops while TRACE_B sends none). */
+  const arrivalRouteRef = useRef<((route: string[] | null) => RoutePath) | null>(null);
+  /** The arrival playing, settled when its walk ends or TRACE_B takes it back. */
+  const liveRef = useRef<{ resolve: (result: ReplayResult) => void; demo: boolean } | null>(null);
+  /** What the playback screen is showing: a test walk, or an arrival with its own route or a demo one. */
+  const [live, setLive] = useState<"route" | "demo" | null>(null);
   /** True from play until the walk ends or the top screen takes over. */
   const playingRef = useRef(false);
   /** The test running, if any: after each walk the next one starts until 終了する. */
@@ -63,6 +75,8 @@ export function DisplayClient() {
         sample: () => buildRoutePath(graph.routeThrough(graph.SAMPLE_STOPS, graph.INDOOR_FIRST)),
         random: () => buildRoutePath(graph.routeThrough(graph.randomIndoorStops(), graph.INDOOR_FIRST)),
       };
+      arrivalRouteRef.current = (route) =>
+        buildRoutePath(route ? graph.routeThrough(route, graph.METRES) : graph.routeThrough(graph.randomIndoorStops(), graph.INDOOR_FIRST));
       const player = await createPlayer({
         overview: mapRef.current!,
         follow: droneRef.current!,
@@ -108,17 +122,59 @@ export function DisplayClient() {
   const backToTop = useCallback(() => {
     playingRef.current = false;
     testRef.current = null;
+    setLive(null);
     playerRef.current?.stop();
     setScreen("top");
   }, []);
+
+  /** One arrival from TRACE_B: its walk fitted into the replay time TRACE_B gives, over a test walk if one is running. */
+  const replayArrival = useCallback(
+    (arrival: ArrivalToPlay, signal: AbortSignal) =>
+      new Promise<ReplayResult>((resolve) => {
+        const player = playerRef.current;
+        const build = arrivalRouteRef.current;
+        if (!player || !build) return resolve("failed");
+        let path: RoutePath;
+        try {
+          path = build(arrival.route);
+        } catch (problem) {
+          console.error(`display: arrival ${arrival.arrivalId} has a route the campus graph cannot walk`, problem);
+          return resolve("failed");
+        }
+        testRef.current = null;
+        liveRef.current = { resolve, demo: arrival.route === null };
+        setLive(arrival.route === null ? "demo" : "route");
+        setStatus({ stop: "", place: "", progress: 0 });
+        playingRef.current = true;
+        player.play(path, arrival.durationSeconds ?? undefined);
+        setScreen("playback");
+        // TRACE_B skipped it, or the lease went: back to the top without reporting.
+        signal.addEventListener(
+          "abort",
+          () => {
+            if (liveRef.current?.resolve !== resolve) return;
+            liveRef.current = null;
+            backToTop();
+            resolve("failed");
+          },
+          { once: true },
+        );
+      }),
+    [backToTop],
+  );
+  const link = useRendererLink(screen !== "loading", replayArrival);
 
   // The arrived card stays a few seconds; a test then plays its next walk,
   // a real arrival hands the booth back to the top screen.
   useEffect(() => {
     if (screen !== "arrived") return;
     const id = window.setTimeout(() => {
+      // An arrival is reported once its card has been up, so the next one does not cut it short.
+      const arrival = liveRef.current;
+      liveRef.current = null;
       if (testRef.current) play(testRef.current);
       else backToTop();
+      arrival?.resolve("completed");
     }, ARRIVED_SECONDS * 1000);
     return () => window.clearTimeout(id);
   }, [screen, play, backToTop]);
@@ -159,7 +215,7 @@ export function DisplayClient() {
             <span className="dsp-mono">SHIBALAB 301</span>
           </p>
           <div className="dsp-tests">
-            <span className="dsp-mono">TEST · 繰り返し再生中</span>
+            <span className="dsp-mono">{live ? (live === "demo" ? "ARRIVAL · DEMO ROUTE" : "ARRIVAL") : "TEST · 繰り返し再生中"}</span>
             <button type="button" className="dsp-test" onClick={backToTop}>
               ■ 終了する <span className="dsp-mono">ESC</span>
             </button>
@@ -194,6 +250,7 @@ export function DisplayClient() {
               SHIBALAB 301 / RAY
             </p>
             <div className="dsp-tests">
+              {link && <LinkBadge state={link} />}
               <span className="dsp-mono">TEST</span>
               <button type="button" className="dsp-test" disabled={screen !== "top"} onClick={() => play("sample")}>
                 ▶ テスト再生 <span className="dsp-mono">SPACE</span>
@@ -239,6 +296,22 @@ export function DisplayClient() {
       <Hud screen={screen} />
       {fps !== null && screen !== "top" && <p className="dsp-fps">{fps} FPS</p>}
     </div>
+  );
+}
+
+const LINK_LABEL: Record<LinkState, string> = {
+  connecting: "LINK · 接続中",
+  standby: "LINK · 待機（別の画面が再生担当）",
+  primary: "LINK · 再生担当",
+  rejected: "LINK · 版が合いません",
+};
+
+/** Whether the booth is taking arrivals from TRACE_B. */
+function LinkBadge({ state }: { state: LinkState }) {
+  return (
+    <span className="dsp-mono dsp-link" data-state={state} role="status">
+      {LINK_LABEL[state]}
+    </span>
   );
 }
 

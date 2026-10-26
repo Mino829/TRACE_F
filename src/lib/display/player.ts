@@ -50,7 +50,8 @@ export interface PlayerOptions {
 }
 
 export interface Player {
-  play(path: RoutePath): void;
+  /** `duration` fits this walk into that many seconds (an arrival's replay time), instead of the page's own pacing. */
+  play(path: RoutePath, duration?: number): void;
   /** Clears the line and stops drawing until the next play (the top screen covers the canvases). */
   stop(): void;
   dispose(): void;
@@ -201,9 +202,9 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     stopMarks.clear();
   }
 
-  function play(next: RoutePath) {
+  function play(next: RoutePath, duration?: number) {
     path = next;
-    timeline = buildTimeline(next, opts.speed, opts.duration);
+    timeline = buildTimeline(next, opts.speed, duration ?? opts.duration);
     head.visible = true;
     clearTrail();
     trail = new THREE.Mesh(buildTube(next), trailMaterial);
