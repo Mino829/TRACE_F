@@ -92,6 +92,45 @@ const stored = (page: Page) =>
     session: Object.keys(sessionStorage).filter((key) => key.startsWith("trace-memory") || key === "trace-experience"),
   }));
 
+/** What this browser keeps in IndexedDB: photos tied to a participation, and anything else (the developer screen's records). */
+const kept = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<{ photos: number; others: number }>((resolve, reject) => {
+        const open = indexedDB.open("trace-ping-log");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const request = open.result.transaction("entries", "readonly").objectStore("entries").getAll();
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            const entries = request.result as { memorySessionId?: string }[];
+            open.result.close();
+            resolve({ photos: entries.filter((entry) => entry.memorySessionId).length, others: entries.filter((entry) => !entry.memorySessionId).length });
+          };
+        };
+      }),
+  );
+
+/** A developer-screen record, which is no participation's and has to outlive one. */
+const putDeveloperRecord = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open("trace-ping-log");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const tx = open.result.transaction("entries", "readwrite");
+          const takenAt = new Date().toISOString();
+          tx.objectStore("entries").put({ id: "developer-1", record: { kind: "ping", purpose: "accuracy", takenAt }, photo: null, sentAt: takenAt });
+          tx.oncomplete = () => {
+            open.result.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+      }),
+  );
+
 test("a reload and a second tab continue the same participation, and withdrawing in one tab ends it in the other", async ({ context, page }) => {
   const backend = await standIn(context);
   await join(page);
@@ -138,12 +177,17 @@ test("a photo saved while another tab opens is sent once, and both tabs show it"
 test("a participation the backend no longer knows is forgotten, with a note and the button to join again", async ({ context, page }) => {
   const backend = await standIn(context);
   await join(page);
+  await savePhoto(page);
+  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible({ timeout: 15000 });
+  expect(await kept(page)).toEqual({ photos: 1, others: 0 });
   backend.deleted = true;
   await page.reload();
   // The note keeps 「はじめる」 and から together with a word joiner, so only its first sentences are matched.
   await expect(page.getByRole("status").filter({ hasText: "参加の記録が見つかりませんでした。期限が切れたか、削除されています。" })).toBeVisible();
   await shoot(page, "tabs-not-found");
   expect(await stored(page)).toEqual({ local: [], session: [] });
+  // Its photos leave the phone with it.
+  await expect.poll(() => kept(page)).toEqual({ photos: 0, others: 0 });
   // The note is said once: the next visit starts as a new participation.
   await page.reload();
   await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
@@ -158,6 +202,10 @@ test("a participation the backend no longer knows is forgotten, with a note and 
 test("past its deleteAfter the participation is forgotten without asking the backend", async ({ context, page }) => {
   const backend = await standIn(context);
   await join(page);
+  await savePhoto(page);
+  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible({ timeout: 15000 });
+  await putDeveloperRecord(page);
+  expect(await kept(page)).toEqual({ photos: 1, others: 1 });
   await page.evaluate(() => {
     const credential = JSON.parse(localStorage.getItem("trace-memory-credential")!);
     localStorage.setItem("trace-memory-credential", JSON.stringify({ ...credential, deleteAfter: new Date(Date.now() - 1000).toISOString() }));
@@ -169,6 +217,8 @@ test("past its deleteAfter the participation is forgotten without asking the bac
   await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
   expect(backend.experienceReads).toBe(reads);
   expect(await stored(page)).toEqual({ local: [], session: [] });
+  // The participation's photos leave the phone; the developer screen's record stays.
+  await expect.poll(() => kept(page)).toEqual({ photos: 0, others: 1 });
   await page.reload();
   await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
   await expect(page.getByRole("status").filter({ hasText: /前の参加|この画面には/ })).toHaveCount(0);

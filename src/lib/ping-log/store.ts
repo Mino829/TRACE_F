@@ -78,3 +78,23 @@ export async function clearEntries(): Promise<void> {
     tx.onerror = () => reject(tx.error ?? new Error("記録を削除できませんでした。"));
   });
 }
+
+/** Erases every photo kept for a backend participation; the developer screen's records stay. */
+export async function clearSessionEntries(): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const request = tx.objectStore(STORE_NAME).openCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return;
+      if ((cursor.value as LogEntry).memorySessionId) cursor.delete();
+      cursor.continue();
+    };
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error ?? new Error("記録を削除できませんでした。"));
+  });
+}

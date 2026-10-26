@@ -23,7 +23,7 @@ import {
 } from "@/lib/ping-log/push";
 import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
 import { dropPromptFromUrl } from "@/lib/ping-log/url";
-import { clearEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
+import { clearEntries, clearSessionEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
 import { LockTimeout, onOtherTabs, withLock } from "@/lib/ping-log/tabs";
 import {
   TRACE_API_URL,
@@ -305,11 +305,16 @@ export function PingLogScreen() {
     // Fetched again on agreeing when this fails.
     fetchPublicConfig().then(setTraceConfig, () => undefined);
     // A participation that is gone takes its consent along: the next visit starts as a new one, without a note.
+    // Its photos on the phone go too (api.md, privacy.md); a send already under way finishes first, so it cannot put one back.
     const forget = () => {
       clearTabExperience();
       clearConsent();
       setExperience(null);
       setConsent(null);
+      void withLock(SEND_LOCK, clearSessionEntries, { waitMs: SEND_WAIT_MS })
+        .catch(() => clearSessionEntries())
+        .then(listEntries)
+        .then(setEntries, () => undefined);
     };
     if (forgetLapsedExperience()) forget();
     const stored = loadTabExperience();
