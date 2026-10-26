@@ -1731,6 +1731,18 @@ html:has(.ray) body {
     width: 32px;
     height: 32px;
   }
+  /* A step with a screenshot: the icon stays by the text, not halfway down the picture. */
+  & .install__step--shot {
+    align-items: start;
+  }
+  & .install__shot {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: 10px;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+  }
 
   & .toast {
     position: absolute;

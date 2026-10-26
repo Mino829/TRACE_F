@@ -178,9 +178,23 @@ export function InstallLayer({
   };
 
   const ios = support === "ios-browser";
-  const steps: { icon: IconName; text: string }[] = [
-    { icon: "share", text: "画面の下（iPad は上）にある共有ボタンを押します。" },
-    { icon: "plus", text: "「ホーム画面に追加」を選び、「追加」を押します。" },
+  // iOS 26 and later keep 「共有」 in the 「…」 menu and open the share sheet folded; earlier ones, and the other tab
+  // layouts, show the share button itself and a sheet to scroll.
+  const steps: { icon: IconName; text: string; note?: string; shot?: { src: string; alt: string; width: number; height: number } }[] = [
+    { icon: "share", text: "画面の下の「…」を押し、\n「共有」を押します。", note: "画面に共有ボタンがあるときは、\nそのボタンを押します。" },
+    {
+      icon: "more",
+      text: "共有メニューの\n「表示を増やす」を押します。",
+      note: "「表示を増やす」がないときは、\nメニューを下へスクロールします。",
+      // Cut from a participant's iPhone (iOS 26), the button framed.
+      shot: { src: "/log/install/ios-show-more.png", alt: "共有メニューの「表示を増やす」", width: 720, height: 236 },
+    },
+    {
+      icon: "plus",
+      text: "「ホーム画面に追加」を押し、\n「追加」を押します。",
+      // Cut from a participant's iPhone (iOS 26), the row framed.
+      shot: { src: "/log/install/ios-add-to-home.png", alt: "共有メニューの「ホーム画面に追加」", width: 720, height: 302 },
+    },
     {
       icon: "bell",
       text: beforeJoining
@@ -213,11 +227,20 @@ export function InstallLayer({
             </p>
             <ol style={{ marginTop: 14 }}>
               {steps.map((step) => (
-                <li key={step.icon} className="install__step">
+                <li key={step.icon} className={`install__step${step.shot ? " install__step--shot" : ""}`}>
                   <Icon name={step.icon} />
-                  <p className="body">
-                    <Sentences text={step.text} />
-                  </p>
+                  <div>
+                    <p className="body">
+                      <Sentences text={step.text} />
+                    </p>
+                    {step.note && (
+                      <p className="small" style={{ marginTop: 4 }}>
+                        <Sentences text={step.note} />
+                      </p>
+                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element -- a fixed screenshot; the static export has no image optimizer */}
+                    {step.shot && <img className="install__shot" src={step.shot.src} alt={step.shot.alt} width={step.shot.width} height={step.shot.height} />}
+                  </div>
                 </li>
               ))}
             </ol>
