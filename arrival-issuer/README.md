@@ -39,6 +39,11 @@ TRACE_THREE_D_MAP_VERSION=TRACE_B の設定と同じ版（中継するときだ�
 /display を書き出すときは、`NEXT_PUBLIC_ARRIVAL_ISSUER_URL=http://127.0.0.1:8790` を設定します。
 設定しないと、/display の QR は見本（ARRIVAL QR · DEMO）のままです。
 
+あわせて、`NEXT_PUBLIC_ARRIVAL_VENUE` と `NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID` に、TRACE_B の `TRACE_ARRIVAL_VENUE` と `TRACE_ARRIVAL_CHECKPOINT_ID` と同じ値を設定します。
+/display は、到着トークンから会場とチェックポイントを省いて短くし、33×33 の QR（誤り訂正 L）で映します。
+/log は、同じ2つの値でトークンを組み立て直して TRACE_B に送るので、公開する /log のビルドにも同じ値が要ります（push-worker の `.env` の `ARRIVAL_VENUE` と `ARRIVAL_CHECKPOINT_ID`）。
+/display に値がないときや、トークンを同じ文字列に組み立て直せないときは、トークンをそのまま QR にします。そのときの QR は細かくなります。
+
 ## 動かす
 
 リポジトリのルートで次を実行し、閉場まで止めずにおきます。止めるときは Ctrl+C を押します。

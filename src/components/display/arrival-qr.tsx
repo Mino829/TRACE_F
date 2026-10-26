@@ -3,6 +3,8 @@
 import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 
+import { arrivalQrText } from "@/lib/trace-api/arrival-code";
+
 /** How long one demo code stays on screen (#10: shown on the projector, refreshed on a timer). */
 const PERIOD_SECONDS = 30;
 /** The arrival issuer on the display PC (arrival-issuer/README.md). Unset, the frame shows the demo code. */
@@ -20,7 +22,8 @@ type LiveToken = { checkpointToken: string; expiresAt: number; nextAt: number; s
  * projector can read the current code.
  *
  * With NEXT_PUBLIC_ARRIVAL_ISSUER_URL set, the code is TRACE_B's signed arrival
- * token as a bare string, which the display PC's issuer renews every 15 s; the
+ * token, which the display PC's issuer renews every 15 s, packed to 33×33
+ * modules (lib/trace-api/arrival-code.ts) or, when it cannot be, as it is; the
  * phone reads it with the camera inside /log. If the issuer has none, the
  * frame stays empty and says OFFLINE. Unset, the code is a placeholder URL
  * that changes every PERIOD_SECONDS, and the frame is marked DEMO.
@@ -91,9 +94,10 @@ export function ArrivalQr() {
       canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
       return;
     }
-    const content = ISSUER_URL ? text : `${window.location.origin}/log?arrival=${text}`;
+    const content = ISSUER_URL ? arrivalQrText(text) : `${window.location.origin}/log?arrival=${text}`;
+    // L: the code is lit on a screen, not printed and scuffed, so bigger modules matter more than recovery.
     QRCode.toCanvas(canvas, content, {
-      errorCorrectionLevel: "M",
+      errorCorrectionLevel: "L",
       margin: 0,
       width: 360,
       color: { dark: "#0c0c0dff", light: "#00000000" },

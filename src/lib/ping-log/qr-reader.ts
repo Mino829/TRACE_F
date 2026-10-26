@@ -8,7 +8,9 @@
  * library's default CDN, so reading a code asks no other server for anything.
  */
 
-export type DetectedCode = { rawValue: string; cornerPoints: ReadonlyArray<{ x: number; y: number }> };
+import { isPackedArrivalCode } from "@/lib/trace-api/arrival-code";
+
+export type DetectedCode ={ rawValue: string; cornerPoints: ReadonlyArray<{ x: number; y: number }> };
 
 export type CodeReader = { detect: (source: HTMLVideoElement) => Promise<DetectedCode[]> };
 
@@ -43,10 +45,12 @@ async function loadReader(): Promise<CodeReader> {
 }
 
 /**
- * Whether a read text can be an arrival code: TRACE_B's signed token, two
+ * Whether a read text can be an arrival code: the booth's packed code
+ * (lib/trace-api/arrival-code.ts), or TRACE_B's signed token as it is, two
  * base64url parts joined by a dot, 30 to 2048 characters. A URL, such as the
  * site's own QR at the entrance, is not one and is never sent.
  */
 export function isArrivalCode(text: string): boolean {
+  if (isPackedArrivalCode(text)) return true;
   return text.length >= 30 && text.length <= 2048 && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(text);
 }

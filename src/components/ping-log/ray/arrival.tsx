@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { isArrivalCode, qrReader, type CodeReader, type DetectedCode } from "@/lib/ping-log/qr-reader";
+import { arrivalTokenFor } from "@/lib/trace-api/arrival-code";
 import {
   TraceApiError,
   arrivalAttempt,
@@ -318,7 +319,9 @@ function CameraScan({
         noted = text;
         return;
       }
-      if (!refused.has(text)) void send(text);
+      // The booth packs TRACE_B's token; what goes out is the token itself.
+      const token = arrivalTokenFor(text);
+      if (!refused.has(token)) void send(token);
     };
 
     const scan = async () => {

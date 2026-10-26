@@ -31,7 +31,15 @@ function fromEnvFile(name) {
 const pushUrl = fromEnvFile("PUSH_API_URL") || "https://trace-push.async5855.workers.dev";
 // Unset, /log keeps everything on the phone and the push worker.
 const traceApiUrl = fromEnvFile("TRACE_API_URL");
-const pageEnv = { NEXT_STATIC_EXPORT: "1", NEXT_PUBLIC_PUSH_API_URL: pushUrl, ...(traceApiUrl ? { NEXT_PUBLIC_TRACE_API_URL: traceApiUrl } : {}) };
+// TRACE_B's TRACE_ARRIVAL_VENUE and TRACE_ARRIVAL_CHECKPOINT_ID: /log rebuilds the booth's packed arrival QR with them.
+const arrivalVenue = fromEnvFile("ARRIVAL_VENUE");
+const arrivalCheckpointId = fromEnvFile("ARRIVAL_CHECKPOINT_ID");
+const pageEnv = {
+  NEXT_STATIC_EXPORT: "1",
+  NEXT_PUBLIC_PUSH_API_URL: pushUrl,
+  ...(traceApiUrl ? { NEXT_PUBLIC_TRACE_API_URL: traceApiUrl } : {}),
+  ...(arrivalVenue && arrivalCheckpointId ? { NEXT_PUBLIC_ARRIVAL_VENUE: arrivalVenue, NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID: arrivalCheckpointId } : {}),
+};
 
 const steps = [
   ["マイグレーションを本番の D1 に適用", [wrangler, "d1", "migrations", "apply", "DB", "--remote"], root, {}],

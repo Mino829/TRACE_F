@@ -68,6 +68,8 @@ npm install
 `.env` に `TRACE_API_URL=/api/backend` を書くと、/log はこのサイトの `/api/backend` を通して、TRACE_B に参加を作るようになります。
 書いていなければ、/log は今までどおり端末と通知サーバーだけで動きます。
 この行を書くのは、下の2つの secret を `trace-log` に設定し、TRACE_B につながることを確かめてからにしてください。
+`.env` に `ARRIVAL_VENUE` と `ARRIVAL_CHECKPOINT_ID` も書きます。値は TRACE_B の `TRACE_ARRIVAL_VENUE` と `TRACE_ARRIVAL_CHECKPOINT_ID` と同じにします。
+/log はこの2つを使って、ブースの短い到着 QR を TRACE_B のトークンに組み立て直します（arrival-issuer/README.md）。
 
 ```bash
 npm --prefix push-worker run release
