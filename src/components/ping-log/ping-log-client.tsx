@@ -1,5 +1,7 @@
 "use client";
 
+import "@/lib/random-uuid";
+
 import dynamic from "next/dynamic";
 
 /**

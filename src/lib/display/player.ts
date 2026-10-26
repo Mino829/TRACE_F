@@ -9,6 +9,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { EDGES, GRID_THETA, NODES, toScene, type Vec3 } from "./campus-graph";
 import {
   buildTimeline,
+  elevatorRiding,
   escalatorWeight,
   lookAheadAt,
   placeAt,
@@ -239,7 +240,8 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
 
     // Follow: turn toward the general way of the walk, slowly and never faster
     // than FOLLOW_TURN, so corners and back-and-forth don't spin the drone round.
-    followYaw = turnToward(followYaw, travelDirection(path, s, FOLLOW_WINDOW.back, FOLLOW_WINDOW.ahead), dt, 0.8, FOLLOW_TURN);
+    const riding = elevatorRiding(path, s);                  // in an elevator the heading stays put
+    followYaw = turnToward(followYaw, riding ? null : travelDirection(path, s, FOLLOW_WINDOW.back, FOLLOW_WINDOW.ahead), dt, 0.8, FOLLOW_TURN);
     heading.copy(fromYaw(followYaw));
     followPos.lerp(droneSpot(p, heading), 1 - Math.exp(-dt * 3));
     followLook.lerp(p, 1 - Math.exp(-dt * 6));
@@ -252,10 +254,10 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     // middle of the ride.
     const body = new THREE.Vector3(...roundedPointAt(path, s, WALK_ROUND));
     const aim = new THREE.Vector3(...roundedPointAt(path, Math.min(path.length, s + WALK_AHEAD), WALK_ROUND)).sub(body);
-    walkYaw = turnToward(walkYaw, aim.x * aim.x + aim.z * aim.z > 0.25 ? [aim.x, 0, aim.z] : null, dt, 6, WALK_TURN);
+    walkYaw = turnToward(walkYaw, !riding && aim.x * aim.x + aim.z * aim.z > 0.25 ? [aim.x, 0, aim.z] : null, dt, 6, WALK_TURN);
     const dir = fromYaw(walkYaw);
     walkCamera.position.set(body.x, body.y + EYE, body.z);
-    const rise = lookAheadAt(path, s, 6)[1] - p.y;          // up a stair or escalator, look up it
+    const rise = riding ? 0 : lookAheadAt(path, s, 6)[1] - p.y;   // up a stair or escalator, look up it; level in an elevator
     const forward = walkCamera.position.clone().addScaledVector(dir, 6);
     forward.y += rise - 6 * Math.tan(WALK_TILT);
     const out = outOfWindow(walkCamera.position, 8);

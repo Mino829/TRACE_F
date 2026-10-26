@@ -16,8 +16,8 @@ import importlib, trace_geo
 importlib.reload(trace_geo)
 
 COL = "30_TRACE_チェックポイント"
-GRAPH_VERSION = "toyosu-graph-2026-10-18.2.draft"
-KIND_COLOR = {"ground": (0.1, 0.55, 1.0), "stairs": (1.0, 0.6, 0.1), "bridge": (0.75, 0.3, 1.0), "indoor": (0.2, 0.8, 0.3), "escalator": (1.0, 0.85, 0.1)}
+GRAPH_VERSION = "toyosu-graph-2026-10-26.1.draft"
+KIND_COLOR = {"ground": (0.1, 0.55, 1.0), "stairs": (1.0, 0.6, 0.1), "bridge": (0.75, 0.3, 1.0), "indoor": (0.2, 0.8, 0.3), "escalator": (1.0, 0.85, 0.1), "elevator": (0.95, 0.95, 0.95)}
 
 
 def _mat(name, rgb):
@@ -223,6 +223,7 @@ def export():
             "threeD": {"x": x, "y": y, "z": z},
             "radiusMetres": n.get("radius", 15),
             "gpsSnap": n.get("gpsSnap", True),
+            "selectable": n.get("selectable", False),
             "note": n.get("note", ""),
         })
     edges = []
@@ -244,7 +245,8 @@ def export():
             "heightMetres": "地面からの高さ。MVP は高さ固定なので経路の計算には使わない",
         },
         "roles": {"checkpoint": "ゴール・目印の点（名前がある）", "room": "教室の中の点", "waypoint": "道の途中の点（数m〜10m おき）"},
-        "edgeKinds": {"ground": "地上の道", "stairs": "階段", "bridge": "渡り廊下", "indoor": "建物の中", "escalator": "エスカレーター"},
+        "edgeKinds": {"ground": "地上の道", "stairs": "階段", "bridge": "渡り廊下", "indoor": "建物の中", "escalator": "エスカレーター", "elevator": "エレベーター（同じ XY を真上に動く。展示では向きを変えない）"},
+        "selectable": "true = 参加者が写真の撮影場所として選べる点（建物 → 階の順に選ぶ。#38）。false = 経路を引くための内部の点で、参加者には見せない",
         "gpsSnap": "true = GPS の位置をこの点にまとめてよい。false = 上の階の点など、GPS では見分けられないので描画（演出）だけに使う",
         "nodes": nodes,
         "edges": edges,

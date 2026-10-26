@@ -1,4 +1,4 @@
-# 研究棟：外観（フィンの外壁・ゲート・大階段・光庭）と、1F・9〜14F の内装
+# 研究棟：外観（フィンの外壁・ゲート・大階段・光庭）と、1F〜14F の内装（8F の図書館だけ作らない）
 # buildings/研究棟.blend を開いて exec(open(path, encoding="utf-8").read()) で実行するか、
 #   blender -b buildings/研究棟.blend --python scripts/build_kenkyuto.py -- --save
 # で実行する。何度実行しても、このスクリプトが作ったもの（"研究棟_gen" 付き）を消して作り直すだけ。
@@ -7,13 +7,14 @@
 #   -Y: 広場側（南棟。大階段とゲート）   +Y: 道路側（北棟）
 #   -X: 教室棟側（EV A。1〜8F の端は 教室棟.blend の「曲がり角」）   +X: 運河側の端（EV B）
 #   南棟（Y -22.9〜-4.5）と北棟（Y 4.6〜22.8）の間は光庭。EV A・EV B の箱が橋のように渡る
-#   ゲート：X -22.5〜7.3（西の端 = 曲がり角の脚、東の端 = 教室棟.blend の 6F の渡り廊下の先）、床 8.1〜天井 34.4
+#   ゲート：X -22.5〜7.3（西の端 = 曲がり角の脚、東の端 = 教室棟.blend の 6F の渡り廊下の先）、床 6.0（2F と同じ）〜天井 34.4
 # 写真：image/研究棟-20261012T084110Z-1-001/研究棟/jpg/（1F 案内図 6730、7F 6731、6F 6733、外観 6720/6721）
 #       image/研究棟2回目-20261012T092852Z-1-001/研究棟2回目/jpg/（9F 案内図 6747、3F 6752、夜の外観 6753/6756/6757）
 # 間取りは案内図を箱の大きさに合わせて置いたもの（実寸ではない）。部屋番号 = 階 + 列（A〜R、+X から）+ 行（25〜32、-Y から）
 #   1F：案内図 6730 のとおり（-X 端の玄関ホール・EV A は教室棟.blend）
 #   9F〜14F：9F の案内図 6747 を全部の階に使う（ユーザーの指示）。10〜14F は 9F の形の「リンク複製」
-#   2F〜8F：外観だけ（窓の奥は暗い面）。8F の図書館は重くなるので作らない（ユーザーの指示）
+#   2F〜8F（2026-10-24）：3F（案内図 6752）・6F（6733）・7F（6731）は +X 側を案内図に合わせ、2・4・5・8F は資料がなく 12F と同じ形（ユーザーの指示）。
+#     X < KX は教室棟.blend の曲がり角なので切ってある。8F の図書館は重くなるので作らない（ユーザーの指示）
 import bpy, bmesh, math, sys
 
 COL = "02_研究棟"
@@ -28,7 +29,7 @@ NY0W = 7.25                                       # 北棟の -X の端（X < XB
 XB = -42.35                                       # 教室棟の南東の面（曲がり角の帯の西の端）
 KX = -22.4                                        # 1〜8F は、これより -X が教室棟.blend（曲がり角）
 GX0, GX1 = -22.5, 7.3                             # ゲート
-DECK = 8.1                                        # ゲートの床（大階段の上）
+DECK = 6.0                                        # ゲートの床（大階段の上）。教室棟 2F・研究棟 2F と同じ高さ（2026-10-24 ユーザーの指示。前は 8.1）
 GATE_TOP = 34.4                                   # ゲートの天井
 LEG_TOP = 34.8                                    # 教室棟.blend の脚の屋上（その上から研究棟）
 FZ = {1: 0.0, 2: 6.0, 3: 11.0, 4: 16.0, 5: 21.0, 6: 26.0, 7: 31.0, 8: 36.0}   # 1〜8F は教室棟と同じ
@@ -46,7 +47,7 @@ EVA = (-25.2, -21.1)        # EV A と階段（X）。その -X の X -28.7〜-2
 EVA_COR = (-28.7, -25.2)
 EVA_CORE = (-28.7, -21.1)
 ESC8 = (-41.8, -38.1, 3.3, 6.4)   # 教室棟 7F→8F のエスカレーターの穴（教室棟.blend）
-INTERIOR_Z = {FZ[1]} | {FZ[f] for f in range(9, 15)}   # 内装を作る階（窓の奥を暗くしない）
+INTERIOR_Z = {FZ[f] for f in range(1, 15)}   # 内装を作る階（窓の奥を暗くしない）。2〜8F も作った
 
 SAVE = "--save" in sys.argv
 
@@ -127,7 +128,15 @@ MAT = dict(
     ev_w=mat("研究棟内装_EVの扉", (0.88, 0.87, 0.85), 0.35),
     steeldoor=mat("研究棟内装_鉄扉", (0.62, 0.62, 0.62), 0.4, 0.4),
     shaft=mat("研究棟内装_シャフト・機械室", (0.55, 0.55, 0.54), 0.7),
+    ev_in=mat("研究棟内装_EVの中の壁（明るい）", (0.93, 0.93, 0.91), 0.45),
+    ev_lamp=mat("研究棟内装_EVの照明（発光）", (1.0, 0.97, 0.88), 0.4),
+    ev_call=mat("研究棟内装_EV扉の上の表示（発光）", (0.35, 0.85, 1.0), 0.4),
 )
+# 発光（glTF にも KHR_materials_emissive_strength で出る）。ライトは書き出しで失われるので、明るさは発光マテリアルでつける
+for _k, _s in (("ev_lamp", 4.0), ("ev_call", 3.0)):
+    _b = bsdf(MAT[_k])
+    _b.inputs["Emission Color"].default_value = (*MAT[_k].diffuse_color[:3], 1)
+    _b.inputs["Emission Strength"].default_value = _s
 
 # ---------- 準備 ----------
 scene = bpy.context.scene
@@ -627,7 +636,7 @@ for x in (GX0 + 1.0, GX1 - 1.0):
     ext.box(x - 0.3, x + 0.3, NY1 - 1.5, NY1, DECK, DECK + 1.8, "stone")
 
 # ---------- 大階段とゲート前の広場（写真 6720・6721） ----------
-ST_Y0, ST_Y1 = -65.5, -39.5     # 階段（下の端・上の端）。上の端からゲートまでは 8.1m の広場
+ST_Y0, ST_Y1 = -65.5, -39.5     # 階段（下の端・上の端）。上の端からゲートまでは 6.0m の広場
 LOW_Y = ST_Y0 + 3.0             # 一番下の広い段の奥
 LOW_Z = 1.2
 ext.box(GX0, GX1, ST_Y1, SY0, 0, DECK - 0.5, "stone")      # 広場の下（中は部屋 01I21。作らない）
@@ -677,7 +686,7 @@ for i in range(n_low):
 # 幅の割り振り：植え込み | 階段 | 花壇 | 階段 | 植え込み
 W = GX1 - GX0
 xs = [GX0, GX0 + 5.4, GX0 + 8.9, GX1 - 8.9, GX1 - 5.4, GX1]
-n_st = 46
+n_st = 32                       # 6.0m まで上がる（蹴上 0.15m 前後）
 for k in (1, 3):                 # 2 本の階段
     a, b = xs[k], xs[k + 1]
     for i in range(n_st):
@@ -810,6 +819,39 @@ def ev_doors(mb, ax, line, us, z, side, label=None):
             mb.box(line + side * 0.06, line + side * 0.08, u + 0.55, u + 1.1, z, z + 2.9, "ev_b")
 
 
+# EV A のかご 2 台（9F〜14F）。扉は -X の廊下を向く。かごの中は床も天井もなく、真上に抜ける（展示の点が (-24.9, 0) を真上に動く）
+EVA_DOORS_Y = (0.0, 3.0)
+EVA_X0, EVA_X1 = EVA[0] + 0.12, EVA[0] + 2.5          # かごの奥行き（前の壁の厚さ 0.12 を除く）
+EVA_HALF = 1.3                                          # かごの幅の半分
+EVA_CELLS = [(EVA_X0, EVA_X1, c - EVA_HALF, c + EVA_HALF) for c in EVA_DOORS_Y]
+FH_ = FH - SLAB                                         # 階ごとの、かごの壁の高さ（-SLAB から次の階の -SLAB まで）
+
+
+def ev_doors_open(mb, line, us, z, side):
+    """EV の扉を開けた状態：開口、両脇の黒い壁、脇に寄せた 2 枚の扉、敷居、扉の上の表示灯"""
+    for u in us:
+        mb.box(line + side * 0.06, line + side * 0.08, u - 1.1, u - 0.55, z, z + 2.9, "ev_b")
+        mb.box(line + side * 0.06, line + side * 0.08, u + 0.55, u + 1.1, z, z + 2.9, "ev_b")
+        mb.box(line + side * 0.06, line + side * 0.08, u - 0.55, u + 0.55, z + 2.3, z + 2.9, "ev_b")
+        mb.box(line + side * 0.085, line + side * 0.105, u - 1.08, u - 0.55, z, z + 2.3, "ev_w")      # 開いた扉（脇へ）
+        mb.box(line + side * 0.085, line + side * 0.105, u + 0.55, u + 1.08, z, z + 2.3, "ev_w")
+        mb.box(line - 0.15, line + 0.15, u - 0.55, u + 0.55, z - 0.02, z + 0.015, "steel")             # 敷居
+        mb.box(line + side * 0.085, line + side * 0.11, u - 0.3, u + 0.3, z + 2.45, z + 2.6, "ev_call")  # 扉の上の表示灯
+
+
+def ev_cell(mb, tx, fl, z_top_extra=0.0):
+    """EV A のかご 2 台の中：明るい壁、奥の壁の発光パネル、階の大きな数字（この階だけ tx に入れる）"""
+    for (x0, x1, y0, y1), c in zip(EVA_CELLS, EVA_DOORS_Y):
+        zb, zt = -SLAB, FH_
+        mb.box(x1 - 0.04, x1, y0, y1, zb, zt, "ev_in")                       # 奥の壁
+        mb.box(x0, x1, y0, y0 + 0.04, zb, zt, "ev_in")                       # 両側の壁
+        mb.box(x0, x1, y1 - 0.04, y1, zb, zt, "ev_in")
+        mb.box(x1 - 0.047, x1 - 0.04, c - 0.95, c + 0.95, 0.3, 3.3, "ev_lamp")           # 奥の壁の発光パネル（各階に 1 枚）
+        mb.box(x0 + 0.04, x1 - 0.04, y0 + 0.04, y0 + 0.047, 0.5, 3.1, "ev_lamp")         # 横の壁の発光帯
+        mb.box(x0 + 0.04, x1 - 0.04, y1 - 0.047, y1 - 0.04, 0.5, 3.1, "ev_lamp")
+        add_text(tx, str(fl), (x1 - 0.055, c, 1.8), (-1, 0), 1.0, key="strip")             # 階の数字（明るいパネルに黒）
+
+
 def row_rooms(mb, xs, labels, y_corr, y_far, z, h, side, door_at=0.75):
     """X 方向に部屋を並べる。xs = 境の X（小さい順）、labels[i] = xs[i]〜xs[i+1] の部屋（None = 壁だけ、"" = 扉なし）。
     y_corr = 廊下側の壁、side = 廊下のある向き（+1/-1）"""
@@ -933,17 +975,103 @@ ROW32 = ([NXa, -45.3, -37.4, -29.6, -21.6, -13.6, -5.4, 2.8, 10.8, 19.2, 27.8, 3
          ["R", "P", "O", "M", "L", "J", "I", "G", "F", "D", "C", "A"])
 
 
-def typical_floor(fl):
-    """標準階（9F の形）。fl = 番号札に使う階。番号札は別のオブジェクト（階ごと）に分ける"""
+def clip_row(row, xmin):
+    """行の境（xs）と部屋の列（labs）を X >= xmin だけにする。先頭が 1.5m 未満の切れ端なら捨てる"""
+    xs, labs = row
+    if xmin is None:
+        return xs, labs
+    nx, nl = [xmin], []
+    for (a, b), lab in zip(zip(xs[:-1], xs[1:]), labs):
+        if b <= xmin + 1e-6:
+            continue
+        nl.append(lab)
+        nx.append(b)
+    if len(nx) > 2 and nx[1] - nx[0] < 1.5:
+        nx, nl = nx[1:], nl[1:]
+    return nx, nl
+
+
+def cut_row(row, xmax):
+    """行を X <= xmax だけにする（それより +X はひと続きの広間にする階）"""
+    xs, labs = row
+    nx, nl = [xs[0]], []
+    for (a, b), lab in zip(zip(xs[:-1], xs[1:]), labs):
+        if a >= xmax - 1e-6:
+            break
+        nl.append(lab)
+        nx.append(min(b, xmax))
+    return nx, nl
+
+
+def tag_size(name):
+    return 0.12 if len(name) <= 6 else max(0.07, 0.12 * 6 / len(name))
+
+
+def tag_name(fl, lab, code_row):
+    return lab[1:] if lab.startswith("=") else f"{fl:02d}{lab}{code_row}"
+
+
+# 階ごとの違い。2〜8F は X < KX が教室棟.blend（曲がり角）なので xmin = KX で切る。
+#   3F（案内図 6752）・6F（6733）・7F（6731）は +X 側（EV B のまわり）を写真に合わせ、ほかは 9F の形
+#   2F・4F・5F・8F は資料がない（ネットにも無かった）ので、ユーザーの指示どおり 12F と同じ形
+#   部屋の文字が "=" で始まるときは、そのまま番号札に書く（標準フォントに日本語がないので英語）
+#   infill = 光庭の +X 側をふさぐ部屋（案内図では 3F・6F・7F でここにも部屋がある）
+_R27_B = (ROW27[0][:13] + [SXb], ROW27[1][:12])
+#   ゲート（X GX0〜GX1）は 2F の床（人工芝のデッキ）から 8F の床の下まで抜けているので、2F〜7F の部屋は GX1 より +X だけ（8F は上を通る）
+SPECS = {
+    "low": dict(xmin=KX),
+    "lowg": dict(xmin=GX1),
+    "f3": dict(
+        xmin=GX1,
+        row30=([NXa, -36.0, EVA_COR[0], EVA_COR[1], -10.5, 0.6, 11.8, EVB_COR[0], EVB_COR[1], 28.5, NXb],
+               [None, "WC", "COR", "K", "I", "F", "=03F30-1", "COR", "=ENG MTG", None]),
+        infill=[("03C28", 19.8, 31.6, S_IN, 0.05, "-x"), ("03C29", 19.8, 31.6, 0.05, N_IN, "-x")]),
+    "f6": dict(
+        xmin=GX1,
+        row25=([SXa, -23.2, -14.9, -6.7, 1.7, 11.8, 20.0, SXb], ["N", "L", "K", "I", "H", "=LAB 6-2", "=LAB 6-1"]),
+        row27=(_R27_B[0], _R27_B[1] + ["=MTG 3"]),
+        row30=([NXa, -36.0, EVA_COR[0], EVA_COR[1], -10.5, 0.6, 11.8, EVB_COR[0], EVB_COR[1], 28.5, NXb],
+               [None, "WC", "COR", "K", "I", "F", "=MTG 5", "COR", "=MTG 4", None]),
+        row32=(ROW32[0][:11] + [NXb], ROW32[1][:10] + ["A"]),
+        infill=[("=STUDIO 2", 19.8, 34.0, S_IN, N_IN, "-x")]),
+    "f7": dict(
+        xmin=GX1,
+        row25=([SXa, -23.2, -14.9, -6.7, 1.7, 10.1, SXb], ["N", "L", "K", "I", "H", "=LAB 7"]),
+        row27=(_R27_B[0], _R27_B[1] + ["=MTG 1"]),
+        commons=10.8,                               # 北棟の +X 側はラーニングコモンズ（ひと続きの広間）
+        infill=[("=STUDIO 1", 20.6, 34.2, S_IN, N_IN, "-x"), ("=MTG 2", 27.8, 34.8, N_IN, N_IN + 4.5, "+y")]),
+    "high": dict(),
+}
+FLOOR_SPEC = {2: "lowg", 3: "f3", 4: "lowg", 5: "lowg", 6: "f6", 7: "f7", 8: "low", **{f: "high" for f in range(9, 15)}}
+
+
+def typical_floor(fl, spec):
+    """標準階（9F の形）に spec の違いを足す。fl = 番号札に使う階。番号札は別のオブジェクト（階ごと）に分ける"""
     mb = MB()
     tx = MB()
+    xmin = spec.get("xmin")
+    lo = xmin if xmin is not None else -1e9
+    commons = spec.get("commons")
+    rows = {k: clip_row(spec.get(k, base), xmin) for k, base in
+            (("row25", ROW25), ("row27", ROW27), ("row30", ROW30), ("row32", ROW32))}
+    if commons is not None:
+        rows["row30"] = cut_row(rows["row30"], commons)
+        rows["row32"] = cut_row(rows["row32"], commons)
     # 床（カーペット）と、研究室の床
     for x0, x1, y0, y1 in ((SXa, SXb, S_OUT, S_IN), (NXa, NXb, N_IN, N_OUT)):
-        mb.box(x0, x1, y0, y1, -SLAB, 0, "carpet")
-    for x0, x1 in (EVB_CORE, EVA_CORE):
-        mb.box(x0, x1, SY1, NY0, -SLAB, 0, "carpet")
-    # 北棟の西の部分（X < XB）は細い
-    mb.box(NXa, XB, N_IN, NY0W, -SLAB - 0.01, 0.01, "shaft")
+        if max(x0, lo) < x1:
+            mb.box(max(x0, lo), x1, y0, y1, -SLAB, 0, "carpet")
+    cores = (EVB_CORE,) if xmin is not None else (EVB_CORE, EVA_CORE)    # EV A は教室棟.blend の曲がり角にある
+    for x0, x1 in cores:
+        rects = [(x0, x1, SY1, NY0)]
+        if (x0, x1) == EVA_CORE:                    # EV A のかごは床がない（真上に抜ける）
+            for h in EVA_CELLS:
+                rects = sub(rects, h)
+        for r in rects:
+            mb.box(r[0], r[1], r[2], r[3], -SLAB, 0, "carpet")
+    if xmin is None:
+        # 北棟の西の部分（X < XB）は細い
+        mb.box(NXa, XB, N_IN, NY0W, -SLAB - 0.01, 0.01, "shaft")
 
     def row(xs_labels, y_corr, y_far, side, code_row):
         xs, labs = xs_labels
@@ -960,7 +1088,7 @@ def typical_floor(fl):
             elif lab == "WC":
                 rl.append("WC")
             else:
-                rl.append(f"{fl:02d}{lab}{code_row}")
+                rl.append(tag_name(fl, lab, code_row))
         # 廊下側の壁と扉（COR・階段・シャフトの所は扉なし）
         for (a, b), lab, name in zip(zip(xs[:-1], xs[1:]), labs, rl):
             if name is None:
@@ -971,7 +1099,7 @@ def typical_floor(fl):
             if name != "WC":
                 fw = 0.08
                 s0, s1 = c + 0.93 + fw + 0.05, c + 0.93 + fw + 0.55
-                add_text(tx, name, ((s0 + s1) / 2, y_corr + side * 0.081, 1.95), (0, side), 0.12)
+                add_text(tx, name, ((s0 + s1) / 2, y_corr + side * 0.081, 1.95), (0, side), tag_size(name))
             # 研究室の床・天井（むき出しの暗い天井）
             y0, y1 = sorted((y_corr, y_far))
             mb.hquad(a, b, y0, y1, 0.005, "lab_floor" if name != "WC" else "carpet2")
@@ -979,13 +1107,15 @@ def typical_floor(fl):
         for x in xs:
             wall(mb, 'y', x, min(y_corr, y_far), max(y_corr, y_far), 0, HC + 0.7)
 
-    row(ROW25, S_C0, S_OUT, +1, 25)     # side = 廊下のある向き
-    row(ROW27, S_C1, S_IN, -1, 27)
-    row(ROW30, N_C0, N_IN, +1, 30)
-    row(ROW32, N_C1, N_OUT, -1, 32)
+    row(rows["row25"], S_C0, S_OUT, +1, 25)     # side = 廊下のある向き
+    row(rows["row27"], S_C1, S_IN, -1, 27)
+    row(rows["row30"], N_C0, N_IN, +1, 30)
+    row(rows["row32"], N_C1, N_OUT, -1, 32)
     # 廊下の天井（白）と、埋め込みの細長い照明（写真 6745）
-    cors = [(SXa, SXb, S_C0, S_C1), (NXa, NXb, N_C0, N_C1),
-            (EVB_COR[0], EVB_COR[1], S_C1, N_C0), (EVA_COR[0], EVA_COR[1], S_C1, N_C0)]
+    cors = [(max(SXa, lo), SXb, S_C0, S_C1), (max(NXa, lo), commons if commons is not None else NXb, N_C0, N_C1),
+            (EVB_COR[0], EVB_COR[1], S_C1, N_C0)]
+    if xmin is None:
+        cors.append((EVA_COR[0], EVA_COR[1], S_C1, N_C0))
     for x0, x1, y0, y1 in cors:
         mb.box(x0, x1, y0, y1, HC, HC + 0.05, "ceil")
         if x1 - x0 > y1 - y0:
@@ -998,53 +1128,68 @@ def typical_floor(fl):
             while y < y1 - 1.0:
                 mb.box((x0 + x1) / 2 - 0.08, (x0 + x1) / 2 + 0.08, y - 0.6, y + 0.6, HC - 0.005, HC, "tube")
                 y += 4.0
+    if commons is not None:                     # ラーニングコモンズの天井（壁も仕切りもない広間）
+        mb.box(commons, NXb, N_IN, N_OUT, HR, HR + 0.05, "ceil")
+    # 光庭の +X 側をふさぐ部屋（案内図の 3F・6F・7F）
+    for label, x0, x1, y0, y1, face in spec.get("infill", []):
+        room1(mb, label[1:] if label.startswith("=") else label, x0, x1, y0, y1, face, z=0.0, h=HC + 0.7)
+        mb.hquad(x0, x1, y0, y1, 0.005, "lab_floor")
+        mb.box(x0, x1, y0, y1, HR, HR + 0.05, "lab_ceil")
     # EV B（光庭の上、扉は +X の廊下を向く）と大きな階の数字（写真 6751）
     mb.box(EVB[0], EVB[1], SY1, NY0, 0, HC + 0.7, "ev_b")
     ev_doors(mb, 'y', EVB[1], [-2.0, 1.6], 0, +1)
     add_text(tx, str(fl), (EVB[1] + 0.09, -3.6, 2.2), (1, 0), 0.9)
     add_text(tx, "B", (EVB[1] + 0.09, -0.2, 2.6), (1, 0), 0.3)
     steel_door(mb, 'y', EVB[1], (S_C1 + S_IN) / 2, 0, +1)
-    # EV A（扉は -X の廊下を向く。教室棟.blend の EV A の真上）
-    mb.box(EVA[0], EVA[1], SY1, NY0, 0, HC + 0.7, "ev_b")
-    ev_doors(mb, 'y', EVA[0], [0.0, 3.0], 0, -1)
-    add_text(tx, "A", (EVA[0] - 0.09, -2.0, 2.6), (-1, 0), 0.3)
-    steel_door(mb, 'y', EVA[0], (S_C1 + S_IN) / 2, 0, -1)
+    if xmin is None:
+        # EV A（扉は -X の廊下を向く。教室棟.blend の EV A の真上）。かごの中をくり抜き、前の壁に扉の開口をあける
+        for x0, x1, y0, y1 in sub(sub([(EVA[0] + 0.12, EVA[1], SY1, NY0)], EVA_CELLS[0]), EVA_CELLS[1]):
+            mb.box(x0, x1, y0, y1, 0, HC + 0.7, "ev_b")
+        wall(mb, 'y', EVA[0] + 0.06, SY1, NY0, 0, HC + 0.7, [(c, 1.1, 2.3) for c in EVA_DOORS_Y], key="ev_b", base=False)
+        ev_doors_open(mb, EVA[0], EVA_DOORS_Y, 0, -1)
+        ev_cell(mb, tx, fl)
+        add_text(tx, "A", (EVA[0] - 0.09, -2.0, 2.6), (-1, 0), 0.3)
+        steel_door(mb, 'y', EVA[0], (S_C1 + S_IN) / 2, 0, -1)
     # 廊下の突き当たりのごみ箱置き場（写真 6748）
     mb.box(SXb - 0.6, SXb, S_C0 + 0.2, S_C1 - 0.2, 0, 0.9, "ev_b")
     return mb, tx
 
 
-for fl in range(9, 15):
-    if fl == 9:
-        mb, tx = typical_floor(9)
-        tf = mb.build("研究棟_内装_9F〜14F_標準階", icol, (0, 0, FZ[9]))
-        tx.build("研究棟_内装_番号札_9F", icol, (0, 0, FZ[9]))
-    else:
-        o = bpy.data.objects.new(f"研究棟_内装_{fl}F", tf.data)     # 9F と同じメッシュ（リンク複製）
+# 2F〜14F。同じ形の階（4・5F、9〜14F）は 1 つのメッシュのリンク複製にして、番号札だけ階ごとに作る
+COURT_FILLED = (2, 8)
+shared = {}                     # spec 名 → 最初に作った階のオブジェクト（メッシュを共有する）
+n_unique = 0
+for fl in range(2, 15):
+    sname = FLOOR_SPEC[fl]
+    mb, tx = typical_floor(fl, SPECS[sname])
+    if sname in shared:
+        o = bpy.data.objects.new(f"研究棟_内装_{fl}F", shared[sname].data)     # 同じメッシュ（リンク複製）
         o.location = (0, 0, FZ[fl])
         o[GEN] = True
         icol.objects.link(o)
-        # 番号札だけ階ごとに作る
-        tx = MB()
-        for xs_labels, y_corr, side, code_row in ((ROW25, S_C0, +1, 25), (ROW27, S_C1, -1, 27),
-                                                 (ROW30, N_C0, +1, 30), (ROW32, N_C1, -1, 32)):
-            xs, labs = xs_labels
-            for (a, b), lab in zip(zip(xs[:-1], xs[1:]), labs):
-                if lab is None or lab in ("COR", "WC") or lab.startswith("STAIR"):
-                    continue
-                c = max(a + 1.1, min(b - 1.1, b - 1.6 if b - a > 4 else (a + b) / 2))
-                s0, s1 = c + 0.93 + 0.13, c + 0.93 + 0.63
-                add_text(tx, f"{fl:02d}{lab}{code_row}", ((s0 + s1) / 2, y_corr + side * 0.081, 1.95), (0, side), 0.12)
-        add_text(tx, str(fl), (EVB[1] + 0.09, -3.6, 2.2), (1, 0), 0.9)
-        add_text(tx, "B", (EVB[1] + 0.09, -0.2, 2.6), (1, 0), 0.3)
-        add_text(tx, "A", (EVA[0] - 0.09, -2.0, 2.6), (-1, 0), 0.3)
-        tx.build(f"研究棟_内装_番号札_{fl}F", icol, (0, 0, FZ[fl]))
+    else:
+        name = "研究棟_内装_9F〜14F_標準階" if sname == "high" else f"研究棟_内装_{fl}F"
+        shared[sname] = mb.build(name, icol, (0, 0, FZ[fl]))
+        n_unique += len(shared[sname].data.vertices)
+    tx.build(f"研究棟_内装_番号札_{fl}F", icol, (0, 0, FZ[fl]))
+    if fl in COURT_FILLED:      # 2F・8F は光庭もふさがっている（1F と同じ）。床と天井だけの小さなメッシュ
+        cf = MB()
+        cx0 = GX1 if fl == 2 else KX                # 2F はゲートの穴の東だけ（8F はゲートの上）
+        cf.box(cx0, SXb, S_IN, N_IN, -SLAB, 0, "carpet")
+        cf.box(cx0, SXb, S_IN, N_IN, HR, HR + 0.05, "ceil")
+        cf.build(f"研究棟_内装_光庭のふさぎ_{fl}F", icol, (0, 0, FZ[fl]))
 
+
+# EV A のかごの上端（14F の天井の上、屋上の下）に発光パネルでふたをする
+_cap = MB()
+for _x0, _x1, _y0, _y1 in EVA_CELLS:
+    _cap.box(_x0, _x1, _y0, _y1, ROOF - 0.35, ROOF - 0.3, "ev_lamp")
+_cap.build("研究棟_内装_EV_Aのかごの天井", icol)
 
 # ---------- 数を数える ----------
 nv = sum(len(o.data.vertices) for o in col.objects if o.get(GEN))
 ni = sum(len(o.data.vertices) for o in icol.objects if o.get(GEN) and o.data.users == 1)
-ni += len(tf.data.vertices)
+ni += n_unique
 print(f"研究棟: 外観 {nv} 頂点, 内装 {ni} 頂点（10〜14F はリンク複製なので 1 回だけ数える）")
 
 if SAVE:

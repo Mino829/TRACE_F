@@ -1,0 +1,261 @@
+/*
+ * The place screen of the photo flow, in RAY's paper and ink. Everything sits
+ * under .ray .pp, so no other screen changes.
+ *
+ * One column that never scrolls as a page: the map takes everything between
+ * the heading and the thin bar at the foot.
+ */
+
+.ray .pp {
+  --pp-line: color-mix(in srgb, var(--ink) 22%, transparent);
+  --pp-line-strong: var(--ink);
+  --pp-row: 52px;
+
+  padding-bottom: 0;
+
+  & .pp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+
+  & .pp-thumb {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border: 1px solid var(--pp-line-strong);
+  }
+
+  /* The map: edge to edge, as tall as the screen allows. */
+  & .pp-map {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 320px;
+    margin: 0 -20px;
+    border-top: 1px solid var(--pp-line-strong);
+    touch-action: none;
+    overflow: hidden;
+  }
+
+  & .pp-map__canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  & .pp-map__wait {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  /* The thin bar at the foot: what is picked, one way out to the list, and the save button. */
+  & .pp-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    flex: none;
+    display: grid;
+    gap: 8px;
+    margin: 0 -20px;
+    padding: 10px 20px calc(var(--safe-bottom) + 12px);
+    background: var(--bg);
+    box-shadow: 0 -1px 0 var(--pp-line-strong);
+  }
+
+  & .pp-foot .note-bar {
+    margin: 0;
+  }
+
+  & .pp-foot__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 24px;
+  }
+
+  & .pp-summary {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.35;
+    opacity: 0.72;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .pp-summary[data-picked] {
+    font-weight: 700;
+    opacity: 1;
+  }
+
+  & .pp-mode {
+    flex: none;
+    min-height: 32px;
+    padding: 0 2px;
+    font-size: 0.72rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  & .pp-foot .btn {
+    min-height: 52px;
+  }
+
+  & .pp-again {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 40px;
+    padding: 0 12px;
+    text-align: left;
+    background-image: repeating-linear-gradient(-45deg, var(--pp-line) 0 2px, transparent 2px 6px);
+    box-shadow: inset 0 0 0 1px var(--pp-line-strong);
+  }
+
+  & .pp-again .mono {
+    flex: none;
+    font-size: 0.72rem;
+    opacity: 0.8;
+  }
+
+  & .pp-again__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+
+  /* The list, instead of the map: building and floor rails, then the checkpoints. */
+  & .pp-list {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--pp-line-strong);
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  & .pp-list__note {
+    margin: 0;
+    opacity: 0.72;
+  }
+
+  & .pp-rail {
+    margin: 0 -20px;
+    padding: 0 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    mask-image: linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+  }
+
+  & .pp-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  & .pp-chips {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: max-content;
+  }
+
+  & .pp-chip {
+    min-height: 44px;
+    min-width: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--pp-line-strong);
+    background: transparent;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    scroll-snap-align: center;
+    transition:
+      background 140ms,
+      color 140ms;
+  }
+
+  & .pp-chip--mono {
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    padding: 0 10px;
+  }
+
+  & .pp-chip[aria-checked="true"] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  & .pp-points {
+    flex: 1 1 0;
+    min-height: 0;
+    list-style: none;
+    margin: 0 -20px;
+    padding: 0 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-top: 1px solid var(--pp-line);
+  }
+
+  & .pp-point {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: var(--pp-row);
+    padding: 8px 2px;
+    text-align: left;
+    border-bottom: 1px solid var(--pp-line);
+  }
+
+  & .pp-point__mark {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--pp-line-strong);
+  }
+
+  & .pp-point[aria-checked="true"] .pp-point__mark {
+    background: var(--ink);
+    box-shadow:
+      0 0 0 3px var(--paper),
+      0 0 0 4px var(--ink);
+  }
+
+  & .pp-point__name {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
+  }
+
+  & .pp-point[aria-checked="true"] .pp-point__name {
+    font-weight: 700;
+  }
+
+  & .pp-point__tag {
+    flex: none;
+    font-size: 0.72rem;
+    opacity: 0.72;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    & .pp-chip {
+      transition: none;
+    }
+  }
+}

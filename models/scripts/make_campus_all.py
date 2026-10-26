@@ -122,5 +122,9 @@ for lib in list(bpy.data.libraries):
 TRACE_ROOT = ROOT
 exec(open(os.path.join(ROOT, "trace", "trace_graph.py"), encoding="utf-8").read())
 build()
+# 芝浦祭の外まわり（入口の壁・屋台・カフェ。2026-10-21）
+exec(open(os.path.join(ROOT, "scripts", "build_festival_props.py"), encoding="utf-8").read())
+# 外の床（舗装の縞・ピロティの石・植え込み・木。2026-10-21。屋台と道の網をよけるので、そのあとで）
+exec(open(os.path.join(ROOT, "scripts", "build_ground.py"), encoding="utf-8").read())
 bpy.ops.wm.save_as_mainfile(filepath=OUT, relative_remap=True)
 print("saved", OUT, [l.filepath for l in bpy.data.libraries])

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { captureOnce } from "@/lib/ping-log/capture";
 import type { Shot } from "@/lib/ping-log/photo-entry";
 import { DEVELOPER_CONSENT_VERSION, clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
 import { networkInfo } from "@/lib/ping-log/context";
@@ -407,13 +406,12 @@ export function PingLogScreen() {
     const file = input.files?.[0];
     input.value = "";
     if (!file || !joined || memoryPhotos.length >= maxPhotos) return;
-    // The photo's moment is when the camera hands it over; its one fix is asked for now.
+    // The photo's moment is when the camera hands it over. Where it was taken is chosen afterwards, on the place screen.
     setShot({
       id: crypto.randomUUID(),
       file,
       receivedAt: Date.now(),
       promptedAt: cameraPromptRef.current,
-      location: captureOnce(),
       network: networkInfo(),
       number: memoryPhotos.length + 1,
     });

@@ -51,7 +51,7 @@ export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
  * indoors that the first person can tell where it is; the long outdoor runs
  * go quicker; stairs and escalators slowest, so the climb shows.
  */
-export const WALK_SPEED: Record<EdgeKind, number> = { ground: 18, indoor: 8, bridge: 8, escalator: 4, stairs: 5 };
+export const WALK_SPEED: Record<EdgeKind, number> = { ground: 18, indoor: 8, bridge: 8, escalator: 4, elevator: 3, stairs: 5 };
 
 /**
  * How much the walk should be looking out of the window at s, riding an
@@ -72,6 +72,14 @@ export function escalatorWeight(path: RoutePath, s: number, peak = 0.6): number 
     w = Math.max(w, peak * smooth(bump));
   });
   return w;
+}
+
+/**
+ * True while s is on an elevator edge. The car only moves straight up or down,
+ * so the camera should hold its heading and level until the doors open.
+ */
+export function elevatorRiding(path: RoutePath, s: number): boolean {
+  return path.kinds.some((kind, i) => kind === "elevator" && s > path.at[i] && s < path.at[i + 1]);
 }
 
 function smooth(x: number): number {

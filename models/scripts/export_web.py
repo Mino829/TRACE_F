@@ -37,8 +37,17 @@ for inst in insts:
 # 文字（校名など）はメッシュにする
 dg = bpy.context.evaluated_depsgraph_get()
 objs = []
-for o in made + list(bpy.data.collections["00_Site"].all_objects):
+# 芝浦祭の外まわり（入口の壁・屋台・交流プラザ。build_festival_props.py）も入れる。交流プラザは建物なので外観扱い
+FEST = bpy.data.collections.get("40_入口と屋台と交流プラザ")
+fest = list(FEST.all_objects) if FEST else []
+GROUND = bpy.data.collections.get("41_外の床")          # 外の床（build_ground.py）は敷地扱い
+fest += list(GROUND.all_objects) if GROUND else []
+for o in fest:
+    LAYER[o] = "exterior" if o.name == "交流プラザ" else "site"
+for o in made + list(bpy.data.collections["00_Site"].all_objects) + fest:
     if any(s in o.name for s in SKIP_SITE) or any(c.name in SKIP_SITE for c in o.users_collection):
+        continue
+    if o.hide_render:               # 隠したもの（交流プラザ_ブロックアウトなど）は入れない（下で全部表示に戻すので、先に外す）
         continue
     layer = LAYER.get(o) or ("surroundings" if any(c.name == "周辺建物_OSM" for c in o.users_collection) else "site")
     o["trace_layer"] = layer
