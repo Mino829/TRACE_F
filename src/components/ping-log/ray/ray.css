@@ -940,15 +940,11 @@ html:has(.ray) body {
    */
   & .home {
     --lead: 0px;
-    --unsent: 0px;
     --remain: 0px;
-    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--unsent) - var(--remain)) * 0.75)));
+    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--remain)) * 0.75)));
   }
   & .home:has(.home__lead) {
     --lead: 34px;
-  }
-  & .home:has(.unsent) {
-    --unsent: 58px;
   }
   & .home:has(.remain) {
     --remain: 32px;
@@ -1163,15 +1159,6 @@ html:has(.ray) body {
   }
   & .empty {
     aspect-ratio: 3 / 4;
-  }
-  & .unsent {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin: -6px 0 16px;
-    padding: 2px 0 2px 14px;
-    border-left: 3px solid var(--fg);
   }
   & .link {
     font-size: 14px;

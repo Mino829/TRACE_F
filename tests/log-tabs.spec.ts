@@ -15,15 +15,11 @@ const SHOTS = process.env.TRACE_TEST_SHOTS;
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, geolocation: undefined, permissions: [] });
 
-type StandIn = { deleted: boolean; experienceReads: number; uploads: string[]; uploading: Promise<void>; holdUploadsMs: number };
+type StandIn = { deleted: boolean; experienceReads: number; uploads: string[] };
 
 /** Answers TRACE_B's participant routes and the push worker's records for every tab of the context. */
 async function standIn(context: BrowserContext): Promise<StandIn> {
-  let uploadStarted!: () => void;
-  const uploading = new Promise<void>((resolve) => {
-    uploadStarted = () => resolve();
-  });
-  const state: StandIn = { deleted: false, experienceReads: 0, uploads: [], uploading, holdUploadsMs: 0 };
+  const state: StandIn = { deleted: false, experienceReads: 0, uploads: [] };
   const memorySession = { sessionId: "mem-1", expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
   const displayAlias = { color: "cyan", symbol: "circle" };
   await context.route("**/api/backend/v1/**", async (route) => {
@@ -54,11 +50,9 @@ async function standIn(context: BrowserContext): Promise<StandIn> {
     const { pathname } = new URL(route.request().url());
     if (pathname.endsWith("/forget")) return route.fulfill({ json: { ok: true, deletedRecords: state.uploads.length } });
     if (!pathname.endsWith("/records")) return route.fulfill({ status: 404, json: {} });
-    // The photo goes up as `<record id>.jpg`.
-    const id = /filename="([^"]+)\.jpg"/.exec(route.request().postDataBuffer()?.toString("latin1") ?? "")?.[1] ?? "unknown";
+    // Only the developer screen's records may come here; a participant's photo would go up as `<record id>.jpg`.
+    const id = /filename="([^"]+)\.jpg"/.exec(route.request().postDataBuffer()?.toString("latin1") ?? "")?.[1] ?? "record";
     state.uploads.push(id);
-    uploadStarted();
-    await new Promise((resolve) => setTimeout(resolve, state.holdUploadsMs));
     return route.fulfill({ json: { ok: true } });
   });
   return state;
@@ -155,23 +149,23 @@ test("a reload and a second tab continue the same participation, and withdrawing
   expect(await stored(page)).toEqual({ local: [], session: [] });
 });
 
-test("a photo saved while another tab opens is sent once, and both tabs show it", async ({ context, page }) => {
+test("a photo stays on the phone: no tab sends it anywhere, and both tabs show it", async ({ context, page }) => {
   const backend = await standIn(context);
   await join(page);
   const second = await context.newPage();
   await second.goto("/log");
   await expect(second.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
 
-  // The first tab's upload is held, and the second tab reloads meanwhile and looks for unsent photos.
-  backend.holdUploadsMs = 2500;
   await savePhoto(page);
-  await backend.uploading;
-  await second.reload();
-  await expect(second.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
   await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible({ timeout: 15000 });
+  // The other tab hears of it without a reload, and a reload there sends nothing either.
   await expect(second.getByText("1枚（12枚まで）")).toBeAttached();
-  await second.waitForTimeout(3000);
-  expect(backend.uploads).toHaveLength(1);
+  await second.reload();
+  await expect(second.getByText("1枚（12枚まで）")).toBeAttached();
+  await second.waitForTimeout(2000);
+  expect(backend.uploads).toEqual([]);
+  expect(await kept(page)).toEqual({ photos: 1, others: 0 });
+  await expect(page.getByText("未送信")).toHaveCount(0);
 });
 
 test("a participation the backend no longer knows is forgotten, with a note and the button to join again", async ({ context, page }) => {

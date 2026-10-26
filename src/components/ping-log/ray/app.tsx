@@ -67,7 +67,6 @@ export type RayAppProps = {
   onCloseDemo: () => void;
   onTakePhoto: () => void;
   onSkip: () => void;
-  onResend: () => void;
   onWithdraw: () => Promise<void>;
   onDeveloper: () => void;
   /** The participant's home, from the TRACE mark: from the demo, even one opened on the developer screen. */
@@ -240,7 +239,6 @@ function Current(props: RayAppProps & { entry: EntryCheck; inert: boolean; openO
       onSkip={() => void skip()}
       onReminder={props.onReminder}
       onReminderInterval={props.onReminderInterval}
-      onResend={props.onResend}
       onArrive={() => void go(props.onArrive)}
       onDeveloper={props.onDeveloper}
       onMenu={onMenu}

@@ -75,8 +75,9 @@ import "./developer.css";
  * memory session, and "参加をやめる" deletes the memory session too. The
  * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
  * and the photo reminder goes through TRACE_B as well (trace-api/reminder.ts).
- * Photos and the story have no backend routes yet and stay on the phone and
- * the push worker, as everything does when the variable is unset.
+ * A participant's photos and their records stay on the phone, with or without
+ * the variable (#54): photos go to no server, and where each was taken reaches
+ * TRACE_B once it has a route for it (#13).
  *
  * The developer screen, behind the button left of the menu, is the team's
  * accuracy test: the ten-minute ping answered by pointing at where one
@@ -157,6 +158,11 @@ function notificationState(): NotificationPermission | "unsupported" {
   return typeof Notification === "undefined" || !("PushManager" in window) ? "unsupported" : Notification.permission;
 }
 
+/** A record still to go to the push worker: the developer screen's. A participant's photo never goes (#54). */
+function waiting(entry: LogEntry): boolean {
+  return !entry.sentAt && purposeOf(entry.record) !== "photo-memory";
+}
+
 /** The worker pings on whole multiples of the interval, counted in minutes since the epoch. */
 function nextMark(now: number, intervalMinutes: number): number {
   const step = intervalMinutes * 60 * 1000;
@@ -235,7 +241,7 @@ export function PingLogScreen() {
         let failures = 0;
         const tried = new Set<string>();
         for (;;) {
-          const entry = (await listEntries()).find((item) => !item.sentAt && !tried.has(item.id));
+          const entry = (await listEntries()).find((item) => waiting(item) && !tried.has(item.id));
           if (!entry) return failures;
           tried.add(entry.id);
           try {
@@ -250,7 +256,7 @@ export function PingLogScreen() {
     ).catch(async (error: unknown) => {
       // Another tab is still sending; it takes the new records too, or the next try does.
       if (!(error instanceof LockTimeout)) throw error;
-      return (await listEntries()).filter((item) => !item.sentAt).length;
+      return (await listEntries()).filter(waiting).length;
     });
     setEntries(await listEntries());
     return failed;
@@ -522,8 +528,13 @@ export function PingLogScreen() {
   };
 
   const save = async (entry: LogEntry): Promise<SaveOutcome> => {
-    await putEntry(memorySessionId && purposeOf(entry.record) === "photo-memory" ? { ...entry, memorySessionId } : entry);
+    const photo = purposeOf(entry.record) === "photo-memory";
+    await putEntry(memorySessionId && photo ? { ...entry, memorySessionId } : entry);
     if (entry.record.kind === "ping") prompt(null);
+    if (photo) {
+      setEntries(await listEntries());
+      return "local";
+    }
     const failed = await sendUnsent();
     return !PUSH_API_URL ? "local" : failed ? "queued" : "sent";
   };
@@ -627,7 +638,6 @@ export function PingLogScreen() {
           onCloseDemo={() => setDemo(null)}
           onTakePhoto={() => openCamera(pendingAt)}
           onSkip={skipReminder}
-          onResend={resend}
           onWithdraw={async () => {
             await withdraw();
           }}
