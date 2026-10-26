@@ -941,7 +941,11 @@ html:has(.ray) body {
   & .home {
     --lead: 0px;
     --remain: 0px;
-    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--remain)) * 0.75)));
+    --at: 0px;
+    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--remain) - var(--at)) * 0.75)));
+  }
+  & .home:has(.strip__at) {
+    --at: 14px;
   }
   & .home:has(.home__lead) {
     --lead: 34px;
@@ -1039,6 +1043,22 @@ html:has(.ray) body {
   }
   & .strip--one {
     justify-content: center;
+  }
+  /* One dash per photo, in the strip's order; the one in view is drawn in ink. */
+  & .strip__at {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 10px;
+  }
+  & .strip__at i {
+    flex: 0 1 22px;
+    height: 2px;
+    background: var(--rule);
+    transition: background-color 0.18s;
+  }
+  & .strip__at i.is-at {
+    background: var(--fg);
   }
 
   /* A print: the photo in its own colours in a hairline frame, and its frame number and time below. */
