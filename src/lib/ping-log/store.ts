@@ -67,6 +67,20 @@ export async function putEntry(entry: LogEntry): Promise<void> {
   });
 }
 
+/** Erases one entry: a participant's photo they deleted (#51). */
+export async function deleteEntry(id: string): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).delete(id);
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error ?? new Error("写真を削除できませんでした。"));
+  });
+}
+
 export async function clearEntries(): Promise<void> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
