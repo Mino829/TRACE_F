@@ -55,7 +55,8 @@ for f, z in FZ.items():
     label = f"{f}F"
     # 交流棟側
     if f == 3:
-        select("shibalab", "教室棟3F 交流棟側（301 ShibaLab）")
+        # 名前は変えない：展示画面の停留所の名前（「ShibaLab に到着」）にも使う
+        select("shibalab", "ShibaLab（教室棟3F 301）")
     elif f != 8:
         nid = f"classroom-{f}f-koryu"
         node(nid, f"教室棟{f}F 交流棟側", label, [*ROOM_301, z], "301（ShibaLab）の真上・真下。交流棟側の端")

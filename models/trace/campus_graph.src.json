@@ -221,7 +221,7 @@
   },
   {
    "id": "shibalab",
-   "name": "教室棟3F 交流棟側（301 ShibaLab）",
+   "name": "ShibaLab（教室棟3F 301）",
    "building": "教室棟",
    "floor": "3F",
    "blender": [
@@ -9842,84 +9842,6 @@
    "kind": "indoor"
   },
   {
-   "id": "hq-1f-car--hq-2f-car",
-   "from": "hq-1f-car",
-   "to": "hq-2f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-2f-car--hq-3f-car",
-   "from": "hq-2f-car",
-   "to": "hq-3f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-3f-car--hq-4f-car",
-   "from": "hq-3f-car",
-   "to": "hq-4f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-4f-car--hq-5f-car",
-   "from": "hq-4f-car",
-   "to": "hq-5f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-5f-car--hq-6f-car",
-   "from": "hq-5f-car",
-   "to": "hq-6f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-6f-car--hq-7f-car",
-   "from": "hq-6f-car",
-   "to": "hq-7f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-7f-car--hq-8f-car",
-   "from": "hq-7f-car",
-   "to": "hq-8f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-8f-car--hq-9f-car",
-   "from": "hq-8f-car",
-   "to": "hq-9f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-9f-car--hq-10f-car",
-   "from": "hq-9f-car",
-   "to": "hq-10f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-10f-car--hq-11f-car",
-   "from": "hq-10f-car",
-   "to": "hq-11f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-11f-car--hq-12f-car",
-   "from": "hq-11f-car",
-   "to": "hq-12f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-12f-car--hq-13f-car",
-   "from": "hq-12f-car",
-   "to": "hq-13f-car",
-   "kind": "elevator"
-  },
-  {
-   "id": "hq-13f-car--hq-14f-car",
-   "from": "hq-13f-car",
-   "to": "hq-14f-car",
-   "kind": "elevator"
-  },
-  {
    "id": "research-1f--research-1f-east",
    "from": "research-1f",
    "to": "research-1f-east",
@@ -10056,6 +9978,84 @@
    "from": "research-gate",
    "to": "research-2f-east",
    "kind": "indoor"
+  },
+  {
+   "id": "hq-1f-car--hq-2f-car",
+   "from": "hq-1f-car",
+   "to": "hq-2f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-2f-car--hq-3f-car",
+   "from": "hq-2f-car",
+   "to": "hq-3f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-3f-car--hq-4f-car",
+   "from": "hq-3f-car",
+   "to": "hq-4f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-4f-car--hq-5f-car",
+   "from": "hq-4f-car",
+   "to": "hq-5f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-5f-car--hq-6f-car",
+   "from": "hq-5f-car",
+   "to": "hq-6f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-6f-car--hq-7f-car",
+   "from": "hq-6f-car",
+   "to": "hq-7f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-7f-car--hq-8f-car",
+   "from": "hq-7f-car",
+   "to": "hq-8f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-8f-car--hq-9f-car",
+   "from": "hq-8f-car",
+   "to": "hq-9f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-9f-car--hq-10f-car",
+   "from": "hq-9f-car",
+   "to": "hq-10f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-10f-car--hq-11f-car",
+   "from": "hq-10f-car",
+   "to": "hq-11f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-11f-car--hq-12f-car",
+   "from": "hq-11f-car",
+   "to": "hq-12f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-12f-car--hq-13f-car",
+   "from": "hq-12f-car",
+   "to": "hq-13f-car",
+   "kind": "elevator"
+  },
+  {
+   "id": "hq-13f-car--hq-14f-car",
+   "from": "hq-13f-car",
+   "to": "hq-14f-car",
+   "kind": "elevator"
   }
  ]
 }
