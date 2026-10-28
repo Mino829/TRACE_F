@@ -1,6 +1,6 @@
 # TRACE Frontend
 
-`/`は旧参加者の状態確認・停止・削除画面、`/log`は写真ごとに参加者がチェックポイントを選ぶ画面です。どちらも新しいGPS取得・送信は行いません。`/log`の写真記録とWeb Pushは`push-worker/`の`trace-push` Workerが扱い、Go APIの写真保存とは別です。
+`/`は旧参加者の状態確認・停止・削除画面、`/log`は写真ごとに参加者がチェックポイントを選ぶ画面です。どちらも新しいGPS取得・送信は行いません。`/log`の写真は端末内だけに保存し、どこにも送信しません。撮影リマインダーのWeb Pushは、TRACE_Bの参加資格情報を持つタブではTRACE_Bが、それ以外では`push-worker/`の`trace-push` Workerが送ります。
 
 ## ローカルで参加者画面を試す
 
@@ -28,7 +28,7 @@ npm run dev:local
 
 静的アセットはsecretなしでも配信できますが、参加者APIは503で閉じます。`trace-push`のD1/KVやWeb Pushのsecretとは別に管理してください。
 
-`/log`の写真送信と通知は、ビルド時の`NEXT_PUBLIC_PUSH_API_URL`が指す`trace-push`を使います。未設定でも端末内には写真を保存できますが、Workerへの送信と通知は使えません。
+`/log`の`trace-push`による通知は、ビルド時の`NEXT_PUBLIC_PUSH_API_URL`が指すWorkerを使います。未設定でも写真は端末内に保存できますが、`trace-push`の通知は使えません。
 
 ```sh
 NEXT_STATIC_EXPORT=1 NEXT_PUBLIC_PUSH_API_URL=https://trace-push.async5855.workers.dev npm run build
