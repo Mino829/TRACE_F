@@ -16,6 +16,21 @@ import "./renderer-link.css";
 const API_URL = process.env.NEXT_PUBLIC_DISPLAY_API_URL ?? "";
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
 
+/** Seconds since the epoch at which a Google ID token (a JWT) expires; null when it cannot be read. */
+function expiresAt(idToken: string): number | null {
+  const payload = idToken.split(".")[1];
+  if (!payload) return null;
+  try {
+    const json: unknown = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof json === "object" && json !== null && "exp" in json && typeof json.exp === "number" ? json.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A Google ID token lasts an hour; one about to run out is treated as gone, so the page asks Google again. */
+const EXPIRY_MARGIN_SECONDS = 60;
+
 export type DisplayLink = {
   state: LinkState;
   /** Why the link stopped, when it did. */
@@ -49,7 +64,12 @@ export function useRendererLink(
     const link = connectRendererLink({
       apiUrl: API_URL,
       versions: { coordinateVersion: COORDINATE_VERSION, campusGraphVersion: CAMPUS_GRAPH_VERSION, threeDMapVersion: THREE_D_MAP_VERSION },
-      idToken: () => idTokenRef.current,
+      idToken: () => {
+        const token = idTokenRef.current;
+        const exp = token ? expiresAt(token) : null;
+        if (token && exp !== null && exp - EXPIRY_MARGIN_SECONDS <= Date.now() / 1000) idTokenRef.current = null;
+        return idTokenRef.current;
+      },
       replay: (arrival, signal) => replayRef.current(arrival, signal),
       onIdle: () => onIdleRef.current(),
       onState: (next, detail) => setState({ state: next, detail: detail ?? null }),

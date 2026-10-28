@@ -30,11 +30,11 @@ type Backend = {
 };
 
 /** A fake Google sign-in and a fake TRACE_B. */
-async function backend(page: Page, opts: { grant?: boolean; ack?: (msg: Sent) => "ack" | "reject" } = {}): Promise<Backend> {
+async function backend(page: Page, opts: { grant?: boolean; ack?: (msg: Sent) => "ack" | "reject"; credential?: string } = {}): Promise<Backend> {
   const sent: Sent[] = [];
   const tokenRequests: string[] = [];
   let server: WebSocketRoute | null = null;
-  await page.addInitScript(() => {
+  await page.addInitScript((credential: string) => {
     let callback: ((response: { credential?: string }) => void) | null = null;
     (window as unknown as { google: unknown }).google = {
       accounts: {
@@ -45,14 +45,14 @@ async function backend(page: Page, opts: { grant?: boolean; ack?: (msg: Sent) =>
           renderButton: (parent: HTMLElement) => {
             const button = document.createElement("button");
             button.textContent = "テスト用 Google ログイン";
-            button.onclick = () => callback?.({ credential: "google-id-token" });
+            button.onclick = () => callback?.({ credential });
             parent.appendChild(button);
           },
           prompt: () => undefined,
         },
       },
     };
-  });
+  }, opts.credential ?? "google-id-token");
   await page.route(`${API}/v1/operator/display-tokens`, async (route) => {
     tokenRequests.push(route.request().headers()["authorization"] ?? "");
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ displayToken: "display-token-1", expiresAt: new Date(Date.now() + 120000).toISOString() }) });
@@ -142,15 +142,43 @@ test("the next visitor waits for the previous card, and a visitor without a rout
   expect(errors).toEqual([]);
 });
 
-test("a start TRACE_B rejects is dropped and the next arrival plays", async ({ page }) => {
-  const b = await backend(page, { ack: (msg) => (msg.arrivalId === "arrival-0001" ? "reject" : "ack") });
+test("a start TRACE_B rejects is asked for again, not dropped, and plays once TRACE_B accepts", async ({ page }) => {
+  // TRACE_B starts only the head of its queue (its photos may still be coming): refuse the first ask, accept the second.
+  let refused = 0;
+  const b = await backend(page, { ack: (msg) => (msg.arrivalId === "arrival-0001" && refused++ === 0 ? "reject" : "ack") });
   const errors = await signIn(page);
   arrive(b, "arrival-0001", ROUTE, "1");
   arrive(b, "arrival-0002", ROUTE, "2");
-  await expect.poll(() => b.of("arrival.replay.started").map((m) => m.arrivalId)).toEqual(["arrival-0001", "arrival-0002"]);
+  await expect.poll(() => b.of("arrival.replay.started").map((m) => m.arrivalId), { timeout: 10000 }).toEqual(["arrival-0001", "arrival-0001"]);
   await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback");
-  await expect.poll(() => b.of("arrival.replay.completed").map((m) => m.arrivalId), { timeout: 15000 }).toEqual(["arrival-0002"]);
+  await expect.poll(() => b.of("arrival.replay.completed").map((m) => m.arrivalId), { timeout: 15000 }).toEqual(["arrival-0001"]);
+  // The second comes after the first one's card, in order.
+  await expect.poll(() => b.of("arrival.replay.completed").map((m) => m.arrivalId), { timeout: 20000 }).toEqual(["arrival-0001", "arrival-0002"]);
   expect(errors).toEqual([]);
+});
+
+test("after a card, a next start TRACE_B keeps refusing does not leave the card up: the QR comes back", async ({ page }) => {
+  const b = await backend(page, { ack: (msg) => (msg.arrivalId === "arrival-0002" ? "reject" : "ack") });
+  const errors = await signIn(page);
+  arrive(b, "arrival-0001", ROUTE, "1");
+  arrive(b, "arrival-0002", ROUTE, "2");
+  await expect(page.getByText("ShibaLab に到着しました")).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "top", { timeout: 10000 });
+  // It keeps asking for the refused one in the background.
+  await expect.poll(() => b.of("arrival.replay.started").filter((m) => m.arrivalId === "arrival-0002").length, { timeout: 10000 }).toBeGreaterThanOrEqual(2);
+  expect(errors).toEqual([]);
+});
+
+test("an expired Google sign-in is not used: the booth asks to sign in again instead of requesting a credential", async ({ page }) => {
+  const expired = `x.${Buffer.from(JSON.stringify({ exp: 1 })).toString("base64url")}.y`;
+  const b = await backend(page, { credential: expired });
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await page.goto("/display");
+  await expect(page.getByRole("button", { name: /テスト再生/ })).toBeEnabled({ timeout: 60000 });
+  await page.getByRole("button", { name: "テスト用 Google ログイン" }).click();
+  await page.waitForTimeout(500);
+  await expect(page.getByRole("status").filter({ hasText: "Google ログインが必要" })).toBeVisible();
+  expect(b.tokenRequests).toHaveLength(0);
 });
 
 test("a skip while playing goes back to the top and is not reported", async ({ page }) => {

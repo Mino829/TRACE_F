@@ -16,8 +16,10 @@
  *    another booth holding it leaves this one on standby;
  * 4. arrivals wait in the order TRACE_B gives (snapshot, then
  *    `arrival.replay.requested`). For each, `arrival.replay.started` is a
- *    request: the walk begins only on TRACE_B's `renderer.ack`, and a
- *    `renderer.rejected` drops that arrival. When the walk ends,
+ *    request: the walk begins only on TRACE_B's `renderer.ack`. TRACE_B only
+ *    starts the head of its own queue, so a `renderer.rejected` (or no answer)
+ *    keeps that arrival first and asks again a little later, until it plays or
+ *    TRACE_B skips it; meanwhile the booth shows its QR. When the walk ends,
  *    `arrival.replay.completed` goes out, the arrived card holds the booth for
  *    a few seconds (QR hidden, nothing new starts), then the next arrival or
  *    the top screen (trace-campus-installation#31);
@@ -88,6 +90,8 @@ type Known = Omit<ArrivalToPlay, "arrivalId">;
 const HEARTBEAT_MS = 10_000;
 const REACQUIRE_MS = 5_000;
 const ACK_TIMEOUT_MS = 10_000;
+/** How long to wait before asking again for an arrival TRACE_B did not start (photos may still be on their way). */
+const RETRY_START_MS = 3_000;
 const BACKOFF_MS = [1_000, 2_000, 5_000, 10_000, 30_000];
 /** Close codes TRACE_B uses after the handshake (TRACE_B#37 internal/api/display.go). */
 const CLOSE_UNAUTHENTICATED = 4401;
@@ -139,6 +143,11 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
   let retry = 0;
   let hold = 0;
   let ackTimer = 0;
+  let retryStart = 0;
+  /** Waiting to ask again for the head of the queue. */
+  let waitingRetry = false;
+  /** The booth is showing a visitor (walk or card): it goes back to its QR once nothing is playing or holding. */
+  let showing = false;
   /** Arrivals waiting, in the order TRACE_B asked for them. */
   let queue: string[] = [];
   const known = new Map<string, Known>();
@@ -162,7 +171,26 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
 
   const acquire = () => send("renderer.primary.acquire");
 
-  const busy = () => Boolean(starting || playing || holding);
+  const busy = () => Boolean(starting || playing || holding || waitingRetry);
+
+  /** Back to the QR once the booth is free, even while an arrival waits to be asked again. */
+  const idleIfFree = () => {
+    if (!showing || playing || holding) return;
+    showing = false;
+    options.onIdle?.();
+  };
+
+  /** TRACE_B did not start the head of the queue: keep it first and ask again shortly. */
+  const askAgainLater = (arrivalId: string) => {
+    if (!queue.includes(arrivalId)) queue.unshift(arrivalId);
+    waitingRetry = true;
+    window.clearTimeout(retryStart);
+    retryStart = window.setTimeout(() => {
+      waitingRetry = false;
+      next();
+    }, RETRY_START_MS);
+    idleIfFree();
+  };
 
   /** Asks TRACE_B to start the oldest waiting arrival; the walk waits for its ack. */
   const next = () => {
@@ -174,10 +202,10 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
     send("arrival.replay.started", { eventId, arrivalId, leaseId });
     window.clearTimeout(ackTimer);
     ackTimer = window.setTimeout(() => {
-      // No answer: leave it to TRACE_B (its own timeouts settle the arrival) and move on.
+      // No answer: ask again later; TRACE_B's own timeouts and skips settle an arrival that will not play.
       if (starting?.eventId !== eventId) return;
       starting = null;
-      next();
+      askAgainLater(arrivalId);
     }, ACK_TIMEOUT_MS);
   };
 
@@ -185,6 +213,7 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
     const meta = known.get(arrivalId) ?? { pathNodeIds: [], photoCheckpoints: [], durationSeconds: null };
     const abort = new AbortController();
     playing = { arrivalId, abort };
+    showing = true;
     options
       .replay({ arrivalId, ...meta }, abort.signal)
       .catch((): ReplayResult => "failed")
@@ -193,16 +222,23 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
         playing = null;
         known.delete(arrivalId);
         // Cut short by a skip or a lost lease: TRACE_B has settled it already.
-        if (abort.signal.aborted || !leaseId) return next();
+        if (abort.signal.aborted || !leaseId) {
+          next();
+          return idleIfFree();
+        }
         send(`arrival.replay.${result}`, { eventId: newId(), arrivalId, leaseId });
-        if (result === "failed") return next();
+        if (result === "failed") {
+          next();
+          return idleIfFree();
+        }
         // The arrived card holds the booth; then the next visitor, or the QR again.
         holding = true;
         window.clearTimeout(hold);
         hold = window.setTimeout(() => {
           holding = false;
-          if (queue.length > 0 && leaseId) next();
-          else options.onIdle?.();
+          // The next start waits for TRACE_B's answer; until then the booth shows its QR.
+          next();
+          idleIfFree();
         }, holdMs);
       });
   };
@@ -211,7 +247,9 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
     playing?.abort.abort();
     playing = null;
     starting = null;
+    waitingRetry = false;
     window.clearTimeout(ackTimer);
+    window.clearTimeout(retryStart);
   };
 
   const remember = (arrivalId: string, data: Record<string, unknown>) => {
@@ -270,6 +308,7 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
           stopPlaying();
           next();
         }
+        idleIfFree();
         break;
       }
       case "renderer.ack": {
@@ -283,12 +322,12 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
         break;
       }
       case "renderer.rejected": {
-        // The start was refused (lease, state): drop that arrival and try the next.
+        // The start was refused: TRACE_B starts only the head of its queue, so ask for the same one again.
         if (starting && str(data.eventId) === starting.eventId) {
           window.clearTimeout(ackTimer);
-          known.delete(starting.arrivalId);
+          const { arrivalId } = starting;
           starting = null;
-          next();
+          askAgainLater(arrivalId);
         }
         break;
       }
@@ -430,6 +469,7 @@ export function connectRendererLink(options: LinkOptions): RendererLink {
       window.clearInterval(reacquire);
       window.clearTimeout(retry);
       window.clearTimeout(hold);
+      window.clearTimeout(retryStart);
       stopPlaying();
       socket?.close();
       socket = null;
