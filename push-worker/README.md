@@ -6,8 +6,10 @@
 - スマホから送られた記録を D1 に、写真を KV に保存します。参加者の記録は写真1枚と撮影したときの位置です。精度テストの記録は、測位の連続値と、開発者が指した場所と階です。
 - 参加者が「参加をやめる」を押すと、その端末の記録と写真をすべて削除します。
 
-デプロイは手動です（自動デプロイは設定していません）。
-Cloudflare アカウントを誰が運用するかは、チームで相談中です。
+main に push され、GitHub Actions の「Verify frontend and Workers」が通ると、`.github/workflows/deploy.yml` が `npm run release` を実行してデプロイします。
+Actions の画面から「Deploy to Cloudflare」を手で実行することもできます。
+このワークフローには、リポジトリの secret に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要です。
+`PUSH_API_URL`、`TRACE_API_URL`、`ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID` は、リポジトリの variable に設定したものだけを `.env` に書きます。
 
 ## 構成
 
