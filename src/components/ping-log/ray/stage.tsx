@@ -99,7 +99,15 @@ function Hud({ mode }: { mode: FieldMode }) {
       <i className="hud__c hud__c--bl" />
       <i className="hud__c hud__c--br" />
       <p className="hud__read">
-        <span>{mode === "room" ? "Trace / ShibaLab 301" : `Trace / ${festivalLabel(now)}`}</span>
+        <span>
+          {mode === "room" ? (
+            <>
+              Trace / <span className="keep-case">ShibaLab</span> 301
+            </>
+          ) : (
+            `Trace / ${festivalLabel(now)}`
+          )}
+        </span>
         <span>
           {pad(date.getHours())}:{pad(date.getMinutes())}:{pad(date.getSeconds())}
         </span>
@@ -526,15 +534,12 @@ export function Icon({ name }: { name: IconName }) {
   );
 }
 
-/**
- * The wordmark, which leads home, and the developer and menu buttons. On
- * home itself the wordmark takes the screen back to its top.
- */
-export function Mast({ extra, onHome, onDeveloper, onMenu }: { extra?: ReactNode; onHome?: () => void; onDeveloper: () => void; onMenu: () => void }) {
+/** The wordmark, which leads to the title, and the developer and menu buttons. */
+export function Mast({ extra, onTitle, onDeveloper, onMenu }: { extra?: ReactNode; onTitle: () => void; onDeveloper: () => void; onMenu: () => void }) {
   return (
     <header className="mast">
       <div className="mast__mark">
-        <HomeMark onHome={onHome} />
+        <TitleMark onTitle={onTitle} />
         {extra}
       </div>
       <MastButtons onDeveloper={onDeveloper} onMenu={onMenu} />
@@ -542,21 +547,25 @@ export function Mast({ extra, onHome, onDeveloper, onMenu }: { extra?: ReactNode
   );
 }
 
-export function HomeMark({ onHome }: { onHome?: () => void }) {
-  const toTop = (button: HTMLElement) => button.closest(".screen")?.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" });
+/** The wordmark: back to the title, as a site's name leads to its top page. */
+export function TitleMark({ onTitle }: { onTitle: () => void }) {
   return (
-    <button type="button" className="wordmark" aria-label="TRACE（ホーム）" onClick={(event) => (onHome ? onHome() : toTop(event.currentTarget))}>
+    <button type="button" className="wordmark" aria-label="TRACE（タイトルへ）" onClick={onTitle}>
       TRACE
     </button>
   );
 }
 
+/** The developer screen is the team's: its button shows only while ?dev is on the URL. */
 export function MastButtons({ onDeveloper, onMenu }: { onDeveloper: () => void; onMenu: () => void }) {
+  const [developer] = useState(() => new URLSearchParams(window.location.search).has("dev"));
   return (
     <div className="mast__right">
-      <button type="button" className="mast__dev" onClick={onDeveloper}>
-        開発者
-      </button>
+      {developer && (
+        <button type="button" className="mast__dev" onClick={onDeveloper}>
+          開発者
+        </button>
+      )}
       <button type="button" className="icon-btn" aria-label="メニュー" aria-haspopup="dialog" onClick={onMenu}>
         <Icon name="menu" />
       </button>

@@ -432,7 +432,7 @@ function makeLabels(root: HTMLElement) {
   };
   const buildings = BUILDING_LABELS.map((b) => ({ ...b, el: make("dsp-label", b.name) }));
   const goalAt = toScene(NODES.get("shibalab")!.threeD);
-  const goal = make("dsp-label dsp-label--goal", "SHIBALAB 301");
+  const goal = make("dsp-label dsp-label--goal", "ShibaLab 301");
   const here = make("dsp-label dsp-label--here", "");
   const v = new THREE.Vector3();
   const put = (el: HTMLElement, at: THREE.Vector3, camera: THREE.Camera, canvas: HTMLCanvasElement) => {

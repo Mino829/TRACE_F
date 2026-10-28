@@ -135,8 +135,8 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
   const hint = selected
     ? placeLabel(data, selected)
     : building === null
-      ? "建物をタップ。外で撮ったときは地面の点を選ぶ"
-      : `${buildingName(data, building)}：階を選んで、場所の点をタップ`;
+      ? "建物をタップしてください。外で撮ったときは、地面の点を選んでください。"
+      : `${buildingName(data, building)}：階を選んで、場所の点をタップしてください。`;
 
   return (
     <Screen key="place" className="screen--flex pp" inert={inert}>

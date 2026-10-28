@@ -200,7 +200,7 @@ export function PhotoScreen(props: Props) {
         </div>
       )}
       <h1 className="h2 clear__msg" role="status">
-        <Phrases text={`${shot.number}枚目のメモリーを残しました`} />
+        <Phrases text={`${shot.number}枚目の写真を残しました`} />
       </h1>
       {props.reminderOn && props.nextReminderAt !== null && (
         <p className="small clear__sub">

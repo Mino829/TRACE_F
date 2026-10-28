@@ -23,7 +23,7 @@ import { clock } from "../ui";
 import { ScanWindow, placeTrackers, useBeam } from "./demo";
 import { KeepsakeScreen } from "./keepsake";
 import { TraceScreen } from "./trace";
-import { HomeMark, Icon, Phrases, Screen, Sentences, SWAP, useField, useRay } from "./stage";
+import { Icon, Phrases, Screen, Sentences, SWAP, TitleMark, useField, useRay } from "./stage";
 
 /**
  * Arriving at ShibaLab for real, while /log works with TRACE_B: the phone's
@@ -71,6 +71,7 @@ export function ArrivalFlow({
   toKeepsake,
   inert,
   onClose,
+  onTitle,
   onArrived,
   onDelete,
 }: {
@@ -82,6 +83,8 @@ export function ArrivalFlow({
   toKeepsake: boolean;
   inert: boolean;
   onClose: () => void;
+  /** The TRACE mark: this closes, and the title shows. */
+  onTitle: () => void;
   onArrived: (memorySessionId: string) => void;
   /** Asks before deleting a photo (#51). */
   onDelete: (entry: LogEntry, number: number) => void;
@@ -93,6 +96,14 @@ export function ArrivalFlow({
   const [arrivedAt, setArrivedAt] = useState<string | null>(null);
   const close = useLayer("#arrival", onClose);
   const leave = useCallback(() => void go(close), [go, close]);
+  const title = useCallback(
+    () =>
+      void go(() => {
+        close();
+        onTitle();
+      }),
+    [go, close, onTitle],
+  );
   const attempt = useRef<ArrivalAttempt | null>(null);
   // A code is on its way, or has arrived: the check below no longer moves the screen.
   const reading = useRef(false);
@@ -158,6 +169,7 @@ export function ArrivalFlow({
         onDelete={onDelete}
         onTrace={() => void go(() => setStep("trace"))}
         onLeave={leave}
+        onTitle={title}
       />
     );
   }
@@ -172,6 +184,7 @@ export function ArrivalFlow({
       onStatus={setStatus}
       onKeepsake={() => void go(() => setStep("keepsake"))}
       onLeave={leave}
+      onTitle={title}
     />
   );
 }
@@ -517,6 +530,7 @@ function Replay({
   onStatus,
   onKeepsake,
   onLeave,
+  onTitle,
 }: {
   target: ArrivalTarget;
   status: ReplayStatus | null;
@@ -527,6 +541,7 @@ function Replay({
   onStatus: (status: ReplayStatus) => void;
   onKeepsake: () => void;
   onLeave: () => void;
+  onTitle: () => void;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const final = isFinal(status);
@@ -607,8 +622,10 @@ function Replay({
     <Screen inert={inert}>
       <header className="mast">
         <div className="mast__mark">
-          <HomeMark onHome={onLeave} />
-          <span className="mono">ShibaLab 301</span>
+          <TitleMark onTitle={onTitle} />
+          <span className="mono">
+            <span className="keep-case">ShibaLab</span> 301
+          </span>
         </div>
         <button type="button" className="icon-btn" aria-label="ホームへもどる" onClick={onLeave}>
           <Icon name="close" />

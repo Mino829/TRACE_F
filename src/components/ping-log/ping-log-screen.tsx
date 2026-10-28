@@ -91,7 +91,7 @@ const PROMPT_MESSAGE = "trace-ping";
 const SEND_LOCK = "trace-log-send";
 /** How long a save waits for another tab that is sending; after that its photo waits for the next try. */
 const SEND_WAIT_MS = 10_000;
-const START_AGAIN = "続けるときは、\nもう一度「はじめる」から参加してください。";
+const START_AGAIN = "もう一度参加するときは、\n「はじめる」を押してください。";
 
 type View = "participant" | "developer";
 type AccuracyFlow = { kind: "ping" | "manual"; promptedAt: string | null };
@@ -555,11 +555,11 @@ export function PingLogScreen() {
 
   const withdraw = () => run(async () => {
     // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
-    let backendNote = "";
+    let removed = "この端末の写真を削除しました。";
     if (TRACE_API_URL && experience) {
       try {
         await deleteMemorySession(experience.memory, memoryDeleteKey(experience.memory.memorySessionId));
-        backendNote = "参加の記録も削除しました。";
+        removed = "この端末の写真と、参加の記録を削除しました。";
       } catch (error) {
         throw new Error(`参加をやめられませんでした。${error instanceof Error ? error.message : ""}`);
       }
@@ -570,7 +570,7 @@ export function PingLogScreen() {
     if (subscription && trace.owned) await subscription.unsubscribe().catch(() => undefined);
     else if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
     trace.forget();
-    const deleted = PUSH_API_URL ? await forgetMe() : 0;
+    if (PUSH_API_URL) await forgetMe();
     await clearEntries();
     clearConsent();
     prompt(null);
@@ -578,7 +578,7 @@ export function PingLogScreen() {
     setExpiresAt(null);
     setEntries([]);
     setConsent(null);
-    setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。${backendNote}`);
+    setMessage(`参加をやめました。${removed}`);
   });
 
   /**

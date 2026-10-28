@@ -49,6 +49,11 @@ html:has(.dsp) body {
   color: var(--fg-2);
 }
 
+/* ShibaLab is written as its name is, in a readout set in capitals. */
+.keep-case {
+  text-transform: none;
+}
+
 .wordmark {
   font-family: var(--latin);
   font-weight: 800;

@@ -63,7 +63,7 @@ test("a photo is saved with the checkpoint chosen for it, and the phone's positi
   await expect(save).toBeEnabled();
   await shoot(page, "03-selected");
   await save.click();
-  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible();
+  await expect(page.getByText("1枚目の写真を残しました")).toBeVisible();
   await shoot(page, "04-clear");
 
   asked.push(String(await page.evaluate(() => (window as unknown as { __geo: number }).__geo)));
@@ -96,7 +96,7 @@ test("the next photo opens on the last place and can take it again in one tap", 
   await page.getByRole("radio", { name: "5F", exact: true }).click();
   await page.getByRole("radio", { name: /本部棟5F/ }).click();
   await page.getByRole("button", { name: "ここで保存" }).click();
-  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible();
+  await expect(page.getByText("1枚目の写真を残しました")).toBeVisible();
   await page.getByRole("button", { name: "ホームへもどる" }).click();
 
   await page.getByRole("button", { name: "写真を撮る" }).first().click({ trial: true }).catch(() => undefined);
@@ -105,7 +105,7 @@ test("the next photo opens on the last place and can take it again in one tap", 
   await page.getByRole("button", { name: /さっきと同じ/ }).click();
   await expect(page.getByRole("button", { name: "ここで保存" })).toBeEnabled();
   await page.getByRole("button", { name: "ここで保存" }).click();
-  await expect(page.getByText("2枚目のメモリーを残しました")).toBeVisible();
+  await expect(page.getByText("2枚目の写真を残しました")).toBeVisible();
 });
 
 test("the list offers every building, floor and checkpoint without the map", async ({ page }) => {

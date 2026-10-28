@@ -8,7 +8,7 @@ import { reducedMotion } from "@/lib/ray/fx";
 import { useLayer } from "../layer";
 import { clock } from "../ui";
 import { PrintPhoto, frameLabel, tearOne } from "./prints";
-import { HomeMark, Icon, Phrases, ROOM, Screen, Sentences, SWAP, useField, useRay, useScroller } from "./stage";
+import { Icon, Phrases, ROOM, Screen, Sentences, SWAP, TitleMark, useField, useRay, useScroller } from "./stage";
 
 /**
  * The demo of arriving at ShibaLab, after a day of nine sample photos:
@@ -40,24 +40,24 @@ function minutes(time: string): number {
 
 type Step = "scan" | "arrived" | "story" | "thanks";
 
-/** onHome: the TRACE mark, which leads to the participant's home even when the demo was opened from the developer screen. */
-export function DemoFlow({ closeLabel, inert, onClose, onHome }: { closeLabel: string; inert: boolean; onClose: () => void; onHome: () => void }) {
+/** onTitle: the TRACE mark, which leads to the participant's title even when the demo was opened from the developer screen. */
+export function DemoFlow({ closeLabel, inert, onClose, onTitle }: { closeLabel: string; inert: boolean; onClose: () => void; onTitle: () => void }) {
   const { go, toast } = useRay();
   const [step, setStep] = useState<Step>("scan");
   const close = useLayer("#demo", onClose);
   const leave = useCallback(() => void go(close), [go, close]);
-  const home = useCallback(
+  const title = useCallback(
     () =>
       void go(() => {
         close();
-        onHome();
+        onTitle();
       }),
-    [go, close, onHome],
+    [go, close, onTitle],
   );
   const say = useCallback((text: string) => toast(text), [toast]);
 
   if (step === "scan") return <Scan inert={inert} onCancel={leave} onRead={() => setStep("arrived")} />;
-  if (step === "arrived") return <Arrived inert={inert} onLeave={leave} onHome={home} onStory={() => void go(() => setStep("story"))} />;
+  if (step === "arrived") return <Arrived inert={inert} onLeave={leave} onTitle={title} onStory={() => void go(() => setStep("story"))} />;
   if (step === "story") return <Story inert={inert} onLeave={leave} say={say} onFinish={() => void go(() => setStep("thanks"))} />;
   return <Thanks inert={inert} closeLabel={closeLabel} say={say} onClose={leave} />;
 }
@@ -355,7 +355,7 @@ export function useBeam(stageRef: RefObject<HTMLDivElement | null>, played: bool
   }, [played, field]);
 }
 
-function Arrived({ inert, onLeave, onHome, onStory }: { inert: boolean; onLeave: () => void; onHome: () => void; onStory: () => void }) {
+function Arrived({ inert, onLeave, onTitle, onStory }: { inert: boolean; onLeave: () => void; onTitle: () => void; onStory: () => void }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [arrivedAt] = useState(() => clock(Date.now()));
   const [progress, setProgress] = useState(0);
@@ -379,8 +379,10 @@ function Arrived({ inert, onLeave, onHome, onStory }: { inert: boolean; onLeave:
     <Screen inert={inert}>
       <header className="mast">
         <div className="mast__mark">
-          <HomeMark onHome={onHome} />
-          <span className="mono">ShibaLab 301</span>
+          <TitleMark onTitle={onTitle} />
+          <span className="mono">
+            <span className="keep-case">ShibaLab</span> 301
+          </span>
         </div>
         <DemoClose onLeave={onLeave} />
       </header>
