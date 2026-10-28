@@ -1,6 +1,6 @@
 {
-  "wait": { "files": ["wait-bgm.mp3", "wait-bgm.ogg"], "loop": true, "volume": 0.5 },
+  "wait": { "files": ["wait-bgm.mp3", "wait-bgm.ogg"], "loop": true, "volume": 0.5, "loopStart": 0.5, "loopEnd": 102.9 },
   "scan": { "files": ["scan.mp3", "scan.ogg"], "volume": 0.9 },
-  "play": { "files": ["play-bgm.mp3", "play-bgm.ogg"], "loop": true, "volume": 0.6 },
+  "play": { "files": ["play-bgm.mp3", "play-bgm.ogg"], "loop": true, "volume": 0.6, "loopStart": 0.5, "loopEnd": 82.1 },
   "arrive": { "files": ["arrive.mp3", "arrive.ogg"], "volume": 0.9 }
 }
