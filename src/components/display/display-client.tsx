@@ -6,7 +6,8 @@ import type { Player } from "@/lib/display/player";
 import type { RoutePath } from "@/lib/display/route-path";
 
 import { ArrivalQr } from "./arrival-qr";
-import { useRendererLink } from "./use-renderer-link";
+import { GoogleSignIn } from "./google-sign-in";
+import { useRendererLink, type DisplayLink } from "./use-renderer-link";
 import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/renderer-link";
 
 /**
@@ -19,11 +20,12 @@ import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/rende
  *   (right) replay the visitor's walk.
  * - arrived: a short card, then back to the top.
  *
- * Arrivals: with a display WebSocket configured (?ws=… or
- * NEXT_PUBLIC_DISPLAY_WS_URL, use-renderer-link.ts) the booth takes TRACE_B's
- * arrivals one at a time as the primary renderer and reports each replay.
- * TRACE_B sends no route yet (TRACE_B#7), so until it does an arrival plays a
- * random indoor walk, marked DEMO ROUTE. The top screen keeps test
+ * Arrivals: with TRACE_B configured (NEXT_PUBLIC_DISPLAY_API_URL and
+ * NEXT_PUBLIC_GOOGLE_CLIENT_ID, use-renderer-link.ts) an operator signs in with
+ * Google on the top screen, and the booth takes TRACE_B's arrivals one at a
+ * time as the primary renderer: the visitor's route (pathNodeIds), then the
+ * arrived card, then the next visitor or the QR. A visitor without a route
+ * (no photos) gets the card alone. The top screen keeps test
  * buttons (Space also plays). A test keeps going, one walk after another,
  * until 終了する (or Esc). Query: ?speed=1.5 (pace; 1 walks at WALK_SPEED),
  * ?duration=30 (fit every walk into that many seconds instead), ?fps=1
@@ -42,12 +44,12 @@ export function DisplayClient() {
   const labelsRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
   const routesRef = useRef<Record<TestRoute, () => RoutePath> | null>(null);
-  /** Builds an arrival's walk from graph node ids (its route, or test stops while TRACE_B sends none). */
-  const arrivalRouteRef = useRef<((route: string[] | null) => RoutePath) | null>(null);
-  /** The arrival playing, settled when its walk ends or TRACE_B takes it back. */
-  const liveRef = useRef<{ resolve: (result: ReplayResult) => void; demo: boolean } | null>(null);
-  /** What the playback screen is showing: a test walk, or an arrival with its own route or a demo one. */
-  const [live, setLive] = useState<"route" | "demo" | null>(null);
+  /** Builds an arrival's walk from its route's graph node ids; null when there is no route to walk. */
+  const arrivalRouteRef = useRef<((pathNodeIds: string[]) => RoutePath | null) | null>(null);
+  /** The arrival walking, settled when its walk ends or TRACE_B takes it back. */
+  const liveRef = useRef<{ resolve: (result: ReplayResult) => void } | null>(null);
+  /** True while the booth shows a visitor's arrival (walk and card) rather than a test. */
+  const [live, setLive] = useState(false);
   /** True from play until the walk ends or the top screen takes over. */
   const playingRef = useRef(false);
   /** The test running, if any: after each walk the next one starts until 終了する. */
@@ -75,8 +77,7 @@ export function DisplayClient() {
         sample: () => buildRoutePath(graph.routeThrough(graph.SAMPLE_STOPS, graph.INDOOR_FIRST)),
         random: () => buildRoutePath(graph.routeThrough(graph.randomIndoorStops(), graph.INDOOR_FIRST)),
       };
-      arrivalRouteRef.current = (route) =>
-        buildRoutePath(route ? graph.routeThrough(route, graph.METRES) : graph.routeThrough(graph.randomIndoorStops(), graph.INDOOR_FIRST));
+      arrivalRouteRef.current = (pathNodeIds) => (pathNodeIds.length >= 2 ? buildRoutePath(graph.routeThrough(pathNodeIds, graph.METRES)) : null);
       const player = await createPlayer({
         overview: mapRef.current!,
         follow: droneRef.current!,
@@ -91,6 +92,9 @@ export function DisplayClient() {
             playingRef.current = false;
             setArrivedAt(clock(new Date()).slice(0, 5));
             setScreen("arrived");
+            // A visitor's walk is complete here; TRACE_B is told, and the card then holds the booth.
+            liveRef.current?.resolve("completed");
+            liveRef.current = null;
           }
         },
       });
@@ -122,7 +126,10 @@ export function DisplayClient() {
   const backToTop = useCallback(() => {
     playingRef.current = false;
     testRef.current = null;
-    setLive(null);
+    setLive(false);
+    // A visitor's walk stopped by hand (終了する, Esc) is reported as failed rather than left hanging.
+    liveRef.current?.resolve("failed");
+    liveRef.current = null;
     playerRef.current?.stop();
     setScreen("top");
   }, []);
@@ -134,16 +141,23 @@ export function DisplayClient() {
         const player = playerRef.current;
         const build = arrivalRouteRef.current;
         if (!player || !build) return resolve("failed");
-        let path: RoutePath;
+        let path: RoutePath | null;
         try {
-          path = build(arrival.route);
+          path = build(arrival.pathNodeIds);
         } catch (problem) {
           console.error(`display: arrival ${arrival.arrivalId} has a route the campus graph cannot walk`, problem);
           return resolve("failed");
         }
         testRef.current = null;
-        liveRef.current = { resolve, demo: arrival.route === null };
-        setLive(arrival.route === null ? "demo" : "route");
+        setLive(true);
+        if (!path) {
+          // No route to walk (no photos, or none on this graph version): the arrived card alone.
+          playingRef.current = false;
+          setArrivedAt(clock(new Date()).slice(0, 5));
+          setScreen("arrived");
+          return resolve("completed");
+        }
+        liveRef.current = { resolve };
         setStatus({ stop: "", place: "", progress: 0 });
         playingRef.current = true;
         player.play(path, arrival.durationSeconds ?? undefined);
@@ -162,22 +176,18 @@ export function DisplayClient() {
       }),
     [backToTop],
   );
-  const link = useRendererLink(screen !== "loading", replayArrival);
+  // After a visitor's card, the link starts the next visitor or hands the booth back to the QR.
+  const link = useRendererLink(screen !== "loading", replayArrival, backToTop);
 
-  // The arrived card stays a few seconds; a test then plays its next walk,
-  // a real arrival hands the booth back to the top screen.
+  // The arrived card stays a few seconds; a test then plays its next walk. A visitor's card is timed by the link.
   useEffect(() => {
-    if (screen !== "arrived") return;
+    if (screen !== "arrived" || live) return;
     const id = window.setTimeout(() => {
-      // An arrival is reported once its card has been up, so the next one does not cut it short.
-      const arrival = liveRef.current;
-      liveRef.current = null;
       if (testRef.current) play(testRef.current);
       else backToTop();
-      arrival?.resolve("completed");
     }, ARRIVED_SECONDS * 1000);
     return () => window.clearTimeout(id);
-  }, [screen, play, backToTop]);
+  }, [screen, live, play, backToTop]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -215,7 +225,7 @@ export function DisplayClient() {
             <span className="dsp-mono">SHIBALAB 301</span>
           </p>
           <div className="dsp-tests">
-            <span className="dsp-mono">{live ? (live === "demo" ? "ARRIVAL · DEMO ROUTE" : "ARRIVAL") : "TEST · 繰り返し再生中"}</span>
+            <span className="dsp-mono">{live ? "ARRIVAL" : "TEST · 繰り返し再生中"}</span>
             <button type="button" className="dsp-test" onClick={backToTop}>
               ■ 終了する <span className="dsp-mono">ESC</span>
             </button>
@@ -250,7 +260,7 @@ export function DisplayClient() {
               SHIBALAB 301 / RAY
             </p>
             <div className="dsp-tests">
-              {link && <LinkBadge state={link} />}
+              {link && <LinkBadge link={link} />}
               <span className="dsp-mono">TEST</span>
               <button type="button" className="dsp-test" disabled={screen !== "top"} onClick={() => play("sample")}>
                 ▶ テスト再生 <span className="dsp-mono">SPACE</span>
@@ -300,18 +310,23 @@ export function DisplayClient() {
 }
 
 const LINK_LABEL: Record<LinkState, string> = {
+  login: "LINK · 運営の Google ログインが必要です",
   connecting: "LINK · 接続中",
   standby: "LINK · 待機（別の画面が再生担当）",
   primary: "LINK · 再生担当",
-  rejected: "LINK · 版が合いません",
+  rejected: "LINK · つなげません",
 };
 
-/** Whether the booth is taking arrivals from TRACE_B. */
-function LinkBadge({ state }: { state: LinkState }) {
+/** Whether the booth is taking arrivals from TRACE_B, and the operator's sign-in when it is needed. */
+function LinkBadge({ link }: { link: DisplayLink }) {
   return (
-    <span className="dsp-mono dsp-link" data-state={state} role="status">
-      {LINK_LABEL[state]}
-    </span>
+    <>
+      <span className="dsp-mono dsp-link" data-state={link.state} role="status">
+        {LINK_LABEL[link.state]}
+        {link.detail ? `：${link.detail}` : ""}
+      </span>
+      {link.state === "login" && <GoogleSignIn clientId={link.googleClientId} onToken={link.signIn} />}
+    </>
   );
 }
 

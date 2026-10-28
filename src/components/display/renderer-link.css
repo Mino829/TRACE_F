@@ -14,3 +14,10 @@
   opacity: 1;
   text-decoration: underline wavy;
 }
+
+/* The operator's Google sign-in button, next to the link badge. */
+.dsp-signin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
