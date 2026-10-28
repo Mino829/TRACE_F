@@ -213,6 +213,15 @@ export function PingLogScreen() {
   const trace = useTraceReminder({ experience, config: traceConfig, setConfig: setTraceConfig, subscription, setSubscription,
     setWorkerExpiresAt: setExpiresAt, registration: registrationRef, now });
   const { noteArrival } = trace;
+  // The memory session TRACE_B has the arrival of: home then leads to the keepsake (#14).
+  const [arrivedIn, setArrivedIn] = useState<string | null>(null);
+  const arrive = useCallback(
+    (memorySessionId: string) => {
+      noteArrival(memorySessionId);
+      setArrivedIn(memorySessionId);
+    },
+    [noteArrival],
+  );
 
   useEffect(() => {
     viewRef.current = view;
@@ -328,7 +337,7 @@ export function PingLogScreen() {
     getExperience(stored.experienceId, stored.memory)
       .then((status) => {
         setExperience(updateTabExperience(stored, status));
-        if (status.replayStatus) noteArrival(stored.memory.memorySessionId);
+        if (status.replayStatus) arrive(stored.memory.memorySessionId);
       })
       .catch((error: unknown) => {
         // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
@@ -340,7 +349,7 @@ export function PingLogScreen() {
         // Any other failure does not prove deletion; keep the credential and its delete key.
         setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
       });
-  }, [noteArrival]);
+  }, [arrive]);
 
   // Another tab joined, withdrew, or saved or sent a photo: this one shows the same participation.
   useEffect(
@@ -633,8 +642,9 @@ export function PingLogScreen() {
           // With the backend, home's button reads the booth's real QR code and follows the replay; without it, the button opens the demo.
           arrival={experience}
           onArrive={() => setDemo("home")}
+          arrived={memorySessionId !== null && arrivedIn === memorySessionId}
           // TRACE_B dropped the reminder's subscription on arrival: the switch stays off from now on.
-          onArrived={noteArrival}
+          onArrived={arrive}
           onCloseDemo={() => setDemo(null)}
           onTakePhoto={() => openCamera(pendingAt)}
           onSkip={skipReminder}
