@@ -90,6 +90,7 @@ export function KeepsakeScreen({
   contact,
   inert,
   onDelete,
+  onTrace,
   onLeave,
 }: {
   /** This participation's photos, oldest first. */
@@ -99,11 +100,14 @@ export function KeepsakeScreen({
   contact: string;
   inert: boolean;
   onDelete: (entry: LogEntry, number: number) => void;
+  /** Opens 振り返り3D (#50). */
+  onTrace: () => void;
   onLeave: () => void;
 }) {
   useField("room", ROOM);
   const artRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
+  const traceId = useId();
   const kept = useMemo(() => photos.filter((entry) => entry.photo), [photos]);
   const [art, setArt] = useState<{ file: File; url: string } | null>(null);
   const [problem, setProblem] = useState("");
@@ -191,6 +195,20 @@ export function KeepsakeScreen({
               問い合わせ先: <Contact value={contact} />
             </p>
           )}
+
+          <section className="keep__trace" aria-labelledby={traceId}>
+            <p className="mono">Trace</p>
+            <h2 className="h3" id={traceId}>
+              あなたの軌跡
+            </h2>
+            <p className="body">
+              <Sentences text={"写真を撮った場所を、\n撮った順に 3D の地図でたどれます。"} />
+            </p>
+            <button type="button" className="btn btn--line" onClick={onTrace}>
+              <Icon name="arrow" />
+              軌跡を見る
+            </button>
+          </section>
 
           <section className="keep__photos" aria-labelledby={labelId}>
             <h2 className="h3" id={labelId}>
