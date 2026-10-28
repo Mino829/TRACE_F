@@ -3,10 +3,11 @@
  *
  * Every record is written here first and sent to the push worker afterwards,
  * so one taken without signal is kept and sent later; `sentAt` marks the ones
- * the worker has acknowledged.
+ * the worker has acknowledged. Every change is told to /log's other tabs.
  */
 
 import type { LogRecord } from "./record";
+import { tellOtherTabs } from "./tabs";
 
 export type LogEntry = {
   id: string;
@@ -57,7 +58,10 @@ export async function putEntry(entry: LogEntry): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     tx.objectStore(STORE_NAME).put(entry);
-    tx.oncomplete = () => resolve();
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
     tx.onerror = () => reject(tx.error ?? new Error("記録を保存できませんでした。"));
   });
 }
@@ -67,7 +71,30 @@ export async function clearEntries(): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     tx.objectStore(STORE_NAME).clear();
-    tx.oncomplete = () => resolve();
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error ?? new Error("記録を削除できませんでした。"));
+  });
+}
+
+/** Erases every photo kept for a backend participation; the developer screen's records stay. */
+export async function clearSessionEntries(): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const request = tx.objectStore(STORE_NAME).openCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return;
+      if ((cursor.value as LogEntry).memorySessionId) cursor.delete();
+      cursor.continue();
+    };
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
     tx.onerror = () => reject(tx.error ?? new Error("記録を削除できませんでした。"));
   });
 }

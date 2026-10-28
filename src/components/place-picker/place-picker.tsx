@@ -148,7 +148,7 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
           </button>
         </span>
         <span className="mono">
-          {String(number).padStart(2, "0")} / {String(maxPhotos).padStart(2, "0")}
+          {number} / {maxPhotos}
         </span>
         <span />
       </div>

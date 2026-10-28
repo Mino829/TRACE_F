@@ -27,3 +27,74 @@ export function pushSupport(): PushSupport {
   if (isIos() && !isStandalone()) return "ios-browser";
   return "unsupported";
 }
+
+/**
+ * Whether this phone and browser can join, checked on the title before
+ * 「はじめる」.
+ *
+ * - ok: join as usual.
+ * - old: older than iOS 16.4, or than the Chrome, Firefox or Safari that
+ *   Next.js 16 supports (111, 111 and 16.4). The page would break partway, so
+ *   joining stops on the title.
+ * - in-app: the browser inside LINE, Instagram, X or Facebook. What it saves
+ *   is not shared with Safari or Chrome, so a participation started here
+ *   could not be carried on there; it has to be opened in Safari or Chrome.
+ * - no-camera: the browser has no camera to offer at all. The camera is the
+ *   one condition of joining (it reads the QR code at ShibaLab); its
+ *   permission is asked when it is first used, not here.
+ * - ios-browser: an iPhone or iPad in a browser tab, where notifications never
+ *   arrive. Starting from the home screen is suggested; joining in the tab,
+ *   without them, is allowed.
+ */
+export type EntryCheck = "ok" | "old" | "in-app" | "no-camera" | "ios-browser";
+
+export type EntryDevice = {
+  userAgent: string;
+  /** iPadOS Safari presents itself as a Mac; a touch screen tells them apart. */
+  maxTouchPoints: number;
+  /** Opened from the home-screen icon. */
+  standalone: boolean;
+  /** navigator.mediaDevices.getUserMedia exists. */
+  camera: boolean;
+};
+
+type Version = [major: number, minor: number];
+
+function readVersion(userAgent: string, pattern: RegExp): Version | null {
+  const match = pattern.exec(userAgent);
+  return match ? [Number(match[1]), Number(match[2] ?? 0)] : null;
+}
+
+/** A version that cannot be read is let through: only a known old one stops anyone. */
+function olderThan(version: Version | null, [major, minor]: Version): boolean {
+  return version !== null && (version[0] < major || (version[0] === major && version[1] < minor));
+}
+
+function tooOld(userAgent: string, ios: boolean, iPadAsMac: boolean): boolean {
+  // Every browser on iOS is Safari's engine, so the system's version is the one that counts.
+  if (ios) return olderThan(readVersion(userAgent, iPadAsMac ? /Version\/(\d+)(?:\.(\d+))?/ : / OS (\d+)(?:_(\d+))?\S* like Mac OS X/), [16, 4]);
+  const chrome = readVersion(userAgent, /Chrome\/(\d+)/);
+  if (chrome) return olderThan(chrome, [111, 0]);
+  const firefox = readVersion(userAgent, /Firefox\/(\d+)/);
+  if (firefox) return olderThan(firefox, [111, 0]);
+  return /Safari\//.test(userAgent) && olderThan(readVersion(userAgent, /Version\/(\d+)(?:\.(\d+))?/), [16, 4]);
+}
+
+export function checkEntry({ userAgent, maxTouchPoints, standalone, camera }: EntryDevice): EntryCheck {
+  const iPadAsMac = /Macintosh/.test(userAgent) && maxTouchPoints > 1;
+  const ios = /iPhone|iPad|iPod/.test(userAgent) || iPadAsMac;
+  if (tooOld(userAgent, ios, iPadAsMac)) return "old";
+  if (IN_APP.test(userAgent)) return "in-app";
+  if (!camera) return "no-camera";
+  if (ios && !standalone) return "ios-browser";
+  return "ok";
+}
+
+export function entryCheck(): EntryCheck {
+  return checkEntry({
+    userAgent: navigator.userAgent,
+    maxTouchPoints: navigator.maxTouchPoints,
+    standalone: isStandalone(),
+    camera: typeof navigator.mediaDevices?.getUserMedia === "function",
+  });
+}
