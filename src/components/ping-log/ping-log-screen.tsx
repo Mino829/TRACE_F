@@ -23,7 +23,8 @@ import {
 } from "@/lib/ping-log/push";
 import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
 import { dropPromptFromUrl } from "@/lib/ping-log/url";
-import { clearEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
+import { clearEntries, clearSessionEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
+import { LockTimeout, onOtherTabs, withLock } from "@/lib/ping-log/tabs";
 import {
   TRACE_API_URL,
   TraceApiError,
@@ -35,6 +36,8 @@ import {
 } from "@/lib/trace-api/client";
 import {
   clearTabExperience,
+  experienceLapsed,
+  forgetLapsedExperience,
   loadTabExperience,
   memoryDeleteKey,
   saveTabExperience,
@@ -44,6 +47,8 @@ import {
 
 import { DeveloperView } from "./developer-view";
 import { RayApp } from "./ray/app";
+import { WORKER_REMINDER } from "./ray/screens";
+import { useTraceReminder } from "./use-trace-reminder";
 import { PxButton, Sentences } from "./ui";
 
 import "./developer.css";
@@ -63,10 +68,13 @@ import "./developer.css";
  * clear screen.
  *
  * With NEXT_PUBLIC_TRACE_API_URL set, agreeing also creates the experience on
- * the work's backend (TRACE_B), and joining lasts as long as this tab keeps
- * its credential: the photo limit comes from the backend's config and counts
- * per memory session, and "参加をやめる" deletes the memory session too. Photos, the arrival QR, the
- * story and the reminder have no backend routes yet and stay on the phone and
+ * the work's backend (TRACE_B), and joining lasts until its memory session
+ * expires, through reloads and in every tab of the browser (session.ts,
+ * tabs.ts): the photo limit comes from the backend's config and counts per
+ * memory session, and "参加をやめる" deletes the memory session too. The
+ * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
+ * and the photo reminder goes through TRACE_B as well (trace-api/reminder.ts).
+ * Photos and the story have no backend routes yet and stay on the phone and
  * the push worker, as everything does when the variable is unset.
  *
  * The developer screen keeps legacy records and their deletion controls
@@ -76,6 +84,10 @@ import "./developer.css";
 const PENDING_KEY = "trace-ping-pending";
 const VIEW_KEY = "trace-log-view";
 const PROMPT_MESSAGE = "trace-ping";
+const SEND_LOCK = "trace-log-send";
+/** How long a save waits for another tab that is sending; after that its photo waits for the next try. */
+const SEND_WAIT_MS = 10_000;
+const START_AGAIN = "続けるときは、\nもう一度「はじめる」から参加してください。";
 
 type View = "participant" | "developer";
 
@@ -115,9 +127,20 @@ function initialPending(): string | null {
   return stored && isToday(stored) ? stored : null;
 }
 
-/** Consent from an earlier tab, but no credential in this one: the backend's experience cannot be picked up again. */
-function initialMessage(): string {
-  return TRACE_API_URL && loadConsent() && !loadTabExperience() ? "前の参加は、このタブでは続けられません。もう一度「はじめる」から参加してください。" : "";
+/**
+ * Why there is no participation to continue although there was one: the
+ * backend deleted it at the end of its period, or this browser never had it
+ * although it agreed or a reminder opened it (another browser, or the other
+ * side of Safari and the home-screen app, started it; the wording is
+ * user-journey.md's, with this page's button).
+ */
+function initialLostNote(): string {
+  if (!TRACE_API_URL || initialView() !== "participant") return "";
+  if (experienceLapsed()) return `前の参加は、\n記録を残す期限が過ぎたので削除されました。${START_AGAIN}`;
+  const fromReminder = new URLSearchParams(window.location.search).has("prompt");
+  return (loadConsent() || fromReminder) && !loadTabExperience()
+    ? "この画面には、前の参加の記録がありません。参加を始めたブラウザか、\nホーム画面のアプリで開いてください。開けないときは、\nもう一度「はじめる」から参加できます。"
+    : "";
 }
 
 function initialView(): View {
@@ -132,6 +155,11 @@ function initialPingOpen(): boolean {
 
 function notificationState(): NotificationPermission | "unsupported" {
   return typeof Notification === "undefined" || !("PushManager" in window) ? "unsupported" : Notification.permission;
+}
+
+/** A record still to go to the push worker: only a GPS-free checkpoint photo ever goes. */
+function waiting(entry: LogEntry): boolean {
+  return !entry.sentAt && isUploadablePhoto(entry);
 }
 
 /** The worker pings on whole multiples of the interval, counted in minutes since the epoch. */
@@ -161,7 +189,9 @@ export function PingLogScreen() {
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [permission, setPermission] = useState(notificationState);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(initialMessage);
+  const [message, setMessage] = useState("");
+  // Shown until this browser joins again, in this tab or another.
+  const [lostNote, setLostNote] = useState(initialLostNote);
   // The backend's side, while NEXT_PUBLIC_TRACE_API_URL is set.
   const [traceConfig, setTraceConfig] = useState<PublicConfig | null>(null);
   const [experience, setExperience] = useState<TabExperience | null>(() => (TRACE_API_URL ? loadTabExperience() : null));
@@ -172,6 +202,10 @@ export function PingLogScreen() {
   // The reminder the camera was opened for, read when the photo comes back.
   const cameraPromptRef = useRef<string | null>(null);
   const viewRef = useRef(view);
+  // While this tab holds a TRACE_B memory credential, the photo reminder is TRACE_B's (#17).
+  const trace = useTraceReminder({ experience, config: traceConfig, setConfig: setTraceConfig, subscription, setSubscription,
+    setWorkerExpiresAt: setExpiresAt, registration: registrationRef, now });
+  const { noteArrival } = trace;
 
   useEffect(() => {
     viewRef.current = view;
@@ -182,23 +216,42 @@ export function PingLogScreen() {
     setPendingAt(value);
   }, []);
 
-  /** Send only GPS-free checkpoint photos; leave legacy and unsafe records untouched locally. */
+  /**
+   * Sends the GPS-free checkpoint photos the worker has not acknowledged yet;
+   * legacy and unsafe records stay on the phone untouched, and a failed one
+   * waits for the next try. One tab sends at a time and reads the records
+   * afresh before each, so one that another tab sent meanwhile is not sent
+   * again, and one saved meanwhile goes in the same round.
+   */
   const sendUnsent = useCallback(async (): Promise<number> => {
-    const items = await listEntries();
+    // Without a worker there is nothing to send, but a record just saved still has to show.
     if (!PUSH_API_URL) {
-      setEntries(items);
+      setEntries(await listEntries());
       return 0;
     }
-    let failed = 0;
-    for (const entry of items) {
-      if (entry.sentAt || !isUploadablePhoto(entry)) continue;
-      try {
-        await uploadEntry(entry);
-        await putEntry({ ...entry, sentAt: new Date().toISOString() });
-      } catch {
-        failed += 1;
-      }
-    }
+    const failed = await withLock(
+      SEND_LOCK,
+      async () => {
+        let failures = 0;
+        const tried = new Set<string>();
+        for (;;) {
+          const entry = (await listEntries()).find((item) => waiting(item) && !tried.has(item.id));
+          if (!entry) return failures;
+          tried.add(entry.id);
+          try {
+            await uploadEntry(entry);
+            await putEntry({ ...entry, sentAt: new Date().toISOString() });
+          } catch {
+            failures += 1;
+          }
+        }
+      },
+      { waitMs: SEND_WAIT_MS },
+    ).catch(async (error: unknown) => {
+      // Another tab is still sending; it takes the new records too, or the next try does.
+      if (!(error instanceof LockTimeout)) throw error;
+      return (await listEntries()).filter(waiting).length;
+    });
     setEntries(await listEntries());
     return failed;
   }, []);
@@ -255,27 +308,66 @@ export function PingLogScreen() {
     if (!TRACE_API_URL) return;
     // Fetched again on agreeing when this fails.
     fetchPublicConfig().then(setTraceConfig, () => undefined);
+    // A participation that is gone takes its consent along: the next visit starts as a new one, without a note.
+    // Its photos on the phone go too (api.md, privacy.md); a send already under way finishes first, so it cannot put one back.
+    const forget = () => {
+      clearTabExperience();
+      clearConsent();
+      setExperience(null);
+      setConsent(null);
+      void withLock(SEND_LOCK, clearSessionEntries, { waitMs: SEND_WAIT_MS })
+        .catch(() => clearSessionEntries())
+        .then(listEntries)
+        .then(setEntries, () => undefined);
+    };
+    if (forgetLapsedExperience()) forget();
     const stored = loadTabExperience();
     if (!stored) return;
     getExperience(stored.experienceId, stored.memory)
-      .then((status) => setExperience(updateTabExperience(stored, status)))
+      .then((status) => {
+        setExperience(updateTabExperience(stored, status));
+        if (status.replayStatus) noteArrival(stored.memory.memorySessionId);
+      })
       .catch((error: unknown) => {
-        // A read failure does not prove deletion; keep the credential and its delete key.
+        // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
+        if (error instanceof TraceApiError && (error.code === "UNAUTHORIZED" || error.code === "NOT_FOUND")) {
+          forget();
+          setLostNote(`${error.message}${START_AGAIN}`);
+          return;
+        }
+        // Any other failure does not prove deletion; keep the credential and its delete key.
         setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
       });
-  }, []);
+  }, [noteArrival]);
+
+  // Another tab joined, withdrew, or saved or sent a photo: this one shows the same participation.
+  useEffect(
+    () =>
+      onOtherTabs(() => {
+        setConsent(loadConsent());
+        if (TRACE_API_URL) {
+          const next = loadTabExperience();
+          setExperience(next);
+          // Joined there: the note about the old participation no longer applies here.
+          if (next) setLostNote("");
+        }
+        listEntries().then(setEntries, () => undefined);
+      }),
+    [],
+  );
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const subscribed = subscription !== null && (!expiresAt || Date.parse(expiresAt) > now);
+  const subscribed = subscription !== null && !trace.owned && (!expiresAt || Date.parse(expiresAt) > now);
   const activePlan = subscribed ? plan : null;
   const upcoming = activePlan ? nextMark(now, activePlan.intervalMinutes) : null;
   // The subscription ends at midnight: after the day's last ping there is no next one.
   const nextPingAt = upcoming !== null && (!expiresAt || upcoming < Date.parse(expiresAt)) ? upcoming : null;
-  const nextReminderAt = activePlan?.purpose === "photo" ? nextPingAt : null;
+  // Without a TRACE_B credential in the tab, the photo reminder is the push worker's, as before.
+  const reminder = trace.reminder ?? { on: activePlan?.purpose === "photo", nextAt: activePlan?.purpose === "photo" ? nextPingAt : null, terms: WORKER_REMINDER };
 
   // With the backend, joining lasts as long as this tab's memory session.
   const sessionExpired = experience !== null && Date.parse(experience.memory.expiresAt) <= now;
@@ -342,6 +434,12 @@ export function PingLogScreen() {
           const tab: TabExperience = { ...created, consentVersion: config.consent.version, createdAt: new Date().toISOString() };
           saveTabExperience(tab);
           setExperience(tab);
+          // A photo reminder through the push worker belonged to the participation before; TRACE_B's takes its place once switched on.
+          if (subscription && subscribed && plan.purpose === "photo") {
+            void unsubscribe(subscription)
+              .catch(() => dropExpired(subscription))
+              .then(() => setSubscription(null), () => undefined);
+          }
         }
       } catch (error) {
         if (error instanceof TraceApiError && error.code === "CONSENT_VERSION_MISMATCH") fetchPublicConfig().then(setTraceConfig, () => setTraceConfig(null));
@@ -352,16 +450,22 @@ export function PingLogScreen() {
       }
     }
     setConsent(saveConsent());
+    setLostNote("");
     setConsentOpen(false);
     setMessage("");
   };
 
-  /** The participant's optional photo reminder is the only new push plan. */
-  const subscribeTo = (consentVersion: string, done: string, silent = false) => run(async () => {
+  /** Asked only from a tap on a switch, once what it is for has been said. */
+  const askPermission = async () => {
     if (notificationState() === "unsupported") throw new Error("このブラウザでは通知を受け取れません。");
     const result = await Notification.requestPermission();
     setPermission(result);
-    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、このサイトの通知を許可してください。");
+    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、\nこのサイトの通知を許可してください。");
+  };
+
+  /** The participant's optional photo reminder is the only new push plan. */
+  const subscribeTo = (consentVersion: string, done: string, silent = false) => run(async () => {
+    await askPermission();
     const registration = registrationRef.current ?? (await navigator.serviceWorker.ready);
     setSubscription(await subscribe(registration, consentVersion));
     setExpiresAt(subscriptionExpiresAt());
@@ -371,6 +475,7 @@ export function PingLogScreen() {
 
   // The switch shows the result itself; an error goes beside it, not up in the note.
   const switchReminder = (on: boolean): Promise<string | null> => {
+    if (trace.reminder) return run(() => trace.switchTo(on, askPermission), { silent: true });
     if (!on) {
       return run(async () => {
         if (!subscription) return;
@@ -451,7 +556,10 @@ export function PingLogScreen() {
       clearTabExperience();
       setExperience(null);
     }
-    if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
+    // TRACE_B's subscription went with the memory session; only the push worker's own is sent to the push worker.
+    if (subscription && trace.owned) await subscription.unsubscribe().catch(() => undefined);
+    else if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
+    trace.forget();
     const deleted = PUSH_API_URL ? await forgetMe() : 0;
     await clearEntries();
     clearConsent();
@@ -480,7 +588,9 @@ export function PingLogScreen() {
   // The arrival demo is the participant's, in their look, wherever it was opened from.
   if (view === "participant" || demo !== null) {
     const notes = [
-      ...(!joined && consent && sessionExpired ? ["参加の期限が切れました。以前の記録を削除する場合はメニューの「参加をやめる」を選んでください。"] : []),
+      ...(!joined && lostNote ? [lostNote] : []),
+      // Agreeing again keeps the expired participation (agree), so the way on is to withdraw it first.
+      ...(!joined && consent && sessionExpired ? ["参加の期限が切れました。\n以前の記録を削除する場合は\nメニューの「参加をやめる」を選んでください。"] : []),
       ...(message ? [message] : []),
     ];
     return (
@@ -505,9 +615,11 @@ export function PingLogScreen() {
           pendingAt={pendingAt}
           pingOpen={pingOpen}
           onClosePing={() => setPingOpen(false)}
-          reminderOn={activePlan?.purpose === "photo"}
-          nextReminderAt={nextReminderAt}
+          reminderOn={reminder.on}
+          nextReminderAt={reminder.nextAt}
+          reminderTerms={reminder.terms}
           onReminder={switchReminder}
+          onReminderInterval={(minutes) => run(() => trace.changeInterval(minutes), { silent: true })}
           shot={shot}
           onRetake={() => openCamera(shot?.promptedAt ?? null)}
           onSave={save}
@@ -518,8 +630,11 @@ export function PingLogScreen() {
           skipped={skipped}
           onCloseSkip={() => setSkipped(null)}
           demo={demo}
-          // The booth's QR code and the replay wait for the work's backend; until then the button opens the demo.
+          // With the backend, home's button reads the booth's real QR code and follows the replay; without it, the button opens the demo.
+          arrival={experience}
           onArrive={() => setDemo("home")}
+          // TRACE_B dropped the reminder's subscription on arrival: the switch stays off from now on.
+          onArrived={noteArrival}
           onCloseDemo={() => setDemo(null)}
           onTakePhoto={() => openCamera(pendingAt)}
           onSkip={skipReminder}

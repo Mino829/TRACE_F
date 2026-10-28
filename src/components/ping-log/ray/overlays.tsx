@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { PushSupport } from "@/lib/ping-log/environment";
-import { REMINDER_PLAN } from "@/lib/ping-log/push";
 
 import { ConsentBody } from "./screens";
-import { Icon, Phrases, Sentences, type IconName } from "./stage";
+import { Icon, Phrases, Sentences, useRay, type IconName } from "./stage";
 
 /**
  * The layers over a screen: the menu, how to play, the install guide, the
@@ -14,7 +13,8 @@ import { Icon, Phrases, Sentences, type IconName } from "./stage";
  * Escape and its own close button; the screen behind is inert meanwhile.
  */
 
-export type OverlayName = "menu" | "howto" | "install" | "consent" | "withdraw";
+/** start: how to play between 「はじめる」 and the consent, leading on to it. */
+export type OverlayName = "menu" | "howto" | "start" | "install" | "consent" | "withdraw";
 
 function Layer({ kind, label, alert = false, onClose, children }: { kind: "full" | "sheet"; label: string; alert?: boolean; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
@@ -97,22 +97,20 @@ export function MenuLayer({ items, onClose }: { items: MenuItem[]; onClose: () =
   );
 }
 
-const STEPS = [
-  { title: "写真を撮る", text: "残したい瞬間を見つけたら、「写真を撮る」を押して撮影します。" },
-  { title: "学祭をめぐる", text: "撮影と撮影のあいだは、自由に学祭をめぐってください。" },
-  {
-    title: "ShibaLab で QR を読む",
-    text: "ShibaLab（教室棟301）には、好きなときに来てください。着いたら、ホームの「QR コードを読み取る」を押して、ASYNC のブースにある QR コードを読み取ってください。",
-  },
-];
-
-export function HowToLayer({ maxPhotos, onClose }: { maxPhotos: number; onClose: () => void }) {
-  const notes = [
-    "撮った写真は、展示に出しません。",
-    `撮影は${maxPhotos}枚までです。`,
-    `撮影のリマインダーは任意です。オンにすると、${REMINDER_PLAN.intervalMinutes}分ごとに届きます。`,
-    "撮りたいものがないときは、リマインダーをスキップして構いません。",
+function steps(reminderMinutes: number) {
+  return [
+    { title: "芝浦祭を楽しむ", text: "第54回芝浦祭を、\n思いっきり楽しんでください。" },
+    { title: "写真を撮る", text: `${reminderMinutes}分毎にお使いの端末に\n通知が送られます。学祭の思い出を切り取りましょう。` },
+    {
+      title: "ShibaLab に行く",
+      text: "教室棟301で、\nあなたの歩んだ軌跡を元に\n演出が楽しめます。ぜひ、お帰りの前に\nShibaLab に立ち寄ってください。",
+    },
   ];
+}
+
+/** Before joining (onNext), its button leads on to the consent instead of closing. */
+export function HowToLayer({ reminderMinutes, onNext, onClose }: { reminderMinutes: number; onNext?: () => void; onClose: () => void }) {
+  const { go } = useRay();
   return (
     <Layer kind="full" label="遊び方" onClose={onClose}>
       <div className="full">
@@ -121,7 +119,7 @@ export function HowToLayer({ maxPhotos, onClose }: { maxPhotos: number; onClose:
           遊び方
         </h1>
         <ol style={{ listStyle: "none" }}>
-          {STEPS.map((step, index) => (
+          {steps(reminderMinutes).map((step, index) => (
             <li key={step.title} className="howto__step">
               <span className="howto__n" aria-hidden="true">
                 {index + 1}
@@ -135,16 +133,16 @@ export function HowToLayer({ maxPhotos, onClose }: { maxPhotos: number; onClose:
             </li>
           ))}
         </ol>
-        <ul className="notes">
-          {notes.map((note) => (
-            <li key={note}>
-              <Sentences text={note} />
-            </li>
-          ))}
-        </ul>
-        <button type="button" className="btn" style={{ marginTop: 18 }} onClick={onClose}>
-          閉じる
-        </button>
+        {onNext ? (
+          <button type="button" className="btn" style={{ marginTop: 18 }} onClick={() => void go(onNext)}>
+            次へ
+            <Icon name="arrow" />
+          </button>
+        ) : (
+          <button type="button" className="btn" style={{ marginTop: 18 }} onClick={onClose}>
+            閉じる
+          </button>
+        )}
       </div>
     </Layer>
   );
@@ -153,9 +151,22 @@ export function HowToLayer({ maxPhotos, onClose }: { maxPhotos: number; onClose:
 /**
  * What to do when this browser cannot receive the optional reminder, with
  * the exact taps. Before joining, the home-screen app keeps its own storage,
- * so the advice is to move first.
+ * so the advice is to move first. From the title in an iPhone's tab it also
+ * offers to join here without notifications (onContinue); from the title in
+ * an in-app browser it is the way to Safari or Chrome, where joining has to start.
  */
-export function InstallLayer({ support, beforeJoining, onClose }: { support: PushSupport; beforeJoining: boolean; onClose: () => void }) {
+export function InstallLayer({
+  support,
+  beforeJoining,
+  onContinue,
+  onClose,
+}: {
+  support: PushSupport;
+  beforeJoining: boolean;
+  onContinue?: () => void;
+  onClose: () => void;
+}) {
+  const { go } = useRay();
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -167,45 +178,69 @@ export function InstallLayer({ support, beforeJoining, onClose }: { support: Pus
   };
 
   const ios = support === "ios-browser";
-  const steps: { icon: IconName; text: string }[] = [
-    { icon: "share", text: "画面の下（iPad は上）にある共有ボタンを押します。" },
-    { icon: "plus", text: "「ホーム画面に追加」を選び、「追加」を押します。" },
+  // iOS 26 and later keep 「共有」 in the 「…」 menu and open the share sheet folded; earlier ones, and the other tab
+  // layouts, show the share button itself and a sheet to scroll.
+  const steps: { icon: IconName; text: string; note?: string; shot?: { src: string; alt: string; width: number; height: number } }[] = [
+    { icon: "share", text: "画面の下の「…」を押し、\n「共有」を押します。", note: "画面に共有ボタンがあるときは、\nそのボタンを押します。" },
+    {
+      icon: "more",
+      text: "共有メニューの\n「表示を増やす」を押します。",
+      note: "「表示を増やす」がないときは、\nメニューを下へスクロールします。",
+      // Cut from a participant's iPhone (iOS 26), the button framed.
+      shot: { src: "/log/install/ios-show-more.png", alt: "共有メニューの「表示を増やす」", width: 720, height: 236 },
+    },
+    {
+      icon: "plus",
+      text: "「ホーム画面に追加」を押し、\n「追加」を押します。",
+      // Cut from a participant's iPhone (iOS 26), the row framed.
+      shot: { src: "/log/install/ios-add-to-home.png", alt: "共有メニューの「ホーム画面に追加」", width: 720, height: 302 },
+    },
     {
       icon: "bell",
       text: beforeJoining
-        ? "ホーム画面にできた TRACE のアイコンから開き、そこで「はじめる」を押してください。"
-        : "ホーム画面にできた TRACE のアイコンから開き直すと、リマインダーをオンにできます。",
+        ? "ホーム画面にできた TRACE の\nアイコンからご参加ください。"
+        : "ホーム画面にできた TRACE の\nアイコンから開き直すと、\nリマインダーをオンにできます。",
     },
   ];
+  const heading = ios ? "iPhone で通知を受け取るには" : support === "in-app" ? "アプリの中で開いています" : "このブラウザでは通知を受け取れません";
 
   return (
-    <Layer kind="full" label="通知を受け取るには" onClose={onClose}>
+    <Layer kind="full" label={heading} onClose={onClose}>
       <div className="full">
         <CloseBar label={ios ? "iPhone" : "Notice"} onClose={onClose} />
         {ios ? (
           <>
             <h1 className="h2">
-              <Phrases text="iPhone で通知を受け取るには" />
+              <Phrases text={heading} />
             </h1>
             <p className="body" style={{ marginTop: 10 }}>
-              <Sentences text="iPhone では、このページをホーム画面に追加すると、撮影のリマインダーを通知で受け取れます（iOS 16.4 以降）。" />
+              <Sentences text={"通知を受け取るため、\nこのページをホーム画面に追加してください。"} />
             </p>
             <p className="small" style={{ marginTop: 8 }}>
               <Sentences
                 text={
                   beforeJoining
-                    ? "ホーム画面のアイコンから開いた TRACE は、このページとは別に記録を保存します。リマインダーを使う場合は、先に移ってから参加してください。"
-                    : "アイコンから開くと、参加の同意からやり直しになります。ここで撮った写真は、アイコンから開いた画面には表示されません。"
+                    ? "追加後、このタブは消去してください。"
+                    : "アイコンから開くと、\n参加の同意からやり直しになります。ここで撮った写真は、\nアイコンから開いた画面には表示されません。"
                 }
               />
             </p>
             <ol style={{ marginTop: 14 }}>
               {steps.map((step) => (
-                <li key={step.icon} className="install__step">
+                <li key={step.icon} className={`install__step${step.shot ? " install__step--shot" : ""}`}>
                   <Icon name={step.icon} />
-                  <p className="body">
-                    <Sentences text={step.text} />
-                  </p>
+                  <div>
+                    <p className="body">
+                      <Sentences text={step.text} />
+                    </p>
+                    {step.note && (
+                      <p className="small" style={{ marginTop: 4 }}>
+                        <Sentences text={step.note} />
+                      </p>
+                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element -- a fixed screenshot; the static export has no image optimizer */}
+                    {step.shot && <img className="install__shot" src={step.shot.src} alt={step.shot.alt} width={step.shot.width} height={step.shot.height} />}
+                  </div>
                 </li>
               ))}
             </ol>
@@ -213,14 +248,16 @@ export function InstallLayer({ support, beforeJoining, onClose }: { support: Pus
         ) : (
           <>
             <h1 className="h2">
-              <Phrases text={support === "in-app" ? "アプリの中で開いています" : "このブラウザでは通知を受け取れません"} />
+              <Phrases text={heading} />
             </h1>
             <p className="body" style={{ marginTop: 10 }}>
               <Sentences
                 text={
-                  support === "in-app"
-                    ? "LINE などのアプリの中で開いたページでは、通知を受け取れません。リマインダーを使う場合は、アプリのメニューの「ブラウザで開く」を選ぶか、リンクをコピーして Safari か Chrome で開いてください。"
-                    : "リマインダーを使う場合は、リンクをコピーして Safari か Chrome で開いてください。"
+                  support !== "in-app"
+                    ? "リマインダーを使う場合は、\nリンクをコピーして\nSafari か Chrome で開いてください。"
+                    : beforeJoining
+                      ? "アプリの中で開いたページの記録は、\nSafari や Chrome に引き継げません。アプリのメニューの「ブラウザで開く」を\n選ぶか、リンクをコピーして\nSafari か Chrome で開いてから、\n参加してください。"
+                      : "LINE などのアプリの中で開いたページでは、\n通知を受け取れません。リマインダーを使う場合は、\nアプリのメニューの「ブラウザで開く」を\n選ぶか、リンクをコピーして\nSafari か Chrome で開いてください。"
                 }
               />
             </p>
@@ -230,9 +267,20 @@ export function InstallLayer({ support, beforeJoining, onClose }: { support: Pus
             </button>
           </>
         )}
-        <button type="button" className="btn btn--line" style={{ marginTop: 18 }} onClick={onClose}>
-          閉じる
-        </button>
+        {onContinue ? (
+          <>
+            <button type="button" className="btn btn--line" style={{ marginTop: 18 }} onClick={() => void go(onContinue)}>
+              通知なしでこのまま参加する
+            </button>
+            <p className="small" style={{ marginTop: 8 }}>
+              <Sentences text={"プライベートブラウズでは\n記録が正常に保存されません。通常のタブで開いてください。"} />
+            </p>
+          </>
+        ) : (
+          <button type="button" className="btn btn--line" style={{ marginTop: 18 }} onClick={onClose}>
+            閉じる
+          </button>
+        )}
       </div>
     </Layer>
   );
@@ -267,7 +315,7 @@ export function WithdrawLayer({ onConfirm, onClose }: { onConfirm: () => Promise
           参加をやめますか？
         </h2>
         <p className="body">
-          <Sentences text="リマインダーを止め、この端末から送った写真と記録をすべて削除します。削除したものは元に戻せません。" />
+          <Sentences text={"リマインダーを止め、この端末から送った\n写真と記録をすべて削除します。削除したものは元に戻せません。"} />
         </p>
         <div className="btns" style={{ marginTop: 16 }}>
           <button type="button" className="btn btn--danger" disabled={working} onClick={() => void confirm()}>
