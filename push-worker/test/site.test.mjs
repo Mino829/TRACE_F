@@ -56,6 +56,59 @@ test("two-token delete forwards the live token only for the dedicated experience
   assert.equal(requests[0].headers.get("Idempotency-Key"), "same-key");
 });
 
+test("relays the photo, arrival and reminder routes with their bodies", async () => {
+  const memory = "v1/memory-sessions/mem_abc";
+  const subscription = JSON.stringify({ consent: true, subscription: { endpoint: "https://push.example.test/1", keys: { p256dh: "k", auth: "a" } }, intervalMinutes: 30 });
+  const cases = [
+    ["GET", `${memory}/photos`],
+    ["GET", `${memory}/memory`],
+    ["POST", `${memory}/photos`, JSON.stringify({ clientPhotoId: "p1", mimeType: "image/jpeg" })],
+    ["POST", `${memory}/photos/photo_xyz/upload-url`, ""],
+    ["POST", `${memory}/photos/photo_xyz/complete`, ""],
+    ["POST", `${memory}/arrival`, JSON.stringify({ checkpointToken: "token" })],
+    ["POST", `${memory}/arrival/skip`, ""],
+    ["PUT", `${memory}/push-subscription`, subscription],
+    ["PATCH", `${memory}/push-subscription`, JSON.stringify({ status: "paused" })],
+    ["DELETE", `${memory}/photos/photo_xyz`],
+    ["DELETE", `${memory}/push-subscription`],
+  ];
+  for (const [method, path, body] of cases) {
+    const headers = { Origin: site, Authorization: "Bearer memory-token", "Idempotency-Key": "key-1" };
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    let forwarded;
+    let forwardedBody;
+    const response = await handleSiteRequest(new Request(`${site}/api/backend/${path}`, { method, headers, body: body || undefined }), env, async (upstream) => {
+      forwarded = upstream;
+      forwardedBody = await upstream.text();
+      return new Response(null, { status: 204 });
+    });
+    assert.equal(response.status, 204, `${method} ${path}`);
+    assert.equal(forwarded.method, method);
+    assert.equal(forwarded.url, `https://go.example.test/${path}`);
+    assert.equal(forwarded.headers.get("Authorization"), "Bearer memory-token");
+    assert.equal(forwarded.headers.get("Idempotency-Key"), "key-1");
+    assert.equal(forwardedBody, body ?? "", `${method} ${path}`);
+  }
+});
+
+test("keeps operator and display routes closed", async () => {
+  const noCall = async () => { throw new Error("backend called"); };
+  const json = { Origin: site, "Content-Type": "application/json" };
+  const cases = [
+    new Request(`${site}/api/backend/v1/operator/arrival-proofs`, { method: "POST", headers: json, body: "" }),
+    new Request(`${site}/api/backend/v1/operator/display-tokens`, { method: "POST", headers: json, body: "" }),
+    new Request(`${site}/api/backend/v1/operator/arrivals`),
+    new Request(`${site}/api/backend/v1/display/ws`),
+    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/abc/complete`, { method: "POST", headers: json }),
+    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos`, { method: "PUT", headers: json, body: "{}" }),
+    new Request(`${site}/api/backend/v1/experiences/exp_abc`, { method: "PATCH", headers: json, body: "{}" }),
+  ];
+  for (const request of cases) {
+    const response = await handleSiteRequest(request, env, noCall);
+    assert.equal(response.status, 404, `${request.method} ${new URL(request.url).pathname}`);
+  }
+});
+
 test("forwards only the Cloudflare client IP, never browser-supplied forwarding headers", async () => {
   const cases = [
     ["203.0.113.42", "203.0.113.42"],
@@ -97,6 +150,9 @@ test("rejects unexpected requests before calling the backend", async () => {
     [new Request(`${site}/api/backend/v1/experiences`, { method: "POST", headers: { Origin: "https://other.example", "Content-Type": "application/json" }, body: "{}" }), 403],
     [new Request(`${site}/api/backend/v1/experiences`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: "{}" }), 415],
     [new Request(`${site}/api/backend/v1/experiences`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "x".repeat(16385) }), 413],
+    [new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/push-subscription`, { method: "PUT", headers: { "Content-Type": "text/plain" }, body: "{}" }), 415],
+    [new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/push-subscription`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: "x".repeat(16385) }), 413],
+    [new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/photo_xyz/complete`, { method: "POST", headers: { Origin: "https://other.example", "Content-Type": "application/json" } }), 403],
   ];
   for (const [request, expected] of cases) {
     const response = await handleSiteRequest(request, env, noCall);

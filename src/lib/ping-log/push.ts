@@ -3,6 +3,8 @@
  * photo reminder or the accuracy ping, sending each record, and withdrawing.
  *
  * The worker's URL comes from NEXT_PUBLIC_PUSH_API_URL (e.g. in .env.local).
+ * While the tab holds a TRACE_B memory credential, the photo reminder goes
+ * through TRACE_B instead (trace-api/reminder.ts).
  */
 
 import type { LogEntry } from "./store";
@@ -89,12 +91,24 @@ function savePlan(plan: PushPlan | null): void {
   }
 }
 
-function base64UrlToBytes(text: string): Uint8Array<ArrayBuffer> {
+export function base64UrlToBytes(text: string): Uint8Array<ArrayBuffer> {
   const padded = text.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(text.length / 4) * 4, "=");
   const binary = atob(padded);
   const bytes = new Uint8Array(new ArrayBuffer(binary.length));
   for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
   return bytes;
+}
+
+/**
+ * Whether the browser made this subscription with the given VAPID public key:
+ * the push worker's and TRACE_B's differ. Null where the browser does not say.
+ */
+export function madeWith(subscription: PushSubscription, publicKey: string): boolean | null {
+  const own = subscription.options?.applicationServerKey;
+  if (!own) return null;
+  const mine = new Uint8Array(own);
+  const theirs = base64UrlToBytes(publicKey);
+  return mine.length === theirs.length && mine.every((byte, index) => byte === theirs[index]);
 }
 
 /** A fetch to the worker that never shows the browser's own words ("Load failed", "Failed to fetch") when the worker cannot be reached. */
@@ -117,6 +131,9 @@ export async function subscribe(registration: ServiceWorkerRegistration, consent
   const response = await reach("/vapid-public-key");
   if (!response.ok) throw new Error("通知サーバーに接続できませんでした。");
   const { publicKey } = (await response.json()) as { publicKey: string };
+  // The browser holds one subscription and refuses a second key; one made for TRACE_B's reminder is let go here (TRACE_B drops it at its next send).
+  const existing = await registration.pushManager.getSubscription();
+  if (existing && madeWith(existing, publicKey) === false) await existing.unsubscribe();
   const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(publicKey) });
   const body = { subscription: subscription.toJSON(), deviceId: deviceId(), consentVersion, purpose: plan.purpose, intervalMinutes: plan.intervalMinutes };
   const { expiresAt } = (await (await post("/subscribe", body)).json()) as { expiresAt: string };

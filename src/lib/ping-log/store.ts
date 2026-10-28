@@ -1,12 +1,14 @@
 /**
  * Device-local store for the timed log (`/log`).
  *
- * Every record is written here first and sent to the push worker afterwards,
- * so one taken without signal is kept and sent later; `sentAt` marks the ones
- * the worker has acknowledged.
+ * Every record is written here first. The developer screen's are sent to the
+ * push worker afterwards, so one taken without signal is kept and sent later;
+ * `sentAt` marks the ones the worker has acknowledged. A participant's photos
+ * stay here and are never sent (#54). Every change is told to /log's other tabs.
  */
 
 import type { LogRecord } from "./record";
+import { tellOtherTabs } from "./tabs";
 
 export type LogEntry = {
   id: string;
@@ -57,8 +59,25 @@ export async function putEntry(entry: LogEntry): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     tx.objectStore(STORE_NAME).put(entry);
-    tx.oncomplete = () => resolve();
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
     tx.onerror = () => reject(tx.error ?? new Error("記録を保存できませんでした。"));
+  });
+}
+
+/** Erases one entry: a participant's photo they deleted (#51). */
+export async function deleteEntry(id: string): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).delete(id);
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error ?? new Error("写真を削除できませんでした。"));
   });
 }
 
@@ -67,7 +86,30 @@ export async function clearEntries(): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     tx.objectStore(STORE_NAME).clear();
-    tx.oncomplete = () => resolve();
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error ?? new Error("記録を削除できませんでした。"));
+  });
+}
+
+/** Erases every photo kept for a backend participation; the developer screen's records stay. */
+export async function clearSessionEntries(): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const request = tx.objectStore(STORE_NAME).openCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return;
+      if ((cursor.value as LogEntry).memorySessionId) cursor.delete();
+      cursor.continue();
+    };
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
     tx.onerror = () => reject(tx.error ?? new Error("記録を削除できませんでした。"));
   });
 }

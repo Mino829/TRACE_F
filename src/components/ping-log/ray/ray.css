@@ -43,6 +43,19 @@
   }
 }
 
+/* A picture coming up out of the dark, as a print does in the developer. */
+@keyframes ray-develop {
+  from {
+    filter: brightness(0) contrast(1.6);
+  }
+  55% {
+    filter: brightness(0.62) contrast(1.25);
+  }
+  to {
+    filter: none;
+  }
+}
+
 @keyframes ray-shear-in {
   from {
     transform: translateX(var(--dx));
@@ -567,6 +580,11 @@ html:has(.ray) body {
     background: var(--fg);
     color: var(--bg);
   }
+  /* A choice of several (the reminder's interval): each side is its own button. */
+  & .seg__o:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
 
   /* The "i" mark and its note. */
   & .info {
@@ -809,6 +827,45 @@ html:has(.ray) body {
     background: var(--paper);
     color: var(--ink);
   }
+  /* Where this phone or browser cannot join (EntryCta): the reason above a button that cannot be pressed, or in its place. */
+  & .title__cta .btn[disabled] {
+    background: transparent;
+    color: var(--paper);
+    box-shadow: inset 0 0 0 1px rgba(211, 213, 211, 0.5);
+    opacity: 0.55;
+  }
+  & .title__why {
+    margin-bottom: 12px;
+    color: var(--paper);
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 600;
+  }
+  & .title__more {
+    margin-top: 4px;
+    text-align: center;
+  }
+  & .title__more .link {
+    color: var(--paper);
+    font-size: 13.5px;
+  }
+  & .title__stop {
+    padding: 14px 16px 15px;
+    box-shadow: inset 0 0 0 1.5px var(--paper);
+    color: var(--paper);
+  }
+  & .title__stop h2 {
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.4;
+  }
+  & .title__stop p {
+    margin-top: 6px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    font-weight: 500;
+    color: #b4b6b9;
+  }
   & .title :is(.btn, .icon-btn, .info, .link, .mast__dev):focus-visible {
     outline-color: var(--paper);
   }
@@ -896,15 +953,19 @@ html:has(.ray) body {
    */
   & .home {
     --lead: 0px;
-    --unsent: 0px;
     --remain: 0px;
-    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--unsent) - var(--remain)) * 0.75)));
+    --at: 0px;
+    --save: 0px;
+    --print-w: max(200px, min(268px, calc((100cqh - 316px - var(--lead) - var(--remain) - var(--at) - var(--save)) * 0.75)));
+  }
+  & .home:has(.save-photo) {
+    --save: 38px;
+  }
+  & .home:has(.strip__at) {
+    --at: 14px;
   }
   & .home:has(.home__lead) {
     --lead: 34px;
-  }
-  & .home:has(.unsent) {
-    --unsent: 58px;
   }
   & .home:has(.remain) {
     --remain: 32px;
@@ -1000,6 +1061,22 @@ html:has(.ray) body {
   & .strip--one {
     justify-content: center;
   }
+  /* One dash per photo, in the strip's order; the one in view is drawn in ink. */
+  & .strip__at {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 10px;
+  }
+  & .strip__at i {
+    flex: 0 1 22px;
+    height: 2px;
+    background: var(--rule);
+    transition: background-color 0.18s;
+  }
+  & .strip__at i.is-at {
+    background: var(--fg);
+  }
 
   /* A print: the photo in its own colours in a hairline frame, and its frame number and time below. */
   & .print {
@@ -1041,11 +1118,12 @@ html:has(.ray) body {
   & .print__img {
     object-fit: cover;
   }
-  /* The pixel copy above the photo shows only while it tears. */
+  /* The pixel copy above the photo shows only while it tears; a long press reaches the photo under it, to save it by hand. */
   & .print__bits {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     opacity: 0;
+    pointer-events: none;
   }
   & .is-tear > .print__bits,
   & .is-tear .print__frame > .print__bits {
@@ -1120,15 +1198,6 @@ html:has(.ray) body {
   & .empty {
     aspect-ratio: 3 / 4;
   }
-  & .unsent {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin: -6px 0 16px;
-    padding: 2px 0 2px 14px;
-    border-left: 3px solid var(--fg);
-  }
   & .link {
     font-size: 14px;
     font-weight: 700;
@@ -1159,6 +1228,9 @@ html:has(.ray) body {
   }
   & .next {
     margin-top: 2px;
+  }
+  & .row-interval {
+    margin-top: 10px;
   }
   & .problem {
     margin-top: 10px;
@@ -1375,6 +1447,20 @@ html:has(.ray) body {
     min-height: 330px;
     margin: 0 -20px;
   }
+  /* The real camera (arrival.tsx). The field draws its picture; the video shows only where WebGL is missing, in grey. */
+  & .scan__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    filter: grayscale(1) contrast(1.2);
+    pointer-events: none;
+  }
+  & .scan__video.is-shown {
+    opacity: 1;
+  }
   & .scan__target {
     position: absolute;
     left: 50%;
@@ -1523,6 +1609,238 @@ html:has(.ray) body {
     display: flex;
     justify-content: space-between;
   }
+  /* After the replay, the way on to the keepsake. */
+  & .play__next {
+    margin-top: 26px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--fg);
+  }
+  & .play__next .h3 {
+    margin-top: 4px;
+  }
+  & .play__next .btn {
+    margin-top: 16px;
+  }
+
+  /* One photo's save, under its caption. */
+  & .save-photo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    font-size: 13px;
+  }
+  & .save-photo svg {
+    width: 16px;
+    height: 16px;
+  }
+  /* Its save on the left, its delete on the right in the quieter grey. */
+  & .print-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  & .print-actions__del {
+    min-height: 38px;
+    font-size: 13px;
+    color: var(--fg-2);
+  }
+  /* The photo in question, before it is deleted. */
+  & .delete__print {
+    display: flex;
+    justify-content: center;
+    margin: 6px 0 12px;
+  }
+
+  /*
+   * The keepsake: the picture as it is saved, coming up out of the dark;
+   * its button and the date the photos go; then each photo on its own.
+   */
+  & .keep__art {
+    position: relative;
+    margin: 22px 0 18px;
+    aspect-ratio: 9 / 16;
+    background: #000;
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+  & .keep__img {
+    width: 100%;
+    height: 100%;
+    animation: ray-develop 1.8s cubic-bezier(0.3, 0, 0.2, 1) both;
+  }
+  & .keep__wait {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  & .keep__note {
+    margin-top: 12px;
+    color: var(--fg-2);
+  }
+  & .keep__photos {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--fg);
+  }
+  & .keep__photos ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+    gap: 18px 14px;
+    margin-top: 16px;
+    list-style: none;
+  }
+  & .keep__photos .print {
+    --w: 100%;
+  }
+  & .keep__home {
+    margin-top: 28px;
+  }
+  & .keep__trace {
+    margin-top: 34px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--fg);
+  }
+  & .keep__trace .btn {
+    margin-top: 14px;
+  }
+
+  /*
+   * 振り返り3D: the way, still, across the phone's width; each photo stands
+   * over its place on a short stem. Below, the same places as a list.
+   */
+  & .trace__host {
+    position: relative;
+    height: max(300px, min(560px, 58cqh));
+    margin: 18px -20px 0;
+    border-block: 1px solid var(--rule);
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+  }
+  & .trace__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  & .trace__pins {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  & .trace__pin {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 32px;
+    height: 42px;
+    margin: -56px 0 0 -16px;
+    padding: 0;
+    pointer-events: auto;
+    background: var(--bg);
+    box-shadow: 0 0 0 1px var(--fg);
+  }
+  & .trace__pin img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* The stem down to the dot on the way. */
+  & .trace__pin::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 1px;
+    height: 14px;
+    background: var(--fg);
+  }
+  & .trace__pin.is-on {
+    z-index: 1;
+    box-shadow:
+      0 0 0 1px var(--bg),
+      0 0 0 3px var(--fg);
+  }
+  & .trace__wait {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+  & .trace__tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 2px;
+  }
+  & .trace__pick {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  & .trace__pick .h3 {
+    padding-bottom: 26px;
+  }
+  & .trace__list {
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1.5px solid var(--fg);
+  }
+  & .trace__list ol {
+    margin-top: 8px;
+    list-style: none;
+  }
+  & .trace__row {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    column-gap: 14px;
+    align-items: center;
+    width: 100%;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+    text-align: left;
+  }
+  & .trace__row.is-on {
+    background: var(--faint);
+  }
+  & .trace__thumb,
+  & .trace__ring {
+    grid-row: span 2;
+    width: 44px;
+    height: 44px;
+  }
+  & .trace__thumb {
+    object-fit: cover;
+    box-shadow: inset 0 0 0 1px var(--fg);
+  }
+  /* ShibaLab, the end of the way: the ring the view draws there. */
+  & .trace__ring {
+    display: grid;
+    place-items: center;
+  }
+  & .trace__ring::before {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--fg);
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 5px var(--bg), inset 0 0 0 9px var(--fg);
+  }
+  & .trace__when {
+    color: var(--fg-2);
+  }
+  & .trace__where {
+    font-size: 14.5px;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  & .trace__back {
+    margin-top: 28px;
+  }
   & .float-note {
     margin-top: 22px;
     padding: 2px 14px;
@@ -1669,6 +1987,18 @@ html:has(.ray) body {
   & .install__step svg {
     width: 32px;
     height: 32px;
+  }
+  /* A step with a screenshot: the icon stays by the text, not halfway down the picture. */
+  & .install__step--shot {
+    align-items: start;
+  }
+  & .install__shot {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: 10px;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
   }
 
   & .toast {
@@ -1824,7 +2154,8 @@ html:has(.ray) body {
     & .toast {
       transition: none;
     }
-    & .daylight__drift {
+    & .daylight__drift,
+    & .keep__img {
       animation: none;
     }
   }

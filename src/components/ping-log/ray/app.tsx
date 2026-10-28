@@ -3,16 +3,17 @@
 import { useState } from "react";
 
 import type { Consent } from "@/lib/ping-log/consent";
-import type { PushSupport } from "@/lib/ping-log/environment";
+import { entryCheck, type EntryCheck, type PushSupport } from "@/lib/ping-log/environment";
 import type { Shot } from "@/lib/ping-log/photo-entry";
 import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
 import { TRACE_API_URL } from "@/lib/trace-api/client";
 import { reducedMotion } from "@/lib/ray/fx";
 
+import { ArrivalFlow, type ArrivalTarget } from "./arrival";
 import { DemoFlow } from "./demo";
-import { ConsentLayer, HowToLayer, InstallLayer, MenuLayer, WithdrawLayer, type MenuItem, type OverlayName } from "./overlays";
+import { ConsentLayer, DeletePhotoLayer, HowToLayer, InstallLayer, MenuLayer, WithdrawLayer, type MenuItem, type OverlayName } from "./overlays";
 import { PhotoScreen } from "./photo";
-import { ConsentScreen, HomeScreen, PingScreen, SkipScreen, TitleScreen } from "./screens";
+import { ConsentScreen, HomeScreen, PingScreen, SkipScreen, TitleScreen, type ReminderTerms } from "./screens";
 import { RayStage, SWAP, useRay } from "./stage";
 
 import "./ray.css";
@@ -46,7 +47,9 @@ export type RayAppProps = {
   onClosePing: () => void;
   reminderOn: boolean;
   nextReminderAt: number | null;
+  reminderTerms: ReminderTerms;
   onReminder: (on: boolean) => Promise<string | null>;
+  onReminderInterval: (minutes: number) => Promise<string | null>;
   shot: Shot | null;
   onRetake: () => void;
   onSave: (entry: LogEntry) => Promise<SaveOutcome>;
@@ -56,11 +59,20 @@ export type RayAppProps = {
   onCloseSkip: () => void;
   /** Where the arrival demo was opened from, while it is up. */
   demo: "home" | "developer" | null;
+  /** The experience on TRACE_B, while /log works with it: home's QR button then reads the booth's real code instead of opening the demo. */
+  arrival: ArrivalTarget | null;
   onArrive: () => void;
+  /** TRACE_B has this participation's arrival: home leads to the keepsake. */
+  arrived: boolean;
+  /** TRACE_B has this memory session's arrival. */
+  onArrived: (memorySessionId: string) => void;
   onCloseDemo: () => void;
   onTakePhoto: () => void;
   onSkip: () => void;
-  onResend: () => void;
+  /** Deletes one photo (#51): resolves to an error message, or null once it is gone. */
+  onDeletePhoto: (entry: LogEntry) => Promise<string | null>;
+  /** Where to ask about the data (TRACE_B's public config), shown after arriving. */
+  contact: string;
   onWithdraw: () => Promise<void>;
   onDeveloper: () => void;
   /** The participant's home, from the TRACE mark: from the demo, even one opened on the developer screen. */
@@ -70,6 +82,11 @@ export type RayAppProps = {
 export function RayApp(props: RayAppProps) {
   const [overlay, setOverlay] = useState<OverlayName | null>(null);
   const close = () => setOverlay(null);
+  // The photo asked about before it is deleted, and which of the day's it is.
+  const [deleting, setDeleting] = useState<{ entry: LogEntry; number: number } | null>(null);
+  // Checked once, on the title: whether this phone and browser can join, and how.
+  const [entry] = useState<EntryCheck>(entryCheck);
+  const entrance = !props.joined && (entry === "in-app" || entry === "ios-browser");
 
   const menuItems: MenuItem[] = [
     { label: "遊び方", onSelect: () => setOverlay("howto") },
@@ -77,13 +94,36 @@ export function RayApp(props: RayAppProps) {
     ...(props.consent ? [{ label: "参加をやめる", onSelect: () => setOverlay("withdraw"), disabled: props.busy }] : []),
   ];
 
-  const layer =
-    overlay === "menu" ? (
+  const layer = deleting ? (
+    <DeletePhotoLayer
+      entry={deleting.entry}
+      number={deleting.number}
+      arrived={props.arrived}
+      onConfirm={() => props.onDeletePhoto(deleting.entry)}
+      onClose={() => setDeleting(null)}
+    />
+  ) : overlay === "menu" ? (
       <MenuLayer items={menuItems} onClose={close} />
-    ) : overlay === "howto" ? (
-      <HowToLayer maxPhotos={props.maxPhotos} onClose={close} />
+    ) : overlay === "howto" || overlay === "start" ? (
+      <HowToLayer
+        reminderMinutes={props.reminderTerms.intervalMinutes}
+        onNext={
+          overlay === "start"
+            ? () => {
+                close();
+                props.onOpenConsent();
+              }
+            : undefined
+        }
+        onClose={close}
+      />
     ) : overlay === "install" ? (
-      <InstallLayer support={props.support} beforeJoining={!props.joined} onClose={close} />
+      <InstallLayer
+        support={entrance ? entry : props.support}
+        beforeJoining={!props.joined}
+        onContinue={entrance && entry === "ios-browser" ? () => setOverlay("start") : undefined}
+        onClose={close}
+      />
     ) : overlay === "consent" ? (
       <ConsentLayer onClose={close} />
     ) : overlay === "withdraw" ? (
@@ -99,13 +139,21 @@ export function RayApp(props: RayAppProps) {
   return (
     <div className="ray">
       <RayStage overlay={layer}>
-        <Current {...props} inert={overlay !== null} openOverlay={setOverlay} />
+        <Current
+          {...props}
+          entry={entry}
+          inert={overlay !== null || deleting !== null}
+          openOverlay={setOverlay}
+          askDelete={(photo, number) => setDeleting({ entry: photo, number })}
+        />
       </RayStage>
     </div>
   );
 }
 
-function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: OverlayName) => void }) {
+function Current(
+  props: RayAppProps & { entry: EntryCheck; inert: boolean; openOverlay: (name: OverlayName) => void; askDelete: (entry: LogEntry, number: number) => void },
+) {
   const { go, field, fx } = useRay();
   const { inert } = props;
   const full = props.photos.length >= props.maxPhotos;
@@ -121,6 +169,21 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
     }
     props.onSkip();
   };
+
+  if (props.demo === "home" && props.arrival) {
+    return (
+      <ArrivalFlow
+        target={props.arrival}
+        photos={props.photos}
+        contact={props.contact}
+        toKeepsake={props.arrived}
+        inert={inert}
+        onClose={props.onCloseDemo}
+        onArrived={props.onArrived}
+        onDelete={props.askDelete}
+      />
+    );
+  }
 
   if (props.demo) {
     return <DemoFlow closeLabel={props.demo === "home" ? "ホームへもどる" : "開発者の画面にもどる"} inert={inert} onClose={props.onCloseDemo} onHome={props.onHome} />;
@@ -140,7 +203,16 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
       );
     }
     return (
-      <TitleScreen notes={props.notes} inert={inert} onStart={() => void go(props.onOpenConsent)} onDeveloper={props.onDeveloper} onMenu={onMenu} />
+      <TitleScreen
+        notes={props.notes}
+        entry={props.entry}
+        inert={inert}
+        // How to play comes first, and its 「次へ」 opens the consent.
+        onStart={() => props.openOverlay("start")}
+        onInstall={onInstall}
+        onDeveloper={props.onDeveloper}
+        onMenu={onMenu}
+      />
     );
   }
 
@@ -155,6 +227,7 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
         maxPhotos={props.maxPhotos}
         support={props.support}
         reminderOn={props.reminderOn}
+        reminderTerms={props.reminderTerms}
         busy={props.busy}
         nextReminderAt={props.nextReminderAt}
         inert={inert}
@@ -191,6 +264,7 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
       pendingAt={props.pendingAt}
       reminderOn={props.reminderOn}
       nextReminderAt={props.nextReminderAt}
+      reminderTerms={props.reminderTerms}
       support={props.support}
       busy={props.busy}
       message={props.notes.join("")}
@@ -198,7 +272,9 @@ function Current(props: RayAppProps & { inert: boolean; openOverlay: (name: Over
       onTakePhoto={props.onTakePhoto}
       onSkip={() => void skip()}
       onReminder={props.onReminder}
-      onResend={props.onResend}
+      onReminderInterval={props.onReminderInterval}
+      arrived={props.arrived}
+      onDelete={props.askDelete}
       onArrive={() => void go(props.onArrive)}
       onDeveloper={props.onDeveloper}
       onMenu={onMenu}

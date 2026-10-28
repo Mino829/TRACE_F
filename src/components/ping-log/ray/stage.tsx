@@ -500,6 +500,8 @@ const ICONS = {
     </>
   ),
   plus: <path d="M3.5 3.5h17v17h-17zM12 8v8M8 12h8" />,
+  // The chevron of the share sheet's 「表示を増やす」.
+  more: <path d="M5.5 9 12 15.5 18.5 9" />,
   download: (
     <>
       <path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5" />

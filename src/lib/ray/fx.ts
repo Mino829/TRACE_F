@@ -39,6 +39,33 @@ function rgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/**
+ * The brightest small area of a picture's pixels, ignoring a thin border, as
+ * fractions of its width and height: where the RAY mark goes.
+ */
+export function brightest(data: Uint8ClampedArray, width: number, height: number): { x: number; y: number } {
+  let best = -1;
+  let bestIndex = 0;
+  for (let y = 1; y < height - 1; y += 1) {
+    if (y < height * 0.08 || y > height * 0.92) continue;
+    for (let x = 1; x < width - 1; x += 1) {
+      if (x < width * 0.08 || x > width * 0.92) continue;
+      let sum = 0;
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const j = ((y + dy) * width + x + dx) * 4;
+          sum += 0.299 * data[j] + 0.587 * data[j + 1] + 0.114 * data[j + 2];
+        }
+      }
+      if (sum > best) {
+        best = sum;
+        bestIndex = y * width + x;
+      }
+    }
+  }
+  return { x: ((bestIndex % width) + 0.5) / width, y: (Math.floor(bestIndex / width) + 0.5) / height };
+}
+
 export class RayPrint {
   readonly canvas: HTMLCanvasElement;
   ray = { x: 0.5, y: 0.5 };
@@ -83,28 +110,7 @@ export class RayPrint {
     }
     this.orig = new Uint8ClampedArray(data);
     this.out = ctx.createImageData(width, height);
-
-    // The brightest small area, ignoring a thin border, is where the RAY mark goes.
-    let best = -1;
-    let bestIndex = 0;
-    for (let y = 1; y < height - 1; y += 1) {
-      if (y < height * 0.08 || y > height * 0.92) continue;
-      for (let x = 1; x < width - 1; x += 1) {
-        if (x < width * 0.08 || x > width * 0.92) continue;
-        let sum = 0;
-        for (let dy = -1; dy <= 1; dy += 1) {
-          for (let dx = -1; dx <= 1; dx += 1) {
-            const j = ((y + dy) * width + x + dx) * 4;
-            sum += 0.299 * data[j] + 0.587 * data[j + 1] + 0.114 * data[j + 2];
-          }
-        }
-        if (sum > best) {
-          best = sum;
-          bestIndex = y * width + x;
-        }
-      }
-    }
-    this.ray = { x: ((bestIndex % width) + 0.5) / width, y: (Math.floor(bestIndex / width) + 0.5) / height };
+    this.ray = brightest(data, width, height);
     return this;
   }
 
