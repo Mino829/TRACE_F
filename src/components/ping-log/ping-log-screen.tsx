@@ -3,17 +3,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { Shot } from "@/lib/ping-log/photo-entry";
-import { DEVELOPER_CONSENT_VERSION, clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
+import { CONSENT_VERSION, clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
 import { networkInfo } from "@/lib/ping-log/context";
 import { pushSupport, type PushSupport } from "@/lib/ping-log/environment";
 import {
-  ACCURACY_PLAN,
   PUSH_API_URL,
   REMINDER_PLAN,
   deviceId,
   dropExpired,
   forgetMe,
   sendTestPing,
+  isUploadablePhoto,
   subscribe,
   subscriptionExpiresAt,
   subscriptionPlan,
@@ -48,7 +48,6 @@ import {
 import { DeveloperView } from "./developer-view";
 import { RayApp } from "./ray/app";
 import { WORKER_REMINDER } from "./ray/screens";
-import { RecordFlow } from "./record-flow";
 import { useTraceReminder } from "./use-trace-reminder";
 import { PxButton, Sentences } from "./ui";
 
@@ -79,10 +78,8 @@ import "./developer.css";
  * the variable (#54): photos go to no server, and where each was taken reaches
  * TRACE_B once it has a route for it (#13).
  *
- * The developer screen, behind the button left of the menu, is the team's
- * accuracy test: the ten-minute ping answered by pointing at where one
- * stands, the phone's records, and the demo of arriving at the venue. Its
- * pixel parts wear RAY's paper and ink (developer.css). Visitors never use it.
+ * The developer screen keeps legacy records and their deletion controls
+ * accessible; it no longer offers location capture or accuracy pings.
  */
 
 const PENDING_KEY = "trace-ping-pending";
@@ -94,7 +91,6 @@ const SEND_WAIT_MS = 10_000;
 const START_AGAIN = "続けるときは、\nもう一度「はじめる」から参加してください。";
 
 type View = "participant" | "developer";
-type AccuracyFlow = { kind: "ping" | "manual"; promptedAt: string | null };
 
 function read(storage: Storage, key: string): string | null {
   try {
@@ -119,6 +115,10 @@ function isToday(value: string): boolean {
 
 /** The notification waiting for an answer: from the one that opened the page, or one left from earlier today. */
 function initialPending(): string | null {
+  if (subscriptionPlan().purpose !== "photo") {
+    write(window.localStorage, PENDING_KEY, null);
+    return null;
+  }
   const fromUrl = new URLSearchParams(window.location.search).get("prompt");
   if (fromUrl && !Number.isNaN(Date.parse(fromUrl))) {
     write(window.localStorage, PENDING_KEY, fromUrl);
@@ -151,16 +151,20 @@ function initialView(): View {
 /** A participant who opened the page from a reminder's notification sees the reminder's own screen first. */
 function initialPingOpen(): boolean {
   const fromUrl = new URLSearchParams(window.location.search).get("prompt");
-  return initialView() === "participant" && !!fromUrl && !Number.isNaN(Date.parse(fromUrl));
+  return initialView() === "participant" && subscriptionPlan().purpose === "photo" && !!fromUrl && !Number.isNaN(Date.parse(fromUrl));
 }
 
 function notificationState(): NotificationPermission | "unsupported" {
   return typeof Notification === "undefined" || !("PushManager" in window) ? "unsupported" : Notification.permission;
 }
 
-/** A record still to go to the push worker: the developer screen's. A participant's photo never goes (#54). */
+/**
+ * A record still to go to the push worker. None qualifies any more: a
+ * participant's photo stays on the phone (#54), and only a GPS-free checkpoint
+ * photo may leave it (#39), so the developer screen's older records stay too.
+ */
 function waiting(entry: LogEntry): boolean {
-  return !entry.sentAt && purposeOf(entry.record) !== "photo-memory";
+  return !entry.sentAt && purposeOf(entry.record) !== "photo-memory" && isUploadablePhoto(entry);
 }
 
 /** The worker pings on whole multiples of the interval, counted in minutes since the epoch. */
@@ -181,11 +185,6 @@ export function PingLogScreen() {
   const [plan, setPlan] = useState<PushPlan>(subscriptionPlan);
   const [pendingAt, setPendingAt] = useState<string | null>(initialPending);
   const [pingOpen, setPingOpen] = useState(initialPingOpen);
-  // On the developer screen a tapped notification opens the accuracy record straight away.
-  const [accuracyFlow, setAccuracyFlow] = useState<AccuracyFlow | null>(() => {
-    const pending = initialPending();
-    return pending && initialView() === "developer" ? { kind: "ping", promptedAt: pending } : null;
-  });
   const [shot, setShot] = useState<Shot | null>(null);
   // When the skipped reminder was due, while the skip's clear screen is up.
   const [skipped, setSkipped] = useState<string | null>(null);
@@ -194,7 +193,6 @@ export function PingLogScreen() {
   const [now, setNow] = useState(() => Date.now());
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [permission, setPermission] = useState(notificationState);
-  const [geolocation, setGeolocation] = useState<PermissionState | "unknown" | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   // Shown until this browser joins again, in this tab or another.
@@ -233,10 +231,11 @@ export function PingLogScreen() {
   }, []);
 
   /**
-   * Sends every record the worker has not acknowledged yet; the rest wait for
-   * the next try. One tab sends at a time and reads the records afresh before
-   * each, so one that another tab sent meanwhile is not sent again, and one
-   * saved meanwhile goes in the same round.
+   * Sends the GPS-free checkpoint photos the worker has not acknowledged yet;
+   * legacy and unsafe records stay on the phone untouched, and a failed one
+   * waits for the next try. One tab sends at a time and reads the records
+   * afresh before each, so one that another tab sent meanwhile is not sent
+   * again, and one saved meanwhile goes in the same round.
    */
   const sendUnsent = useCallback(async (): Promise<number> => {
     // Without a worker there is nothing to send, but a record just saved still has to show.
@@ -280,12 +279,6 @@ export function PingLogScreen() {
         return sendUnsent();
       })
       .catch(() => setMessage("記録を読み込めませんでした。"));
-    (navigator.permissions ? navigator.permissions.query({ name: "geolocation" }) : Promise.reject(new Error("no Permissions API")))
-      .then((status) => {
-        setGeolocation(status.state);
-        status.onchange = () => setGeolocation(status.state);
-      })
-      .catch(() => setGeolocation("unknown"));
     if (!("serviceWorker" in navigator)) return;
     navigator.serviceWorker
       .register("/ping-sw.js", { scope: "/" })
@@ -294,8 +287,18 @@ export function PingLogScreen() {
         if (!("pushManager" in registration)) return;
         const current = await registration.pushManager.getSubscription();
         const expiry = subscriptionExpiresAt();
-        // The worker stopped pinging at midnight; the phone should stop claiming otherwise.
-        if (current && expiry && Date.parse(expiry) <= Date.now()) {
+        // Previous releases used one subscription for accuracy pings. Remove
+        // that subscription without touching a photo reminder on this phone.
+        if (current && subscriptionPlan().purpose === "accuracy") {
+          try {
+            await unsubscribe(current);
+          } catch {
+            await dropExpired(current);
+            setMessage("以前の精度テスト通知を端末で停止しました。サーバーへの解除は確認できませんでした。");
+          }
+          setExpiresAt(null);
+          setSubscription(null);
+        } else if (current && expiry && Date.parse(expiry) <= Date.now()) {
           await dropExpired(current);
           setExpiresAt(null);
           setSubscription(null);
@@ -306,9 +309,9 @@ export function PingLogScreen() {
       .catch(() => setMessage("通知の準備に失敗しました。"));
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type !== PROMPT_MESSAGE) return;
+      if (subscriptionPlan().purpose !== "photo") return;
       prompt(event.data.promptedAt);
-      if (viewRef.current === "developer") setAccuracyFlow((current) => current ?? { kind: "ping", promptedAt: event.data.promptedAt });
-      else setPingOpen(true);
+      if (viewRef.current === "participant") setPingOpen(true);
     };
     navigator.serviceWorker.addEventListener("message", onMessage);
     return () => navigator.serviceWorker.removeEventListener("message", onMessage);
@@ -382,7 +385,7 @@ export function PingLogScreen() {
 
   // With the backend, joining lasts as long as this tab's memory session.
   const sessionExpired = experience !== null && Date.parse(experience.memory.expiresAt) <= now;
-  const joined = consent !== null && (!TRACE_API_URL || (experience !== null && !sessionExpired));
+  const joined = consent?.version === CONSENT_VERSION && (!TRACE_API_URL || (experience !== null && !sessionExpired));
   const memorySessionId = joined ? (experience?.memory.memorySessionId ?? null) : null;
   const maxPhotos = (TRACE_API_URL && traceConfig?.photo.maxCount) || MAX_PHOTOS;
 
@@ -400,7 +403,6 @@ export function PingLogScreen() {
         .reverse(),
     [entries, day, memorySessionId],
   );
-  const todayAccuracy = entries.filter((entry) => purposeOf(entry.record) === "accuracy" && isToday(entry.record.takenAt)).length;
 
   /**
    * Runs a task behind the busy note; resolves to its error message, or null
@@ -428,25 +430,32 @@ export function PingLogScreen() {
     setMessage("");
   };
 
-  /** With the backend, the experience is created here, memory-only; joining waits until it exists. */
+  /** Keep an existing memory session and its delete key when consent text changes. */
   const agree = async () => {
     if (TRACE_API_URL) {
       setJoining(true);
       setJoinError("");
       try {
-        const config = traceConfig ?? (await fetchPublicConfig());
-        setTraceConfig(config);
-        if (!config.registrationOpen) throw new TraceApiError(503, "REGISTRATION_CLOSED", null);
-        const created = await createExperience(config);
-        const tab: TabExperience = { ...created, consentVersion: config.consent.version, createdAt: new Date().toISOString() };
-        saveTabExperience(tab);
-        setExperience(tab);
-        // A photo reminder through the push worker belonged to the participation before; TRACE_B's takes its place once switched on.
-        if (subscription && subscribed && plan.purpose === "photo") {
-          void unsubscribe(subscription).catch(() => dropExpired(subscription)).then(() => setSubscription(null));
+        if (experience) {
+          if (Date.parse(experience.memory.expiresAt) <= Date.now()) {
+            throw new Error("以前の参加の期限が切れました。メニューの「参加をやめる」から以前の記録を削除してから、もう一度参加してください。");
+          }
+        } else {
+          const config = traceConfig ?? (await fetchPublicConfig());
+          setTraceConfig(config);
+          if (!config.registrationOpen) throw new TraceApiError(503, "REGISTRATION_CLOSED", null);
+          const created = await createExperience(config);
+          const tab: TabExperience = { ...created, consentVersion: config.consent.version, createdAt: new Date().toISOString() };
+          saveTabExperience(tab);
+          setExperience(tab);
+          // A photo reminder through the push worker belonged to the participation before; TRACE_B's takes its place once switched on.
+          if (subscription && subscribed && plan.purpose === "photo") {
+            void unsubscribe(subscription)
+              .catch(() => dropExpired(subscription))
+              .then(() => setSubscription(null), () => undefined);
+          }
         }
       } catch (error) {
-        // The text changed on the server: read the new versions before the next try.
         if (error instanceof TraceApiError && error.code === "CONSENT_VERSION_MISMATCH") fetchPublicConfig().then(setTraceConfig, () => setTraceConfig(null));
         setJoinError(error instanceof Error ? error.message : "うまくいきませんでした。");
         return;
@@ -468,13 +477,13 @@ export function PingLogScreen() {
     if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、\nこのサイトの通知を許可してください。");
   };
 
-  /** One subscription per phone: the photo reminder and the accuracy ping replace each other. */
-  const subscribeTo = (next: PushPlan, consentVersion: string, done: string, silent = false) => run(async () => {
+  /** The participant's optional photo reminder is the only new push plan. */
+  const subscribeTo = (consentVersion: string, done: string, silent = false) => run(async () => {
     await askPermission();
     const registration = registrationRef.current ?? (await navigator.serviceWorker.ready);
-    setSubscription(await subscribe(registration, consentVersion, next));
+    setSubscription(await subscribe(registration, consentVersion));
     setExpiresAt(subscriptionExpiresAt());
-    setPlan(next);
+    setPlan(REMINDER_PLAN);
     setMessage(done);
   }, { silent });
 
@@ -489,18 +498,22 @@ export function PingLogScreen() {
         setExpiresAt(null);
       }, { silent: true });
     }
-    return consent ? subscribeTo(REMINDER_PLAN, consent.version, "", true) : Promise.resolve("参加の同意がまだです。");
+    return joined && consent ? subscribeTo(consent.version, "", true) : Promise.resolve("参加の同意がまだです。");
   };
 
-  const enableAccuracyPings = () =>
-    void subscribeTo(ACCURACY_PLAN, DEVELOPER_CONSENT_VERSION, `精度テストの通知をオンにしました。${ACCURACY_PLAN.intervalMinutes}分ごとに届きます。`);
 
   const stopNotifications = (done: string) => void run(async () => {
     if (!subscription) return;
-    await unsubscribe(subscription);
+    try {
+      await unsubscribe(subscription);
+      setMessage(done);
+    } catch {
+      if (plan?.purpose !== "accuracy") throw new Error("通知を停止できませんでした。");
+      await dropExpired(subscription);
+      setMessage("旧・精度テスト通知を端末で停止しました。サーバーへの解除は確認できませんでした。");
+    }
     setSubscription(null);
     setExpiresAt(null);
-    setMessage(done);
   });
 
   const test = () => void run(async () => {
@@ -548,10 +561,6 @@ export function PingLogScreen() {
     return !PUSH_API_URL ? "local" : failed ? "queued" : "sent";
   };
 
-  const closeAccuracyFlow = () => {
-    if (accuracyFlow?.kind === "ping") prompt(null);
-    setAccuracyFlow(null);
-  };
 
   const withdraw = () => run(async () => {
     // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
@@ -599,7 +608,7 @@ export function PingLogScreen() {
 
   const resend = () => void run(async () => {
     const failed = await sendUnsent();
-    setMessage(failed ? `${failed}件を送信できませんでした。` : "未送信の記録を送りました。");
+    setMessage(failed ? `${failed}件を送信できませんでした。位置情報を含む旧記録は送信せず、端末に残します。` : "送信可能な写真を送りました。旧記録は端末に残します。");
   });
 
   const clearLocal = () => void run(async () => {
@@ -615,7 +624,8 @@ export function PingLogScreen() {
   if (view === "participant" || demo !== null) {
     const notes = [
       ...(!joined && lostNote ? [lostNote] : []),
-      ...(!joined && consent && sessionExpired ? [`参加の期限が切れました。${START_AGAIN}`] : []),
+      // Agreeing again keeps the expired participation (agree), so the way on is to withdraw it first.
+      ...(!joined && consent && sessionExpired ? ["参加の期限が切れました。\n以前の記録を削除する場合は\nメニューの「参加をやめる」を選んでください。"] : []),
       ...(message ? [message] : []),
     ];
     return (
@@ -708,7 +718,6 @@ export function PingLogScreen() {
           deviceId={deviceId()}
           consent={consent}
           notificationPermission={permission}
-          geolocationPermission={geolocation}
           pushSupport={support}
           subscription={subscribed ? subscription : null}
           plan={activePlan}
@@ -716,28 +725,14 @@ export function PingLogScreen() {
           nextPingAt={nextPingAt}
           entries={entries}
           busy={busy}
-          onEnableAccuracy={enableAccuracyPings}
           onStopNotifications={() => stopNotifications("通知を止めました。")}
           onTest={test}
-          onRecordNow={() => setAccuracyFlow({ kind: "manual", promptedAt: null })}
           onResend={resend}
           onClearLocal={clearLocal}
           onOpenDemo={() => setDemo("developer")}
         />
       </main>
 
-      {accuracyFlow && (
-        <RecordFlow
-          key={`${accuracyFlow.kind}-${accuracyFlow.promptedAt}`}
-          kind={accuracyFlow.kind}
-          promptedAt={accuracyFlow.promptedAt}
-          subscribed={activePlan?.purpose === "accuracy"}
-          nextPingAt={nextPingAt}
-          todayCount={todayAccuracy}
-          onSave={save}
-          onClose={closeAccuracyFlow}
-        />
-      )}
     </div>
   );
 }

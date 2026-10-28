@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { CONSENT_VERSION } from "@/lib/ping-log/consent";
 import type { Consent } from "@/lib/ping-log/consent";
 import { entryCheck, type EntryCheck, type PushSupport } from "@/lib/ping-log/environment";
 import type { Shot } from "@/lib/ping-log/photo-entry";
@@ -90,7 +91,7 @@ export function RayApp(props: RayAppProps) {
 
   const menuItems: MenuItem[] = [
     { label: "遊び方", onSelect: () => setOverlay("howto") },
-    ...(props.consent ? [{ label: "同意した内容", onSelect: () => setOverlay("consent") }] : []),
+    ...(props.consent?.version === CONSENT_VERSION ? [{ label: "同意した内容", onSelect: () => setOverlay("consent") }] : []),
     ...(props.consent ? [{ label: "参加をやめる", onSelect: () => setOverlay("withdraw"), disabled: props.busy }] : []),
   ];
 

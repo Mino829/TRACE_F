@@ -11,14 +11,26 @@ async function session(page: Page): Promise<Session> {
   return page.evaluate(() => JSON.parse(sessionStorage.getItem("trace.participant.v1")!));
 }
 
-async function join(page: Page, live: boolean) {
+/** Simulates a credential issued before the GPS cutover; the root screen never creates new ones. */
+async function storedSession(page: Page, live: boolean) {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "体験をはじめる" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /同意して参加する/ })).toBeDisabled();
-  await page.getByRole("checkbox", { name: /内容を確認し/ }).check();
-  if (live) await page.getByRole("checkbox", { name: /位置情報を使った/ }).check();
-  await page.getByRole("button", { name: /同意して参加する/ }).click();
-  await expect(page.getByRole("heading", { name: "あなたの一歩を、展示へ。" })).toBeVisible();
+  const config = await (await page.request.get("/api/backend/v1/public/config")).json();
+  const response = await page.request.post("/api/backend/v1/experiences", { data: {
+    memoryConsentVersion: config.consent.version,
+    livePresenceConsentVersion: live ? config.livePresenceConsentVersion : "",
+    enableLivePresence: live,
+    consentLanguage: config.consent.language,
+    clientTime: new Date().toISOString(),
+  } });
+  expect(response.ok()).toBe(true);
+  const created = await response.json();
+  await page.evaluate((value) => sessionStorage.setItem("trace.participant.v1", JSON.stringify({ ...value, operationKeys: {} })), created);
+  await page.reload();
+  await expect(page.getByRole("region", { name: "参加状況" })).toBeVisible();
+}
+
+async function legacySession(page: Page) {
+  await storedSession(page, true);
 }
 
 test.afterEach(async ({ page }) => {
@@ -34,27 +46,11 @@ test.afterEach(async ({ page }) => {
   }
 });
 
-test("arrival gate, stop and two-token deletion recover across partial and lost responses", async ({ page, context }) => {
+test("legacy live sessions can stop and two-token deletion recovers across partial and lost responses", async ({ page }) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await join(page, true);
-  await expect(page.getByRole("button", { name: /位置送信を開始/ })).toBeVisible();
-  await page.getByRole("button", { name: /位置送信を開始/ }).click();
-  await expect(page.getByRole("status")).toHaveText("位置を送信しました。", { timeout: 15000 });
-  await expect(page.getByText("約 8 m", { exact: true })).toBeVisible();
-
-  await page.reload();
-  await expect(page.getByRole("button", { name: /位置送信を開始/ })).toBeVisible();
-  await context.setGeolocation({ latitude: 36, longitude: 135, accuracy: 8 });
-  await page.getByRole("button", { name: /位置送信を開始/ }).click();
-  await expect(page.getByRole("status")).toContainText("対象エリア外", { timeout: 15000 });
-  await page.getByRole("button", { name: /端末からの送信を一時停止/ }).click();
-  await context.setGeolocation({ latitude: 35, longitude: 135, accuracy: 8 });
-  await page.getByRole("button", { name: /位置送信を開始/ }).click();
-  await expect(page.getByRole("status")).toHaveText("位置を送信しました。", { timeout: 15000 });
-
-  // Merely walking/accepting a position cannot mark an arrival.
-  await expect(page.getByRole("button", { name: /会場内の体験へ進む/ })).toHaveCount(0);
+  await legacySession(page);
+  await expect(page.getByRole("button", { name: /位置送信を開始/ })).toHaveCount(0);
   await page.getByRole("button", { name: "この参加の位置送信を終了する" }).click();
   await expect(page.getByText("位置送信は終了しています", { exact: true })).toBeVisible();
   const current = await session(page);
@@ -99,24 +95,24 @@ test("arrival gate, stop and two-token deletion recover across partial and lost 
   await page.reload();
   await page.getByRole("button", { name: "すべて削除して終了" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "体験をはじめる" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
   expect(keys).toHaveLength(3);
   expect(new Set(keys).size).toBe(1);
   expect(await page.evaluate(() => sessionStorage.getItem("trace.participant.v1"))).toBeNull();
   expect(pageErrors).toEqual([]);
 });
 
-test("memory-only participation and individual deletion", async ({ page }) => {
-  await join(page, false);
+test("a previous memory-only participant can still delete their data", async ({ page }) => {
+  await storedSession(page, false);
   expect((await session(page)).livePresenceSession).toBeUndefined();
   await expect(page.getByRole("button", { name: /位置送信を開始/ })).toHaveCount(0);
   await page.getByRole("button", { name: "メモリー参加情報を削除" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "体験をはじめる" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
 });
 
-test("deleting memory separately leaves a live credential for individual deletion", async ({ page }) => {
-  await join(page, true);
+test("deleting memory separately leaves a legacy live credential for individual deletion", async ({ page }) => {
+  await legacySession(page);
   const original = await session(page);
   await page.getByRole("button", { name: "メモリー参加情報を削除" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
@@ -129,12 +125,12 @@ test("deleting memory separately leaves a live credential for individual deletio
   });
   await page.getByRole("button", { name: "すべて削除して終了" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "体験をはじめる" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
   expect(deletedPath).toContain(`/v1/live-presence-sessions/${original.livePresenceSession!.sessionId}`);
 });
 
 test("one expired deletion window still allows deleting the other session", async ({ page }) => {
-  await join(page, true);
+  await legacySession(page);
   const original = await session(page);
   await page.addInitScript(() => {
     const key = "trace.participant.v1";
@@ -143,7 +139,7 @@ test("one expired deletion window still allows deleting the other session", asyn
     sessionStorage.setItem(key, JSON.stringify(stored));
   });
   await page.reload();
-  await expect(page.getByRole("heading", { name: "あなたの一歩を、展示へ。" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "参加状況" })).toBeVisible();
   expect((await session(page)).memoryDeleted).toBe(true);
   expect((await session(page)).livePresenceSession?.participantToken).toBe(original.livePresenceSession?.participantToken);
   let deletedPath = "";
@@ -153,7 +149,7 @@ test("one expired deletion window still allows deleting the other session", asyn
   });
   await page.getByRole("button", { name: "すべて削除して終了" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "体験をはじめる" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
   expect(deletedPath).toContain(`/v1/live-presence-sessions/${original.livePresenceSession!.sessionId}`);
   const cleanup = await page.request.delete(`/api/backend/v1/memory-sessions/${original.memorySession.sessionId}`, {
     headers: { Authorization: `Bearer ${original.memorySession.participantToken}`, "Idempotency-Key": crypto.randomUUID() },
@@ -161,8 +157,8 @@ test("one expired deletion window still allows deleting the other session", asyn
   expect(cleanup.status()).toBe(204);
 });
 
-test("server-side live deletion is reflected before deleting the remaining memory", async ({ page }) => {
-  await join(page, true);
+test("server-side legacy live deletion is reflected before deleting the remaining memory", async ({ page }) => {
+  await legacySession(page);
   const original = await session(page);
   const deleted = await page.request.delete(`/api/backend/v1/live-presence-sessions/${original.livePresenceSession!.sessionId}`, {
     headers: { Authorization: `Bearer ${original.livePresenceSession!.participantToken}`, "Idempotency-Key": crypto.randomUUID() },
@@ -173,32 +169,31 @@ test("server-side live deletion is reflected before deleting the remaining memor
   expect((await session(page)).livePresenceSession).toBeUndefined();
   await page.getByRole("button", { name: "すべて削除して終了" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "体験をはじめる" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
 });
 
-test("on-site consent appears only after the server reports arrived", async ({ page }) => {
-  await join(page, true);
-  await expect(page.getByRole("button", { name: /会場内の体験へ進む/ })).toHaveCount(0);
-  await page.route("**/api/backend/v1/experiences/*", async (route) => {
-    if (route.request().method() !== "GET") return route.continue();
-    const response = await route.fetch();
-    const state = await response.json();
-    await route.fulfill({ response, json: {
-      ...state, livePresenceSession: { ...state.livePresenceSession, presencePhase: "arrived" },
-    } });
-  });
-  await page.getByRole("button", { name: /参加状態を更新/ }).click();
-  await expect(page.getByRole("button", { name: /会場内の体験へ進む/ })).toBeDisabled();
-  await page.getByRole("checkbox", { name: "会場内の位置表現に同意する" }).check();
-  await expect(page.getByRole("button", { name: /会場内の体験へ進む/ })).toBeEnabled();
-});
-
-test("mobile layout and permission refusal", async ({ page, context }) => {
+test("the root entry never accesses location when permission is denied", async ({ page, context }) => {
   await context.clearPermissions();
   await page.setViewportSize({ width: 390, height: 844 });
-  await join(page, true);
+  await page.addInitScript(() => {
+    const calls: string[] = [];
+    Object.defineProperty(window, "__geoCalls", { value: calls, configurable: true });
+    const location = navigator.geolocation;
+    if (location) {
+      location.getCurrentPosition = () => { calls.push("getCurrentPosition"); throw new Error("location disabled"); };
+      location.watchPosition = () => { calls.push("watchPosition"); throw new Error("location disabled"); };
+    }
+    if (navigator.permissions) {
+      const original = navigator.permissions.query.bind(navigator.permissions);
+      navigator.permissions.query = (descriptor) => {
+        if (descriptor.name === "geolocation") calls.push("permission query");
+        return original(descriptor);
+      };
+    }
+  });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /同意して参加する/ })).toHaveCount(0);
+  expect(await page.evaluate(() => Reflect.get(window, "__geoCalls"))).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole("button", { name: /位置送信を開始/ }).click();
-  await expect(page.getByRole("status")).toContainText("許可されていません", { timeout: 15000 });
-  await page.screenshot({ path: "test-results/mobile.png", fullPage: true });
 });
