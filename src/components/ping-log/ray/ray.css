@@ -1634,6 +1634,23 @@ html:has(.ray) body {
     width: 16px;
     height: 16px;
   }
+  /* Its save on the left, its delete on the right in the quieter grey. */
+  & .print-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  & .print-actions__del {
+    min-height: 38px;
+    font-size: 13px;
+    color: var(--fg-2);
+  }
+  /* The photo in question, before it is deleted. */
+  & .delete__print {
+    display: flex;
+    justify-content: center;
+    margin: 6px 0 12px;
+  }
 
   /*
    * The keepsake: the picture as it is saved, coming up out of the dark;

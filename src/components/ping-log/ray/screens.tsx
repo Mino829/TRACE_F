@@ -8,7 +8,7 @@ import { REMINDER_PLAN } from "@/lib/ping-log/push";
 import type { LogEntry } from "@/lib/ping-log/store";
 
 import { clock } from "../ui";
-import { SavePhoto } from "./keepsake";
+import { PhotoActions } from "./keepsake";
 import { Print, Strip, frameLabel } from "./prints";
 import {
   ClearWord,
@@ -345,6 +345,8 @@ type HomeProps = {
   onReminderInterval: (minutes: number) => Promise<string | null>;
   /** TRACE_B has the arrival: the foot leads to the keepsake instead of the QR code. */
   arrived: boolean;
+  /** Asks before deleting a photo (#51). */
+  onDelete: (entry: LogEntry, number: number) => void;
   onArrive: () => void;
   onDeveloper: () => void;
   onMenu: () => void;
@@ -354,7 +356,7 @@ type HomeProps = {
 /**
  * Home, where a participant lands every time after joining: a reminder
  * waiting for an answer, today's photos shown large under a ruled head, each
- * of which can be saved to the phone, the camera button, the reminder's
+ * of which can be saved to the phone or deleted, the camera button, the reminder's
  * switch, and at the foot, in the dark of the room, the way into ShibaLab.
  * Nothing here mentions where photos were taken.
  */
@@ -441,7 +443,7 @@ export function HomeScreen(props: HomeProps) {
                   time={clock(entry.record.takenAt)}
                   ratio={meta && meta.width > 0 && meta.height > 0 ? meta.width / meta.height : 3 / 4}
                 />
-                <SavePhoto entry={entry} number={count - index} />
+                <PhotoActions entry={entry} number={count - index} onDelete={props.onDelete} />
               </li>
             );
           })}

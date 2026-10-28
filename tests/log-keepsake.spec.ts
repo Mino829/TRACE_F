@@ -4,7 +4,7 @@ import path from "node:path";
 
 /**
  * /log after arriving at ShibaLab (#14): the keepsake drawn from the photos
- * kept on the phone, and each photo saved on its own. Like log-tabs.spec.ts,
+ * kept on the phone, and each photo saved or deleted (#51) on its own. Like log-tabs.spec.ts,
  * the dev server runs with NEXT_PUBLIC_TRACE_API_URL=/api/backend and a
  * stand-in inside the test answers for TRACE_B. Chrome on a computer saves
  * by downloading, which is what is checked here; an iPhone's share sheet is not.
@@ -33,6 +33,7 @@ async function standIn(context: BrowserContext): Promise<{ replay: "playing" | "
     if (where === "POST /v1/experiences") {
       return route.fulfill({ status: 201, json: { experienceId: "exp-1", memorySession: { ...memorySession, participantToken: "token-1" }, displayAlias } });
     }
+    if (where === "DELETE /v1/memory-sessions/mem-1") return route.fulfill({ status: 204 });
     if (where === "GET /v1/experiences/exp-1") {
       return route.fulfill({ json: {
         memorySession, displayAlias, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 }, ...(state.replay ? { replayStatus: state.replay } : {}),
@@ -76,6 +77,24 @@ async function savePhoto(page: Page, number: number) {
   await page.getByRole("button", { name: "ホームへもどる" }).click();
   await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
 }
+
+/** How many photos this browser keeps in IndexedDB. */
+const kept = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<number>((resolve, reject) => {
+        const open = indexedDB.open("trace-ping-log");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const request = open.result.transaction("entries", "readonly").objectStore("entries").count();
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            open.result.close();
+            resolve(request.result);
+          };
+        };
+      }),
+  );
 
 /** A downloaded JPEG: its name, its size in pixels, and whether it carries an EXIF block. */
 async function jpeg(download: Download) {
@@ -143,4 +162,43 @@ test("a browser without the photos says the keepsake cannot be made here", async
   await expect(page.getByText(/この端末には写真が残っていないので/)).toBeVisible();
   await expect(page.getByRole("button", { name: "作品を保存する" })).toHaveCount(0);
   await shoot(page, "keepsake-empty");
+});
+
+test("a photo deletes after a question, from home before arriving and from the keepsake after; withdrawing leaves none on the phone", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  for (const number of [1, 2, 3]) await savePhoto(page, number);
+
+  // Before arriving: from home's strip, after a question that can be cancelled.
+  await page.getByRole("button", { name: "2枚目の写真を削除" }).click();
+  await expect(page.getByRole("heading", { name: "2枚目の写真を削除しますか？" })).toBeVisible();
+  await page.screenshot({ path: SHOTS ? path.join(SHOTS, "delete-ask.png") : undefined });
+  await page.getByRole("button", { name: "キャンセル" }).click();
+  await expect(page.getByText("3枚（12枚まで）")).toBeAttached();
+  expect(await kept(page)).toBe(3);
+  await page.getByRole("button", { name: "2枚目の写真を削除" }).click();
+  await page.getByRole("button", { name: "削除する" }).click();
+  await expect(page.getByRole("heading", { name: "2枚目の写真を削除しますか？" })).toHaveCount(0);
+  await expect(page.getByText("2枚（12枚まで）")).toBeAttached();
+  expect(await kept(page)).toBe(2);
+
+  // After arriving: from the keepsake, which is drawn again without it.
+  backend.replay = "completed";
+  await page.reload();
+  await page.getByRole("button", { name: "作品を見る" }).click();
+  await expect(page.getByRole("img", { name: /^作品。撮った2枚の写真/ })).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: "1枚目の写真を削除" }).click();
+  await expect(page.getByText("作品からも外れます。")).toBeVisible();
+  await page.getByRole("button", { name: "削除する" }).click();
+  await expect(page.getByRole("img", { name: /^作品。撮った1枚の写真/ })).toBeVisible({ timeout: 15000 });
+  expect(await kept(page)).toBe(1);
+
+  // Withdrawing deletes the participation on TRACE_B and every photo here.
+  await page.getByRole("button", { name: "ホームへもどる" }).last().click();
+  await page.getByRole("button", { name: "メニュー" }).click();
+  await page.getByRole("button", { name: "参加をやめる" }).click();
+  await page.getByRole("button", { name: "やめて削除する" }).click();
+  await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
+  // The title is up once TRACE_B has let go; the phone clears its photos just after.
+  await expect.poll(() => kept(page)).toBe(0);
 });

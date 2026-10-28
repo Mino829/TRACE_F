@@ -3,13 +3,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { PushSupport } from "@/lib/ping-log/environment";
+import type { LogEntry } from "@/lib/ping-log/store";
 
+import { clock } from "../ui";
+import { Print } from "./prints";
 import { ConsentBody } from "./screens";
 import { Icon, Phrases, Sentences, useRay, type IconName } from "./stage";
 
 /**
  * The layers over a screen: the menu, how to play, the install guide, the
- * consent as agreed, and the question before withdrawing. Each closes on
+ * consent as agreed, and the questions before deleting a photo and before
+ * withdrawing. Each closes on
  * Escape and its own close button; the screen behind is inert meanwhile.
  */
 
@@ -291,6 +295,76 @@ export function ConsentLayer({ onClose }: { onClose: () => void }) {
     <Layer kind="full" label="同意した内容" onClose={onClose}>
       <div className="full">
         <ConsentBody onClose={onClose} />
+      </div>
+    </Layer>
+  );
+}
+
+/**
+ * The question before one photo is deleted (#51), with the photo in view.
+ * onConfirm resolves to an error message, or null once the photo is gone;
+ * on an error the photo stays, and the question stays up to try again.
+ */
+export function DeletePhotoLayer({
+  entry,
+  number,
+  arrived,
+  onConfirm,
+  onClose,
+}: {
+  entry: LogEntry;
+  number: number;
+  /** After arriving, the photo leaves the keepsake too. */
+  arrived: boolean;
+  onConfirm: () => Promise<string | null>;
+  onClose: () => void;
+}) {
+  const [working, setWorking] = useState(false);
+  const [problem, setProblem] = useState("");
+  const meta = entry.record.photo;
+  const confirm = async () => {
+    setWorking(true);
+    setProblem("");
+    const error = await onConfirm();
+    setWorking(false);
+    if (error) setProblem(error);
+    else onClose();
+  };
+  return (
+    <Layer kind="sheet" label={`${number}枚目の写真を削除しますか？`} alert onClose={working ? () => undefined : onClose}>
+      <div className="scrim" onClick={working ? undefined : onClose} aria-hidden="true" />
+      <div className="sheet-panel sheet-panel--bottom">
+        <p className="mono">! Delete</p>
+        <h2 className="h2" style={{ margin: "4px 0 8px" }}>
+          <Phrases text={`${number}枚目の写真を削除しますか？`} />
+        </h2>
+        {entry.photo && (
+          <div className="delete__print">
+            <Print
+              source={{ blob: entry.photo }}
+              number={number}
+              time={clock(entry.record.takenAt)}
+              ratio={meta && meta.width > 0 && meta.height > 0 ? meta.width / meta.height : 3 / 4}
+              small
+            />
+          </div>
+        )}
+        <p className="body">
+          <Sentences text={`この写真と、\n選んだ場所の記録を削除します。${arrived ? "作品からも外れます。" : ""}削除した写真は元に戻せません。`} />
+        </p>
+        {problem && (
+          <p className="problem" role="alert">
+            <Sentences text={problem} />
+          </p>
+        )}
+        <div className="btns" style={{ marginTop: 16 }}>
+          <button type="button" className="btn btn--danger" disabled={working} onClick={() => void confirm()}>
+            {working ? "削除しています…" : "削除する"}
+          </button>
+          <button type="button" className="btn btn--line" disabled={working} onClick={onClose}>
+            キャンセル
+          </button>
+        </div>
       </div>
     </Layer>
   );

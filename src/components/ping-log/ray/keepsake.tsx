@@ -16,8 +16,9 @@ import { HomeMark, Icon, NoteBar, Phrases, ROOM, Screen, Sentences, useField, us
  * The keepsake (作品, #14), after the replay: the photos taken before
  * arriving, drawn as one picture (lib/ray/keepsake.ts) that the participant
  * saves to the phone. It is the one thing they take home. Each photo can be
- * saved on its own too. Nothing leaves the phone but through the share sheet
- * or a download the participant starts.
+ * saved on its own too, or deleted (#51), which draws the keepsake again.
+ * Nothing leaves the phone but through the share sheet or a download the
+ * participant starts.
  */
 
 /** 11月1日 18:00 */
@@ -52,16 +53,52 @@ export function SavePhoto({ entry, number }: { entry: LogEntry; number: number }
   );
 }
 
+/** Under a photo: save it to the phone, or delete it after a question (#51). */
+export function PhotoActions({ entry, number, onDelete }: { entry: LogEntry; number: number; onDelete: (entry: LogEntry, number: number) => void }) {
+  return (
+    <div className="print-actions">
+      <SavePhoto entry={entry} number={number} />
+      <button type="button" className="link print-actions__del" aria-label={`${number}枚目の写真を削除`} onClick={() => onDelete(entry, number)}>
+        削除
+      </button>
+    </div>
+  );
+}
+
+/** Where to ask about the data, as TRACE_B gives it: a web page or an address opens as a link. */
+function Contact({ value }: { value: string }) {
+  if (/^https?:\/\//.test(value)) {
+    return (
+      <a className="latin" href={value} target="_blank" rel="noreferrer">
+        {value}
+      </a>
+    );
+  }
+  if (/^[^\s@]+@[^\s@]+$/.test(value)) {
+    return (
+      <a className="latin" href={`mailto:${value}`}>
+        {value}
+      </a>
+    );
+  }
+  return <>{value}</>;
+}
+
 export function KeepsakeScreen({
   photos,
   deleteAfter,
+  contact,
   inert,
+  onDelete,
   onLeave,
 }: {
   /** This participation's photos, oldest first. */
   photos: LogEntry[];
   deleteAfter: string;
+  /** Where to ask about the data (TRACE_B's public config); empty when it gives none. */
+  contact: string;
   inert: boolean;
+  onDelete: (entry: LogEntry, number: number) => void;
   onLeave: () => void;
 }) {
   useField("room", ROOM);
@@ -149,10 +186,15 @@ export function KeepsakeScreen({
           <p className="small keep__note">
             <Sentences text={`TRACE の中の写真は、\n${dayTime(deleteAfter)}を過ぎると削除されます。作品や写真を保存しても、\nこの日時は延びません。`} />
           </p>
+          {contact && (
+            <p className="small keep__note">
+              問い合わせ先: <Contact value={contact} />
+            </p>
+          )}
 
           <section className="keep__photos" aria-labelledby={labelId}>
             <h2 className="h3" id={labelId}>
-              写真を1枚ずつ保存する
+              撮った写真
             </h2>
             <ul>
               {kept.map((entry, index) => {
@@ -165,7 +207,7 @@ export function KeepsakeScreen({
                       time={clock(entry.record.takenAt)}
                       ratio={meta && meta.width > 0 && meta.height > 0 ? meta.width / meta.height : 3 / 4}
                     />
-                    <SavePhoto entry={entry} number={index + 1} />
+                    <PhotoActions entry={entry} number={index + 1} onDelete={onDelete} />
                   </li>
                 );
               })}

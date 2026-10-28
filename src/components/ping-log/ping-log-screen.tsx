@@ -23,7 +23,7 @@ import {
 } from "@/lib/ping-log/push";
 import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
 import { dropPromptFromUrl } from "@/lib/ping-log/url";
-import { clearEntries, clearSessionEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
+import { clearEntries, clearSessionEntries, deleteEntry, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
 import { LockTimeout, onOtherTabs, withLock } from "@/lib/ping-log/tabs";
 import {
   TRACE_API_URL,
@@ -581,6 +581,22 @@ export function PingLogScreen() {
     setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。${backendNote}`);
   });
 
+  /**
+   * Deletes one of the participant's photos (#51): resolves to an error
+   * message, or null once it is gone. The photo and the place chosen for it
+   * are kept on the phone only for now. Once TRACE_B keeps where each photo
+   * was taken (#13), that record goes first, and the photo stays if it cannot.
+   */
+  const deletePhoto = async (entry: LogEntry): Promise<string | null> => {
+    try {
+      await deleteEntry(entry.id);
+      setEntries(await listEntries());
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : "写真を削除できませんでした。";
+    }
+  };
+
   const resend = () => void run(async () => {
     const failed = await sendUnsent();
     setMessage(failed ? `${failed}件を送信できませんでした。` : "未送信の記録を送りました。");
@@ -648,6 +664,8 @@ export function PingLogScreen() {
           onCloseDemo={() => setDemo(null)}
           onTakePhoto={() => openCamera(pendingAt)}
           onSkip={skipReminder}
+          onDeletePhoto={deletePhoto}
+          contact={traceConfig?.contact ?? ""}
           onWithdraw={async () => {
             await withdraw();
           }}

@@ -65,18 +65,24 @@ type ReadAnswer = { ok: true } | { ok: false; code: string; message: string; ret
 export function ArrivalFlow({
   target,
   photos,
+  contact,
   toKeepsake,
   inert,
   onClose,
   onArrived,
+  onDelete,
 }: {
   target: ArrivalTarget;
   /** This participation's photos, oldest first. */
   photos: LogEntry[];
+  /** Where to ask about the data, shown with the keepsake. */
+  contact: string;
   toKeepsake: boolean;
   inert: boolean;
   onClose: () => void;
   onArrived: (memorySessionId: string) => void;
+  /** Asks before deleting a photo (#51). */
+  onDelete: (entry: LogEntry, number: number) => void;
 }) {
   const { go } = useRay();
   const [step, setStep] = useState<"scan" | "replay" | "keepsake">("scan");
@@ -140,7 +146,9 @@ export function ArrivalFlow({
   );
 
   if (step === "scan") return <CameraScan inert={inert} onCancel={leave} onRead={read} onArrived={() => setStep("replay")} />;
-  if (step === "keepsake") return <KeepsakeScreen photos={photos} deleteAfter={memory.deleteAfter} inert={inert} onLeave={leave} />;
+  if (step === "keepsake") {
+    return <KeepsakeScreen photos={photos} deleteAfter={memory.deleteAfter} contact={contact} inert={inert} onDelete={onDelete} onLeave={leave} />;
+  }
   return (
     <Replay
       target={target}
