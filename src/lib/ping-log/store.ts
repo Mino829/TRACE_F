@@ -2,10 +2,11 @@
  * Device-local store for the timed log (`/log`).
  *
  * Every record is written here and stays: a participant's photos are never
- * sent (#54), and the developer screen's older records carry where they were
- * taken, which never leaves the phone (#39); `sentAt` marks the ones the push
- * worker acknowledged before. They stay until the participant deletes them.
- * Every change is told to /log's other tabs.
+ * sent (#54), only the checkpoint and time of each go to TRACE_B (#13), and
+ * the developer screen's older records carry where they were taken, which
+ * never leaves the phone (#39); `sentAt` marks the ones the push worker
+ * acknowledged before. They stay until the participant deletes them. Every
+ * change is told to /log's other tabs.
  */
 
 import type { LogRecord } from "./record";
@@ -23,6 +24,12 @@ export type LogEntry = {
    * push worker gets the record, not this.
    */
   memorySessionId?: string;
+  /**
+   * TRACE_B's record of the photo's checkpoint and time (#13), once it has
+   * one. Absent while that is still to be sent; null when it never will be:
+   * the photo was taken after the arrival, or TRACE_B turned it down.
+   */
+  photoMomentId?: string | null;
 };
 
 /** Where a saved entry ended up: with the worker, waiting here for a signal, or here only (no worker configured). */

@@ -71,6 +71,7 @@ export function ArrivalFlow({
   toKeepsake,
   inert,
   onClose,
+  beforeArrival,
   onArrived,
   onDelete,
 }: {
@@ -82,6 +83,8 @@ export function ArrivalFlow({
   toKeepsake: boolean;
   inert: boolean;
   onClose: () => void;
+  /** Gives the photos' places still on their way a moment to reach TRACE_B (#13); never rejects. */
+  beforeArrival: () => Promise<void>;
   onArrived: (memorySessionId: string) => void;
   /** Asks before deleting a photo (#51). */
   onDelete: (entry: LogEntry, number: number) => void;
@@ -102,6 +105,15 @@ export function ArrivalFlow({
   useEffect(() => {
     onArrivedRef.current = onArrived;
   }, [onArrived]);
+  const beforeArrivalRef = useRef(beforeArrival);
+  useEffect(() => {
+    beforeArrivalRef.current = beforeArrival;
+  }, [beforeArrival]);
+
+  // The places still on their way start for TRACE_B while the camera starts, so reading the code seldom waits for them.
+  useEffect(() => {
+    void beforeArrivalRef.current();
+  }, []);
 
   // Arrived already (a reload, or the button pressed again): straight to where the replay stands.
   useEffect(() => {
@@ -131,6 +143,8 @@ export function ArrivalFlow({
       if (attempt.current?.checkpointToken !== code) attempt.current = arrivalAttempt(code);
       const current = attempt.current;
       try {
+        // The room's screen draws the way from the places TRACE_B has when the arrival comes.
+        await beforeArrivalRef.current();
         const result = await sendOnce(memory.memorySessionId, "arrival", current, (key) => sendArrival(memory, current, key));
         arrived.current = true;
         onArrivedRef.current(memory.memorySessionId);

@@ -65,6 +65,8 @@ export type RayAppProps = {
   onArrive: () => void;
   /** TRACE_B has this participation's arrival: home leads to the keepsake. */
   arrived: boolean;
+  /** Runs before the arrival goes: the photos' places still on their way get a moment to reach TRACE_B (#13). */
+  onBeforeArrival: () => Promise<void>;
   /** TRACE_B has this memory session's arrival. */
   onArrived: (memorySessionId: string) => void;
   onCloseDemo: () => void;
@@ -180,6 +182,7 @@ function Current(
         toKeepsake={props.arrived}
         inert={inert}
         onClose={props.onCloseDemo}
+        beforeArrival={props.onBeforeArrival}
         onArrived={props.onArrived}
         onDelete={props.askDelete}
       />

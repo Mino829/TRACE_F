@@ -5,7 +5,8 @@ import path from "node:path";
 /**
  * /log after arriving at ShibaLab (#14): the keepsake drawn from the photos
  * kept on the phone, each photo saved or deleted (#51) on its own, and
- * 振り返り3D (#50) from the keepsake. Like log-tabs.spec.ts,
+ * 振り返り3D (#50) from the keepsake; and what of each photo goes to TRACE_B
+ * on the way there (#13). Like log-tabs.spec.ts,
  * the dev server runs with NEXT_PUBLIC_TRACE_API_URL=/api/backend and a
  * stand-in inside the test answers for TRACE_B. Chrome on a computer saves
  * by downloading, which is what is checked here; an iPhone's share sheet is not.
@@ -17,9 +18,24 @@ const SHOTS = process.env.TRACE_TEST_SHOTS;
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, geolocation: undefined, permissions: [], acceptDownloads: true });
 
-/** Answers TRACE_B's participant routes; `replay` is where the arrival's replay stands, once there is one. */
-async function standIn(context: BrowserContext): Promise<{ replay: "playing" | "completed" | null }> {
-  const state: { replay: "playing" | "completed" | null } = { replay: null };
+type Moment = { photoMomentId: string; clientPhotoId: string; checkpointId: string; capturedAt: string };
+
+type StandIn = {
+  /** Where the arrival's replay stands, once there is one. */
+  replay: "playing" | "completed" | null;
+  /** The photos' records TRACE_B keeps (#13), by the id the phone keeps each photo by. */
+  moments: Map<string, Moment>;
+  /** Every body sent to TRACE_B's /v2 photos, as it came. */
+  sent: unknown[];
+  /** TRACE_B's /v2 cannot be reached. */
+  down: boolean;
+  /** TRACE_B keeps a photo's record, but its answer is lost on the way back. */
+  lose: boolean;
+};
+
+/** Answers TRACE_B's participant routes, as TRACE_B's README describes them. */
+async function standIn(context: BrowserContext): Promise<StandIn> {
+  const state: StandIn = { replay: null, moments: new Map(), sent: [], down: false, lose: false };
   const memorySession = { sessionId: "mem-1", expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
   const displayAlias = { color: "cyan", symbol: "circle" };
   await context.route("**/api/backend/v1/**", async (route) => {
@@ -41,6 +57,28 @@ async function standIn(context: BrowserContext): Promise<{ replay: "playing" | "
       } });
     }
     return route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND", requestId: "req-1" } } });
+  });
+  await context.route("**/api/backend/v2/**", async (route) => {
+    if (state.down) return route.abort("internetdisconnected");
+    const request = route.request();
+    const where = `${request.method()} ${new URL(request.url()).pathname.replace("/api/backend", "")}`;
+    const keyed = !!request.headers()["idempotency-key"] && request.headers().authorization === "Bearer token-1";
+    if (where === "POST /v2/memory-sessions/mem-1/photos" && keyed) {
+      const body = request.postDataJSON() as Omit<Moment, "photoMomentId">;
+      state.sent.push(body);
+      const known = state.moments.get(body.clientPhotoId);
+      const moment = known ?? { photoMomentId: `photo_${state.sent.length}`, ...body };
+      state.moments.set(body.clientPhotoId, moment);
+      if (state.lose) return route.abort("connectionreset");
+      return route.fulfill({ status: known ? 200 : 201, json: { ...moment, sequenceNo: state.moments.size } });
+    }
+    const removing = /^DELETE \/v2\/memory-sessions\/mem-1\/photos\/(photo_\w+)$/.exec(where);
+    const moment = [...state.moments.values()].find((item) => item.photoMomentId === removing?.[1]);
+    if (moment && keyed) {
+      state.moments.delete(moment.clientPhotoId);
+      return route.fulfill({ status: 204 });
+    }
+    return route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND", requestId: "req-2" } } });
   });
   await context.route("**/push-stub/**", (route) => route.fulfill({ json: { ok: true } }));
   return state;
@@ -93,6 +131,25 @@ const kept = (page: Page) =>
           request.onsuccess = () => {
             open.result.close();
             resolve(request.result);
+          };
+        };
+      }),
+  );
+
+/** TRACE_B's record id each kept photo carries, oldest first: "waiting" while it is still to be sent, null when it never will be. */
+const momentIds = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<(string | null)[]>((resolve, reject) => {
+        const open = indexedDB.open("trace-ping-log");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const request = open.result.transaction("entries", "readonly").objectStore("entries").getAll();
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            open.result.close();
+            const entries = request.result as { record: { takenAt: string }; photoMomentId?: string | null }[];
+            resolve(entries.sort((a, b) => a.record.takenAt.localeCompare(b.record.takenAt)).map((entry) => (entry.photoMomentId === undefined ? "waiting" : entry.photoMomentId)));
           };
         };
       }),
@@ -203,6 +260,63 @@ test("a photo deletes after a question, from home before arriving and from the k
   await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
   // The title is up once TRACE_B has let go; the phone clears its photos just after.
   await expect.poll(() => kept(page)).toBe(0);
+});
+
+test("each photo's place and time go to TRACE_B, never the photo; a photo deletes there first, and stays while TRACE_B is out of reach", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page, 1);
+  await expect.poll(() => momentIds(page)).toEqual(["photo_1"]);
+
+  // Out of reach, a photo still saves and waits on the phone; back online, it goes.
+  backend.down = true;
+  await savePhoto(page, 2, ["研究棟", "7F", "研究棟7F 運河側"]);
+  await expect.poll(() => momentIds(page)).toEqual(["photo_1", "waiting"]);
+  backend.down = false;
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect.poll(() => momentIds(page)).toEqual(["photo_1", "photo_2"]);
+
+  // Only the photo's id, its checkpoint and its time went, once each.
+  expect(backend.sent).toHaveLength(2);
+  for (const body of backend.sent) expect(Object.keys(body as object).sort()).toEqual(["capturedAt", "checkpointId", "clientPhotoId"]);
+  const [first, second] = [...backend.moments.values()];
+  expect(first.checkpointId).not.toBe(second.checkpointId);
+  expect(Date.parse(first.capturedAt)).toBeLessThan(Date.parse(second.capturedAt));
+
+  // Out of reach, deleting keeps the photo and says why; the question stays up to try again.
+  backend.down = true;
+  await page.getByRole("button", { name: "1枚目の写真を削除" }).click();
+  await page.getByRole("button", { name: "削除する" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "サーバーにつながりませんでした" })).toBeVisible();
+  expect(await kept(page)).toBe(2);
+  backend.down = false;
+  await page.getByRole("button", { name: "削除する" }).click();
+  await expect(page.getByRole("heading", { name: "1枚目の写真を削除しますか？" })).toHaveCount(0);
+  expect(await kept(page)).toBe(1);
+  expect([...backend.moments.values()].map((moment) => moment.photoMomentId)).toEqual(["photo_2"]);
+
+  // A photo taken after the arrival stays off TRACE_B, whose way to ShibaLab ends at the photo before it.
+  backend.replay = "completed";
+  await page.reload();
+  await expect(page.getByRole("button", { name: "作品を見る" })).toBeVisible();
+  await savePhoto(page, 2, ["交流棟", "3F", "交流棟3F 食堂"]);
+  await expect.poll(() => momentIds(page)).toEqual(["photo_2", null]);
+  expect(backend.sent).toHaveLength(2);
+});
+
+test("a photo whose answer from TRACE_B was lost is found there by its id when deleted, and deleted there too", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  backend.lose = true;
+  await savePhoto(page, 1);
+  await expect.poll(() => backend.moments.size).toBe(1);
+  expect(await momentIds(page)).toEqual(["waiting"]);
+  backend.lose = false;
+  await page.getByRole("button", { name: "1枚目の写真を削除" }).click();
+  await page.getByRole("button", { name: "削除する" }).click();
+  await expect(page.getByRole("heading", { name: "1枚目の写真を削除しますか？" })).toHaveCount(0);
+  expect(await kept(page)).toBe(0);
+  expect(backend.moments.size).toBe(0);
 });
 
 /** Where the photos' pins stand over the 3D view. */

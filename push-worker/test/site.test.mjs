@@ -56,8 +56,9 @@ test("two-token delete forwards the live token only for the dedicated experience
   assert.equal(requests[0].headers.get("Idempotency-Key"), "same-key");
 });
 
-test("relays the arrival, reminder and photo-delete routes with their bodies", async () => {
+test("relays the arrival, reminder, photo place and photo-delete routes with their bodies", async () => {
   const memory = "v1/memory-sessions/mem_abc";
+  const moments = "v2/memory-sessions/mem_abc/photos";
   const subscription = JSON.stringify({ consent: true, subscription: { endpoint: "https://push.example.test/1", keys: { p256dh: "k", auth: "a" } }, intervalMinutes: 30 });
   const cases = [
     ["POST", `${memory}/arrival`, JSON.stringify({ checkpointToken: "token" })],
@@ -66,6 +67,8 @@ test("relays the arrival, reminder and photo-delete routes with their bodies", a
     ["PATCH", `${memory}/push-subscription`, JSON.stringify({ status: "paused" })],
     ["DELETE", `${memory}/photos/photo_xyz`],
     ["DELETE", `${memory}/push-subscription`],
+    ["POST", moments, JSON.stringify({ clientPhotoId: "photo-1", checkpointId: "cp_kyoshitsu_3f_301", capturedAt: "2026-10-31T01:00:00.000Z" })],
+    ["DELETE", `${moments}/photo_xyz`],
   ];
   for (const [method, path, body] of cases) {
     const headers = { Origin: site, Authorization: "Bearer memory-token", "Idempotency-Key": "key-1" };
@@ -104,6 +107,11 @@ test("keeps operator and display routes closed", async () => {
     new Request(`${site}/api/backend/v1/live-presence-sessions/live_abc/position`, { method: "POST", headers: json, body: "{}" }),
     new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos`, { method: "PUT", headers: json, body: "{}" }),
     new Request(`${site}/api/backend/v1/experiences/exp_abc`, { method: "PATCH", headers: json, body: "{}" }),
+    // /log neither lists its photos' places nor reads the memory from TRACE_B.
+    new Request(`${site}/api/backend/v2/memory-sessions/mem_abc/photos`),
+    new Request(`${site}/api/backend/v2/memory-sessions/mem_abc/memory`),
+    new Request(`${site}/api/backend/v2/memory-sessions/mem_abc/photos/photo_xyz`, { method: "POST", headers: json, body: "{}" }),
+    new Request(`${site}/api/backend/v2/memory-sessions/mem_abc/photos/other_xyz`, { method: "DELETE", headers: { Origin: site } }),
   ];
   for (const request of cases) {
     const response = await handleSiteRequest(request, env, noCall);
