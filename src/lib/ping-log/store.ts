@@ -1,9 +1,10 @@
 /**
  * Device-local store for the timed log (`/log`).
  *
- * Every record is written here first and sent to the push worker afterwards,
- * so one taken without signal is kept and sent later; `sentAt` marks the ones
- * the worker has acknowledged. Every change is told to /log's other tabs.
+ * Every record is written here first. The developer screen's are sent to the
+ * push worker afterwards, so one taken without signal is kept and sent later;
+ * `sentAt` marks the ones the worker has acknowledged. A participant's photos
+ * stay here and are never sent (#54). Every change is told to /log's other tabs.
  */
 
 import type { LogRecord } from "./record";

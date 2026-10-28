@@ -342,7 +342,6 @@ type HomeProps = {
   onReminder: (on: boolean) => Promise<string | null>;
   /** Resolves to an error message, or null once the interval is changed. */
   onReminderInterval: (minutes: number) => Promise<string | null>;
-  onResend: () => void;
   onArrive: () => void;
   onDeveloper: () => void;
   onMenu: () => void;
@@ -364,7 +363,6 @@ export function HomeScreen(props: HomeProps) {
   const count = photos.length;
   const left = maxPhotos - count;
   const full = left <= 0;
-  const unsent = photos.filter((entry) => !entry.sentAt).length;
   const now = useNow(15_000);
   useField("day", DAY);
 
@@ -417,16 +415,6 @@ export function HomeScreen(props: HomeProps) {
         )}
       </header>
       <Pop info={memoryInfo} text={`撮影は${maxPhotos}枚までです。`} />
-      {unsent > 0 && (
-        <div className="unsent">
-          <span className="body">
-            <b>未送信</b> {unsent}枚
-          </span>
-          <button type="button" className="link" disabled={props.busy} onClick={props.onResend}>
-            いま送る
-          </button>
-        </div>
-      )}
       {left > 0 && left <= 3 && <p className="h3 remain">あと{left}枚撮れます</p>}
 
       {count === 0 ? (
