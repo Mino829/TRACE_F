@@ -185,7 +185,7 @@ export function TitleScreen({
           </li>
         </ol>
         <p className="title__note">
-          <Phrases text={"ShibaLab（教室棟301）には、\n好きなときに来てください。"} />
+          <Phrases text={"写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。"} />
           <Info info={info} label="写真の扱いについて" />
         </p>
         <Pop info={info} text="撮った写真は、展示に出しません。参加は任意です。" />
@@ -507,7 +507,7 @@ export function HomeScreen(props: HomeProps) {
           <span className="mono">Room 301</span>
         </div>
         <p className="body">
-          <Sentences text={"ShibaLab（教室棟301）には、\n好きなときに来てください。着いたら、ASYNC のブースにある\nQR コードを読み取ってください。"} />
+          <Sentences text={"写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。着いたら、ASYNC のブースにある\nQR コードを読み取ってください。"} />
         </p>
         <button type="button" className="btn" onClick={props.onArrive}>
           <Icon name="qr" />
