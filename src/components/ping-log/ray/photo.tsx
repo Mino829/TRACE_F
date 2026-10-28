@@ -51,19 +51,11 @@ type Props = {
 
 type Step = "preview" | "place" | "saving" | "done";
 
-/** Only a photo still waiting is worth a word; a sent one needs none. */
-const OUTCOME: Record<SaveOutcome, string> = {
-  sent: "",
-  queued: "まだ送信できていません。電波の良い場所で送信してください。",
-  local: "",
-};
-
 export function PhotoScreen(props: Props) {
   const { shot } = props;
   const { field, fx, go } = useRay();
   const [photo, setPhoto] = useState<{ blob: Blob; meta: PhotoMeta } | null>(null);
   const [step, setStep] = useState<Step>("preview");
-  const [outcome, setOutcome] = useState<SaveOutcome | null>(null);
   const [error, setError] = useState("");
   // Decided when the photo arrives, so switching it on here keeps the switch in view.
   const [offer] = useState(props.offerReminder);
@@ -105,9 +97,9 @@ export function PhotoScreen(props: Props) {
     if (!photo) return;
     setStep("saving");
     setError("");
-    let saved: SaveOutcome;
     try {
-      saved = await props.onSave(await photoEntry(shot, photo, props.consent, place));
+      // The photo stays on the phone (#54): there is nothing to wait for on the network.
+      await props.onSave(await photoEntry(shot, photo, props.consent, place));
     } catch (problem) {
       setError(problem instanceof Error ? problem.message : "保存できませんでした。");
       setStep("place");
@@ -121,7 +113,6 @@ export function PhotoScreen(props: Props) {
       field?.burst(0.9);
       await fx?.flash(SWAP, 90);
     }
-    setOutcome(saved);
     setStep("done");
   };
 
@@ -190,7 +181,6 @@ export function PhotoScreen(props: Props) {
     );
   }
 
-  const sub = `${outcome ? OUTCOME[outcome] : ""}`;
   return (
     <Screen key="clear" className="clear" inert={props.inert}>
       <div className="topbar">
@@ -212,11 +202,6 @@ export function PhotoScreen(props: Props) {
       <h1 className="h2 clear__msg" role="status">
         <Phrases text={`${shot.number}枚目のメモリーを残しました`} />
       </h1>
-      {sub && (
-        <p className="small clear__sub">
-          <Sentences text={sub} />
-        </p>
-      )}
       {props.reminderOn && props.nextReminderAt !== null && (
         <p className="small clear__sub">
           次のリマインダーは <span className="latin">{clock(props.nextReminderAt)}</span> ごろです。

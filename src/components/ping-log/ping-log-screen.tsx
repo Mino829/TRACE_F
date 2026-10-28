@@ -23,7 +23,7 @@ import {
 } from "@/lib/ping-log/push";
 import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
 import { dropPromptFromUrl } from "@/lib/ping-log/url";
-import { clearEntries, clearSessionEntries, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
+import { clearEntries, clearSessionEntries, deleteEntry, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
 import { LockTimeout, onOtherTabs, withLock } from "@/lib/ping-log/tabs";
 import {
   TRACE_API_URL,
@@ -74,8 +74,9 @@ import "./developer.css";
  * memory session, and "参加をやめる" deletes the memory session too. The
  * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
  * and the photo reminder goes through TRACE_B as well (trace-api/reminder.ts).
- * Photos and the story have no backend routes yet and stay on the phone and
- * the push worker, as everything does when the variable is unset.
+ * A participant's photos and their records stay on the phone, with or without
+ * the variable (#54): photos go to no server, and where each was taken reaches
+ * TRACE_B once it has a route for it (#13).
  *
  * The developer screen keeps legacy records and their deletion controls
  * accessible; it no longer offers location capture or accuracy pings.
@@ -157,9 +158,13 @@ function notificationState(): NotificationPermission | "unsupported" {
   return typeof Notification === "undefined" || !("PushManager" in window) ? "unsupported" : Notification.permission;
 }
 
-/** A record still to go to the push worker: only a GPS-free checkpoint photo ever goes. */
+/**
+ * A record still to go to the push worker. None qualifies any more: a
+ * participant's photo stays on the phone (#54), and only a GPS-free checkpoint
+ * photo may leave it (#39), so the developer screen's older records stay too.
+ */
 function waiting(entry: LogEntry): boolean {
-  return !entry.sentAt && isUploadablePhoto(entry);
+  return !entry.sentAt && purposeOf(entry.record) !== "photo-memory" && isUploadablePhoto(entry);
 }
 
 /** The worker pings on whole multiples of the interval, counted in minutes since the epoch. */
@@ -206,6 +211,15 @@ export function PingLogScreen() {
   const trace = useTraceReminder({ experience, config: traceConfig, setConfig: setTraceConfig, subscription, setSubscription,
     setWorkerExpiresAt: setExpiresAt, registration: registrationRef, now });
   const { noteArrival } = trace;
+  // The memory session TRACE_B has the arrival of: home then leads to the keepsake (#14).
+  const [arrivedIn, setArrivedIn] = useState<string | null>(null);
+  const arrive = useCallback(
+    (memorySessionId: string) => {
+      noteArrival(memorySessionId);
+      setArrivedIn(memorySessionId);
+    },
+    [noteArrival],
+  );
 
   useEffect(() => {
     viewRef.current = view;
@@ -326,7 +340,7 @@ export function PingLogScreen() {
     getExperience(stored.experienceId, stored.memory)
       .then((status) => {
         setExperience(updateTabExperience(stored, status));
-        if (status.replayStatus) noteArrival(stored.memory.memorySessionId);
+        if (status.replayStatus) arrive(stored.memory.memorySessionId);
       })
       .catch((error: unknown) => {
         // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
@@ -338,7 +352,7 @@ export function PingLogScreen() {
         // Any other failure does not prove deletion; keep the credential and its delete key.
         setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
       });
-  }, [noteArrival]);
+  }, [arrive]);
 
   // Another tab joined, withdrew, or saved or sent a photo: this one shows the same participation.
   useEffect(
@@ -536,8 +550,13 @@ export function PingLogScreen() {
   };
 
   const save = async (entry: LogEntry): Promise<SaveOutcome> => {
-    await putEntry(memorySessionId && purposeOf(entry.record) === "photo-memory" ? { ...entry, memorySessionId } : entry);
+    const photo = purposeOf(entry.record) === "photo-memory";
+    await putEntry(memorySessionId && photo ? { ...entry, memorySessionId } : entry);
     if (entry.record.kind === "ping") prompt(null);
+    if (photo) {
+      setEntries(await listEntries());
+      return "local";
+    }
     const failed = await sendUnsent();
     return !PUSH_API_URL ? "local" : failed ? "queued" : "sent";
   };
@@ -570,6 +589,22 @@ export function PingLogScreen() {
     setConsent(null);
     setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。${backendNote}`);
   });
+
+  /**
+   * Deletes one of the participant's photos (#51): resolves to an error
+   * message, or null once it is gone. The photo and the place chosen for it
+   * are kept on the phone only for now. Once TRACE_B keeps where each photo
+   * was taken (#13), that record goes first, and the photo stays if it cannot.
+   */
+  const deletePhoto = async (entry: LogEntry): Promise<string | null> => {
+    try {
+      await deleteEntry(entry.id);
+      setEntries(await listEntries());
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : "写真を削除できませんでした。";
+    }
+  };
 
   const resend = () => void run(async () => {
     const failed = await sendUnsent();
@@ -633,12 +668,14 @@ export function PingLogScreen() {
           // With the backend, home's button reads the booth's real QR code and follows the replay; without it, the button opens the demo.
           arrival={experience}
           onArrive={() => setDemo("home")}
+          arrived={memorySessionId !== null && arrivedIn === memorySessionId}
           // TRACE_B dropped the reminder's subscription on arrival: the switch stays off from now on.
-          onArrived={noteArrival}
+          onArrived={arrive}
           onCloseDemo={() => setDemo(null)}
           onTakePhoto={() => openCamera(pendingAt)}
           onSkip={skipReminder}
-          onResend={resend}
+          onDeletePhoto={deletePhoto}
+          contact={traceConfig?.contact ?? ""}
           onWithdraw={async () => {
             await withdraw();
           }}

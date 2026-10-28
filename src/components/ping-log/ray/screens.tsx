@@ -8,6 +8,7 @@ import { REMINDER_PLAN } from "@/lib/ping-log/push";
 import type { LogEntry } from "@/lib/ping-log/store";
 
 import { clock } from "../ui";
+import { PhotoActions } from "./keepsake";
 import { Print, Strip, frameLabel } from "./prints";
 import {
   ClearWord,
@@ -185,7 +186,7 @@ export function TitleScreen({
           </li>
         </ol>
         <p className="title__note">
-          <Phrases text={"ShibaLab（教室棟301）には、\n好きなときに来てください。"} />
+          <Phrases text={"写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。"} />
           <Info info={info} label="写真の扱いについて" />
         </p>
         <Pop info={info} text="撮った写真は、展示に出しません。参加は任意です。" />
@@ -342,7 +343,10 @@ type HomeProps = {
   onReminder: (on: boolean) => Promise<string | null>;
   /** Resolves to an error message, or null once the interval is changed. */
   onReminderInterval: (minutes: number) => Promise<string | null>;
-  onResend: () => void;
+  /** TRACE_B has the arrival: the foot leads to the keepsake instead of the QR code. */
+  arrived: boolean;
+  /** Asks before deleting a photo (#51). */
+  onDelete: (entry: LogEntry, number: number) => void;
   onArrive: () => void;
   onDeveloper: () => void;
   onMenu: () => void;
@@ -351,9 +355,10 @@ type HomeProps = {
 
 /**
  * Home, where a participant lands every time after joining: a reminder
- * waiting for an answer, today's photos shown large under a ruled head, the
- * camera button, the reminder's switch, and at the foot, in the dark of the
- * room, the way into ShibaLab. Nothing here mentions where photos were taken.
+ * waiting for an answer, today's photos shown large under a ruled head, each
+ * of which can be saved to the phone or deleted, the camera button, the reminder's
+ * switch, and at the foot, in the dark of the room, the way into ShibaLab.
+ * Nothing here mentions where photos were taken.
  */
 export function HomeScreen(props: HomeProps) {
   const { photos, maxPhotos, pendingAt } = props;
@@ -364,7 +369,6 @@ export function HomeScreen(props: HomeProps) {
   const count = photos.length;
   const left = maxPhotos - count;
   const full = left <= 0;
-  const unsent = photos.filter((entry) => !entry.sentAt).length;
   const now = useNow(15_000);
   useField("day", DAY);
 
@@ -417,16 +421,6 @@ export function HomeScreen(props: HomeProps) {
         )}
       </header>
       <Pop info={memoryInfo} text={`撮影は${maxPhotos}枚までです。`} />
-      {unsent > 0 && (
-        <div className="unsent">
-          <span className="body">
-            <b>未送信</b> {unsent}枚
-          </span>
-          <button type="button" className="link" disabled={props.busy} onClick={props.onResend}>
-            いま送る
-          </button>
-        </div>
-      )}
       {left > 0 && left <= 3 && <p className="h3 remain">あと{left}枚撮れます</p>}
 
       {count === 0 ? (
@@ -449,6 +443,7 @@ export function HomeScreen(props: HomeProps) {
                   time={clock(entry.record.takenAt)}
                   ratio={meta && meta.width > 0 && meta.height > 0 ? meta.width / meta.height : 3 / 4}
                 />
+                <PhotoActions entry={entry} number={count - index} onDelete={props.onDelete} />
               </li>
             );
           })}
@@ -518,13 +513,27 @@ export function HomeScreen(props: HomeProps) {
           <span className="mono">ShibaLab</span>
           <span className="mono">Room 301</span>
         </div>
-        <p className="body">
-          <Sentences text={"ShibaLab（教室棟301）には、\n好きなときに来てください。着いたら、ASYNC のブースにある\nQR コードを読み取ってください。"} />
-        </p>
-        <button type="button" className="btn" onClick={props.onArrive}>
-          <Icon name="qr" />
-          QR コードを読み取る
-        </button>
+        {props.arrived ? (
+          <>
+            <p className="body">
+              <Sentences text={"再生が終わったら、\n撮った写真を一枚の作品にして保存できます。"} />
+            </p>
+            <button type="button" className="btn" onClick={props.onArrive}>
+              <Icon name="arrow" />
+              作品を見る
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="body">
+              <Sentences text={"写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。着いたら、ASYNC のブースにある\nQR コードを読み取ってください。"} />
+            </p>
+            <button type="button" className="btn" onClick={props.onArrive}>
+              <Icon name="qr" />
+              QR コードを読み取る
+            </button>
+          </>
+        )}
       </section>
     </Screen>
   );

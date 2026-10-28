@@ -1,7 +1,11 @@
 /**
- * Device-local log. Only new GPS-free checkpoint photos are eligible to send;
- * older entries stay here until the participant deletes them. Every change is
- * told to /log's other tabs.
+ * Device-local store for the timed log (`/log`).
+ *
+ * Every record is written here and stays: a participant's photos are never
+ * sent (#54), and the developer screen's older records carry where they were
+ * taken, which never leaves the phone (#39); `sentAt` marks the ones the push
+ * worker acknowledged before. They stay until the participant deletes them.
+ * Every change is told to /log's other tabs.
  */
 
 import type { LogRecord } from "./record";
@@ -62,6 +66,20 @@ export async function putEntry(entry: LogEntry): Promise<void> {
       resolve();
     };
     tx.onerror = () => reject(tx.error ?? new Error("記録を保存できませんでした。"));
+  });
+}
+
+/** Erases one entry: a participant's photo they deleted (#51). */
+export async function deleteEntry(id: string): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    tx.objectStore(STORE_NAME).delete(id);
+    tx.oncomplete = () => {
+      tellOtherTabs();
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error ?? new Error("写真を削除できませんでした。"));
   });
 }
 

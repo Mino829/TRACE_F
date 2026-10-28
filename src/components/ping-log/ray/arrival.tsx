@@ -15,18 +15,23 @@ import {
   type MemoryCredential,
   type ReplayStatus,
 } from "@/lib/trace-api/client";
+import type { LogEntry } from "@/lib/ping-log/store";
 import { sendOnce } from "@/lib/trace-api/session";
 
 import { useLayer } from "../layer";
 import { clock } from "../ui";
 import { ScanWindow, placeTrackers, useBeam } from "./demo";
+import { KeepsakeScreen } from "./keepsake";
+import { TraceScreen } from "./trace";
 import { HomeMark, Icon, Phrases, Screen, Sentences, SWAP, useField, useRay } from "./stage";
 
 /**
  * Arriving at ShibaLab for real, while /log works with TRACE_B: the phone's
  * rear camera reads the QR code in the booth's projected picture, the arrival
  * goes to TRACE_B, and the phone follows the replay on the room's screen
- * until it has played or been skipped. Without the backend, the home's button
+ * until it has played or been skipped. Then the photos taken before arriving
+ * become the keepsake (keepsake.tsx), and the way between their places
+ * 振り返り3D (trace.tsx). Without the backend, the home's button
  * opens the demo (demo.tsx) instead.
  *
  * As in the demo, the phone shows no queue, no wait and no symbol. The camera
@@ -55,20 +60,34 @@ function isFinal(status: ReplayStatus | null): boolean {
 
 type ReadAnswer = { ok: true } | { ok: false; code: string; message: string; retryAfter: number | null };
 
-/** onArrived: TRACE_B has the arrival, now or from before; it ends the photo reminder then. */
+/**
+ * onArrived: TRACE_B has the arrival, now or from before; it ends the photo reminder then.
+ * toKeepsake: opened from home after arriving, so a replay that is over leads straight to the keepsake.
+ */
 export function ArrivalFlow({
   target,
+  photos,
+  contact,
+  toKeepsake,
   inert,
   onClose,
   onArrived,
+  onDelete,
 }: {
   target: ArrivalTarget;
+  /** This participation's photos, oldest first. */
+  photos: LogEntry[];
+  /** Where to ask about the data, shown with the keepsake. */
+  contact: string;
+  toKeepsake: boolean;
   inert: boolean;
   onClose: () => void;
   onArrived: (memorySessionId: string) => void;
+  /** Asks before deleting a photo (#51). */
+  onDelete: (entry: LogEntry, number: number) => void;
 }) {
   const { go } = useRay();
-  const [step, setStep] = useState<"scan" | "replay">("scan");
+  const [step, setStep] = useState<"scan" | "replay" | "keepsake" | "trace">("scan");
   const [status, setStatus] = useState<ReplayStatus | null>(null);
   // Unknown when the arrival was earlier than this screen.
   const [arrivedAt, setArrivedAt] = useState<string | null>(null);
@@ -94,7 +113,7 @@ export function ArrivalFlow({
         onArrivedRef.current(memory.memorySessionId);
         void go(() => {
           setStatus(known);
-          setStep("replay");
+          setStep(toKeepsake && isFinal(known) ? "keepsake" : "replay");
         });
       })
       // The camera is starting anyway; sending the code will tell.
@@ -102,7 +121,7 @@ export function ArrivalFlow({
     return () => {
       alive = false;
     };
-  }, [go, experienceId, memory]);
+  }, [go, experienceId, memory, toKeepsake]);
 
   const read = useCallback(
     async (code: string): Promise<ReadAnswer> => {
@@ -129,7 +148,32 @@ export function ArrivalFlow({
   );
 
   if (step === "scan") return <CameraScan inert={inert} onCancel={leave} onRead={read} onArrived={() => setStep("replay")} />;
-  return <Replay target={target} status={status} arrivedAt={arrivedAt} inert={inert} onStatus={setStatus} onLeave={leave} />;
+  if (step === "keepsake") {
+    return (
+      <KeepsakeScreen
+        photos={photos}
+        deleteAfter={memory.deleteAfter}
+        contact={contact}
+        inert={inert}
+        onDelete={onDelete}
+        onTrace={() => void go(() => setStep("trace"))}
+        onLeave={leave}
+      />
+    );
+  }
+  if (step === "trace") return <TraceScreen photos={photos} inert={inert} onBack={() => void go(() => setStep("keepsake"))} />;
+  return (
+    <Replay
+      target={target}
+      status={status}
+      arrivedAt={arrivedAt}
+      photos={photos.length}
+      inert={inert}
+      onStatus={setStatus}
+      onKeepsake={() => void go(() => setStep("keepsake"))}
+      onLeave={leave}
+    />
+  );
 }
 
 /* ------------------------------------------------------------------- scan */
@@ -441,15 +485,15 @@ function CameraScan({
 
 function replayText(status: ReplayStatus | null, skippedHere: boolean): { label: string; title: string; body: string } {
   if (status === "playing") return { label: "Playback", title: "スクリーンを見てください", body: "あなたの軌跡を、\nスクリーンで再生しています。" };
-  if (status === "completed") return { label: "Played", title: "再生が終わりました", body: "撮った写真は、ホームでいつでも見られます。" };
+  if (status === "completed") return { label: "Played", title: "再生が終わりました", body: "あなたの軌跡を、\nスクリーンで再生しました。" };
   if (status === "skipped" && skippedHere) {
-    return { label: "Skipped", title: "再生をやめました", body: "あなたの軌跡は、スクリーンには映りません。撮った写真は、ホームでいつでも見られます。" };
+    return { label: "Skipped", title: "再生をやめました", body: "あなたの軌跡は、スクリーンには映りません。" };
   }
   if (status === "skipped") {
     return {
       label: "Skipped",
       title: "スクリーンでは\n再生できませんでした",
-      body: "展示の都合で、\n今回はスクリーンで再生できませんでした。撮った写真は、ホームでいつでも見られます。",
+      body: "展示の都合で、\n今回はスクリーンで再生できませんでした。",
     };
   }
   return { label: "Standby", title: "スクリーンの前でお待ちください", body: "あなたの軌跡を、\nこのあとスクリーンで再生します。" };
@@ -461,21 +505,27 @@ const QUIET_FAILURES = 3;
 /**
  * Where the replay stands, asked of TRACE_B every few seconds while it is
  * queued or playing and the page is visible. While it is queued the
- * participant may give it up.
+ * participant may give it up. Once it is over, played or not, the photos
+ * lead on to the keepsake.
  */
 function Replay({
   target,
   status,
   arrivedAt,
+  photos,
   inert,
   onStatus,
+  onKeepsake,
   onLeave,
 }: {
   target: ArrivalTarget;
   status: ReplayStatus | null;
   arrivedAt: string | null;
+  /** How many photos this phone keeps for the participation. */
+  photos: number;
   inert: boolean;
   onStatus: (status: ReplayStatus) => void;
+  onKeepsake: () => void;
   onLeave: () => void;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -603,8 +653,28 @@ function Replay({
           </div>
         </section>
       )}
+      {final && photos > 0 && (
+        <section className="play__next" aria-labelledby="ray-keep">
+          <p className="mono">Keepsake</p>
+          <h2 className="h3" id="ray-keep">
+            作品を保存できます
+          </h2>
+          <p className="body">
+            <Sentences text={"撮った写真を、\n一枚の作品にまとめました。持ち帰れるのは、\nこの作品と写真です。"} />
+          </p>
+          <button type="button" className="btn" onClick={onKeepsake}>
+            <Icon name="arrow" />
+            作品を見る
+          </button>
+        </section>
+      )}
+      {final && photos === 0 && (
+        <p className="body" style={{ marginTop: 18 }}>
+          <Sentences text={"この端末には写真が残っていないので、\n作品を作れません。写真を撮ったブラウザで開くと、\n作品を保存できます。"} />
+        </p>
+      )}
       {final && (
-        <button type="button" className="btn" style={{ marginTop: 18 }} onClick={onLeave}>
+        <button type="button" className={`btn${photos > 0 ? " btn--line" : ""}`} style={{ marginTop: photos > 0 ? 10 : 18 }} onClick={onLeave}>
           ホームへもどる
         </button>
       )}

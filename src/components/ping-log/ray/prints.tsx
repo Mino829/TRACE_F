@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- photos are local blob: URLs or the demo's own files */
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Children, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { RayPrint, reducedMotion } from "@/lib/ray/fx";
 
@@ -138,10 +138,15 @@ export function Print({
   );
 }
 
-/** Photos side by side, snapping one at a time. A fast swipe tears the field and the photos. */
+/**
+ * Photos side by side, snapping one at a time. A fast swipe tears the field
+ * and the photos. Below them, one dash per photo marks the one in view (#52).
+ */
 export function Strip({ children, label, one }: { children: ReactNode; label: string; one: boolean }) {
   const { field } = useRay();
   const ref = useRef<HTMLUListElement>(null);
+  const total = Children.count(children);
+  const [at, setAt] = useState(0);
 
   useEffect(() => {
     const strip = ref.current;
@@ -164,10 +169,53 @@ export function Strip({ children, label, one }: { children: ReactNode; label: st
     return () => strip.removeEventListener("scroll", onScroll);
   }, [field]);
 
-  // Focusable, so the arrow keys can scroll it too.
+  // The photo nearest the middle is the one in view; read once a frame while scrolling.
+  useEffect(() => {
+    const strip = ref.current;
+    if (!strip || one) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const box = strip.getBoundingClientRect();
+      const middle = box.left + box.width / 2;
+      let nearest = 0;
+      let best = Infinity;
+      Array.from(strip.children).forEach((child, index) => {
+        const rect = child.getBoundingClientRect();
+        const distance = Math.abs(rect.left + rect.width / 2 - middle);
+        if (distance < best) {
+          best = distance;
+          nearest = index;
+        }
+      });
+      setAt(nearest);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    frame = requestAnimationFrame(measure);
+    strip.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      strip.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, [one, total]);
+
+  // Focusable, so the arrow keys can scroll it too. Each photo's caption already says which it is, so the dashes are for the eye only.
   return (
-    <ul ref={ref} className={`strip${one ? " strip--one" : ""}`} aria-label={label} tabIndex={0}>
-      {children}
-    </ul>
+    <>
+      <ul ref={ref} className={`strip${one ? " strip--one" : ""}`} aria-label={label} tabIndex={0}>
+        {children}
+      </ul>
+      {!one && (
+        <div className="strip__at" aria-hidden="true">
+          {Array.from({ length: total }, (_, index) => (
+            <i key={index} className={index === Math.min(at, total - 1) ? "is-at" : undefined} />
+          ))}
+        </div>
+      )}
+    </>
   );
 }
