@@ -7,7 +7,10 @@
 //
 // The page is built against PUSH_API_URL from .env when it is set. When .env
 // also sets TRACE_API_URL (/api/backend), /log joins on TRACE_B through this
-// site's relay; set trace-log's two backend secrets before that.
+// site's relay; set trace-log's two backend secrets before that. When .env sets
+// both DISPLAY_API_URL and GOOGLE_CLIENT_ID, /display signs the operator in with
+// Google and connects to TRACE_B directly (no relay); otherwise it stays on its
+// test playback.
 
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -34,11 +37,15 @@ const traceApiUrl = fromEnvFile("TRACE_API_URL");
 // TRACE_B's TRACE_ARRIVAL_VENUE and TRACE_ARRIVAL_CHECKPOINT_ID: /log rebuilds the booth's packed arrival QR with them.
 const arrivalVenue = fromEnvFile("ARRIVAL_VENUE");
 const arrivalCheckpointId = fromEnvFile("ARRIVAL_CHECKPOINT_ID");
+// TRACE_B's own origin (not this site's /api/backend) and the Web client ID in TRACE_B's TRACE_DISPLAY_GOOGLE_CLIENT_ID.
+const displayApiUrl = fromEnvFile("DISPLAY_API_URL");
+const googleClientId = fromEnvFile("GOOGLE_CLIENT_ID");
 const pageEnv = {
   NEXT_STATIC_EXPORT: "1",
   NEXT_PUBLIC_PUSH_API_URL: pushUrl,
   ...(traceApiUrl ? { NEXT_PUBLIC_TRACE_API_URL: traceApiUrl } : {}),
   ...(arrivalVenue && arrivalCheckpointId ? { NEXT_PUBLIC_ARRIVAL_VENUE: arrivalVenue, NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID: arrivalCheckpointId } : {}),
+  ...(displayApiUrl && googleClientId ? { NEXT_PUBLIC_DISPLAY_API_URL: displayApiUrl, NEXT_PUBLIC_GOOGLE_CLIENT_ID: googleClientId } : {}),
 };
 
 const steps = [
