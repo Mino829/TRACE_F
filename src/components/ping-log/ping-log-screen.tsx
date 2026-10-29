@@ -30,8 +30,11 @@ import {
   TraceApiError,
   createExperience,
   deleteMemorySession,
+  deletePhotoMoment,
   fetchPublicConfig,
   getExperience,
+  sendPhotoMoment,
+  type MemoryCredential,
   type PublicConfig,
 } from "@/lib/trace-api/client";
 import {
@@ -75,8 +78,9 @@ import "./developer.css";
  * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
  * and the photo reminder goes through TRACE_B as well (trace-api/reminder.ts).
  * A participant's photos and their records stay on the phone, with or without
- * the variable (#54): photos go to no server, and where each was taken reaches
- * TRACE_B once it has a route for it (#13).
+ * the variable (#54): photos go to no server. Only the checkpoint and time of
+ * each photo taken before the arrival go to TRACE_B (#13), which draws the way
+ * between them on to ShibaLab.
  *
  * The developer screen keeps legacy records and their deletion controls
  * accessible; it no longer offers location capture or accuracy pings.
@@ -88,6 +92,8 @@ const PROMPT_MESSAGE = "trace-ping";
 const SEND_LOCK = "trace-log-send";
 /** How long a save waits for another tab that is sending; after that its photo waits for the next try. */
 const SEND_WAIT_MS = 10_000;
+/** How long reading the arrival QR waits for photos' places still on their way to TRACE_B; the code lives 25 seconds. */
+const PLACES_BEFORE_ARRIVAL_MS = 3_000;
 const START_AGAIN = "続けるときは、\nもう一度「はじめる」から参加してください。";
 
 type View = "participant" | "developer";
@@ -167,6 +173,41 @@ function waiting(entry: LogEntry): boolean {
   return !entry.sentAt && purposeOf(entry.record) !== "photo-memory" && isUploadablePhoto(entry);
 }
 
+/** A photo of this memory session whose checkpoint and time TRACE_B does not have yet. */
+function placeWaiting(entry: LogEntry, memorySessionId: string): boolean {
+  return entry.memorySessionId === memorySessionId && entry.photoMomentId === undefined && !!entry.record.place;
+}
+
+/**
+ * TRACE_B's answers that it will never take this photo's record, however often
+ * it is asked: deleted there before, past the photo limit, a participation
+ * that has ended or began before TRACE_B kept photos this way, or a request it
+ * cannot read. A checkpoint it does not know is not one of them: TRACE_B may
+ * learn it (TRACE_B#39).
+ */
+function turnedDown(error: TraceApiError): boolean {
+  return error.status === 404 || error.status === 409 || (error.status === 400 && error.code !== "INVALID_CHECKPOINT");
+}
+
+/**
+ * Sends one photo's checkpoint and time to TRACE_B: resolves to the id of
+ * TRACE_B's record, or to null when TRACE_B will never take it. Every try for
+ * the photo sends the same request, keyed by the photo's own id, so a resend
+ * gets the same record back; the key needs no storage of its own, which would
+ * outlast a participation that is forgotten meanwhile.
+ */
+async function sendPlace(memory: MemoryCredential, entry: LogEntry): Promise<string | null> {
+  const place = entry.record.place;
+  if (!place) return null;
+  const moment = { clientPhotoId: entry.id, checkpointId: place.checkpointId, capturedAt: entry.record.takenAt };
+  try {
+    return (await sendPhotoMoment(memory, moment, `photo:${entry.id}`)).photoMomentId;
+  } catch (error) {
+    if (error instanceof TraceApiError && turnedDown(error)) return null;
+    throw error;
+  }
+}
+
 /** The worker pings on whole multiples of the interval, counted in minutes since the epoch. */
 function nextMark(now: number, intervalMinutes: number): number {
   const step = intervalMinutes * 60 * 1000;
@@ -220,6 +261,11 @@ export function PingLogScreen() {
     },
     [noteArrival],
   );
+  // TRACE_B asked to wait before the next photo's place (RATE_LIMITED): none is sent before then.
+  const placesHeldUntil = useRef(0);
+  const [placesRetryAt, setPlacesRetryAt] = useState<number | null>(null);
+  // Photos whose checkpoint TRACE_B did not know: asked about again only when the page opens next, so they cannot use up its rate limit.
+  const checkpointRefused = useRef(new Set<string>());
 
   useEffect(() => {
     viewRef.current = view;
@@ -269,6 +315,80 @@ export function PingLogScreen() {
     setEntries(await listEntries());
     return failed;
   }, []);
+
+  /**
+   * Sends TRACE_B the checkpoint and time of each photo of this participation
+   * it does not have yet (#13); the photos themselves stay here. One tab sends
+   * at a time and reads the photos afresh before each, as sendUnsent does. A
+   * photo that cannot go now waits on the phone for the next try: the next
+   * photo, the page opening again, the phone coming back online, the arrival,
+   * or the end of TRACE_B's rate limit. Nothing about it is shown: the photo
+   * is saved either way.
+   */
+  const sendPlaces = useCallback(async (): Promise<void> => {
+    const memory = experience?.memory;
+    if (!memory || Date.parse(memory.expiresAt) <= Date.now() || placesHeldUntil.current > Date.now()) return;
+    await withLock(
+      SEND_LOCK,
+      async () => {
+        const tried = new Set<string>();
+        for (;;) {
+          const entry = (await listEntries()).find(
+            (item) => placeWaiting(item, memory.memorySessionId) && !tried.has(item.id) && !checkpointRefused.current.has(item.id),
+          );
+          if (!entry) return;
+          tried.add(entry.id);
+          try {
+            await putEntry({ ...entry, photoMomentId: await sendPlace(memory, entry) });
+          } catch (error) {
+            // A checkpoint this TRACE_B does not know yet (TRACE_B#39 may add it): the others still go.
+            if (error instanceof TraceApiError && error.code === "INVALID_CHECKPOINT") {
+              checkpointRefused.current.add(entry.id);
+              continue;
+            }
+            if (error instanceof TraceApiError && error.code === "RATE_LIMITED") {
+              placesHeldUntil.current = Date.now() + (error.retryAfter ?? 60) * 1000;
+              setPlacesRetryAt(placesHeldUntil.current);
+            }
+            return;
+          }
+        }
+      },
+      { waitMs: SEND_WAIT_MS },
+    ).catch(() => {
+      // Another tab is sending and takes these too, or the phone's storage failed: the next try picks them up.
+    });
+    listEntries().then(setEntries, () => undefined);
+  }, [experience]);
+
+  // The places left over when the page opens or joins, and those that waited for the phone to come back online.
+  useEffect(() => {
+    void sendPlaces();
+    const onOnline = () => void sendPlaces();
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [sendPlaces]);
+
+  // TRACE_B's wait is over: the places that waited for it go now.
+  useEffect(() => {
+    if (placesRetryAt === null) return;
+    const timer = window.setTimeout(() => {
+      placesHeldUntil.current = 0;
+      setPlacesRetryAt(null);
+      void sendPlaces();
+    }, Math.max(0, placesRetryAt - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [placesRetryAt, sendPlaces]);
+
+  /**
+   * Before the arrival goes, the places still on their way get a moment to
+   * reach TRACE_B, so the way the room's screen draws has them; the arrival
+   * goes after that whether they did or not.
+   */
+  const placesBeforeArrival = useCallback(
+    () => Promise.race([sendPlaces(), new Promise<void>((resolve) => window.setTimeout(resolve, PLACES_BEFORE_ARRIVAL_MS))]),
+    [sendPlaces],
+  );
 
   useEffect(() => {
     // The prompt is in localStorage now; a reload should not bring back an answered one.
@@ -387,6 +507,7 @@ export function PingLogScreen() {
   const sessionExpired = experience !== null && Date.parse(experience.memory.expiresAt) <= now;
   const joined = consent?.version === CONSENT_VERSION && (!TRACE_API_URL || (experience !== null && !sessionExpired));
   const memorySessionId = joined ? (experience?.memory.memorySessionId ?? null) : null;
+  const arrived = memorySessionId !== null && arrivedIn === memorySessionId;
   const maxPhotos = (TRACE_API_URL && traceConfig?.photo.maxCount) || MAX_PHOTOS;
 
   // This participation's photos: the memory session's with the backend, the day's without.
@@ -551,10 +672,12 @@ export function PingLogScreen() {
 
   const save = async (entry: LogEntry): Promise<SaveOutcome> => {
     const photo = purposeOf(entry.record) === "photo-memory";
-    await putEntry(memorySessionId && photo ? { ...entry, memorySessionId } : entry);
+    // A photo taken after the arrival stays off TRACE_B: TRACE_B draws the way on to ShibaLab only from a last photo taken before it.
+    await putEntry(memorySessionId && photo ? { ...entry, memorySessionId, ...(arrived ? { photoMomentId: null } : {}) } : entry);
     if (entry.record.kind === "ping") prompt(null);
     if (photo) {
       setEntries(await listEntries());
+      void sendPlaces();
       return "local";
     }
     const failed = await sendUnsent();
@@ -580,7 +703,8 @@ export function PingLogScreen() {
     else if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
     trace.forget();
     const deleted = PUSH_API_URL ? await forgetMe() : 0;
-    await clearEntries();
+    // A place already on its way finishes first, so it cannot put its photo back.
+    await withLock(SEND_LOCK, clearEntries, { waitMs: SEND_WAIT_MS }).catch(() => clearEntries());
     clearConsent();
     prompt(null);
     setSubscription(null);
@@ -592,16 +716,49 @@ export function PingLogScreen() {
 
   /**
    * Deletes one of the participant's photos (#51): resolves to an error
-   * message, or null once it is gone. The photo and the place chosen for it
-   * are kept on the phone only for now. Once TRACE_B keeps where each photo
-   * was taken (#13), that record goes first, and the photo stays if it cannot.
+   * message, or null once it is gone. TRACE_B's record of where and when it
+   * was taken goes first (#13), and the photo stays if that cannot; a photo
+   * TRACE_B no longer has, or never took, goes from the phone only. It runs
+   * under the send lock, so a send under way cannot leave TRACE_B a record of
+   * a photo the phone no longer has.
    */
   const deletePhoto = async (entry: LogEntry): Promise<string | null> => {
     try {
-      await deleteEntry(entry.id);
+      await withLock(
+        SEND_LOCK,
+        async () => {
+          // Read afresh: a send may have given it TRACE_B's record since the screen was drawn.
+          const current = (await listEntries()).find((item) => item.id === entry.id);
+          if (!current) return;
+          const memory = experience?.memory.memorySessionId === current.memorySessionId ? experience?.memory : undefined;
+          let photoMomentId = current.photoMomentId;
+          // Still waiting to be sent: TRACE_B may have it although its answer never came back. The same request again tells.
+          if (memory && photoMomentId === undefined) {
+            try {
+              photoMomentId = await sendPlace(memory, current);
+            } catch (error) {
+              // TRACE_B never took it, the participation is gone there, or TRACE_B takes no photos at all.
+              const nothingThere = error instanceof TraceApiError && (error.status === 401 || error.code === "INVALID_CHECKPOINT" || error.code === "PHOTO_DISABLED");
+              if (!nothingThere) throw error;
+              photoMomentId = null;
+            }
+          }
+          if (memory && photoMomentId) {
+            try {
+              await deletePhotoMoment(memory, photoMomentId, `photo-delete:${current.id}`);
+            } catch (error) {
+              // Gone there already, or its participation has ended there: nothing is left on TRACE_B.
+              if (!(error instanceof TraceApiError && [401, 404, 409].includes(error.status))) throw error;
+            }
+          }
+          await deleteEntry(current.id);
+        },
+        { waitMs: SEND_WAIT_MS },
+      );
       setEntries(await listEntries());
       return null;
     } catch (error) {
+      if (error instanceof LockTimeout) return "写真の記録を送っている途中です。少し待ってから、もう一度削除してください。";
       return error instanceof Error ? error.message : "写真を削除できませんでした。";
     }
   };
@@ -668,7 +825,8 @@ export function PingLogScreen() {
           // With the backend, home's button reads the booth's real QR code and follows the replay; without it, the button opens the demo.
           arrival={experience}
           onArrive={() => setDemo("home")}
-          arrived={memorySessionId !== null && arrivedIn === memorySessionId}
+          arrived={arrived}
+          onBeforeArrival={placesBeforeArrival}
           // TRACE_B dropped the reminder's subscription on arrival: the switch stays off from now on.
           onArrived={arrive}
           onCloseDemo={() => setDemo(null)}

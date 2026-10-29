@@ -13,9 +13,10 @@ const MAX_JSON_BODY = 16 * 1024;
 /**
  * The participant routes of TRACE_B (internal/api/server.go). Operator and display routes stay closed.
  * Photos stay on the participant's phone (trace-campus-installation#23・#25), so the v1 photo upload,
- * listing and story routes are not relayed; a photo's checkpoint goes to TRACE_B's /v2 once
- * TRACE_F#13 sends it. The live position is gone with GPS; only stopping and deleting an old live
- * session remain (and on-site, which TRACE_B answers as gone).
+ * listing and story routes are not relayed; only each photo's checkpoint and time go to TRACE_B's
+ * /v2, and can be deleted there one by one (TRACE_F#13). /log reads neither the /v2 list nor the
+ * memory, so those stay closed. The live position is gone with GPS; only stopping and deleting an
+ * old live session remain (and on-site, which TRACE_B answers as gone).
  */
 const allowed: Record<string, RegExp[]> = {
   GET: [
@@ -27,6 +28,7 @@ const allowed: Record<string, RegExp[]> = {
     /^v1\/experiences$/,
     /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+\/(on-site|stop)$/,
     /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(arrival|arrival\/skip)$/,
+    /^v2\/memory-sessions\/mem_[A-Za-z0-9_-]+\/photos$/,
   ],
   PUT: [/^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/push-subscription$/],
   PATCH: [/^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/push-subscription$/],
@@ -35,6 +37,7 @@ const allowed: Record<string, RegExp[]> = {
     /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+$/,
     /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(photos\/photo_[A-Za-z0-9_-]+|push-subscription)$/,
     /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+$/,
+    /^v2\/memory-sessions\/mem_[A-Za-z0-9_-]+\/photos\/photo_[A-Za-z0-9_-]+$/,
   ],
 };
 /** Methods whose body is relayed. Each must say it is JSON, even when the body is empty (arrival/skip). */
