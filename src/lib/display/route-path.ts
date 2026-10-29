@@ -76,10 +76,30 @@ export function escalatorWeight(path: RoutePath, s: number, peak = 0.6): number 
 
 /**
  * True while s is on an elevator edge. The car only moves straight up or down,
- * so the camera should hold its heading and level until the doors open.
+ * so the drone holds its heading and the walk keeps level until the doors open.
  */
 export function elevatorRiding(path: RoutePath, s: number): boolean {
   return path.kinds.some((kind, i) => kind === "elevator" && s > path.at[i] && s < path.at[i + 1]);
+}
+
+/**
+ * Riding an elevator at s, the level way out of the car at the floor where the
+ * ride ends: from the car to the first point at least 0.5m away on the level.
+ * People turn round to face the doors while the car moves, so the walk does too
+ * instead of staring at the back wall. null when not riding or the walk ends in the car.
+ */
+export function elevatorExit(path: RoutePath, s: number): Vec3 | null {
+  let i = path.kinds.findIndex((kind, k) => kind === "elevator" && s > path.at[k] && s < path.at[k + 1]);
+  if (i < 0) return null;
+  while (i + 1 < path.kinds.length && path.kinds[i + 1] === "elevator") i++;
+  const car = path.points[i + 1];
+  for (let k = i + 2; k < path.points.length; k++) {
+    const dx = path.points[k][0] - car[0];
+    const dz = path.points[k][2] - car[2];
+    const len = Math.hypot(dx, dz);
+    if (len >= 0.5) return [dx / len, 0, dz / len];
+  }
+  return null;
 }
 
 function smooth(x: number): number {

@@ -9,6 +9,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { EDGES, GRID_THETA, NODES, toScene, type Vec3 } from "./campus-graph";
 import {
   buildTimeline,
+  elevatorExit,
   elevatorRiding,
   escalatorWeight,
   lookAheadAt,
@@ -255,7 +256,9 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     // middle of the ride.
     const body = new THREE.Vector3(...roundedPointAt(path, s, WALK_ROUND));
     const aim = new THREE.Vector3(...roundedPointAt(path, Math.min(path.length, s + WALK_AHEAD), WALK_ROUND)).sub(body);
-    walkYaw = turnToward(walkYaw, !riding && aim.x * aim.x + aim.z * aim.z > 0.25 ? [aim.x, 0, aim.z] : null, dt, 6, WALK_TURN);
+    // In an elevator the eye turns round to the doors it will step out of.
+    const walkTarget: Vec3 | null = riding ? elevatorExit(path, s) : aim.x * aim.x + aim.z * aim.z > 0.25 ? [aim.x, 0, aim.z] : null;
+    walkYaw = turnToward(walkYaw, walkTarget, dt, 6, WALK_TURN);
     const dir = fromYaw(walkYaw);
     walkCamera.position.set(body.x, body.y + EYE, body.z);
     const rise = riding ? 0 : lookAheadAt(path, s, 6)[1] - p.y;   // up a stair or escalator, look up it; level in an elevator
