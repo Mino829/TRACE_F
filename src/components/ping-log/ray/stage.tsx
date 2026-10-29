@@ -500,6 +500,7 @@ const ICONS = {
   menu: <path d="M3 6.5h18M3 12h18M3 17.5h18" />,
   close: <path d="M5 5l14 14M19 5 5 19" />,
   arrow: <path d="M3.5 12h16M13.5 6l6 6-6 6" />,
+  back: <path d="M20.5 12h-16M10.5 6l-6 6 6 6" />,
   check: <path d="M4 12.5l5 5L20 6.5" />,
   share: (
     <>

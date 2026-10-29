@@ -69,7 +69,7 @@ async function join(page: Page) {
 /** Takes a photo and saves it at a place picked from the list: building, floor, place. */
 async function savePhoto(page: Page, number: number, [building, floor, place] = ["本部棟", "5F", "本部棟5F"]) {
   await page.locator('input[type="file"][capture]').setInputFiles(PHOTO);
-  await page.getByRole("button", { name: "残す", exact: true }).click();
+  await page.getByRole("button", { name: "次へ", exact: true }).click();
   await page.getByRole("button", { name: "一覧で選ぶ" }).click();
   await page.getByRole("radio", { name: building, exact: true }).click();
   await page.getByRole("radio", { name: floor, exact: true }).click();

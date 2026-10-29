@@ -26,7 +26,7 @@ async function join(page: Page) {
 
 async function takePhoto(page: Page) {
   await page.locator('input[type="file"][capture]').setInputFiles(PHOTO);
-  await page.getByRole("button", { name: "残す", exact: true }).click();
+  await page.getByRole("button", { name: "次へ", exact: true }).click();
   await expect(page.getByRole("heading", { name: /どこで撮りましたか/ })).toBeVisible();
 }
 
@@ -119,14 +119,14 @@ test("the list offers every building, floor and checkpoint without the map", asy
   await page.getByRole("button", { name: "地図で選ぶ" }).click();
   await expect(page.getByRole("button", { name: "ここで保存" })).toBeEnabled();
   await page.getByRole("button", { name: "写真にもどる" }).click();
-  await expect(page.getByRole("button", { name: "残す", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "次へ", exact: true })).toBeVisible();
 });
 
 test("the phone's back button steps back from the place screen to the photo and keeps the photo", async ({ page }) => {
   await join(page);
   await takePhoto(page);
   await page.goBack();
-  await expect(page.getByRole("button", { name: "残す", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "残す", exact: true }).click();
+  await expect(page.getByRole("button", { name: "次へ", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "次へ", exact: true }).click();
   await expect(page.getByRole("heading", { name: /どこで撮りましたか/ })).toBeVisible();
 });

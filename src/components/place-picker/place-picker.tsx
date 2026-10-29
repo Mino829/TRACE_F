@@ -143,7 +143,7 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
       <div className="topbar">
         <span>
           <button type="button" className="link" disabled={saving} onClick={() => void go(onBack)}>
-            <Icon name="close" />
+            <Icon name="back" />
             写真にもどる
           </button>
         </span>

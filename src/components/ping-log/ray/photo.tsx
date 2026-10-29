@@ -149,7 +149,6 @@ export function PhotoScreen(props: Props) {
           <span className="mono">Photo</span>
           <span />
         </div>
-        {/* The two buttons below answer the question: not keeping it, or keeping it (the place comes next). */}
         <h1 className="h1">
           <Phrases text="この写真を残しますか？" />
         </h1>
@@ -175,7 +174,7 @@ export function PhotoScreen(props: Props) {
           </button>
           <button type="button" className="btn" disabled={!photo} onClick={() => setStep("place")}>
             <Icon name="arrow" />
-            残す
+            次へ
           </button>
         </div>
       </Screen>
