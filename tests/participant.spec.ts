@@ -13,7 +13,9 @@ async function session(page: Page): Promise<Session> {
 
 /** Simulates a credential issued before the GPS cutover; the root screen never creates new ones. */
 async function storedSession(page: Page, live: boolean) {
+  // Without one, the root sends the tab on to /log; the credential is stored there and the root opened again.
   await page.goto("/");
+  await page.waitForURL("**/log");
   const config = await (await page.request.get("/api/backend/v1/public/config")).json();
   const response = await page.request.post("/api/backend/v1/experiences", { data: {
     memoryConsentVersion: config.consent.version,
@@ -25,8 +27,9 @@ async function storedSession(page: Page, live: boolean) {
   expect(response.ok()).toBe(true);
   const created = await response.json();
   await page.evaluate((value) => sessionStorage.setItem("trace.participant.v1", JSON.stringify({ ...value, operationKeys: {} })), created);
-  await page.reload();
+  await page.goto("/");
   await expect(page.getByRole("region", { name: "参加状況" })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
 }
 
 async function legacySession(page: Page) {
@@ -172,7 +175,7 @@ test("server-side legacy live deletion is reflected before deleting the remainin
   await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
 });
 
-test("the root entry never accesses location when permission is denied", async ({ page, context }) => {
+test("the root entry sends a tab with no earlier participation on to /log, never touching location", async ({ page, context }) => {
   await context.clearPermissions();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
@@ -191,9 +194,8 @@ test("the root entry never accesses location when permission is denied", async (
       };
     }
   });
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /同意して参加する/ })).toHaveCount(0);
+  await page.goto("/?ref=qr#top");
+  await page.waitForURL(/\/log\?ref=qr#top$/);
+  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toHaveCount(0);
   expect(await page.evaluate(() => Reflect.get(window, "__geoCalls"))).toEqual([]);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

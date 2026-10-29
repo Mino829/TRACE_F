@@ -54,6 +54,12 @@ export default function ParticipantApp() {
     async function initialize() {
       try {
         const stored = readSession();
+        if (!stored) {
+          // Nothing from an earlier participation to stop or delete in this tab: TRACE starts at /log.
+          cancelled = true;
+          window.location.replace(`/log${window.location.search}${window.location.hash}`);
+          return;
+        }
         if (!cancelled) setSession(stored);
         const settings = await api<PublicConfig>("/v1/public/config");
         if (cancelled) return;
