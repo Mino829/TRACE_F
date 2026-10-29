@@ -31,7 +31,9 @@ import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/rende
  * buttons (Space also plays). A test keeps going, one walk after another,
  * until 終了する (or Esc). Query: ?speed=1.5 (pace; 1 walks at WALK_SPEED),
  * ?duration=30 (fit every walk into that many seconds instead), ?fps=1
- * (frames per second in the corner, to check the booth PC keeps up).
+ * (frames per second in the corner, to check the booth PC keeps up),
+ * ?stops=hq-11f,hq-4f-bridge,shibalab (the sample test walks through these
+ * graph nodes in order, choosing each leg by metres the way TRACE_B does).
  *
  * Sound (issue #27, src/lib/display/sound.ts): music while waiting and while
  * replaying, a cue as a walk starts and one at ShibaLab. The browser needs one
@@ -107,9 +109,10 @@ export function DisplayClient() {
       const speed = Number(params.get("speed")) || 1;
       const duration = Number(params.get("duration")) || undefined;
       const showFps = params.get("fps") === "1";
-      // Test walks favour indoors and the escalators, like most visitors.
+      const stops = params.has("stops") ? graph.parseStops(params.get("stops") ?? "") : null;
+      // Test walks favour indoors and the escalators, like most visitors; ?stops walks like an arrival.
       routesRef.current = {
-        sample: () => buildRoutePath(graph.routeThrough(graph.SAMPLE_STOPS, graph.INDOOR_FIRST)),
+        sample: () => buildRoutePath(stops ? graph.routeThrough(stops, graph.METRES) : graph.routeThrough(graph.SAMPLE_STOPS, graph.INDOOR_FIRST)),
         random: () => buildRoutePath(graph.routeThrough(graph.randomIndoorStops(), graph.INDOOR_FIRST)),
       };
       arrivalRouteRef.current = (pathNodeIds) => (pathNodeIds.length >= 2 ? buildRoutePath(graph.routeThrough(pathNodeIds, graph.METRES)) : null);
@@ -354,7 +357,7 @@ export function DisplayClient() {
                 </li>
               </ol>
               {error ? (
-                <p className="dsp-error">3D を読み込めませんでした：{error}</p>
+                <p className="dsp-error">展示を始められませんでした：{error}</p>
               ) : screen === "loading" ? (
                 <p className="dsp-mono dsp-loading">LOADING CAMPUS…</p>
               ) : null}
