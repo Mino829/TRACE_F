@@ -72,7 +72,7 @@ async function join(page: Page) {
 
 async function savePhoto(page: Page) {
   await page.locator('input[type="file"][capture]').setInputFiles(PHOTO);
-  await page.getByRole("button", { name: "場所を選ぶ" }).click();
+  await page.getByRole("button", { name: "残す", exact: true }).click();
   await page.getByRole("button", { name: "一覧で選ぶ" }).click();
   await page.getByRole("radio", { name: "本部棟", exact: true }).click();
   await page.getByRole("radio", { name: "5F", exact: true }).click();

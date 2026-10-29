@@ -141,14 +141,15 @@ export function PhotoScreen(props: Props) {
       <Screen key="preview" inert={props.inert}>
         <div className="topbar">
           <span>
-            <button type="button" className="link" onClick={() => void go(close)}>
-              <Icon name="close" />
-              やめる
+            <button type="button" className="link" onClick={props.onRetake}>
+              <Icon name="camera" />
+              撮り直す
             </button>
           </span>
           <span className="mono">Photo</span>
           <span />
         </div>
+        {/* The two buttons below answer the question: not keeping it, or keeping it (the place comes next). */}
         <h1 className="h1">
           <Phrases text="この写真を残しますか？" />
         </h1>
@@ -169,12 +170,12 @@ export function PhotoScreen(props: Props) {
         </div>
         <div className="actionbar">
           <NoteBar text={error} alert />
-          <button type="button" className="btn btn--line" onClick={props.onRetake}>
-            撮り直す
+          <button type="button" className="btn btn--line" onClick={() => void go(close)}>
+            残さない
           </button>
           <button type="button" className="btn" disabled={!photo} onClick={() => setStep("place")}>
             <Icon name="arrow" />
-            場所を選ぶ
+            残す
           </button>
         </div>
       </Screen>
