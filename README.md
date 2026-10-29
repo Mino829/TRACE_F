@@ -11,9 +11,11 @@ npm ci
 npm run dev:local
 ```
 
-`http://127.0.0.1:3000`を開きます。`dev:local`は隣の`../trace_Backend`からGo APIをビルドし、ローカルPostgreSQL、API、Next.jsを起動します。3000、8080、55432番が使用中なら起動を止めます。データは`.local/postgres`に残り、停止しても消しません。
+`http://127.0.0.1:3000`を開きます。`dev:local`は隣の`../trace_Backend`からGo APIをビルドし、ローカルPostgreSQL、API、Next.jsを起動します。別checkoutを使うときは`TRACE_BACKEND_REPO`で指定します。3000、8080、55432番が使用中なら起動を止めます。データは`.local/postgres`に残り、停止しても消しません。検証用に分離する場合は`TRACE_LOCAL_DATA_DIR`で専用ディレクトリを指定できます。
 
-通常の`npm run dev`でも、`/api/backend/*`は`TRACE_BACKEND_URL`（既定は`http://127.0.0.1:8080`）へ転送されます。これはローカル開発用のNext.js rewriteです。
+起動時にFrontendの固定Graphから3つの版をGoへ渡し、参加者Originを`127.0.0.1:3000`と`localhost:3000`に揃えます。受付・写真metadata等の機能flagや同意文を自動で有効化・承認することはありません。新規参加の結合検証は使い捨てDBとテスト専用の同意版・本文・明示的な機能設定を使い、公開環境から分離してください。
+
+参加者APIの既定は`/api/backend`です。`NEXT_PUBLIC_TRACE_API_URL`が未設定・空文字でもBackendへ接続し、端末だけのデモ参加には退避しません。通常の`npm run dev`では、このパスを`TRACE_BACKEND_URL`（既定は`http://127.0.0.1:8080`）へ転送します。`dev:local`は同じパスとローカルGoを明示して起動します。
 
 ## Cloudflareでの参加者画面
 
@@ -22,7 +24,7 @@ npm run dev:local
 サイトWorkerには次の2つのsecretを設定します。Go側にも**同じ**`TRACE_EDGE_SHARED_SECRET`をSecret Managerから設定します。32バイト以上のランダム値を使用し、リポジトリ、`.env`、コマンドログへ値を残さないでください。
 
 - `TRACE_BACKEND_URL`: Go APIのHTTPSオリジン。末尾のパスを含めない
-- `TRACE_EDGE_SHARED_SECRET`: WorkerからGoへのアクセス確認用。`/v1/*`へ`X-Trace-Edge-Secret`として送る
+- `TRACE_EDGE_SHARED_SECRET`: WorkerからGoへのアクセス確認用。許可した`/v1/*`・`/v2/*`へ`X-Trace-Edge-Secret`として送る
 
 サイトWorkerはCloudflareが設定する`CF-Connecting-IP`が正規のIPv4/IPv6アドレスの場合だけ、Go APIへ`X-Trace-Client-IP`として1つ送ります。ブラウザからの`X-Forwarded-For`と`X-Trace-Client-IP`は転送しません。値がない場合や不正な場合はヘッダーを付けず、Go側は接続元アドレスへフォールバックします。この信頼境界はCloudflare経由の配信を前提とし、Go側は共有secretが一致するときだけ転送IPを信頼します。
 
@@ -40,9 +42,9 @@ npm run deploy:site
 
 ## 実装範囲と確認
 
-`/`の新規受付は、旧Backend同意文に位置情報の記述が残るため一時停止し、既存のMemorySession・LivePresenceSessionの状態確認、位置参加の停止、個別削除、両資格情報による全削除だけを維持します。既存の位置データや資格情報は自動削除しません。`/log`は写真の撮影場所をチェックポイントから選び、EXIFを引き継がないJPEGを保存します。開発者向け精度テストの新規取得と通知購読を廃止し、端末に残る旧GPS記録は保持して再送しません。削除操作は残します。
+`/`は既存MemorySession・旧LivePresenceSessionの状態確認、停止、個別削除、両資格情報による全削除を維持します。新規参加は`/log`でGoの公開設定と同意文を取得し、表示した本文・版・言語への明示同意後、MemorySessionの作成成功を確認して開始します。受付停止・設定取得失敗・参加作成失敗をローカル参加成功として扱いません。同意版が変わった場合は新本文を表示し、再同意を求めます。同意した本文は端末に保持し、参加後もメニューから確認できます。既存の位置データや資格情報は自動削除しません。`/log`の写真は撮影場所をチェックポイントから選び、EXIFを引き継がないJPEGとして端末内だけに保存します。開発者向け精度テストの新規取得と通知購読は廃止し、旧GPS記録は保持して再送しません。削除操作は残します。
 
-**公開前の条件:** /logの同意文は未承認の草案です。設計#23/Backend#26とプライバシー#9で同意版・旧Live・入口を確認し、配信/受付を無断で開始しません。metadata API・直接描画WSS・任意Go Pushに対応するコードと、実配備/実Google/カメラ・投影機材/公開承認を区別します。新しい画像バイト列をGoへ送らない契約は維持します。
+**公開前の条件:** 同意文はBackendの公開設定を正本としますが、配信できることは承認済みを意味しません。既定の未承認草案では受付を閉じたままにします。設計#23/Backend#26とプライバシー#9で同意版・旧Live・入口を確認し、配信/受付を無断で開始しません。metadata API・直接描画WSS・任意Go Pushに対応するコードと、実配備/実Google/カメラ・投影機材/公開承認を区別します。新しい画像バイト列をGoへ送らない契約は維持します。
 
 ```sh
 npm run lint
@@ -52,6 +54,8 @@ cd push-worker && npm test && npm run typecheck
 ```
 
 参加者のE2EはローカルGo APIと使い捨ての検証DBを使い、`npm run test:e2e`で実行します。本番や共有stagingのDBをテスト対象にしないでください。
+
+接続確認では、API公開設定の同意表示、参加作成、写真の端末保存と`/v2`metadataのみの送信、Memory停止後の期限/本人権利維持、写真・Memory削除を実Goで確認します。`/`の空bodyの停止POSTも`application/json`を付け、配信Workerの制限を通します。API未設定時の偽成功、閉鎖・通信失敗、同意版409後の再同意は`tests/log-tabs.spec.ts`で回帰確認します。API stand-inのブラウザテストと、実Workerポリシー→Goの結合確認、実Cloudflare TLS/IAMの確認は別の検証です。
 
 ## 展示用ログインと到着 QR
 

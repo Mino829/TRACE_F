@@ -32,6 +32,28 @@ Google の Client ID は本人確認の公開設定で、本人確認を共有�
 
 会場・チェックポイント・公開 key ID は Go と `/display`・`/log` で揃えます。完全に同じ署名済み文字列へ復元できるときだけ短い QR 形式を使用し、それ以外は署名済みトークン全体を使用します。key ID は署名鍵そのものではありません。
 
+### Go と描画ブラウザの接続条件
+
+`NEXT_PUBLIC_DISPLAY_API_URL` は参加者用 `/api/backend` ではなく、ブラウザから到達できる **Go のオリジン**です。ローカルでは、例えばブローカーの `TRACE_API_ORIGIN` とともに `http://localhost:8080` に揃えます。HTTPS の展示ページでは HTTPS/WSS の Go オリジンを使用してください。描画用 `POST /v1/operator/display-tokens` と `GET /v1/display/ws` は Go が直接認証するため Edge secret は付けません。その他の運営 API だけはブローカーが Edge secret を追加します。
+
+展示ページを `http://localhost:3000/display` で開く場合、次の各設定にはパスなしの `http://localhost:3000` を許可します。`127.0.0.1` は別 Origin なので混在させません。
+
+- Go の `TRACE_DISPLAY_ALLOWED_ORIGINS`（直接の資格発行・WS）
+- Go の `TRACE_OPERATOR_ALLOWED_ORIGINS` とブローカーの `DISPLAY_ORIGINS`（ブローカーは元のブラウザ Origin を Go へ転送）
+- Google Web クライアントの承認済み JavaScript 生成元（既存設定を管理者が確認）
+
+現在の UI は同じ Google ID token を2つの独立した資格発行に使用するため、`NEXT_PUBLIC_GOOGLE_CLIENT_ID`、Go の `TRACE_DISPLAY_GOOGLE_CLIENT_ID`、`TRACE_OPERATOR_GOOGLE_CLIENT_ID` は同じ Web client ID に揃えます。メールの許可リストは引き続き描画用・運営用で独立です。Go の `TRACE_DISPLAY_ENABLED`、`TRACE_OPERATOR_ENABLED`、`TRACE_ARRIVAL_ENABLED` は各機能を使用する場合だけ明示的に有効化し、署名鍵は Edge・display・arrival 間で共有しません。
+
+描画の3つの版も Go の既定値に任せず、配布する `models/trace/campus_graph.json` と Go の `internal/route/campus_graph.json` に合わせます。現在の同梱グラフに対応する Go 設定は次の通りです。
+
+```dotenv
+TRACE_COORDINATE_VERSION=toyosu-2026-08-28.1
+TRACE_CAMPUS_GRAPH_VERSION=toyosu-graph-2026-10-26.1.draft
+TRACE_THREE_D_MAP_VERSION=toyosu-3dmap-2026-10-26
+```
+
+ブラウザはこの同梱グラフの版と `schemaVersion: 1` を WS の初回認証と後続メッセージに付けます。不一致は Go が close code `4409` で拒否します。版の文字列だけを変更して異なるグラフを接続しないでください。
+
 ## 起動と UI スモーク
 
 ```sh
@@ -45,6 +67,13 @@ node arrival-issuer/issuer.mjs
 3. 運営権限がある場合だけ到着 QR が表示されます。表示中は15秒ごとに取得し、2分資格は Google 本人確認で更新します。Google 本人確認の期限後は再ログインが必要です。
 4. 「ログアウト・現在の運営資格を失効」または「自分の全運営資格を失効」で実際の DELETE を呼び、成功後にメモリ内の資格を消します。失効に失敗した場合はエラーを表示し、成功扱いにしません。
 5. Google の権限拒否・ブローカー停止時は QR が消え、明示的な再試行が必要です。描画だけの認証は運営の失敗に巻き込みません。
+
+実 Go へ接続する確認では DevTools の Network で次も確認します（後述の Playwright は API/WS を模擬するため、実接続の証明とは別です）。
+
+- 描画資格は Go への `POST /v1/operator/display-tokens`、WS は同じ Go オリジンの `/v1/display/ws` へ直接接続し、初回送信は `renderer.authenticate`。`display.snapshot` → `renderer.primary.acquire` → `renderer.primary.granted` で `LINK · 再生担当` になります。別の主描画機がいる場合は待機が正常です。
+- 運営資格は loopback への `POST /operator/credentials`、QR は `GET /arrival-token`。Google ID token は資格発行だけ、QR 発行と DELETE は opaque operator token だけを使い、ブラウザのどの要求にも `X-Trace-Edge-Secret` がないことを確認します。資格や QR 本文は記録・共有しないでください。
+- テスト用 Memory の `/log` で実 QR を読み取った場合は、WS の `participant.arrived` / `arrival.replay.requested` に続き、`arrival.replay.started` への `renderer.ack` 後にのみ再生されることを確認します。写真0枚なら経路アニメーションなしの到着カードが正常です。
+- ブローカーを停止すると QR が消え、運営通信エラーが表示される一方、描画 WS は独立していることを確認します。実 Google ログインが使えない場合、実資格発行・到着再生は未検証として扱います。
 
 公開 HTTPS サイトから loopback へ接続するときは、ブラウザのローカルネットワークアクセス許可が必要な場合があります。実 Google アカウント、staging の IAM/ネットワーク、投影機材の確認は別途必要です。このプログラムはそれらの設定やデプロイを行いません。
 

@@ -70,7 +70,7 @@ export async function api<T>(path: string, options: {
   const headers: Record<string, string> = {};
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
   if (options.liveToken) headers["X-Trace-Live-Token"] = options.liveToken;
-  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+  if (options.body !== undefined || options.method === "POST") headers["Content-Type"] = "application/json";
   if (options.key) headers["Idempotency-Key"] = options.key;
   let response: Response;
   try {

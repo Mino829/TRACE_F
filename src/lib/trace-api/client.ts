@@ -2,11 +2,11 @@
  * Client for TRACE_B public config, memory-only experience creation and
  * status, where and when each photo was taken (/v2), the arrival at ShibaLab
  * and its replay, individual memory deletion, and the photo reminder's push
- * subscription. The /log demo does not create live presence, and a photo
- * itself never goes to TRACE_B.
+ * subscription. /log does not create live presence, and a photo itself never
+ * goes to TRACE_B.
  *
- * The backend's URL comes from NEXT_PUBLIC_TRACE_API_URL. Unset, /log keeps
- * everything on the phone and the push worker, as before.
+ * Requests use the same-origin backend proxy by default. An explicit
+ * NEXT_PUBLIC_TRACE_API_URL overrides that base, not whether participation is real.
  *
  * /log joins memory-only: it never starts a live presence session, so the
  * create response carries neither a live token nor an experience link token.
@@ -18,7 +18,7 @@
  * sessionStorage).
  */
 
-export const TRACE_API_URL = (process.env.NEXT_PUBLIC_TRACE_API_URL ?? "").replace(/\/$/, "");
+export const TRACE_API_URL = (process.env.NEXT_PUBLIC_TRACE_API_URL || "/api/backend").replace(/\/$/, "");
 
 const TIMEOUT_MS = 15_000;
 
@@ -159,7 +159,10 @@ async function request<T>(path: string, { method = "GET", body, token, idempoten
 
 export async function fetchPublicConfig(): Promise<PublicConfig> {
   const config = await request<PublicConfig>("/v1/public/config");
-  if (!config || typeof config.registrationOpen !== "boolean" || typeof config.photo?.maxCount !== "number") {
+  if (!config || typeof config.registrationOpen !== "boolean" || typeof config.photo?.maxCount !== "number" ||
+      typeof config.consent?.version !== "string" || !config.consent.version.trim() ||
+      typeof config.consent.language !== "string" || !config.consent.language.trim() ||
+      typeof config.consent.body !== "string" || !config.consent.body.trim()) {
     throw new TraceApiError(0, "UNKNOWN", null);
   }
   return config;

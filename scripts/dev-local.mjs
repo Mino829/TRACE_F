@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -8,10 +8,12 @@ import { loadEnvFile } from "node:process";
 const root = fileURLToPath(new URL("../", import.meta.url));
 if (existsSync(path.join(root, ".env.local"))) loadEnvFile(path.join(root, ".env.local"));
 const backendRepo = path.resolve(process.env.TRACE_BACKEND_REPO ?? path.join(root, "../trace_Backend"));
-const local = path.join(root, ".local");
+const local = path.resolve(process.env.TRACE_LOCAL_DATA_DIR ?? path.join(root, ".local"));
 const dbDir = path.join(local, "postgres");
 const dbPort = 55432;
 const apiPort = 8080;
+const frontendOrigin = "http://127.0.0.1:3000";
+const graph = JSON.parse(readFileSync(path.join(root, "models/trace/campus_graph.json"), "utf8"));
 const children = [];
 let databaseStarted = false;
 let ending = false;
@@ -76,7 +78,11 @@ try {
   const binary = path.join(local, "trace-backend");
   execute("go", ["build", "-o", binary, "./cmd/server"], { cwd: backendRepo });
   const backendEnv = { ...process.env, DATABASE_URL: `postgresql://trace_local@127.0.0.1:${dbPort}/trace?sslmode=disable`,
-    TRACE_ADDRESS: `127.0.0.1:${apiPort}`, TRACE_DATABASE_PATH: "", TRACE_EDGE_SHARED_SECRET: "" };
+    TRACE_ADDRESS: `127.0.0.1:${apiPort}`, TRACE_DATABASE_PATH: "", TRACE_EDGE_SHARED_SECRET: "",
+    TRACE_ALLOWED_ORIGINS: `${frontendOrigin},http://localhost:3000`,
+    TRACE_COORDINATE_VERSION: graph.coordinateVersion,
+    TRACE_CAMPUS_GRAPH_VERSION: graph.campusGraphVersion,
+    TRACE_THREE_D_MAP_VERSION: graph.threeDMapVersion };
   execute(binary, ["migrate"], { env: backendEnv });
   start(binary, [], { env: backendEnv });
   let ready = false;
@@ -88,9 +94,10 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   if (!ready) throw new Error("The Go API did not become ready.");
-  console.log("TRACE: http://localhost:3000 — Ctrl+C stops the app, API and local DB. Data stays in .local/postgres.");
-  start(process.execPath, [path.join(root, "node_modules/next/dist/bin/next"), "dev", "--webpack", "--hostname", "127.0.0.1"], {
-    cwd: root, env: { ...process.env, TRACE_BACKEND_URL: `http://127.0.0.1:${apiPort}` },
+  console.log(`TRACE: ${frontendOrigin} — Ctrl+C stops the app, API and local DB. Data stays in ${dbDir}.`);
+  start(process.execPath, [path.join(root, "node_modules/next/dist/bin/next"), "dev", "--webpack", "--hostname", "127.0.0.1", "--port", "3000"], {
+    cwd: root, env: { ...process.env, NEXT_STATIC_EXPORT: "", NEXT_PUBLIC_TRACE_API_URL: "/api/backend",
+      TRACE_BACKEND_URL: `http://127.0.0.1:${apiPort}` },
   });
 } catch (error) {
   console.error(error.message);
