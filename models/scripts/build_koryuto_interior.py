@@ -160,6 +160,10 @@ def partition_panel(mb, xa, xb, z, glass=True):
     mb.box(xa, xb, y0 - 0.01, y1 + 0.01, z, z + 0.08, "base")
 
 
+# 扉は全部開けた状態にする（展示の一人称が扉の板を通り抜けないように。2026-10-29 ユーザーの指示）
+OPEN_DOORS = True
+
+
 def door(mb, xa, xb, z, label_glass=True):
     """白い枠の扉（写真 6661：大きなガラスの入った片引き戸）。枠の中は廊下から少し奥"""
     y0, y1 = PY - WT / 2, PY + WT / 2
@@ -169,8 +173,10 @@ def door(mb, xa, xb, z, label_glass=True):
     mb.box(xa, xa + fw, y0 - 0.02, y1 + 0.02, z, z + DH + fw, "door")          # 枠
     mb.box(xb - fw, xb, y0 - 0.02, y1 + 0.02, z, z + DH + fw, "door")
     mb.box(xa, xb, y0 - 0.02, y1 + 0.02, z + DH, z + DH + fw, "door")
-    # 扉（白い框＋ガラス）
+    # 扉（白い框＋ガラス）。OPEN_DOORS なら -X 側へ引いて開けておく
     a, b = xa + fw, xb - fw
+    if OPEN_DOORS:
+        a, b = a - (b - a), a
     dy0, dy1 = PY - 0.02, PY + 0.02
     m = 0.12
     if label_glass:

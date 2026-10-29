@@ -610,16 +610,36 @@ for i in range(1, 6):            # 天井の目地（縦の梁）
 gc = (GX0 + GX1) / 2
 add_text(ext, "SHIBAURA INSTITUTE OF TECHNOLOGY", (gc + 1.2, SY0 - 0.32, GATE_TOP + 0.75), (0, -1), 0.55, "sign")
 ext.box(gc - 9.0, gc - 7.9, SY0 - 0.36, SY0 - 0.3, GATE_TOP + 0.3, GATE_TOP + 1.35, "emblem")
-# 東の壁（X = GX1、-X を向く）：コンクリートの壁と縦長のガラス、6F の渡り廊下の口
+# 東の壁（X = GX1、-X を向く）：コンクリートの壁と縦長のガラス。扉の口（GATE_DOORS）は壁をあける（2026-10-29）
+#   2F：南棟の廊下の端から芝生へ出る扉（運河側の EV B から芝生へ。前は口がなかった）
+#   6F：教室棟からの渡り廊下の先の扉（前は閉じたガラスの面だけだった）
+GATE_DOORS = [(COR_S[0], COR_S[1], DECK, DECK + 2.6), (-12.3, -9.5, FZ[6], FZ[6] + 2.9)]
+
+
+def wall_with_holes(mb, f, y0, y1, d0, d1, z0, z1, key, holes):
+    """B の壁を、holes = [(y0, y1, z0, z1)] の所だけあけて作る"""
+    ys = sorted({y0, y1} | {v for h in holes for v in h[:2] if y0 < v < y1})
+    for ya, yb in zip(ys[:-1], ys[1:]):
+        zs = [(z0, z1)]
+        for hy0, hy1, hz0, hz1 in holes:
+            if hy0 <= ya + 1e-6 and yb <= hy1 + 1e-6:
+                zs = [p for a, b in zs for p in ((a, min(b, hz0)), (max(a, hz1), b)) if p[1] - p[0] > 1e-6]
+        for a, b in zs:
+            B(mb, *f, ya, yb, d0, d1, a, b, key)
+
+
 for (y0, y1) in ((SY0, SY1), (NY0, NY1)):
     f = ('y', GX1, -1)
-    B(ext, *f, y0, y1, -0.3, 0, DECK, GATE_TOP, "concrete")
+    wall_with_holes(ext, f, y0, y1, -0.3, 0, DECK, GATE_TOP, "concrete", GATE_DOORS)
     yc = (y0 + y1) / 2
     Q(ext, *f, yc - 0.9, yc + 0.9, 0.01, DECK + 3.0, GATE_TOP - 1.0, "glass")
     for z in range(int(DECK) + 4, int(GATE_TOP), 3):
-        Q(ext, *f, y0, y1, 0.005, z, z + 0.03, "rib")
+        cuts = [(h[0], h[1]) for h in GATE_DOORS if h[2] <= z <= h[3]]
+        ys = sorted({y0, y1} | {v for c in cuts for v in c if y0 < v < y1})
+        for ya, yb in zip(ys[:-1], ys[1:]):
+            if not any(c[0] <= ya + 1e-6 and yb <= c[1] + 1e-6 for c in cuts):
+                Q(ext, *f, ya, yb, 0.005, z, z + 0.03, "rib")
 f = ('y', GX1, -1)
-Q(ext, *f, -12.3, -9.5, 0.02, FZ[6], FZ[6] + 2.9, "glass")     # 渡り廊下の先の扉
 # 東の壁の南棟と北棟のあいだ（光庭の幅）：芝生から光庭がのぞけていたのでふさぐ（ユーザーの指示 2026-10-29）
 B(ext, *f, SY1, NY0, -0.3, 0, DECK, GATE_TOP, "concrete")
 for z in range(int(DECK) + 4, int(GATE_TOP), 3):
@@ -784,6 +804,10 @@ def wall(mb, ax, line, u0, u1, z, h, doors=(), key="wall", base=True):
                 mb.box(line - WT / 2 - 0.012, line + WT / 2 + 0.012, a, b, z, z + 0.1, "base")
 
 
+# 扉は全部開けた状態にする（展示の一人称が扉の板を通り抜けないように。2026-10-29 ユーザーの指示）
+OPEN_DOORS = True
+
+
 def glass_door(mb, ax, line, c, z, w=1.7, dh=2.4, side=+1, label=None, strip=True):
     """白い枠のガラスの両開き扉（写真 6725・6746）と、横の黒い縦の札。side = 札を見る側（廊下）"""
     a, b = c - w / 2, c + w / 2
@@ -798,13 +822,24 @@ def glass_door(mb, ax, line, c, z, w=1.7, dh=2.4, side=+1, label=None, strip=Tru
     bx(a - fw, a, -0.09, 0.09, 0, dh + fw, "door")
     bx(b, b + fw, -0.09, 0.09, 0, dh + fw, "door")
     bx(a - fw, b + fw, -0.09, 0.09, dh, dh + fw, "door")
-    for la, lb in ((a, c), (c, b)):
-        m = 0.11
-        bx(la, lb, -0.025, 0.025, 0, 0.15, "door")
-        bx(la, lb, -0.025, 0.025, dh - m, dh, "door")
-        bx(la, la + m, -0.025, 0.025, 0.15, dh - m, "door")
-        bx(lb - m, lb, -0.025, 0.025, 0.15, dh - m, "door")
-        bx(la + m, lb - m, -0.004, 0.004, 0.15, dh - m, "dglass")
+    m = 0.11
+    if OPEN_DOORS:
+        # 2 枚とも蝶番（a と b）で、札のない側（部屋の中）へ 90° 開いて、壁に沿わせる（扉の板は扉の面と直交）
+        #   廊下側へ開くと、向かい合う部屋の扉の板が廊下の幅をふさいでいた
+        L = c - a
+        for hu, s_u in ((a, +1), (b, -1)):
+            u0, u1 = sorted((hu, hu + s_u * 0.05))
+            t = lambda d: -side * (0.09 + d)
+            for d0, d1, z0, z1, key in ((0, L, 0, 0.15, "door"), (0, L, dh - m, dh, "door"), (L - m, L, 0.15, dh - m, "door"),
+                                       (0, m, 0.15, dh - m, "door"), (m, L - m, 0.15, dh - m, "dglass")):
+                bx(u0, u1, min(t(d0), t(d1)), max(t(d0), t(d1)), z0, z1, key)
+    else:
+        for la, lb in ((a, c), (c, b)):
+            bx(la, lb, -0.025, 0.025, 0, 0.15, "door")
+            bx(la, lb, -0.025, 0.025, dh - m, dh, "door")
+            bx(la, la + m, -0.025, 0.025, 0.15, dh - m, "door")
+            bx(lb - m, lb, -0.025, 0.025, 0.15, dh - m, "door")
+            bx(la + m, lb - m, -0.004, 0.004, 0.15, dh - m, "dglass")
     if strip:
         s0, s1 = b + fw + 0.05, b + fw + 0.55
         bx(s0, s1, side * 0.06, side * 0.08, 0.08, dh + 0.3, "strip")
@@ -814,6 +849,13 @@ def glass_door(mb, ax, line, c, z, w=1.7, dh=2.4, side=+1, label=None, strip=Tru
             else:
                 center, normal = (line + side * 0.081, (s0 + s1) / 2, z + 1.95), (side, 0)
             add_text(mb, label, center, normal, 0.12)
+
+
+# ゲートの東の壁の扉（GATE_DOORS。芝生・渡り廊下の側へ開けておく）
+gd = MB()
+for y0, y1, z0, z1 in GATE_DOORS:
+    glass_door(gd, 'y', GX1 - 0.15, (y0 + y1) / 2, z0, w=y1 - y0 - 0.3, dh=min(2.6, z1 - z0 - 0.1), side=-1, strip=False)
+gd.build("研究棟_ゲートの扉", col)
 
 
 def steel_door(mb, ax, line, c, z, side, w=1.0, dh=2.1):
@@ -1066,7 +1108,10 @@ SPECS = {
     "f6": dict(
         xmin=GX1,
         row25=([SXa, -23.2, -14.9, -6.7, 1.7, 11.8, 20.0, SXb], ["N", "L", "K", "I", "H", "=LAB 6-2", "=LAB 6-1"]),
-        row27=(_R27_B[0], _R27_B[1] + ["=MTG 3"]),
+        # 光庭側の 1 部屋目（G、ゲートの壁 GX1〜EV B）は、教室棟からの渡り廊下の入口ホール（2026-10-29：前は部屋の壁が
+        #   渡り廊下の口の半分をふさいでいた）。"COR" で部屋の壁を作らず、ゲートの壁の側にも仕切りを立てない（open_start27）
+        row27=(_R27_B[0], [("COR" if l == "G" else l) for l in _R27_B[1]] + ["=MTG 3"]),
+        open_start27=True,
         row30=([NXa, -36.0, EVA_COR[0], EVA_COR[1], -10.5, 0.6, 11.8, EVB_COR[0], EVB_COR[1], 28.5, NXb],
                [None, "WC", "COR", "K", "I", "F", "=MTG 5", "COR", "=MTG 4", None]),
         row32=(ROW32[0][:11] + [NXb], ROW32[1][:10] + ["A"]),
@@ -1110,7 +1155,7 @@ def typical_floor(fl, spec):
         # 北棟の西の部分（X < XB）は細い
         mb.box(NXa, XB, N_IN, NY0W, -SLAB - 0.01, 0.01, "shaft")
 
-    def row(xs_labels, y_corr, y_far, side, code_row):
+    def row(xs_labels, y_corr, y_far, side, code_row, open_start=False):
         xs, labs = xs_labels
         rl = []
         for (a, b), lab in zip(zip(xs[:-1], xs[1:]), labs):
@@ -1141,11 +1186,13 @@ def typical_floor(fl, spec):
             y0, y1 = sorted((y_corr, y_far))
             mb.hquad(a, b, y0, y1, 0.005, "lab_floor" if name != "WC" else "carpet2")
             mb.box(a, b, y0, y1, HR, HR + 0.05, "lab_ceil")
-        for x in xs:
+        for k, x in enumerate(xs):
+            if k == 0 and labs and labs[0] == "COR" and open_start:
+                continue                            # 通り抜けの区画の端（ゲートの壁の側）には仕切りを立てない
             wall(mb, 'y', x, min(y_corr, y_far), max(y_corr, y_far), 0, HC + 0.7)
 
     row(rows["row25"], S_C0, S_OUT, +1, 25)     # side = 廊下のある向き
-    row(rows["row27"], S_C1, S_IN, -1, 27)
+    row(rows["row27"], S_C1, S_IN, -1, 27, open_start=spec.get("open_start27", False))
     row(rows["row30"], N_C0, N_IN, +1, 30)
     row(rows["row32"], N_C1, N_OUT, -1, 32)
     # 廊下の天井（白）と、埋め込みの細長い照明（写真 6745）

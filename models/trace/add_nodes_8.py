@@ -44,6 +44,11 @@ for n in src["nodes"]:
         n["fix8"] = True
         moved.append(n["id"])
 
+# 3F↔4F の大階段（build_honbuto_interior.py の STAIR）：4F 側の点は上の端の踊り場（EV B の裏との間）、3F 側の点は下の端と教室の間の通路
+#   前は 4F 側が EV B の箱の中、3F 側が教室 2303 の中にあった。座標は本部棟.blend の座標から原点のずれを引く
+put("hq-4f-hall", HONBU, 44.8 - HONBU_ORIGIN[0], -9.7 - HONBU_ORIGIN[1])
+put("hq-3f", HONBU, 44.8 - HONBU_ORIGIN[0], -21.95 - HONBU_ORIGIN[1])
+
 # ---- 交流棟：かご（SHAFT の中心）と 1F の入口の中 ----
 SHAFT = (24.05, 26.375, -6.9, -5.2)
 for f in range(1, 7):
@@ -59,6 +64,28 @@ for f in range(1, 15):
 # ---- 研究棟ゲートの道路側：外階段の上の端（デッキの端 Y = 22.8、ゲートの真ん中 X = -7.6） ----
 put("o-120", KENKYU, -7.6, 22.8, 6.0)
 put("research-road", KENKYU, -7.6, 31.0, 0)
+
+# ---- 交流プラザ：中の点は台（0.8m）の上。玄関の扉の 1 組目（u -26.2〜-23.6、build_festival_props.py の DOOR_PAIRS）の真ん中を通る ----
+#   前は中の点が高さ 0m（台の中）で、玄関の点が扉と扉の間の柱の位置にあった。外から台へ上がる線は 6 段の石の階段
+KYO = KYOSHITSU
+for nid, u, v, z in (("o-081", -24.9, None, None), ("o-082", -24.9, -76.2, 0.8)):
+    t, c = P[KYO]["theta"], P[KYO]["center"]
+    x, y = NODES[nid]["blender"][:2]
+    du, dv = x - c[0], y - c[1]
+    cu, cv = math.cos(t) * du + math.sin(t) * dv, -math.sin(t) * du + math.cos(t) * dv
+    put(nid, KYO, u, cv if v is None else v, z)
+NODES["koryu-plaza"]["blender"][2] = 0.8
+for e in src["edges"]:
+    if e["id"] == "o-081--o-082":
+        e["kind"] = "stairs"
+
+# ---- 教室棟 2F の交流棟側：301 の真下の位置は 2F では扉のない部屋の中なので、前の廊下へ ----
+put("classroom-2f-koryu", KYOSHITSU, -26.94, -2.5)
+
+# ---- 研究棟 1F の運河側（EV B）と教室棟側（EV A）を直接結ぶ線を外す ----
+#   モデルの研究棟 1F は、曲がり角に近い西の端が部屋（01I25・01K28）と詰め物の壁で、EV A へ向かう廊下がない（案内図 6730 の
+#   この辺りの廊下の形は分からない）。線が部屋と壁を抜けていたので外す。運河側からは EV B で 2F へ上がって芝生を渡るか、8F 以上で渡る
+src["edges"] = [e for e in src["edges"] if e["id"] != "research-1f--research-1f-east"]
 
 # ---- 行き止まりの道の点を消す ----
 #   教室棟の階段室へ入る枝（10/24 に階段の線を消したので行き止まり。階段室の鉄の扉は壁に貼った板なので、線が壁を抜けていた）と、
