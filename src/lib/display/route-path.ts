@@ -172,11 +172,18 @@ export function pointAt(path: RoutePath, s: number): Vec3 {
 /**
  * Where to look from s: the first point ahead that has moved sideways by at
  * least `ahead` metres. Searching by horizontal distance keeps a straight
- * stair from tipping the view to the ceiling.
+ * stair from tipping the view to the ceiling. The search stops where an
+ * elevator ride starts (its car on this floor): an elevator moves straight up
+ * or down, so looking past it pointed the view at a floor several storeys
+ * away and the walk dipped to the white floor just before stepping in.
  */
 export function lookAheadAt(path: RoutePath, s: number, ahead: number): Vec3 {
   const here = pointAt(path, s);
   for (let d = 1; s + d <= path.length; d += 1) {
+    if (!elevatorRiding(path, s) && elevatorRiding(path, s + d)) {
+      const i = path.kinds.findIndex((kind, k) => kind === "elevator" && s + d > path.at[k] && s + d < path.at[k + 1]);
+      return pointAt(path, path.at[i]);
+    }
     const p = pointAt(path, s + d);
     if (Math.hypot(p[0] - here[0], p[2] - here[2]) >= ahead) return p;
   }
