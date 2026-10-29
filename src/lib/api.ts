@@ -17,19 +17,22 @@ export interface Credential {
   deleteAfter: string;
 }
 
+export type MemoryStatus = "main" | "arrived" | "ended";
+export type ReplayStatus = "queued" | "playing" | "completed" | "skipped";
+export type MemoryState = Pick<Credential, "sessionId" | "expiresAt" | "deleteAfter"> & { status: MemoryStatus };
+export type LiveState = Pick<Credential, "sessionId" | "expiresAt" | "deleteAfter"> & { trackingStatus: "tracking" | "stopped" | "expired" };
+export type MemoryStopResult = Pick<MemoryState, "status" | "expiresAt" | "deleteAfter"> & { stoppedAt: string };
+
 export interface Experience {
   experienceId: string;
-  memorySession: Credential;
-  livePresenceSession?: Credential & { trackingStatus: string; presencePhase: string };
-  displayAlias: { color: string; symbol: string };
-  positionIntervalSeconds: number;
+  memorySession: Credential & { status: MemoryStatus };
+  livePresenceSession?: Credential & { trackingStatus: LiveState["trackingStatus"] };
 }
 
 export interface ExperienceState {
-  memorySession: Pick<Credential, "sessionId" | "expiresAt" | "deleteAfter">;
-  livePresenceSession?: Pick<Credential, "sessionId" | "expiresAt" | "deleteAfter"> & { trackingStatus: string; presencePhase: string };
-  displayAlias: Experience["displayAlias"];
+  memorySession: MemoryState;
   photoSummary: { ready: number; pending: number; failed: number; maxCount: number };
+  replayStatus: ReplayStatus | null;
 }
 
 export interface DeleteResult {

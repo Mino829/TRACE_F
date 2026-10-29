@@ -23,21 +23,25 @@ type Moment = { photoMomentId: string; clientPhotoId: string; checkpointId: stri
 type StandIn = {
   /** Where the arrival's replay stands, once there is one. */
   replay: "playing" | "completed" | null;
+  /** Explicit stop is terminal but preserves owner reads and deletion. */
+  ended: boolean;
+  expiresAt: string;
   /** The photos' records TRACE_B keeps (#13), by the id the phone keeps each photo by. */
   moments: Map<string, Moment>;
   /** Every body sent to TRACE_B's /v2 photos, as it came. */
   sent: unknown[];
+  /** Owner metadata reads used to recover lost create acknowledgements. */
+  listed: number;
   /** TRACE_B's /v2 cannot be reached. */
   down: boolean;
   /** TRACE_B keeps a photo's record, but its answer is lost on the way back. */
   lose: boolean;
 };
 
-/** Answers TRACE_B's participant routes, as TRACE_B's README describes them. */
+/** Answers TRACE_B's participant routes, including retained ownership after stopping. */
 async function standIn(context: BrowserContext): Promise<StandIn> {
-  const state: StandIn = { replay: null, moments: new Map(), sent: [], down: false, lose: false };
-  const memorySession = { sessionId: "mem-1", expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
-  const displayAlias = { color: "cyan", symbol: "circle" };
+  const state: StandIn = { replay: null, ended: false, expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), moments: new Map(), sent: [], listed: 0, down: false, lose: false };
+  const memorySession = { sessionId: "mem-1", status: "main", expiresAt: state.expiresAt, deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
   await context.route("**/api/backend/v1/**", async (route) => {
     const request = route.request();
     const where = `${request.method()} ${new URL(request.url()).pathname.replace("/api/backend", "")}`;
@@ -48,12 +52,19 @@ async function standIn(context: BrowserContext): Promise<StandIn> {
       } });
     }
     if (where === "POST /v1/experiences") {
-      return route.fulfill({ status: 201, json: { experienceId: "exp-1", memorySession: { ...memorySession, participantToken: "token-1" }, displayAlias } });
+      return route.fulfill({ status: 201, json: { experienceId: "exp-1", memorySession: { ...memorySession, participantToken: "token-1" } } });
     }
     if (where === "DELETE /v1/memory-sessions/mem-1") return route.fulfill({ status: 204 });
+    if (where === "POST /v1/memory-sessions/mem-1/stop") {
+      expect(request.headers().authorization).toBe("Bearer token-1");
+      expect(request.headers()["idempotency-key"]).toBeTruthy();
+      expect(request.postData()).toBeNull();
+      state.ended = true;
+      return route.fulfill({ json: { status: "ended", stoppedAt: new Date().toISOString(), expiresAt: state.expiresAt, deleteAfter: memorySession.deleteAfter } });
+    }
     if (where === "GET /v1/experiences/exp-1") {
       return route.fulfill({ json: {
-        memorySession, displayAlias, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 }, ...(state.replay ? { replayStatus: state.replay } : {}),
+        memorySession: { ...memorySession, expiresAt: state.expiresAt, status: state.ended ? "ended" : state.replay === null ? "main" : "arrived" }, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 }, replayStatus: state.replay,
       } });
     }
     return route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND", requestId: "req-1" } } });
@@ -63,9 +74,14 @@ async function standIn(context: BrowserContext): Promise<StandIn> {
     const request = route.request();
     const where = `${request.method()} ${new URL(request.url()).pathname.replace("/api/backend", "")}`;
     const keyed = !!request.headers()["idempotency-key"] && request.headers().authorization === "Bearer token-1";
+    if (where === "GET /v2/memory-sessions/mem-1/photos" && request.headers().authorization === "Bearer token-1") {
+      state.listed += 1;
+      return route.fulfill({ json: { photos: [...state.moments.values()].map((moment, index) => ({ ...moment, sequenceNo: index + 1 })) } });
+    }
     if (where === "POST /v2/memory-sessions/mem-1/photos" && keyed) {
       const body = request.postDataJSON() as Omit<Moment, "photoMomentId">;
       state.sent.push(body);
+      if (state.ended) return route.fulfill({ status: 409, json: { error: { code: "STATE_CONFLICT", requestId: "req-ended" } } });
       const known = state.moments.get(body.clientPhotoId);
       const moment = known ?? { photoMomentId: `photo_${state.sent.length}`, ...body };
       state.moments.set(body.clientPhotoId, moment);
@@ -349,7 +365,53 @@ test("a photo whose answer from TRACE_B was lost is found there by its id when d
   await expect(page.getByRole("heading", { name: "1枚目の写真を削除しますか？" })).toHaveCount(0);
   expect(await kept(page)).toBe(0);
   expect(backend.moments.size).toBe(0);
+  expect(backend.listed).toBe(1);
+  expect(backend.sent).toHaveLength(1);
 });
+
+for (const ending of ["stop", "expiry"] as const) {
+  test(`${ending} prevents new metadata creates but retains owner recovery and deletion after a lost acknowledgement`, async ({ context, page }) => {
+    if (ending === "expiry") await page.clock.install();
+    const backend = await standIn(context);
+    await join(page);
+    backend.lose = true;
+    await savePhoto(page, 1);
+    await expect.poll(() => backend.moments.size).toBe(1);
+    expect(await momentIds(page)).toEqual(["waiting"]);
+    backend.lose = false;
+    const creates = backend.sent.length;
+
+    if (ending === "stop") {
+      await page.getByRole("button", { name: "メニュー" }).click();
+      await page.getByRole("button", { name: "記録を残して参加を終了", exact: true }).click();
+      await page.getByRole("button", { name: "記録を残して終了する", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "記録を残して参加を終了しますか？" })).toHaveCount(0);
+    } else {
+      backend.ended = true;
+      await page.clock.fastForward(6 * HOUR + 1000);
+    }
+    await expect(page.getByRole("button", { name: "写真を撮る", exact: true }).first()).toBeDisabled();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "写真を撮る", exact: true }).first()).toBeDisabled();
+    await page.evaluate(() => window.dispatchEvent(new Event("online")));
+    expect(await momentIds(page)).toEqual(["waiting"]);
+
+    // A GET finds the already-created record without replaying a now-forbidden POST.
+    await page.getByRole("button", { name: "1枚目の写真を削除" }).click();
+    await page.getByRole("button", { name: "削除する", exact: true }).click();
+    await expect.poll(() => kept(page)).toBe(0);
+    expect(backend.moments.size).toBe(0);
+    expect(backend.listed).toBe(1);
+    expect(backend.sent).toHaveLength(creates);
+    await expect(page.getByRole("button", { name: /はじめる/ })).toHaveCount(0);
+
+    // Stopping is not deletion: the retained owner can still withdraw the whole memory.
+    await page.getByRole("button", { name: "メニュー" }).click();
+    await page.getByRole("button", { name: "参加をやめる", exact: true }).click();
+    await page.getByRole("button", { name: "やめて削除する" }).click();
+    await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
+  });
+}
 
 /** Where the photos' pins stand over the 3D view. */
 const pinsAt = (page: Page) => page.locator(".trace__pin:not([hidden])").evaluateAll((pins) => pins.map((pin) => (pin as HTMLElement).style.transform));
@@ -404,6 +466,24 @@ test("振り返り3D draws the way from the photos' places to ShibaLab, turns by
   await page.getByRole("button", { name: "作品にもどる" }).click();
   await expect(page.getByRole("heading", { name: "あなたの作品" })).toBeVisible();
   expect(problems).toEqual([]);
+});
+
+test("one photo still draws the final photo-to-arrival route and exposes both stops", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page, 1);
+  await expect(page.getByRole("button", { name: "QR コードを読み取る" })).toBeVisible();
+  backend.replay = "completed";
+  await page.reload();
+  await page.getByRole("button", { name: "作品を見る" }).click();
+  await page.getByRole("button", { name: "軌跡を見る" }).click();
+  await expect(page.getByRole("heading", { name: "あなたの軌跡" })).toBeVisible();
+  await expect(page.locator(".trace__pin:not([hidden])")).toHaveCount(1, { timeout: 15000 });
+  await expect(page.getByRole("button", { name: "元の向きにもどす" })).toBeEnabled();
+  const rows = page.locator(".trace__list li");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText("本部棟5F");
+  await expect(rows.last()).toContainText("ShibaLab（教室棟301）");
 });
 
 test("without WebGL, 振り返り3D says so and still lists the places", async ({ context, page }) => {

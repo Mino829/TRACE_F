@@ -11,7 +11,7 @@ async function session(page: Page): Promise<Session> {
   return page.evaluate(() => JSON.parse(sessionStorage.getItem("trace.participant.v1")!));
 }
 
-/** Simulates a credential issued before the GPS cutover; the root screen never creates new ones. */
+/** New joins are memory-only. Legacy Live owner credentials are supplied by a stateful fixture, never minted by enrollment. */
 async function storedSession(page: Page, live: boolean) {
   // Without one, the root sends the tab on to /log; the credential is stored there and the root opened again.
   await page.goto("/");
@@ -19,13 +19,46 @@ async function storedSession(page: Page, live: boolean) {
   const config = await (await page.request.get("/api/backend/v1/public/config")).json();
   const response = await page.request.post("/api/backend/v1/experiences", { data: {
     memoryConsentVersion: config.consent.version,
-    livePresenceConsentVersion: live ? config.livePresenceConsentVersion : "",
-    enableLivePresence: live,
+    livePresenceConsentVersion: config.livePresenceConsentVersion,
+    enableLivePresence: false,
     consentLanguage: config.consent.language,
     clientTime: new Date().toISOString(),
   } });
   expect(response.ok()).toBe(true);
   const created = await response.json();
+  if (live) {
+    const credential = {
+      sessionId: `legacy-live-${crypto.randomUUID()}`, participantToken: "synthetic-legacy-owner",
+      expiresAt: created.memorySession.expiresAt, deleteAfter: created.memorySession.deleteAfter,
+      trackingStatus: "tracking",
+    };
+    let deleted = false;
+    await page.route("**/api/backend/v1/**", async (route) => {
+      const request = route.request();
+      const pathname = new URL(request.url()).pathname.replace("/api/backend", "");
+      if (pathname === `/v1/live-presence-sessions/${credential.sessionId}` || pathname === `/v1/live-presence-sessions/${credential.sessionId}/stop`) {
+        expect(request.headers().authorization).toBe(`Bearer ${credential.participantToken}`);
+        if (request.method() === "DELETE") {
+          deleted = true;
+          return route.fulfill({ status: 204 });
+        }
+        if (deleted) return route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND" } } });
+        if (request.method() === "POST") credential.trackingStatus = "stopped";
+        return route.fulfill({ json: { sessionId: credential.sessionId, trackingStatus: credential.trackingStatus, expiresAt: credential.expiresAt, deleteAfter: credential.deleteAfter } });
+      }
+      if (pathname === `/v1/experiences/${created.experienceId}` && request.method() === "DELETE") {
+        expect(request.headers()["x-trace-live-token"]).toBe(credential.participantToken);
+        const response = await page.request.delete(`/api/backend/v1/memory-sessions/${created.memorySession.sessionId}`, {
+          headers: { Authorization: `Bearer ${created.memorySession.participantToken}`, "Idempotency-Key": request.headers()["idempotency-key"] },
+        });
+        expect(response.status()).toBe(204);
+        deleted = true;
+        return route.fulfill({ json: { memory: "deleted", live: "deleted", complete: true } });
+      }
+      return route.fallback();
+    });
+    created.livePresenceSession = credential;
+  }
   await page.evaluate((value) => sessionStorage.setItem("trace.participant.v1", JSON.stringify({ ...value, operationKeys: {} })), created);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "参加状況" })).toBeVisible();
@@ -57,21 +90,18 @@ test("legacy live sessions can stop and two-token deletion recovers across parti
   await page.getByRole("button", { name: "この参加の位置送信を終了する" }).click();
   await expect(page.getByText("位置送信は終了しています", { exact: true })).toBeVisible();
   const current = await session(page);
-  const state = await page.request.get(`/api/backend/v1/experiences/${current.experienceId}`, {
-    headers: { Authorization: `Bearer ${current.memorySession.participantToken}` },
-  });
-  expect((await state.json()).livePresenceSession.presencePhase).toBe("ended");
-  const stoppedPosition = await page.request.post(`/api/backend/v1/live-presence-sessions/${current.livePresenceSession!.sessionId}/position`, {
-    headers: { Authorization: `Bearer ${current.livePresenceSession!.participantToken}` },
-    data: { point: { latitude: 35, longitude: 135, accuracyM: 8, recordedAt: new Date().toISOString() } },
-  });
-  expect((await stoppedPosition.json()).error.code).toBe("TRACKING_STOPPED");
+  expect((await page.evaluate(async (credential) => {
+    const response = await fetch(`/api/backend/v1/live-presence-sessions/${credential.sessionId}`, {
+      headers: { Authorization: `Bearer ${credential.participantToken}` },
+    });
+    return response.json();
+  }, current.livePresenceSession!)).trackingStatus).toBe("stopped");
 
   // First the server reports only a partial result, then the complete reply is lost in transit.
   const keys: string[] = [];
   let attempts = 0;
   await page.route("**/api/backend/v1/experiences/*", async (route) => {
-    if (route.request().method() !== "DELETE") return route.continue();
+    if (route.request().method() !== "DELETE") return route.fallback();
     attempts++;
     keys.push(route.request().headers()["idempotency-key"]);
     expect(route.request().headers()["authorization"]).toBe(`Bearer ${current.memorySession.participantToken}`);
@@ -81,9 +111,12 @@ test("legacy live sessions can stop and two-token deletion recovers across parti
       await route.fulfill({ status: 200, contentType: "application/json",
         body: JSON.stringify({ memory: "pending", live: "deleted", complete: false }) });
     } else if (attempts === 2) {
-      await route.fetch();
+      const response = await page.request.delete(`/api/backend/v1/memory-sessions/${current.memorySession.sessionId}`, {
+        headers: { Authorization: `Bearer ${current.memorySession.participantToken}`, "Idempotency-Key": keys[0] },
+      });
+      expect(response.status()).toBe(204);
       await route.abort();
-    } else await route.continue();
+    } else await route.fallback();
   });
   await page.getByRole("button", { name: "すべて削除して終了" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
@@ -114,17 +147,62 @@ test("a previous memory-only participant can still delete their data", async ({ 
   await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
 });
 
-test("deleting memory separately leaves a legacy live credential for individual deletion", async ({ page }) => {
+test("memory stop is terminal, survives a lost reply, and retains owner read/delete rights", async ({ page }) => {
+  await storedSession(page, false);
+  const original = await session(page);
+  const keys: string[] = [];
+  let attempts = 0;
+  await page.route(`**/v1/memory-sessions/${original.memorySession.sessionId}/stop`, async (route) => {
+    expect(route.request().postData()).toBeNull();
+    keys.push(route.request().headers()["idempotency-key"]);
+    attempts += 1;
+    if (attempts === 1) {
+      const response = await route.fetch();
+      expect(response.ok()).toBe(true);
+      await route.abort();
+    } else await route.continue();
+  });
+  await page.getByRole("button", { name: "メモリー参加を終了する", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("サーバーに接続できません");
+  // The first request committed, so a state read also recovers the terminal outcome.
+  await page.getByRole("button", { name: /参加状態を更新/ }).click();
+  await expect(page.getByRole("heading", { name: "メモリー参加は終了しました" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "メモリー参加を終了する", exact: true })).toHaveCount(0);
+  expect((await session(page)).memorySession.participantToken).toBe(original.memorySession.participantToken);
+  const stopped = await page.request.get(`/api/backend/v1/experiences/${original.experienceId}`, {
+    headers: { Authorization: `Bearer ${original.memorySession.participantToken}` },
+  });
+  expect(stopped.status()).toBe(200);
+  const state = await stopped.json();
+  expect(state.memorySession.status).toBe("ended");
+  expect(state.replayStatus).toBeNull();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "メモリー参加は終了しました" })).toBeVisible();
+  await page.getByRole("button", { name: "メモリー参加情報を削除" }).click();
+  await page.getByRole("button", { name: "削除する", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
+  expect(keys).toHaveLength(1);
+});
+
+
+test("after memory deletion a legacy owner can independently read, stop and delete Live", async ({ page }) => {
   await legacySession(page);
   const original = await session(page);
   await page.getByRole("button", { name: "メモリー参加情報を削除" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
   expect((await session(page)).livePresenceSession?.participantToken).toBe(original.livePresenceSession?.participantToken);
-  await page.reload();
+  const [liveRead] = await Promise.all([
+    page.waitForResponse((response) => response.request().method() === "GET" && response.url().endsWith(`/v1/live-presence-sessions/${original.livePresenceSession!.sessionId}`)),
+    page.reload(),
+  ]);
+  expect((await liveRead.json()).trackingStatus).toBe("tracking");
+  await expect(page.getByRole("button", { name: "メモリー参加情報を削除" })).toHaveCount(0);
+  await page.getByRole("button", { name: "この参加の位置送信を終了する" }).click();
+  await expect(page.getByText("位置送信は終了しています", { exact: true })).toBeVisible();
   let deletedPath = "";
   await page.route("**/api/backend/v1/**", async (route) => {
     if (route.request().method() === "DELETE") deletedPath = new URL(route.request().url()).pathname;
-    await route.continue();
+    await route.fallback();
   });
   await page.getByRole("button", { name: "すべて削除して終了" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
@@ -148,7 +226,7 @@ test("one expired deletion window still allows deleting the other session", asyn
   let deletedPath = "";
   await page.route("**/api/backend/v1/**", async (route) => {
     if (route.request().method() === "DELETE") deletedPath = new URL(route.request().url()).pathname;
-    await route.continue();
+    await route.fallback();
   });
   await page.getByRole("button", { name: "すべて削除して終了" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
@@ -163,10 +241,13 @@ test("one expired deletion window still allows deleting the other session", asyn
 test("server-side legacy live deletion is reflected before deleting the remaining memory", async ({ page }) => {
   await legacySession(page);
   const original = await session(page);
-  const deleted = await page.request.delete(`/api/backend/v1/live-presence-sessions/${original.livePresenceSession!.sessionId}`, {
-    headers: { Authorization: `Bearer ${original.livePresenceSession!.participantToken}`, "Idempotency-Key": crypto.randomUUID() },
-  });
-  expect(deleted.status()).toBe(204);
+  const deletedStatus = await page.evaluate(async (credential) => {
+    const response = await fetch(`/api/backend/v1/live-presence-sessions/${credential.sessionId}`, {
+      method: "DELETE", headers: { Authorization: `Bearer ${credential.participantToken}`, "Idempotency-Key": crypto.randomUUID() },
+    });
+    return response.status;
+  }, original.livePresenceSession!);
+  expect(deletedStatus).toBe(204);
   await page.getByRole("button", { name: /参加状態を更新/ }).click();
   await expect(page.getByRole("button", { name: "位置参加情報を削除" })).toHaveCount(0);
   expect((await session(page)).livePresenceSession).toBeUndefined();

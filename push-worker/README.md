@@ -9,7 +9,7 @@
 main に push され、GitHub Actions の「Verify frontend and Workers」が通ると、`.github/workflows/deploy.yml` が `npm run release` を実行してデプロイします。
 Actions の画面から「Deploy to Cloudflare」を手で実行することもできます。
 このワークフローには、リポジトリの secret に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要です。
-`PUSH_API_URL`、`TRACE_API_URL`、`ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID`、`DISPLAY_API_URL`、`GOOGLE_CLIENT_ID` は、リポジトリの variable に設定したものだけを `.env` に書きます。
+`PUSH_API_URL`、`TRACE_API_URL`、`ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID`、`ARRIVAL_PROOF_KEY_ID`、`ARRIVAL_ISSUER_URL`、`DISPLAY_API_URL`、`GOOGLE_CLIENT_ID` は、リポジトリの variable に設定したものだけを `.env` に書きます。
 
 ## 構成
 
@@ -70,12 +70,15 @@ npm install
 `.env` に `TRACE_API_URL=/api/backend` を書くと、/log はこのサイトの `/api/backend` を通して、TRACE_B に参加を作るようになります。
 書いていなければ、/log は今までどおり端末と通知サーバーだけで動きます。
 この行を書くのは、下の2つの secret を `trace-log` に設定し、TRACE_B につながることを確かめてからにしてください。
-`.env` に `ARRIVAL_VENUE` と `ARRIVAL_CHECKPOINT_ID` も書きます。値は TRACE_B の `TRACE_ARRIVAL_VENUE` と `TRACE_ARRIVAL_CHECKPOINT_ID` と同じにします。
-/log はこの2つを使って、ブースの短い到着 QR を TRACE_B のトークンに組み立て直します（arrival-issuer/README.md）。
+`.env` に `ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID`、`ARRIVAL_PROOF_KEY_ID`（省略時 `arrival-proof-v1`）も書きます。Go の同名 `TRACE_*` 設定と一致させます。key ID は公開識別子で、署名鍵ではありません。
+`/log` はこの3値と固定 purpose `arrival` を使い、短い T2 到着 QR から署名済みトークンを復元します。値が異なる場合は QR を短縮しません（arrival-issuer/README.md）。
+
 `.env` に `DISPLAY_API_URL` と `GOOGLE_CLIENT_ID` を両方書くと、/display は運営に Google でログインしてもらい、TRACE_B へ直接 WebSocket でつないで到着を再生します。
 `DISPLAY_API_URL` は TRACE_B のオリジン（このサイトの `/api/backend` ではありません）、`GOOGLE_CLIENT_ID` は TRACE_B の `TRACE_DISPLAY_GOOGLE_CLIENT_ID` と同じ値です。
 どちらかが無ければ、/display は今までどおりテスト再生だけで動きます。
 TRACE_B の `TRACE_DISPLAY_ALLOWED_ORIGINS` と、Google 側の「承認済みの JavaScript 生成元」には、`trace-log` のオリジンを入れておきます。
+個人運営資格の取得/失効とQR発行は別の認証付きloopback brokerを使い、Edge keyをブラウザへ渡しません（[運営入口](../arrival-issuer/README.md)）。実Workerポリシー→ローカルGo HTTPの成功は、Cloudflare配備やGoogle/機材の確認とは別です。
+`.env` の任意の公開設定 `ARRIVAL_ISSUER_URL` は、ビルド時に `NEXT_PUBLIC_ARRIVAL_ISSUER_URL` としてこの broker の URL を渡します。未設定は空のままで、個人運営機能は無効です。Edge key や署名鍵などの secret はこの値に含めません。
 
 ```bash
 npm --prefix push-worker run release
@@ -96,8 +99,9 @@ npm run deploy:site
 参加者画面のAPI中継を使う場合、`trace-log`側へ`TRACE_BACKEND_URL`（Go APIのHTTPSオリジン）と`TRACE_EDGE_SHARED_SECRET`（Go側と同じ32バイト以上の値）をsecretとして設定します。設定されるまで`/api/backend/*`は503を返し、静的ページだけが表示されます。`trace-push`のVAPID secretとは別です。
 
 中継するのは、参加者画面が使う TRACE_B の API だけです（一覧は `src/site.ts` の `allowed`）。
-参加の作成・取得・削除、写真（作成、一覧、アップロード URL、完了、削除、記録の取得）、到着（`arrival`、`arrival/skip`）、撮影リマインダー（`push-subscription` の PUT、PATCH、DELETE）、ライブ位置を通します。
-運営用（`/v1/operator/*`）と展示画面用（`/v1/display/*`）の API には 404 を返します。
+参加の作成・取得・削除、/v2 の写真 metadata 作成・一覧・story・削除、到着（`arrival`、`arrival/skip`）、Memory 参加停止（`stop`）、撮影リマインダー（`push-subscription` の PUT、PATCH、DELETE）を通します。写真の本体は端末に残します。
+旧 Live の本人照会・停止・削除と旧クラウド写真の本人閲覧・削除も通し、停止後・失効後も `deleteAfter` まで本人閲覧・削除を維持します。旧写真 upload/complete と新規 GPS 書き込みは通しません。
+運営用（`/v1/operator/*`）と展示画面用（`/v1/display/*`）の API には 404 を返します。Edge secret は Worker だけが保持し、ブラウザには渡しません。
 POST、PUT、PATCH は、本文が空でも `Content-Type: application/json` を付けないと 415 になります。
 
 ```bash

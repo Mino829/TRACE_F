@@ -12,7 +12,7 @@ import { reducedMotion } from "@/lib/ray/fx";
 
 import { ArrivalFlow, type ArrivalTarget } from "./arrival";
 import { DemoFlow } from "./demo";
-import { ConsentLayer, DeletePhotoLayer, HowToLayer, InstallLayer, MenuLayer, WithdrawLayer, type MenuItem, type OverlayName } from "./overlays";
+import { ConsentLayer, DeletePhotoLayer, HowToLayer, InstallLayer, MenuLayer, StopLayer, WithdrawLayer, type MenuItem, type OverlayName } from "./overlays";
 import { PhotoScreen } from "./photo";
 import { ConsentScreen, HomeScreen, PingScreen, SkipScreen, TitleScreen, type ReminderTerms } from "./screens";
 import { RayStage, SWAP, useRay } from "./stage";
@@ -27,6 +27,8 @@ import "./ray.css";
 
 export type RayAppProps = {
   joined: boolean;
+  ended: boolean;
+  onStop?: () => Promise<string | null>;
   consent: Consent | null;
   /** The consent screen before joining. */
   consentOpen: boolean;
@@ -97,6 +99,7 @@ export function RayApp(props: RayAppProps) {
   const menuItems: MenuItem[] = [
     { label: "遊び方", onSelect: () => setOverlay("howto") },
     ...(props.consent?.version === CONSENT_VERSION ? [{ label: "同意した内容", onSelect: () => setOverlay("consent") }] : []),
+    ...(props.onStop ? [{ label: "記録を残して参加を終了", onSelect: () => setOverlay("stop"), disabled: props.busy }] : []),
     ...(props.consent ? [{ label: "参加をやめる", onSelect: () => setOverlay("withdraw"), disabled: props.busy }] : []),
   ];
 
@@ -132,6 +135,8 @@ export function RayApp(props: RayAppProps) {
       />
     ) : overlay === "consent" ? (
       <ConsentLayer onClose={close} />
+    ) : overlay === "stop" && props.onStop ? (
+      <StopLayer onConfirm={props.onStop} onClose={close} />
     ) : overlay === "withdraw" ? (
       <WithdrawLayer
         onConfirm={async () => {
@@ -187,13 +192,14 @@ function Current(
     props.onSkip();
   };
 
-  if (props.demo === "home" && props.arrival) {
+  if (props.demo === "home" && props.arrival && (!props.ended || props.arrived)) {
     return (
       <ArrivalFlow
         target={props.arrival}
         photos={props.photos}
         contact={props.contact}
         toKeepsake={props.arrived}
+        ended={props.ended}
         inert={inert}
         onClose={props.onCloseDemo}
         onTitle={() => props.onTitle(true)}
@@ -204,7 +210,7 @@ function Current(
     );
   }
 
-  if (props.demo) {
+  if (props.demo && !(props.ended && props.arrival)) {
     return (
       <DemoFlow
         closeLabel={props.demo === "home" ? "ホームへもどる" : "開発者の画面にもどる"}
@@ -243,7 +249,7 @@ function Current(
     );
   }
 
-  if (props.shot && props.consent) {
+  if (!props.ended && props.shot && props.consent) {
     return (
       <PhotoScreen
         key={props.shot.id}
@@ -267,11 +273,11 @@ function Current(
     );
   }
 
-  if (props.skipped) {
+  if (!props.ended && props.skipped) {
     return <SkipScreen at={props.skipped} nextReminderAt={props.nextReminderAt} inert={inert} onClose={() => void go(props.onCloseSkip)} />;
   }
 
-  if (props.pingOpen && props.pendingAt) {
+  if (!props.ended && props.pingOpen && props.pendingAt) {
     return (
       <PingScreen
         pendingAt={props.pendingAt}
@@ -300,9 +306,10 @@ function Current(
   return (
     <HomeScreen
       photos={props.photos}
+      ended={props.ended}
       maxPhotos={props.maxPhotos}
-      pendingAt={props.pendingAt}
-      reminderOn={props.reminderOn}
+      pendingAt={props.ended ? null : props.pendingAt}
+      reminderOn={!props.ended && props.reminderOn}
       nextReminderAt={props.nextReminderAt}
       reminderTerms={props.reminderTerms}
       support={props.support}

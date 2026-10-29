@@ -38,6 +38,7 @@ export type DisplayLink = {
   googleClientId: string;
   /** The operator signed in with Google: the ID token stays in this tab's memory only. */
   signIn: (idToken: string) => void;
+  signOut: () => void;
 };
 
 /** Keeps the page linked to TRACE_B while it is open; null when no link is configured. */
@@ -48,6 +49,7 @@ export function useRendererLink(
 ): DisplayLink | null {
   const configured = /^https?:\/\//.test(API_URL) && GOOGLE_CLIENT_ID.length > 0;
   const [state, setState] = useState<{ state: LinkState; detail: string | null }>({ state: "login", detail: null });
+  const [identityVersion, setIdentityVersion] = useState(0);
   const replayRef = useRef(replay);
   const onIdleRef = useRef(onIdle);
   const idTokenRef = useRef<string | null>(null);
@@ -79,12 +81,20 @@ export function useRendererLink(
       link.close();
       linkRef.current = null;
     };
-  }, [ready, configured]);
+  }, [ready, configured, identityVersion]);
 
   const signIn = useCallback((idToken: string) => {
     idTokenRef.current = idToken;
     linkRef.current?.signedIn();
   }, []);
 
-  return configured ? { ...state, googleClientId: GOOGLE_CLIENT_ID, signIn } : null;
+  const signOut = useCallback(() => {
+    idTokenRef.current = null;
+    linkRef.current?.close();
+    linkRef.current = null;
+    setState({ state: "login", detail: null });
+    setIdentityVersion((version) => version + 1);
+  }, []);
+
+  return configured ? { ...state, googleClientId: GOOGLE_CLIENT_ID, signIn, signOut } : null;
 }

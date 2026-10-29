@@ -2,25 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { api, errorMessage, type DeleteResult, type ExperienceState, type PublicConfig } from "@/lib/api";
+import { ApiError, api, errorMessage, type DeleteResult, type ExperienceState, type LiveState, type MemoryStopResult, type PublicConfig } from "@/lib/api";
 import { readSession, saveSession, type ParticipantSession } from "@/lib/session";
 
 function date(value: string) {
   return new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
-const colorNames: Record<string, string> = { cyan: "水色", magenta: "マゼンタ", amber: "琥珀色", violet: "紫", lime: "黄緑", coral: "コーラル" };
-const symbols: Record<string, string> = { circle: "●", triangle: "▲", diamond: "◆", star: "★", wave: "〜", square: "■" };
-const phases: Record<string, string> = { approaching: "キャンパスを歩いています", arrived: "展示場に到着しました", on_site: "会場内の体験に参加中", ended: "体験を終了しました" };
-
 function fromState(current: ParticipantSession, state: ExperienceState): ParticipantSession {
   return {
     ...current,
-    displayAlias: state.displayAlias,
     memorySession: { ...current.memorySession, ...state.memorySession },
-    livePresenceSession: state.livePresenceSession && current.livePresenceSession
-      ? { ...current.livePresenceSession, ...state.livePresenceSession }
-      : undefined,
   };
 }
 
@@ -36,9 +28,8 @@ export default function ParticipantApp() {
   const locked = useRef(false);
   const tracking = session?.livePresenceSession?.trackingStatus === "tracking";
   const pendingDelete = !!session && !!(session.operationKeys["delete-all"] || session.operationKeys["delete-memory"] || session.operationKeys["delete-live"]);
-  const expired = session ? Date.parse(session.memorySession.expiresAt) <= clock &&
-    (!session.livePresenceSession || Date.parse(session.livePresenceSession.expiresAt) <= clock) : false;
   const active = !!session?.livePresenceSession && tracking && Date.parse(session.livePresenceSession.expiresAt) > clock;
+  const memoryEnded = !!session && (session.memorySession.status === "ended" || Date.parse(session.memorySession.expiresAt) <= clock);
   useEffect(() => {
     const timer = setInterval(() => setClock(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -74,30 +65,50 @@ export default function ParticipantApp() {
     return () => { cancelled = true; };
   }, []);
 
+  const readCurrent = useCallback(async (current: ParticipantSession, signal?: AbortSignal) => {
+    let next = current;
+    if (!current.memoryDeleted) {
+      try {
+        const state = await api<ExperienceState>(`/v1/experiences/${current.experienceId}`, { token: current.memorySession.participantToken, signal });
+        next = fromState(current, state);
+      } catch (failure) {
+        if (!(failure instanceof ApiError) || failure.code !== "NOT_FOUND" && failure.code !== "UNAUTHORIZED") throw failure;
+        next = { ...current, memoryDeleted: true };
+      }
+    }
+    const live = current.livePresenceSession;
+    if (live) {
+      try {
+        const state = await api<LiveState>(`/v1/live-presence-sessions/${live.sessionId}`, { token: live.participantToken, signal });
+        next = { ...next, livePresenceSession: { ...live, ...state } };
+      } catch (failure) {
+        if (!(failure instanceof ApiError) || failure.code !== "NOT_FOUND" && failure.code !== "UNAUTHORIZED") throw failure;
+        next = { ...next, livePresenceSession: undefined };
+      }
+    }
+    return next.memoryDeleted && !next.livePresenceSession ? null : next;
+  }, []);
+
   const refresh = useCallback(async (current: ParticipantSession) => {
-    if (current.memoryDeleted || current.operationKeys["delete-all"] || current.operationKeys["delete-memory"] || current.operationKeys["delete-live"]) return;
-    const state = await api<ExperienceState>(`/v1/experiences/${current.experienceId}`, { token: current.memorySession.participantToken });
-    persist(fromState(current, state));
-  }, [persist]);
+    if (current.operationKeys["delete-all"] || current.operationKeys["delete-memory"] || current.operationKeys["delete-live"]) return;
+    persist(await readCurrent(current));
+  }, [persist, readCurrent]);
 
   const experienceId = session?.experienceId;
   const memoryDeleted = session?.memoryDeleted;
   const memoryToken = session?.memorySession.participantToken;
   useEffect(() => {
-    if (!experienceId || !memoryToken || memoryDeleted || pendingDelete || busy) return;
+    if (!experienceId || !memoryToken || pendingDelete || busy) return;
     let disposed = false;
     const controller = new AbortController();
     async function check() {
       if (document.visibilityState !== "visible" || !navigator.onLine) return;
       try {
-        const state = await api<ExperienceState>(`/v1/experiences/${experienceId}`, { token: memoryToken, signal: controller.signal });
+        const current = readSession();
+        if (!current || current.experienceId !== experienceId) return;
+        const updated = await readCurrent(current, controller.signal);
         if (disposed) return;
-        setSession((current) => {
-          if (!current || current.experienceId !== experienceId) return current;
-          const updated = fromState(current, state);
-          saveSession(updated);
-          return updated;
-        });
+        persist(updated);
       } catch (failure) {
         if (!disposed) {
           setError(errorMessage(failure));
@@ -107,7 +118,7 @@ export default function ParticipantApp() {
     void check();
     const timer = setInterval(check, 15000);
     return () => { disposed = true; controller.abort(); clearInterval(timer); };
-  }, [experienceId, memoryDeleted, memoryToken, pendingDelete, busy]);
+  }, [experienceId, memoryDeleted, memoryToken, pendingDelete, busy, persist, readCurrent]);
 
   async function run(label: string, action: () => Promise<void>) {
     if (locked.current) return;
@@ -124,15 +135,27 @@ export default function ParticipantApp() {
     return updated;
   }
 
-  async function stop() {
+  async function stopLive() {
     if (!session?.livePresenceSession) return;
     await run("位置送信を終了しています…", async () => {
       const current = withKey(session, "stop");
       const live = current.livePresenceSession!;
       await api(`/v1/live-presence-sessions/${live.sessionId}/stop`, { method: "POST", token: live.participantToken,
         key: current.operationKeys.stop, body: { reason: "participant_requested" } });
-      persist({ ...current, livePresenceSession: { ...live, trackingStatus: "stopped", presencePhase: "ended" } });
+      persist({ ...current, livePresenceSession: { ...live, trackingStatus: "stopped" } });
       setNotice("位置送信を終了し、サーバーの最新位置を消去しました。");
+    });
+  }
+
+  async function stopMemory() {
+    if (!session || session.memoryDeleted) return;
+    await run("メモリー参加を終了しています…", async () => {
+      const current = withKey(session, "stop-memory");
+      const state = await api<MemoryStopResult>(`/v1/memory-sessions/${current.memorySession.sessionId}/stop`, {
+        method: "POST", token: current.memorySession.participantToken, key: current.operationKeys["stop-memory"],
+      });
+      persist({ ...current, memorySession: { ...current.memorySession, ...state } });
+      setNotice("メモリー参加を終了しました。保存期限までは参加状態の確認とデータの削除ができます。");
     });
   }
 
@@ -221,15 +244,15 @@ export default function ParticipantApp() {
             {pendingDelete && <div className="message error" role="status">{session.deleteResult
               ? `削除は保留中です（メモリー: ${session.deleteResult.memory === "deleted" ? "削除済み" : "保留"}、位置情報: ${session.deleteResult.live === "deleted" ? "削除済み" : "保留"}）。同じ操作を再度実行してください。`
               : "前回の削除結果を確認できていません。同じ操作を再度実行してください。"}</div>}
-            <h2>{expired ? "参加期限が終了しました" : "あなたの参加を、展示へ。"}</h2>
-            <p className="panel-description">{session.livePresenceSession ? phases[session.livePresenceSession.presencePhase] ?? "参加状態を確認しています" : "位置情報を使わずに参加しています。"}</p>
-            <div className="alias-card"><span className={`alias-symbol alias-${session.displayAlias.color}`}>{symbols[session.displayAlias.symbol] ?? "●"}</span><div><small>展示でのあなたの目印</small><strong>{colorNames[session.displayAlias.color] ?? session.displayAlias.color}</strong></div><span className="anonymous-tag">ANONYMOUS</span></div>
+            <h2>{memoryEnded ? "メモリー参加は終了しました" : session.memorySession.status === "arrived" ? "展示場に到着しました" : "あなたの参加を、展示へ。"}</h2>
+            <p className="panel-description">位置情報を使わずに参加しています。</p>
             {session.livePresenceSession && <div className="presence-card">
               <div className="status-heading"><span className="status-dot" /><strong>{active ? "この画面からの位置送信は停止しています" : "位置送信は終了しています"}</strong></div>
               <p role="status">この画面は現在地を取得・送信しません。</p>
-              {active && !pendingDelete && <div className="button-row"><button className="text-button" disabled={!!busy} onClick={stop}>この参加の位置送信を終了する</button></div>}
+              {active && !pendingDelete && <div className="button-row"><button className="text-button" disabled={!!busy} onClick={stopLive}>この参加の位置送信を終了する</button></div>}
             </div>}
             {!session.memoryDeleted && <div className="session-dates"><span>メモリー参加期限 <strong>{date(session.memorySession.expiresAt)}</strong></span><span>メモリーデータ削除期限 <strong>{date(session.memorySession.deleteAfter)}</strong></span></div>}
+            {!session.memoryDeleted && !memoryEnded && !pendingDelete && <button className="text-button" disabled={!!busy} onClick={stopMemory}>メモリー参加を終了する</button>}
             {session.livePresenceSession && <div className="session-dates"><span>位置参加期限 <strong>{date(session.livePresenceSession.expiresAt)}</strong></span><span>位置データ削除期限 <strong>{date(session.livePresenceSession.deleteAfter)}</strong></span></div>}
             <div className="manage-section"><h3>参加データの管理</h3><p>参加情報は個別に削除できます。</p><div className="manage-links">
               {!session.memoryDeleted && !session.operationKeys["delete-all"] && !session.operationKeys["delete-live"] && <button disabled={!!busy} onClick={() => setConfirmDelete("memory")}>メモリー参加情報を削除</button>}
@@ -237,7 +260,7 @@ export default function ParticipantApp() {
               {!session.operationKeys["delete-memory"] && !session.operationKeys["delete-live"] && <button disabled={!!busy} onClick={() => setConfirmDelete("all")}>すべて削除して終了</button>}
             </div></div>
             {confirmDelete && <div className="delete-confirm" role="group" aria-label="削除の確認"><strong>{confirmDelete === "all" ? "この参加のデータをすべて削除しますか？" : confirmDelete === "live" ? "位置情報の参加を削除しますか？" : "メモリー参加情報を削除しますか？"}</strong><p>{confirmDelete === "memory" && session.livePresenceSession ? "位置情報の参加は残ります。両方を消す場合は「すべて削除して終了」を選んでください。" : "削除したデータは元に戻せません。"}</p><div className="confirm-actions"><button className="danger-button" disabled={!!busy} onClick={() => remove(confirmDelete)}>{busy || "削除する"}</button><button className="secondary-button" disabled={!!busy} onClick={() => setConfirmDelete(null)}>キャンセル</button></div></div>}
-            {!session.memoryDeleted && !pendingDelete && <button className="text-button refresh-button" disabled={!!busy} onClick={() => run("状態を確認しています…", () => refresh(session))}>参加状態を更新 ↻</button>}
+            {!pendingDelete && <button className="text-button refresh-button" disabled={!!busy} onClick={() => run("状態を確認しています…", () => refresh(session))}>参加状態を更新 ↻</button>}
           </>}
           {config && <div className="contact"><span>お困りのときは</span><p>{config.contact}</p></div>}
         </section>

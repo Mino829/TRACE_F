@@ -33,11 +33,14 @@ import {
   deletePhotoMoment,
   fetchPublicConfig,
   getExperience,
+  listPhotoMoments,
+  stopMemorySession,
   sendPhotoMoment,
   type MemoryCredential,
   type PublicConfig,
 } from "@/lib/trace-api/client";
 import {
+  sendMemoryAction,
   clearTabExperience,
   experienceLapsed,
   forgetLapsedExperience,
@@ -74,8 +77,8 @@ import "./developer.css";
  * the work's backend (TRACE_B), and joining lasts until its memory session
  * expires, through reloads and in every tab of the browser (session.ts,
  * tabs.ts): the photo limit comes from the backend's config and counts per
- * memory session, and "参加をやめる" deletes the memory session too. The
- * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
+ * memory session, and terminal stopping is separate from deleting its data.
+ * The arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
  * and the photo reminder goes through TRACE_B as well (trace-api/reminder.ts).
  * A participant's photos and their records stay on the phone, with or without
  * the variable (#54): photos go to no server. Only the checkpoint and time of
@@ -241,6 +244,10 @@ export function PingLogScreen() {
   // The backend's side, while NEXT_PUBLIC_TRACE_API_URL is set.
   const [traceConfig, setTraceConfig] = useState<PublicConfig | null>(null);
   const [experience, setExperience] = useState<TabExperience | null>(() => (TRACE_API_URL ? loadTabExperience() : null));
+  const experienceRef = useRef(experience);
+  useEffect(() => {
+    experienceRef.current = experience;
+  }, [experience]);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
@@ -257,6 +264,12 @@ export function PingLogScreen() {
   const arrive = useCallback(
     (memorySessionId: string) => {
       noteArrival(memorySessionId);
+      setExperience((current) => {
+        if (!current || current.memory.memorySessionId !== memorySessionId || current.status === "ended") return current;
+        const next = { ...current, status: "arrived" as const };
+        saveTabExperience(next);
+        return next;
+      });
       setArrivedIn(memorySessionId);
     },
     [noteArrival],
@@ -270,6 +283,16 @@ export function PingLogScreen() {
   useEffect(() => {
     viewRef.current = view;
   }, [view]);
+
+  // Check again under the send lock: another tab may have stopped while this send waited.
+  const canWriteMemory = useCallback((memorySessionId: string): boolean => {
+    const current = experienceRef.current;
+    const stored = loadTabExperience();
+    return current !== null && current.memory.memorySessionId === memorySessionId &&
+      current.status !== "ended" && Date.parse(current.memory.expiresAt) > Date.now() &&
+      (stored === null || (stored.memory.memorySessionId === memorySessionId &&
+        stored.status !== "ended" && Date.parse(stored.memory.expiresAt) > Date.now()));
+  }, []);
 
   const prompt = useCallback((value: string | null) => {
     write(window.localStorage, PENDING_KEY, value);
@@ -327,7 +350,7 @@ export function PingLogScreen() {
    */
   const sendPlaces = useCallback(async (): Promise<void> => {
     const memory = experience?.memory;
-    if (!memory || Date.parse(memory.expiresAt) <= Date.now() || placesHeldUntil.current > Date.now()) return;
+    if (!memory || !canWriteMemory(memory.memorySessionId) || placesHeldUntil.current > Date.now()) return;
     await withLock(
       SEND_LOCK,
       async () => {
@@ -336,7 +359,7 @@ export function PingLogScreen() {
           const entry = (await listEntries()).find(
             (item) => placeWaiting(item, memory.memorySessionId) && !tried.has(item.id) && !checkpointRefused.current.has(item.id),
           );
-          if (!entry) return;
+          if (!entry || !canWriteMemory(memory.memorySessionId)) return;
           tried.add(entry.id);
           try {
             await putEntry({ ...entry, photoMomentId: await sendPlace(memory, entry) });
@@ -359,7 +382,7 @@ export function PingLogScreen() {
       // Another tab is sending and takes these too, or the phone's storage failed: the next try picks them up.
     });
     listEntries().then(setEntries, () => undefined);
-  }, [experience]);
+  }, [experience, canWriteMemory]);
 
   // The places left over when the page opens or joins, and those that waited for the phone to come back online.
   useEffect(() => {
@@ -447,6 +470,7 @@ export function PingLogScreen() {
     const forget = () => {
       clearTabExperience();
       clearConsent();
+      experienceRef.current = null;
       setExperience(null);
       setConsent(null);
       void withLock(SEND_LOCK, clearSessionEntries, { waitMs: SEND_WAIT_MS })
@@ -459,8 +483,14 @@ export function PingLogScreen() {
     if (!stored) return;
     getExperience(stored.experienceId, stored.memory)
       .then((status) => {
-        setExperience(updateTabExperience(stored, status));
-        if (status.replayStatus) arrive(stored.memory.memorySessionId);
+        setExperience((current) => {
+          if (!current || current.memory.memorySessionId !== stored.memory.memorySessionId) return current;
+          // A read begun before an explicit stop cannot reopen the terminal session.
+          if (current.status === "ended" && status.memorySession.status !== "ended") return current;
+          return updateTabExperience(current, status);
+        });
+        if (status.replayStatus !== null) arrive(stored.memory.memorySessionId);
+        if (status.memorySession.status === "ended") noteArrival(stored.memory.memorySessionId);
       })
       .catch((error: unknown) => {
         // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
@@ -472,7 +502,7 @@ export function PingLogScreen() {
         // Any other failure does not prove deletion; keep the credential and its delete key.
         setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
       });
-  }, [arrive]);
+  }, [arrive, noteArrival]);
 
   // Another tab joined, withdrew, or saved or sent a photo: this one shows the same participation.
   useEffect(
@@ -503,11 +533,11 @@ export function PingLogScreen() {
   // Without a TRACE_B credential in the tab, the photo reminder is the push worker's, as before.
   const reminder = trace.reminder ?? { on: activePlan?.purpose === "photo", nextAt: activePlan?.purpose === "photo" ? nextPingAt : null, terms: WORKER_REMINDER };
 
-  // With the backend, joining lasts as long as this tab's memory session.
-  const sessionExpired = experience !== null && Date.parse(experience.memory.expiresAt) <= now;
-  const joined = consent?.version === CONSENT_VERSION && (!TRACE_API_URL || (experience !== null && !sessionExpired));
-  const memorySessionId = joined ? (experience?.memory.memorySessionId ?? null) : null;
-  const arrived = memorySessionId !== null && arrivedIn === memorySessionId;
+  // An ended session remains readable and deletable until deleteAfter.
+  const sessionExpired = experience !== null && (experience.status === "ended" || Date.parse(experience.memory.expiresAt) <= now);
+  const joined = consent?.version === CONSENT_VERSION && (!TRACE_API_URL || experience !== null);
+  const memorySessionId = experience?.memory.memorySessionId ?? null;
+  const arrived = memorySessionId !== null && (arrivedIn === memorySessionId || experience?.status === "arrived");
   const maxPhotos = (TRACE_API_URL && traceConfig?.photo.maxCount) || MAX_PHOTOS;
 
   // This participation's photos: the memory session's with the backend, the day's without.
@@ -558,8 +588,8 @@ export function PingLogScreen() {
       setJoinError("");
       try {
         if (experience) {
-          if (Date.parse(experience.memory.expiresAt) <= Date.now()) {
-            throw new Error("以前の参加の期限が切れました。メニューの「参加をやめる」から以前の記録を削除してから、もう一度参加してください。");
+          if (experience.status === "ended" || Date.parse(experience.memory.expiresAt) <= Date.now()) {
+            throw new Error("以前の参加は終了しています。メニューの「参加をやめる」から記録を削除してから、もう一度参加してください。");
           }
         } else {
           const config = traceConfig ?? (await fetchPublicConfig());
@@ -652,7 +682,7 @@ export function PingLogScreen() {
   const onCameraFile = (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = "";
-    if (!file || !joined || memoryPhotos.length >= maxPhotos) return;
+    if (!file || !joined || sessionExpired || memoryPhotos.length >= maxPhotos) return;
     // The photo's moment is when the camera hands it over. Where it was taken is chosen afterwards, on the place screen.
     setShot({
       id: crypto.randomUUID(),
@@ -672,6 +702,9 @@ export function PingLogScreen() {
 
   const save = async (entry: LogEntry): Promise<SaveOutcome> => {
     const photo = purposeOf(entry.record) === "photo-memory";
+    if (photo && TRACE_API_URL && (!memorySessionId || !canWriteMemory(memorySessionId))) {
+      throw new TraceApiError(409, "STATE_CONFLICT", null);
+    }
     // A photo taken after the arrival stays off TRACE_B: TRACE_B draws the way on to ShibaLab only from a last photo taken before it.
     await putEntry(memorySessionId && photo ? { ...entry, memorySessionId, ...(arrived ? { photoMomentId: null } : {}) } : entry);
     if (entry.record.kind === "ping") prompt(null);
@@ -685,6 +718,27 @@ export function PingLogScreen() {
   };
 
 
+  const stopParticipation = () => run(async () => {
+    if (!experience || sessionExpired) return;
+    const result = await sendMemoryAction(experience.memory.memorySessionId, "stop", null,
+      (key) => stopMemorySession(experience.memory, key));
+    const next: TabExperience = {
+      ...experience, status: result.status,
+      memory: { ...experience.memory, expiresAt: result.expiresAt, deleteAfter: result.deleteAfter },
+    };
+    saveTabExperience(next);
+    experienceRef.current = next;
+    setExperience(next);
+    noteArrival(experience.memory.memorySessionId);
+    if (trace.owned) await subscription?.unsubscribe().catch(() => undefined);
+    setDemo(null);
+    setShot(null);
+    setSkipped(null);
+    setPingOpen(false);
+    prompt(null);
+    setMessage("参加を終了しました。保存期限までは写真の確認とデータの削除ができます。");
+  });
+
   const withdraw = () => run(async () => {
     // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
     let removed = "この端末の写真を削除しました。";
@@ -696,6 +750,7 @@ export function PingLogScreen() {
         throw new Error(`参加をやめられませんでした。${error instanceof Error ? error.message : ""}`);
       }
       clearTabExperience();
+      experienceRef.current = null;
       setExperience(null);
     }
     // TRACE_B's subscription went with the memory session; only the push worker's own is sent to the push worker.
@@ -732,13 +787,13 @@ export function PingLogScreen() {
           if (!current) return;
           const memory = experience?.memory.memorySessionId === current.memorySessionId ? experience?.memory : undefined;
           let photoMomentId = current.photoMomentId;
-          // Still waiting to be sent: TRACE_B may have it although its answer never came back. The same request again tells.
+          // A lost acknowledgement may hide an existing record. Owner reads still work after stopping; creating one no longer does.
           if (memory && photoMomentId === undefined) {
             try {
-              photoMomentId = await sendPlace(memory, current);
+              photoMomentId = (await listPhotoMoments(memory)).find((moment) => moment.clientPhotoId === current.id)?.photoMomentId ?? null;
             } catch (error) {
-              // TRACE_B never took it, the participation is gone there, or TRACE_B takes no photos at all.
-              const nothingThere = error instanceof TraceApiError && (error.status === 401 || error.code === "INVALID_CHECKPOINT" || error.code === "PHOTO_DISABLED");
+              // The participation is gone there, or this backend never kept its photo metadata.
+              const nothingThere = error instanceof TraceApiError && (error.status === 401 || error.status === 404 || error.code === "PHOTO_DISABLED");
               if (!nothingThere) throw error;
               photoMomentId = null;
             }
@@ -747,8 +802,8 @@ export function PingLogScreen() {
             try {
               await deletePhotoMoment(memory, photoMomentId, `photo-delete:${current.id}`);
             } catch (error) {
-              // Gone there already, or its participation has ended there: nothing is left on TRACE_B.
-              if (!(error instanceof TraceApiError && [401, 404, 409].includes(error.status))) throw error;
+              // Gone there already, or the owner credential is no longer retained.
+              if (!(error instanceof TraceApiError && [401, 404].includes(error.status))) throw error;
             }
           }
           await deleteEntry(current.id);
@@ -781,14 +836,14 @@ export function PingLogScreen() {
   if (view === "participant" || demo !== null) {
     const notes = [
       ...(!joined && lostNote ? [lostNote] : []),
-      // Agreeing again keeps the expired participation (agree), so the way on is to withdraw it first.
-      ...(!joined && consent && sessionExpired ? ["参加の期限が切れました。\n以前の記録を削除する場合は\nメニューの「参加をやめる」を選んでください。"] : []),
       ...(message ? [message] : []),
     ];
     return (
       <>
         <RayApp
           joined={joined}
+          ended={sessionExpired}
+          onStop={experience && !sessionExpired ? stopParticipation : undefined}
           consent={consent}
           consentOpen={consentOpen}
           onOpenConsent={() => setConsentOpen(true)}

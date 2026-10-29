@@ -337,6 +337,7 @@ function IntervalSeg(props: { value: number; choices: number[]; labelledBy: stri
 type HomeProps = {
   /** This participation's photos, oldest first. */
   photos: LogEntry[];
+  ended: boolean;
   maxPhotos: number;
   /** A reminder waiting for an answer. */
   pendingAt: string | null;
@@ -405,7 +406,7 @@ export function HomeScreen(props: HomeProps) {
             <button type="button" className="btn btn--line" onClick={props.onSkip}>
               スキップ
             </button>
-            <button type="button" className="btn" disabled={full} onClick={props.onTakePhoto}>
+            <button type="button" className="btn" disabled={full || props.ended} onClick={props.onTakePhoto}>
               写真を撮る
             </button>
           </div>
@@ -431,7 +432,7 @@ export function HomeScreen(props: HomeProps) {
         )}
       </header>
       <Pop info={memoryInfo} text={`撮影は${maxPhotos}枚までです。`} />
-      {left > 0 && left <= 3 && <p className="h3 remain">あと{left}枚撮れます</p>}
+      {!props.ended && left > 0 && left <= 3 && <p className="h3 remain">あと{left}枚撮れます</p>}
 
       {count === 0 ? (
         <div className="slot">
@@ -462,11 +463,12 @@ export function HomeScreen(props: HomeProps) {
 
       {/* The button follows a scroll, unless a reminder above has its own. */}
       <Dock sticky={!pendingAt && !full}>
-        <button type="button" className={`btn${pendingAt ? " btn--line" : ""}`} disabled={full} onClick={props.onTakePhoto}>
+        <button type="button" className={`btn${pendingAt ? " btn--line" : ""}`} disabled={full || props.ended} onClick={props.onTakePhoto}>
           <Icon name="camera" />
           写真を撮る
         </button>
       </Dock>
+      {props.ended && <p className="note-bar" role="status">参加は終了しました。保存期限までは写真の確認と記録の削除ができます。</p>}
       {full && (
         <p className="small limit">
           <Sentences text={`${maxPhotos}枚撮り終えました。新しく撮るときは、\n写真を1枚削除してください。`} />
@@ -485,7 +487,7 @@ export function HomeScreen(props: HomeProps) {
             </p>
           )}
         </div>
-        <Seg on={props.reminderOn} labelledBy={labelId} disabled={props.busy} onToggle={reminder.toggle} />
+        <Seg on={props.reminderOn} labelledBy={labelId} disabled={props.busy || props.ended} onToggle={reminder.toggle} />
       </div>
       <Pop info={reminderInfo} text={reminderNote(props.reminderTerms)} />
       {props.reminderOn && props.reminderTerms.choices.length > 1 && (
@@ -523,10 +525,12 @@ export function HomeScreen(props: HomeProps) {
           <span className="mono keep-case">ShibaLab</span>
           <span className="mono">Room 301</span>
         </div>
-        {props.arrived ? (
+        {props.ended && !props.arrived ? (
+          <p className="body">参加は終了しました。残した写真はこの画面で確認できます。</p>
+        ) : props.arrived ? (
           <>
             <p className="body">
-              <Sentences text={"再生が終わったら、\n撮った写真を一枚の作品にして保存できます。"} />
+              <Sentences text={props.ended ? "参加は終了しました。残した写真を確認できます。" : "再生が終わったら、\n撮った写真を一枚の作品にして保存できます。"} />
             </p>
             <button type="button" className="btn" onClick={props.onArrive}>
               <Icon name="arrow" />

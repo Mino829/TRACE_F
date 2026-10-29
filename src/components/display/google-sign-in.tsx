@@ -15,6 +15,7 @@ type GoogleIdentity = {
       initialize: (config: { client_id: string; callback: (response: CredentialResponse) => void; auto_select?: boolean }) => void;
       renderButton: (parent: HTMLElement, options: Record<string, string | number>) => void;
       prompt: () => void;
+      disableAutoSelect?: () => void;
     };
   };
 };
@@ -57,7 +58,7 @@ export function GoogleSignIn({ clientId, onToken }: { clientId: string; onToken:
           client_id: clientId,
           auto_select: true,
           callback: (response) => {
-            if (response.credential) onTokenRef.current(response.credential);
+            if (alive && response.credential) onTokenRef.current(response.credential);
           },
         });
         google.accounts.id.renderButton(ref.current, { type: "standard", theme: "outline", size: "large", text: "signin_with", locale: "ja" });

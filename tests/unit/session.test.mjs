@@ -31,7 +31,7 @@ const {
   loadTabExperience,
   memoryDeleteKey,
   saveTabExperience,
-  sendOnce,
+  sendMemoryAction,
   updateTabExperience,
 } = await import("../../src/lib/trace-api/session.ts");
 
@@ -41,7 +41,7 @@ const now = Date.parse("2026-10-31T12:00:00+09:00");
 function experience(memorySessionId = "mem-1") {
   return {
     experienceId: "exp-1",
-    displayAlias: { color: "cyan", symbol: "circle" },
+    status: "main",
     consentVersion: "v1",
     createdAt: new Date(now - HOUR).toISOString(),
     memory: {
@@ -103,11 +103,12 @@ test("withdrawing clears the credential, the experience and the action keys", ()
 test("the backend's newer periods replace the stored ones; another memory session's answer is refused", () => {
   saveTabExperience(experience());
   const deleteAfter = new Date(now + 40 * HOUR).toISOString();
-  const update = { memorySession: { sessionId: "mem-1", expiresAt: new Date(now + 2 * HOUR).toISOString(), deleteAfter },
-    displayAlias: { color: "lime", symbol: "star" }, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 } };
+  const update = { memorySession: { sessionId: "mem-1", status: "ended", expiresAt: new Date(now + 2 * HOUR).toISOString(), deleteAfter },
+    replayStatus: null, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 } };
   updateTabExperience(experience(), update);
   assert.equal(loadTabExperience(now).memory.deleteAfter, deleteAfter);
-  assert.equal(loadTabExperience(now).displayAlias.color, "lime");
+  assert.equal(loadTabExperience(now).status, "ended");
+  assert.equal(loadTabExperience(now).memory.participantToken, "token-1");
   assert.throws(() => updateTabExperience(experience(), { ...update, memorySession: { ...update.memorySession, sessionId: "mem-2" } }));
 });
 
@@ -125,42 +126,62 @@ test("an action's key is reused for the same request and replaced for a request 
   assert.notEqual(actionKey("mem-1", "delete"), second);
 });
 
-test("two calls sending the arrival at once send it once, and both get the first answer", async () => {
+test("concurrent arrival retries serialize, reuse their key and return current replay status", async () => {
   const sent = [];
+  let inFlight = false;
   const send = async (key) => {
+    assert.equal(inFlight, false);
+    inFlight = true;
     sent.push(key);
     await new Promise((resolve) => setTimeout(resolve, 20));
-    return { arrivalId: "arrival-1" };
+    inFlight = false;
+    return { arrivalId: "arrival-1", status: sent.length === 1 ? "queued" : "playing" };
   };
+  const input = { checkpointToken: "qr-1" };
   const answers = await Promise.all([
-    sendOnce("mem-1", "arrival", { checkpointToken: "qr-1" }, send),
-    sendOnce("mem-1", "arrival", { checkpointToken: "qr-1" }, send),
+    sendMemoryAction("mem-1", "arrival", input, send),
+    sendMemoryAction("mem-1", "arrival", input, send),
   ]);
-  assert.equal(sent.length, 1);
-  assert.deepEqual(answers, [{ arrivalId: "arrival-1" }, { arrivalId: "arrival-1" }]);
+  assert.equal(sent.length, 2);
+  assert.equal(sent[0], sent[1]);
+  assert.deepEqual(answers, [
+    { arrivalId: "arrival-1", status: "queued" },
+    { arrivalId: "arrival-1", status: "playing" },
+  ]);
 });
 
-test("after the arrival was answered, a reload or a fresh QR code gets the first answer without sending", async () => {
-  await sendOnce("mem-1", "arrival", { checkpointToken: "qr-1" }, async () => ({ arrivalId: "arrival-1" }));
-  const answer = await sendOnce("mem-1", "arrival", { checkpointToken: "qr-2" }, async () => assert.fail("sent twice"));
-  assert.deepEqual(answer, { arrivalId: "arrival-1" });
+test("a fresh QR obtains current replay state instead of replaying a stored queued response", async () => {
+  await sendMemoryAction("mem-1", "arrival", { checkpointToken: "qr-1" }, async () => ({ arrivalId: "arrival-1", status: "queued" }));
+  const answer = await sendMemoryAction("mem-1", "arrival", { checkpointToken: "qr-2" }, async () => ({ arrivalId: "arrival-1", status: "completed" }));
+  assert.deepEqual(answer, { arrivalId: "arrival-1", status: "completed" });
 });
 
 test("an arrival whose answer was lost is sent again with the same key", async () => {
   const keys = [];
-  await assert.rejects(sendOnce("mem-1", "arrival", { checkpointToken: "qr-1" }, async (key) => {
+  await assert.rejects(sendMemoryAction("mem-1", "arrival", { checkpointToken: "qr-1" }, async (key) => {
     keys.push(key);
     throw new Error("network");
   }));
-  await sendOnce("mem-1", "arrival", { checkpointToken: "qr-1" }, async (key) => {
+  await sendMemoryAction("mem-1", "arrival", { checkpointToken: "qr-1" }, async (key) => {
     keys.push(key);
-    return { arrivalId: "arrival-1" };
+    return { arrivalId: "arrival-1", status: "playing" };
   });
   assert.equal(keys.length, 2);
   assert.equal(keys[0], keys[1]);
 });
 
-test("a new participation sends its own arrival", async () => {
-  await sendOnce("mem-1", "arrival", null, async () => "first");
-  assert.equal(await sendOnce("mem-2", "arrival", null, async () => "second"), "second");
+test("stopping retains the read/delete credential and has a separate stable mutation key", async () => {
+  saveTabExperience(experience());
+  const deleteKey = memoryDeleteKey("mem-1");
+  const keys = [];
+  const stop = async (key) => {
+    keys.push(key);
+    return { status: "ended" };
+  };
+  await sendMemoryAction("mem-1", "stop", null, stop);
+  await sendMemoryAction("mem-1", "stop", null, stop);
+  assert.equal(keys[0], keys[1]);
+  assert.notEqual(keys[0], deleteKey);
+  assert.equal(loadTabExperience(now).memory.participantToken, "token-1");
+  assert.equal(memoryDeleteKey("mem-1"), deleteKey);
 });

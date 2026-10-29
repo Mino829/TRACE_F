@@ -33,7 +33,7 @@ export function readSession(): ParticipantSession | null {
       typeof v.expiresAt === "string" && Number.isFinite(Date.parse(v.expiresAt)) &&
       typeof v.deleteAfter === "string" && Number.isFinite(Date.parse(v.deleteAfter));
     if (typeof value.experienceId !== "string" || !credential(value.memorySession) ||
-      (value.livePresenceSession && !credential(value.livePresenceSession)) || !value.displayAlias) {
+      (value.livePresenceSession && !credential(value.livePresenceSession))) {
       saveSession(null);
       return null;
     }

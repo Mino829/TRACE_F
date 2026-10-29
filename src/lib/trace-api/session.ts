@@ -16,7 +16,7 @@
 
 import { withLock } from "@/lib/ping-log/tabs";
 
-import type { DisplayAlias, ExperienceStatus, MemoryCredential } from "./client";
+import type { ExperienceStatus, MemoryCredential, MemoryStatus } from "./client";
 
 const CREDENTIAL_KEY = "trace-memory-credential";
 const EXPERIENCE_KEY = "trace-experience";
@@ -28,7 +28,7 @@ const SEND_WAIT_MS = 15_000;
 /** What the browser knows about its experience besides the credential. */
 export type ExperienceInfo = {
   experienceId: string;
-  displayAlias: DisplayAlias;
+  status: MemoryStatus;
   consentVersion: string;
   createdAt: string;
 };
@@ -56,7 +56,7 @@ function readStored(): TabExperience | null {
   const memory = read<MemoryCredential>(CREDENTIAL_KEY);
   const info = read<ExperienceInfo>(EXPERIENCE_KEY);
   if (!memory?.participantToken || !memory.memorySessionId || !memory.expiresAt || !memory.deleteAfter || !info?.experienceId) return null;
-  return { experienceId: info.experienceId, displayAlias: info.displayAlias, consentVersion: info.consentVersion, createdAt: info.createdAt, memory };
+  return { experienceId: info.experienceId, status: info.status ?? "main", consentVersion: info.consentVersion, createdAt: info.createdAt, memory };
 }
 
 function lapsed(experience: TabExperience, now: number): boolean {
@@ -92,7 +92,7 @@ export function updateTabExperience(experience: TabExperience, update: Experienc
   if (experience.memory.memorySessionId !== update.memorySession.sessionId) {
     throw new Error("参加情報の確認に失敗しました。削除するための情報は、このブラウザに残しています。");
   }
-  const next = { ...experience, displayAlias: update.displayAlias, memory: {
+  const next = { ...experience, status: update.memorySession.status, memory: {
     ...experience.memory, expiresAt: update.memorySession.expiresAt, deleteAfter: update.memorySession.deleteAfter,
   } };
   saveTabExperience(next);
@@ -105,8 +105,8 @@ export function clearTabExperience(): void {
   write(ACTIONS_KEY, null);
 }
 
-/** One action on a memory session: the key every try sends, the request it was made for, and the first answer once one came. */
-type Action = { key: string; input: string; done?: { result: unknown } };
+/** One action's stable key and the content it belongs to; replies are always fetched afresh. */
+type Action = { key: string; input: string };
 type Actions = { memorySessionId: string; actions: Record<string, Action> };
 
 function readActions(memorySessionId: string): Record<string, Action> {
@@ -139,23 +139,13 @@ export function memoryDeleteKey(memorySessionId: string): string {
   return actionKey(memorySessionId, "delete");
 }
 
-/**
- * Sends an action that counts once per memory session, such as the arrival.
- * One tab sends at a time; a retry of the same request reuses its key; and
- * once a try has been answered, every later call, in any tab and after a
- * reload, gets that first answer without asking the backend again. Rejects
- * with LockTimeout when another tab has been sending it for too long.
- */
-export function sendOnce<T>(memorySessionId: string, name: string, input: unknown, send: (idempotencyKey: string) => Promise<T>): Promise<T> {
+/** Serializes mutations across tabs without freezing the backend's current response. */
+export function sendMemoryAction<T>(memorySessionId: string, name: string, input: unknown, send: (idempotencyKey: string) => Promise<T>): Promise<T> {
   return withLock(
-    `trace-once:${name}`,
+    `trace-action:${name}`,
     async () => {
-      const done = readActions(memorySessionId)[name]?.done;
-      if (done) return done.result as T;
       const key = actionKey(memorySessionId, name, input);
-      const result = await send(key);
-      writeAction(memorySessionId, name, { key, input: JSON.stringify(input), done: { result } });
-      return result;
+      return send(key);
     },
     { waitMs: SEND_WAIT_MS },
   );

@@ -8,7 +8,7 @@ import { test, expect, type Page, type WebSocketRoute } from "@playwright/test";
  * Playwright stands in for Google Identity Services, the credential API and
  * TRACE_B's /v1/display/ws (frames as in TRACE_B internal/api/display.go).
  * The dev server must run with
- *   NEXT_PUBLIC_DISPLAY_API_URL=https://api.test NEXT_PUBLIC_GOOGLE_CLIENT_ID=test-client
+ *   NEXT_PUBLIC_DISPLAY_API_URL=https://api.test NEXT_PUBLIC_GOOGLE_CLIENT_ID=test-client NEXT_PUBLIC_ARRIVAL_ISSUER_URL=http://127.0.0.1:8790
  */
 
 const API = "https://api.test";
@@ -91,7 +91,7 @@ async function signIn(page: Page) {
   await page.setViewportSize({ width: 1600, height: 900 });
   await page.goto("/display");
   await expect(page.getByRole("button", { name: /テスト再生/ })).toBeEnabled({ timeout: 60000 });
-  await expect(page.getByRole("status").filter({ hasText: "Google ログインが必要" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /^LINK · 展示用の Google ログインが必要/ })).toBeVisible();
   await page.getByRole("button", { name: "テスト用 Google ログイン" }).click();
   await expect(page.getByRole("status").filter({ hasText: "LINK · 再生担当" })).toBeVisible();
   return errors;
@@ -219,4 +219,58 @@ test("without the lease the booth waits on standby and plays nothing", async ({ 
   await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "top");
   expect(b.of("arrival.replay.started")).toHaveLength(0);
   expect(errors).toEqual([]);
+});
+
+test("renderer entitlement alone leaves operator failure visible and never displays a fake arrival QR", async ({ page }) => {
+  const google = `header.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url")}.signature`;
+  await backend(page, { credential: google });
+  let proofs = 0;
+  await page.route("http://127.0.0.1:8790/operator/credentials", (route) => route.fulfill({ status: 403, json: { error: { code: "FORBIDDEN" } } }));
+  await page.route("http://127.0.0.1:8790/arrival-token", (route) => {
+    proofs++;
+    return route.fulfill({ status: 401, json: { error: { code: "UNAUTHORIZED" } } });
+  });
+  await signIn(page);
+  await expect(page.locator("[data-operator-state=error]")).toContainText("FORBIDDEN");
+  await expect(page.getByText("ARRIVAL QR", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/ARRIVAL QR · DEMO/)).toHaveCount(0);
+  expect(proofs).toBe(0);
+  await expect(page.getByRole("status").filter({ hasText: "LINK · 再生担当" })).toBeVisible();
+});
+
+test("independent operator login renders a real QR, revokes on logout, and keeps credentials out of browser storage", async ({ page }) => {
+  const google = `header.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url")}.signature`;
+  await backend(page, { credential: google });
+  let active = false;
+  await page.route("http://127.0.0.1:8790/operator/credentials", async (route) => {
+    expect(route.request().headers().authorization).toBe(`Bearer ${google}`);
+    active = true;
+    await route.fulfill({ json: { operatorToken: "opaque-browser-operator", credentialId: "credential-1", role: "operator", expiresAt: new Date(Date.now() + 120000).toISOString() } });
+  });
+  await page.route("http://127.0.0.1:8790/arrival-token", async (route) => {
+    const authorized = active && route.request().headers().authorization === "Bearer opaque-browser-operator";
+    await route.fulfill(authorized
+      ? { json: { checkpointToken: "signed-arrival-proof.signature", expiresAt: new Date(Date.now() + 25000).toISOString() } }
+      : { status: 401, json: { error: { code: "UNAUTHORIZED" } } });
+  });
+  await page.route("http://127.0.0.1:8790/operator/credentials/current", async (route) => {
+    expect(route.request().method()).toBe("DELETE");
+    expect(route.request().headers().authorization).toBe("Bearer opaque-browser-operator");
+    active = false;
+    await route.fulfill({ status: 204 });
+  });
+  await signIn(page);
+  await expect(page.getByText("ARRIVAL QR", { exact: true })).toBeVisible();
+  await expect.poll(() => page.locator(".dsp-qr__code").evaluate((node) => {
+    const canvas = node as HTMLCanvasElement;
+    const pixels = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+    return pixels.some((value, index) => index % 4 === 3 && value > 0);
+  })).toBe(true);
+  const stored = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
+  expect(stored).not.toContain("opaque-browser-operator");
+  expect(stored).not.toContain(google);
+  await page.getByRole("button", { name: "ログアウト・現在の運営資格を失効" }).click();
+  await expect(page.locator("[data-operator-state=login]")).toBeVisible();
+  await expect(page.getByText("ARRIVAL QR", { exact: true })).toHaveCount(0);
+  expect(active).toBe(false);
 });
