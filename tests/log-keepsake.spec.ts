@@ -20,8 +20,7 @@ test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true
 /** Answers TRACE_B's participant routes; `replay` is where the arrival's replay stands, once there is one. */
 async function standIn(context: BrowserContext): Promise<{ replay: "playing" | "completed" | null }> {
   const state: { replay: "playing" | "completed" | null } = { replay: null };
-  const memorySession = { sessionId: "mem-1", expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
-  const displayAlias = { color: "cyan", symbol: "circle" };
+  const memorySession = { sessionId: "mem-1", status: "main", expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
   await context.route("**/api/backend/v1/**", async (route) => {
     const request = route.request();
     const where = `${request.method()} ${new URL(request.url()).pathname.replace("/api/backend", "")}`;
@@ -32,12 +31,12 @@ async function standIn(context: BrowserContext): Promise<{ replay: "playing" | "
       } });
     }
     if (where === "POST /v1/experiences") {
-      return route.fulfill({ status: 201, json: { experienceId: "exp-1", memorySession: { ...memorySession, participantToken: "token-1" }, displayAlias } });
+      return route.fulfill({ status: 201, json: { experienceId: "exp-1", memorySession: { ...memorySession, participantToken: "token-1" } } });
     }
     if (where === "DELETE /v1/memory-sessions/mem-1") return route.fulfill({ status: 204 });
     if (where === "GET /v1/experiences/exp-1") {
       return route.fulfill({ json: {
-        memorySession, displayAlias, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 }, ...(state.replay ? { replayStatus: state.replay } : {}),
+        memorySession: { ...memorySession, status: state.replay === null ? "main" : "arrived" }, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 }, replayStatus: state.replay,
       } });
     }
     return route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND", requestId: "req-1" } } });
@@ -258,6 +257,24 @@ test("振り返り3D draws the way from the photos' places to ShibaLab, turns by
   await page.getByRole("button", { name: "作品にもどる" }).click();
   await expect(page.getByRole("heading", { name: "あなたの作品" })).toBeVisible();
   expect(problems).toEqual([]);
+});
+
+test("one photo still draws the final photo-to-arrival route and exposes both stops", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page, 1);
+  await expect(page.getByRole("button", { name: "QR コードを読み取る" })).toBeVisible();
+  backend.replay = "completed";
+  await page.reload();
+  await page.getByRole("button", { name: "作品を見る" }).click();
+  await page.getByRole("button", { name: "軌跡を見る" }).click();
+  await expect(page.getByRole("heading", { name: "あなたの軌跡" })).toBeVisible();
+  await expect(page.locator(".trace__pin:not([hidden])")).toHaveCount(1, { timeout: 15000 });
+  await expect(page.getByRole("button", { name: "元の向きにもどす" })).toBeEnabled();
+  const rows = page.locator(".trace__list li");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toContainText("本部棟5F");
+  await expect(rows.last()).toContainText("ShibaLab（教室棟301）");
 });
 
 test("without WebGL, 振り返り3D says so and still lists the places", async ({ context, page }) => {

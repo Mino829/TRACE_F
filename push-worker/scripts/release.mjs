@@ -31,14 +31,16 @@ function fromEnvFile(name) {
 const pushUrl = fromEnvFile("PUSH_API_URL") || "https://trace-push.async5855.workers.dev";
 // Unset, /log keeps everything on the phone and the push worker.
 const traceApiUrl = fromEnvFile("TRACE_API_URL");
-// TRACE_B's TRACE_ARRIVAL_VENUE and TRACE_ARRIVAL_CHECKPOINT_ID: /log rebuilds the booth's packed arrival QR with them.
+// Public arrival proof context: /log reconstructs the exact signed QR payload.
 const arrivalVenue = fromEnvFile("ARRIVAL_VENUE");
 const arrivalCheckpointId = fromEnvFile("ARRIVAL_CHECKPOINT_ID");
+const arrivalProofKeyId = fromEnvFile("ARRIVAL_PROOF_KEY_ID") || "arrival-proof-v1";
 const pageEnv = {
   NEXT_STATIC_EXPORT: "1",
   NEXT_PUBLIC_PUSH_API_URL: pushUrl,
   ...(traceApiUrl ? { NEXT_PUBLIC_TRACE_API_URL: traceApiUrl } : {}),
   ...(arrivalVenue && arrivalCheckpointId ? { NEXT_PUBLIC_ARRIVAL_VENUE: arrivalVenue, NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID: arrivalCheckpointId } : {}),
+  NEXT_PUBLIC_ARRIVAL_PROOF_KEY_ID: arrivalProofKeyId,
 };
 
 const steps = [

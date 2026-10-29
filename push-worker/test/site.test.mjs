@@ -95,12 +95,10 @@ test("keeps operator and display routes closed", async () => {
     new Request(`${site}/api/backend/v1/operator/arrivals`),
     new Request(`${site}/api/backend/v1/display/ws`),
     new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/abc/complete`, { method: "POST", headers: json }),
-    // Photos stay on the phone: no v1 upload, listing or story; no live position without GPS.
+    // Legacy cloud uploads and new GPS writes stay blocked; owner reads remain available.
     new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos`, { method: "POST", headers: json, body: "{}" }),
     new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/photo_xyz/upload-url`, { method: "POST", headers: json, body: "" }),
     new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/photo_xyz/complete`, { method: "POST", headers: json, body: "" }),
-    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos`),
-    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/memory`),
     new Request(`${site}/api/backend/v1/live-presence-sessions/live_abc/position`, { method: "POST", headers: json, body: "{}" }),
     new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos`, { method: "PUT", headers: json, body: "{}" }),
     new Request(`${site}/api/backend/v1/experiences/exp_abc`, { method: "PATCH", headers: json, body: "{}" }),

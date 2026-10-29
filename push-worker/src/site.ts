@@ -12,21 +12,24 @@ interface Fetcher {
 const MAX_JSON_BODY = 16 * 1024;
 /**
  * The participant routes of TRACE_B (internal/api/server.go). Operator and display routes stay closed.
- * Photos stay on the participant's phone (trace-campus-installation#23・#25), so the v1 photo upload,
- * listing and story routes are not relayed; a photo's checkpoint goes to TRACE_B's /v2 once
- * TRACE_F#13 sends it. The live position is gone with GPS; only stopping and deleting an old live
- * session remain (and on-site, which TRACE_B answers as gone).
+ * New photo bytes never leave the phone; /v2 relays metadata and private stories.
+ * Legacy /v1 photo reads/deletes and Live state/stop/delete remain available to their
+ * owners until deleteAfter. Legacy uploads and all new GPS writes stay blocked.
  */
 const allowed: Record<string, RegExp[]> = {
   GET: [
     /^health\/(live|ready)$/,
     /^v1\/public\/config$/,
     /^v1\/experiences\/exp_[A-Za-z0-9_-]+$/,
+    /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+$/,
+    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(photos|memory)$/,
+    /^v2\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(photos|memory)$/,
   ],
   POST: [
     /^v1\/experiences$/,
     /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+\/(on-site|stop)$/,
-    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(arrival|arrival\/skip)$/,
+    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(arrival|arrival\/skip|stop)$/,
+    /^v2\/memory-sessions\/mem_[A-Za-z0-9_-]+\/photos$/,
   ],
   PUT: [/^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/push-subscription$/],
   PATCH: [/^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/push-subscription$/],
@@ -35,6 +38,7 @@ const allowed: Record<string, RegExp[]> = {
     /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+$/,
     /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(photos\/photo_[A-Za-z0-9_-]+|push-subscription)$/,
     /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+$/,
+    /^v2\/memory-sessions\/mem_[A-Za-z0-9_-]+\/photos\/photo_[A-Za-z0-9_-]+$/,
   ],
 };
 /** Methods whose body is relayed. Each must say it is JSON, even when the body is empty (arrival/skip). */

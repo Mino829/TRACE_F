@@ -16,7 +16,7 @@ import {
   type ReplayStatus,
 } from "@/lib/trace-api/client";
 import type { LogEntry } from "@/lib/ping-log/store";
-import { sendOnce } from "@/lib/trace-api/session";
+import { sendMemoryAction } from "@/lib/trace-api/session";
 
 import { useLayer } from "../layer";
 import { clock } from "../ui";
@@ -69,6 +69,7 @@ export function ArrivalFlow({
   photos,
   contact,
   toKeepsake,
+  ended,
   inert,
   onClose,
   onArrived,
@@ -80,6 +81,7 @@ export function ArrivalFlow({
   /** Where to ask about the data, shown with the keepsake. */
   contact: string;
   toKeepsake: boolean;
+  ended: boolean;
   inert: boolean;
   onClose: () => void;
   onArrived: (memorySessionId: string) => void;
@@ -87,7 +89,7 @@ export function ArrivalFlow({
   onDelete: (entry: LogEntry, number: number) => void;
 }) {
   const { go } = useRay();
-  const [step, setStep] = useState<"scan" | "replay" | "keepsake" | "trace">("scan");
+  const [step, setStep] = useState<"scan" | "replay" | "keepsake" | "trace">(ended ? "keepsake" : "scan");
   const [status, setStatus] = useState<ReplayStatus | null>(null);
   // Unknown when the arrival was earlier than this screen.
   const [arrivedAt, setArrivedAt] = useState<string | null>(null);
@@ -106,6 +108,7 @@ export function ArrivalFlow({
   // Arrived already (a reload, or the button pressed again): straight to where the replay stands.
   useEffect(() => {
     let alive = true;
+    if (ended) return;
     getExperience(experienceId, memory)
       .then((state) => {
         const known = replayStatus(state.replayStatus);
@@ -121,17 +124,16 @@ export function ArrivalFlow({
     return () => {
       alive = false;
     };
-  }, [go, experienceId, memory, toKeepsake]);
+  }, [go, experienceId, memory, toKeepsake, ended]);
 
   const read = useCallback(
     async (code: string): Promise<ReadAnswer> => {
       reading.current = true;
-      // The same code read again resends the same try with the same key, so an answer lost on the way
-      // still counts once; one tab sends at a time, and after an answer every tab gets that answer.
+      // Retry the same request with its stable key; every reply reflects the current replay state.
       if (attempt.current?.checkpointToken !== code) attempt.current = arrivalAttempt(code);
       const current = attempt.current;
       try {
-        const result = await sendOnce(memory.memorySessionId, "arrival", current, (key) => sendArrival(memory, current, key));
+        const result = await sendMemoryAction(memory.memorySessionId, "arrival", current, (key) => sendArrival(memory, current, key));
         arrived.current = true;
         onArrivedRef.current(memory.memorySessionId);
         setStatus(replayStatus(result.status) ?? "queued");
@@ -146,9 +148,10 @@ export function ArrivalFlow({
     },
     [memory],
   );
+  const visibleStep = ended && (step === "scan" || step === "replay") ? "keepsake" : step;
 
-  if (step === "scan") return <CameraScan inert={inert} onCancel={leave} onRead={read} onArrived={() => setStep("replay")} />;
-  if (step === "keepsake") {
+  if (visibleStep === "scan") return <CameraScan inert={inert} onCancel={leave} onRead={read} onArrived={() => setStep("replay")} />;
+  if (visibleStep === "keepsake") {
     return (
       <KeepsakeScreen
         photos={photos}
@@ -161,7 +164,7 @@ export function ArrivalFlow({
       />
     );
   }
-  if (step === "trace") return <TraceScreen photos={photos} inert={inert} onBack={() => void go(() => setStep("keepsake"))} />;
+  if (visibleStep === "trace") return <TraceScreen photos={photos} inert={inert} onBack={() => void go(() => setStep("keepsake"))} />;
   return (
     <Replay
       target={target}

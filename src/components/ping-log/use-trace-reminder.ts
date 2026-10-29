@@ -52,8 +52,9 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
   const owned = subscription !== null && ((key !== "" && madeWith(subscription, key) === true) || subscription.endpoint === stored?.active?.endpoint);
 
   const record = experience && stored?.memorySessionId === experience.memory.memorySessionId ? stored : null;
+  const ended = experience !== null && (experience.status !== "main" || Date.parse(experience.memory.expiresAt) <= now);
   const active =
-    record?.active && subscription?.endpoint === record.active.endpoint && Date.parse(record.active.expiresAt) > now ? record.active : null;
+    !ended && record?.active && subscription?.endpoint === record.active.endpoint && Date.parse(record.active.expiresAt) > now ? record.active : null;
   const terms: ReminderTerms = {
     intervalMinutes: record?.intervalMinutes ?? startingInterval(config?.notification),
     choices: config?.notification?.allowedIntervalsMinutes ?? [],
@@ -92,7 +93,7 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
       return;
     }
     try {
-      if (current.ended) throw new ReminderError(ENDED_MESSAGE, "ended");
+      if (current.ended || ended) throw new ReminderError(ENDED_MESSAGE, "ended");
       await askPermission();
       const latest = config ?? (await fetchPublicConfig());
       setConfig(latest);
@@ -114,6 +115,7 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
   /** A PATCH, while it is on. */
   const changeInterval = async (minutes: number) => {
     if (!experience || !record || !active) return;
+    if (ended) throw new ReminderError(ENDED_MESSAGE, "ended");
     try {
       keep({ ...record, intervalMinutes: minutes, active: await changeTraceReminderInterval(experience.memory, active, minutes) });
     } catch (error) {

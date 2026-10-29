@@ -8,6 +8,7 @@ import type { RoutePath } from "@/lib/display/route-path";
 import { ArrivalQr } from "./arrival-qr";
 import { GoogleSignIn } from "./google-sign-in";
 import { useRendererLink, type DisplayLink } from "./use-renderer-link";
+import { useOperatorSession } from "./use-operator-session";
 import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/renderer-link";
 
 /**
@@ -178,6 +179,19 @@ export function DisplayClient() {
   );
   // After a visitor's card, the link starts the next visitor or hands the booth back to the QR.
   const link = useRendererLink(screen !== "loading", replayArrival, backToTop);
+  const operator = useOperatorSession();
+  const googleClientId = link?.googleClientId ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+  const signIn = (idToken: string) => {
+    link?.signIn(idToken);
+    void operator.session?.signIn(idToken);
+  };
+  const signOut = async (all: boolean) => {
+    const revoked = await operator.session?.logout(all);
+    if (revoked) {
+      link?.signOut();
+      window.google?.accounts.id.disableAutoSelect?.();
+    }
+  };
 
   // The arrived card stays a few seconds; a test then plays its next walk. A visitor's card is timed by the link.
   useEffect(() => {
@@ -261,6 +275,18 @@ export function DisplayClient() {
             </p>
             <div className="dsp-tests">
               {link && <LinkBadge link={link} />}
+              {operator.session && (
+                <>
+                  <span className="dsp-mono dsp-link" data-operator-state={operator.state} role="status">
+                    運営 · {operator.state === "ready" ? "到着 QR 発行可" : operator.state === "authorizing" ? "認証中" : operator.state === "revoking" ? "失効中" : operator.state === "error" ? "認証・通信エラー" : "Google ログインが必要です"}
+                    {operator.detail ? `：${operator.detail}` : ""}
+                  </span>
+                  {operator.state === "error" && <button type="button" className="dsp-test" onClick={() => void operator.session?.retry()}>運営認証を再試行</button>}
+                  {operator.state !== "login" && <button type="button" className="dsp-test" disabled={operator.state === "revoking"} onClick={() => void signOut(false)}>ログアウト・現在の運営資格を失効</button>}
+                  {operator.state !== "login" && <button type="button" className="dsp-test" disabled={operator.state === "revoking"} onClick={() => void signOut(true)}>自分の全運営資格を失効</button>}
+                </>
+              )}
+              {googleClientId && (link?.state === "login" || (operator.session && (operator.state === "login" || operator.state === "error"))) && <GoogleSignIn clientId={googleClientId} onToken={signIn} />}
               <span className="dsp-mono">TEST</span>
               <button type="button" className="dsp-test" disabled={screen !== "top"} onClick={() => play("sample")}>
                 ▶ テスト再生 <span className="dsp-mono">SPACE</span>
@@ -298,7 +324,7 @@ export function DisplayClient() {
                 <p className="dsp-mono dsp-loading">LOADING CAMPUS…</p>
               ) : null}
             </div>
-            <ArrivalQr />
+            <ArrivalQr key={operator.state} session={operator.session} authorized={operator.state === "ready"} />
           </div>
         </div>
       )}
@@ -310,7 +336,7 @@ export function DisplayClient() {
 }
 
 const LINK_LABEL: Record<LinkState, string> = {
-  login: "LINK · 運営の Google ログインが必要です",
+  login: "LINK · 展示用の Google ログインが必要です",
   connecting: "LINK · 接続中",
   standby: "LINK · 待機（別の画面が再生担当）",
   primary: "LINK · 再生担当",
@@ -325,7 +351,6 @@ function LinkBadge({ link }: { link: DisplayLink }) {
         {LINK_LABEL[link.state]}
         {link.detail ? `：${link.detail}` : ""}
       </span>
-      {link.state === "login" && <GoogleSignIn clientId={link.googleClientId} onToken={link.signIn} />}
     </>
   );
 }

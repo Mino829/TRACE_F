@@ -32,9 +32,11 @@ import {
   deleteMemorySession,
   fetchPublicConfig,
   getExperience,
+  stopMemorySession,
   type PublicConfig,
 } from "@/lib/trace-api/client";
 import {
+  sendMemoryAction,
   clearTabExperience,
   experienceLapsed,
   forgetLapsedExperience,
@@ -71,8 +73,8 @@ import "./developer.css";
  * the work's backend (TRACE_B), and joining lasts until its memory session
  * expires, through reloads and in every tab of the browser (session.ts,
  * tabs.ts): the photo limit comes from the backend's config and counts per
- * memory session, and "参加をやめる" deletes the memory session too. The
- * arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
+ * memory session, and terminal stopping is separate from deleting its data.
+ * The arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
  * and the photo reminder goes through TRACE_B as well (trace-api/reminder.ts).
  * A participant's photos and their records stay on the phone, with or without
  * the variable (#54): photos go to no server, and where each was taken reaches
@@ -216,6 +218,12 @@ export function PingLogScreen() {
   const arrive = useCallback(
     (memorySessionId: string) => {
       noteArrival(memorySessionId);
+      setExperience((current) => {
+        if (!current || current.memory.memorySessionId !== memorySessionId || current.status === "ended") return current;
+        const next = { ...current, status: "arrived" as const };
+        saveTabExperience(next);
+        return next;
+      });
       setArrivedIn(memorySessionId);
     },
     [noteArrival],
@@ -340,7 +348,8 @@ export function PingLogScreen() {
     getExperience(stored.experienceId, stored.memory)
       .then((status) => {
         setExperience(updateTabExperience(stored, status));
-        if (status.replayStatus) arrive(stored.memory.memorySessionId);
+        if (status.replayStatus !== null) arrive(stored.memory.memorySessionId);
+        if (status.memorySession.status === "ended") noteArrival(stored.memory.memorySessionId);
       })
       .catch((error: unknown) => {
         // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
@@ -352,7 +361,7 @@ export function PingLogScreen() {
         // Any other failure does not prove deletion; keep the credential and its delete key.
         setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
       });
-  }, [arrive]);
+  }, [arrive, noteArrival]);
 
   // Another tab joined, withdrew, or saved or sent a photo: this one shows the same participation.
   useEffect(
@@ -383,10 +392,10 @@ export function PingLogScreen() {
   // Without a TRACE_B credential in the tab, the photo reminder is the push worker's, as before.
   const reminder = trace.reminder ?? { on: activePlan?.purpose === "photo", nextAt: activePlan?.purpose === "photo" ? nextPingAt : null, terms: WORKER_REMINDER };
 
-  // With the backend, joining lasts as long as this tab's memory session.
-  const sessionExpired = experience !== null && Date.parse(experience.memory.expiresAt) <= now;
-  const joined = consent?.version === CONSENT_VERSION && (!TRACE_API_URL || (experience !== null && !sessionExpired));
-  const memorySessionId = joined ? (experience?.memory.memorySessionId ?? null) : null;
+  // An ended session remains readable and deletable until deleteAfter.
+  const sessionExpired = experience !== null && (experience.status === "ended" || Date.parse(experience.memory.expiresAt) <= now);
+  const joined = consent?.version === CONSENT_VERSION && (!TRACE_API_URL || experience !== null);
+  const memorySessionId = experience?.memory.memorySessionId ?? null;
   const maxPhotos = (TRACE_API_URL && traceConfig?.photo.maxCount) || MAX_PHOTOS;
 
   // This participation's photos: the memory session's with the backend, the day's without.
@@ -437,8 +446,8 @@ export function PingLogScreen() {
       setJoinError("");
       try {
         if (experience) {
-          if (Date.parse(experience.memory.expiresAt) <= Date.now()) {
-            throw new Error("以前の参加の期限が切れました。メニューの「参加をやめる」から以前の記録を削除してから、もう一度参加してください。");
+          if (experience.status === "ended" || Date.parse(experience.memory.expiresAt) <= Date.now()) {
+            throw new Error("以前の参加は終了しています。メニューの「参加をやめる」から記録を削除してから、もう一度参加してください。");
           }
         } else {
           const config = traceConfig ?? (await fetchPublicConfig());
@@ -531,7 +540,7 @@ export function PingLogScreen() {
   const onCameraFile = (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = "";
-    if (!file || !joined || memoryPhotos.length >= maxPhotos) return;
+    if (!file || !joined || sessionExpired || memoryPhotos.length >= maxPhotos) return;
     // The photo's moment is when the camera hands it over. Where it was taken is chosen afterwards, on the place screen.
     setShot({
       id: crypto.randomUUID(),
@@ -561,6 +570,26 @@ export function PingLogScreen() {
     return !PUSH_API_URL ? "local" : failed ? "queued" : "sent";
   };
 
+
+  const stopParticipation = () => run(async () => {
+    if (!experience || sessionExpired) return;
+    const result = await sendMemoryAction(experience.memory.memorySessionId, "stop", null,
+      (key) => stopMemorySession(experience.memory, key));
+    const next: TabExperience = {
+      ...experience, status: result.status,
+      memory: { ...experience.memory, expiresAt: result.expiresAt, deleteAfter: result.deleteAfter },
+    };
+    saveTabExperience(next);
+    setExperience(next);
+    noteArrival(experience.memory.memorySessionId);
+    if (trace.owned) await subscription?.unsubscribe().catch(() => undefined);
+    setDemo(null);
+    setShot(null);
+    setSkipped(null);
+    setPingOpen(false);
+    prompt(null);
+    setMessage("参加を終了しました。保存期限までは写真の確認とデータの削除ができます。");
+  });
 
   const withdraw = () => run(async () => {
     // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
@@ -624,14 +653,14 @@ export function PingLogScreen() {
   if (view === "participant" || demo !== null) {
     const notes = [
       ...(!joined && lostNote ? [lostNote] : []),
-      // Agreeing again keeps the expired participation (agree), so the way on is to withdraw it first.
-      ...(!joined && consent && sessionExpired ? ["参加の期限が切れました。\n以前の記録を削除する場合は\nメニューの「参加をやめる」を選んでください。"] : []),
       ...(message ? [message] : []),
     ];
     return (
       <>
         <RayApp
           joined={joined}
+          ended={sessionExpired}
+          onStop={experience && !sessionExpired ? stopParticipation : undefined}
           consent={consent}
           consentOpen={consentOpen}
           onOpenConsent={() => setConsentOpen(true)}

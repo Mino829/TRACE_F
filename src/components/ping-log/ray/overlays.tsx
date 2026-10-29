@@ -18,7 +18,7 @@ import { Icon, Phrases, Sentences, useRay, type IconName } from "./stage";
  */
 
 /** start: how to play between 「はじめる」 and the consent, leading on to it. */
-export type OverlayName = "menu" | "howto" | "start" | "install" | "consent" | "withdraw";
+export type OverlayName = "menu" | "howto" | "start" | "install" | "consent" | "stop" | "withdraw";
 
 function Layer({ kind, label, alert = false, onClose, children }: { kind: "full" | "sheet"; label: string; alert?: boolean; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
@@ -364,6 +364,33 @@ export function DeletePhotoLayer({
           <button type="button" className="btn btn--line" disabled={working} onClick={onClose}>
             キャンセル
           </button>
+        </div>
+      </div>
+    </Layer>
+  );
+}
+
+/** Terminal participation stop, deliberately separate from destructive withdrawal. */
+export function StopLayer({ onConfirm, onClose }: { onConfirm: () => Promise<string | null>; onClose: () => void }) {
+  const [working, setWorking] = useState(false);
+  const [problem, setProblem] = useState("");
+  const confirm = async () => {
+    setWorking(true);
+    const error = await onConfirm();
+    setWorking(false);
+    if (error) setProblem(error);
+    else onClose();
+  };
+  return (
+    <Layer kind="sheet" label="記録を残して参加を終了しますか？" alert onClose={working ? () => undefined : onClose}>
+      <div className="scrim" onClick={working ? undefined : onClose} aria-hidden="true" />
+      <div className="sheet-panel sheet-panel--bottom">
+        <h2 className="h2">記録を残して参加を終了しますか？</h2>
+        <p className="body"><Sentences text={"撮影・到着の受付とリマインダーを終了します。この参加は再開できません。保存期限までは写真の確認と記録の削除ができます。"} /></p>
+        {problem && <p className="problem" role="alert"><Sentences text={problem} /></p>}
+        <div className="btns" style={{ marginTop: 16 }}>
+          <button type="button" className="btn" disabled={working} onClick={() => void confirm()}>{working ? "終了しています…" : "記録を残して終了する"}</button>
+          <button type="button" className="btn btn--line" disabled={working} onClick={onClose}>キャンセル</button>
         </div>
       </div>
     </Layer>

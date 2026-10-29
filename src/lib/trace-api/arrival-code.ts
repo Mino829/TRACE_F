@@ -1,31 +1,32 @@
 /**
  * The booth's arrival QR in fewer modules.
  *
- * TRACE_B signs a token of about 250 characters (internal/api/arrivals.go):
- * base64url JSON of checkpointId, venue, issuedAt, expiresAt and a 32-byte
- * nonce, a dot, and the base64url HMAC-SHA256 of that first part. The venue
+ * TRACE_B signs a token (internal/api/arrivals.go): base64url JSON of purpose,
+ * keyId, checkpointId, venue, issuedAt, expiresAt and a 32-byte nonce, a dot,
+ * and the base64url HMAC-SHA256 of that first part. The purpose, public key ID,
  * and the checkpoint are the same in every token and the JSON's shape is fixed,
  * so the display packs only issuedAt, the lifetime, the nonce and the MAC, 69
  * bytes, as base32, which a QR holds in its alphanumeric mode: 33×33 modules at
  * error correction L instead of 61×61 at M. The phone rebuilds the very string
  * TRACE_B signed and sends that, so TRACE_B sees no difference.
  *
- * The venue and the checkpoint come from this build: NEXT_PUBLIC_ARRIVAL_VENUE
- * and NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID, the values TRACE_B has as
- * TRACE_ARRIVAL_VENUE and TRACE_ARRIVAL_CHECKPOINT_ID. A token that does not
- * rebuild exactly (the settings are missing or differ, or TRACE_B changed the
- * token) goes on the QR whole, as before.
+ * The venue, checkpoint and public key ID come from NEXT_PUBLIC_ARRIVAL_VENUE,
+ * NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID and NEXT_PUBLIC_ARRIVAL_PROOF_KEY_ID
+ * (default arrival-proof-v1). They must match TRACE_B. A token that does not
+ * rebuild exactly goes on the QR whole. T1 codes from the retired unsigned-
+ * purpose format are not reconstructed.
  */
 
-export type ArrivalPlace = { venue: string; checkpointId: string };
+export type ArrivalPlace = { venue: string; checkpointId: string; keyId: string };
 
 const VENUE = process.env.NEXT_PUBLIC_ARRIVAL_VENUE ?? "";
 const CHECKPOINT_ID = process.env.NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID ?? "";
+const KEY_ID = process.env.NEXT_PUBLIC_ARRIVAL_PROOF_KEY_ID ?? "arrival-proof-v1";
 
-export const ARRIVAL_PLACE: ArrivalPlace | null = VENUE && CHECKPOINT_ID ? { venue: VENUE, checkpointId: CHECKPOINT_ID } : null;
+export const ARRIVAL_PLACE: ArrivalPlace | null = VENUE && CHECKPOINT_ID && KEY_ID ? { venue: VENUE, checkpointId: CHECKPOINT_ID, keyId: KEY_ID } : null;
 
-/** "T1" names this packing; a later one would take another. */
-const PREFIX = "T1";
+/** T2 binds the reconstructed signed purpose and key ID as well as the venue. */
+const PREFIX = "T2";
 const NONCE_BYTES = 32;
 const MAC_BYTES = 32;
 /** issuedAt (4 bytes), the lifetime in seconds (1), the nonce and the MAC. */
@@ -83,7 +84,7 @@ function fromBase64Url(text: string): Uint8Array | null {
 
 /** The signed part, in the field order of TRACE_B's checkpointProof. */
 function payloadFor(place: ArrivalPlace, issuedAt: number, expiresAt: number, nonce: Uint8Array): string {
-  const json = JSON.stringify({ checkpointId: place.checkpointId, venue: place.venue, issuedAt, expiresAt, nonce: toBase64Url(nonce) });
+  const json = JSON.stringify({ purpose: "arrival", keyId: place.keyId, checkpointId: place.checkpointId, venue: place.venue, issuedAt, expiresAt, nonce: toBase64Url(nonce) });
   return toBase64Url(new TextEncoder().encode(json));
 }
 

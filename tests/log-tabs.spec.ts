@@ -15,13 +15,12 @@ const SHOTS = process.env.TRACE_TEST_SHOTS;
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, geolocation: undefined, permissions: [] });
 
-type StandIn = { deleted: boolean; experienceReads: number; uploads: string[] };
+type StandIn = { deleted: boolean; ended: boolean; experienceReads: number; uploads: string[]; stopKeys: string[] };
 
 /** Answers TRACE_B's participant routes and the push worker's records for every tab of the context. */
 async function standIn(context: BrowserContext): Promise<StandIn> {
-  const state: StandIn = { deleted: false, experienceReads: 0, uploads: [] };
-  const memorySession = { sessionId: "mem-1", expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
-  const displayAlias = { color: "cyan", symbol: "circle" };
+  const state: StandIn = { deleted: false, ended: false, experienceReads: 0, uploads: [], stopKeys: [] };
+  const memorySession = { sessionId: "mem-1", status: "main", expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
   await context.route("**/api/backend/v1/**", async (route) => {
     const request = route.request();
     const where = `${request.method()} ${new URL(request.url()).pathname.replace("/api/backend", "")}`;
@@ -33,12 +32,20 @@ async function standIn(context: BrowserContext): Promise<StandIn> {
     }
     if (where === "POST /v1/experiences") {
       state.deleted = false;
-      return route.fulfill({ status: 201, json: { experienceId: "exp-1", memorySession: { ...memorySession, participantToken: "token-1" }, displayAlias } });
+      state.ended = false;
+      return route.fulfill({ status: 201, json: { experienceId: "exp-1", memorySession: { ...memorySession, participantToken: "token-1" } } });
     }
     if (where === "GET /v1/experiences/exp-1") {
       state.experienceReads += 1;
       if (state.deleted) return route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND", requestId: "req-1" } } });
-      return route.fulfill({ json: { memorySession, displayAlias, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 } } });
+      return route.fulfill({ json: { memorySession: { ...memorySession, status: state.ended ? "ended" : "main" }, replayStatus: null, photoSummary: { ready: 0, pending: 0, failed: 0, maxCount: 12 } } });
+    }
+    if (where === "POST /v1/memory-sessions/mem-1/stop") {
+      expect(request.headers().authorization).toBe("Bearer token-1");
+      expect(request.postData()).toBeNull();
+      state.stopKeys.push(request.headers()["idempotency-key"]);
+      state.ended = true;
+      return route.fulfill({ json: { status: "ended", stoppedAt: new Date().toISOString(), expiresAt: memorySession.expiresAt, deleteAfter: memorySession.deleteAfter } });
     }
     if (where === "DELETE /v1/memory-sessions/mem-1") {
       state.deleted = true;
@@ -148,6 +155,65 @@ test("a reload and a second tab continue the same participation, and withdrawing
   await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
   expect(await stored(page)).toEqual({ local: [], session: [] });
 });
+
+test("terminal stop keeps photos and owner rights across tabs and reload, separately from deletion", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page);
+  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: "ホームへもどる" }).click();
+  const credential = await page.evaluate(() => localStorage.getItem("trace-memory-credential"));
+  const second = await context.newPage();
+  await second.goto("/log");
+  await expect(second.getByRole("button", { name: "写真を撮る" }).first()).toBeEnabled();
+  await page.getByRole("button", { name: "メニュー" }).click();
+  await page.getByRole("button", { name: "記録を残して参加を終了", exact: true }).click();
+  await page.getByRole("button", { name: "記録を残して終了する", exact: true }).click();
+  await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeDisabled();
+  await expect(second.getByRole("button", { name: "写真を撮る" }).first()).toBeDisabled();
+  expect(backend.ended).toBe(true);
+  expect(backend.deleted).toBe(false);
+  expect(backend.stopKeys).toHaveLength(1);
+  expect(await kept(page)).toEqual({ photos: 1, others: 0 });
+  expect(await page.evaluate(() => localStorage.getItem("trace-memory-credential"))).toBe(credential);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeDisabled();
+  await expect(page.getByRole("button", { name: "QR コードを読み取る" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "作品を見る" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "1枚目の写真を保存" })).toBeVisible();
+  await page.getByRole("button", { name: "メニュー" }).click();
+  await expect(page.getByRole("button", { name: "記録を残して参加を終了", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "参加をやめる" }).click();
+  await page.getByRole("button", { name: "やめて削除する" }).click();
+  await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
+  expect(backend.deleted).toBe(true);
+  expect(await kept(page)).toEqual({ photos: 0, others: 0 });
+});
+
+test("a failed stop leaves participation usable and retries with the same key", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  let first = true;
+  const keys: string[] = [];
+  await page.route("**/v1/memory-sessions/mem-1/stop", async (route) => {
+    keys.push(route.request().headers()["idempotency-key"]);
+    if (first) {
+      first = false;
+      return route.fulfill({ status: 503, json: { error: { code: "NETWORK" } } });
+    }
+    return route.fallback();
+  });
+  await page.getByRole("button", { name: "メニュー" }).click();
+  await page.getByRole("button", { name: "記録を残して参加を終了", exact: true }).click();
+  await page.getByRole("button", { name: "記録を残して終了する", exact: true }).click();
+  await expect(page.getByRole("alertdialog").getByRole("alert")).toContainText("サーバーにつながりませんでした");
+  expect(backend.ended).toBe(false);
+  await page.getByRole("button", { name: "記録を残して終了する", exact: true }).click();
+  await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeDisabled();
+  expect(keys).toHaveLength(2);
+  expect(keys[0]).toBe(keys[1]);
+});
+
 
 test("a photo stays on the phone: no tab sends it anywhere, and both tabs show it", async ({ context, page }) => {
   const backend = await standIn(context);

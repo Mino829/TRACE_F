@@ -21,15 +21,8 @@ export const TRACE_API_URL = (process.env.NEXT_PUBLIC_TRACE_API_URL ?? "").repla
 
 const TIMEOUT_MS = 15_000;
 
-export type AliasColor = "cyan" | "magenta" | "amber" | "violet" | "lime" | "coral";
-export type AliasSymbol = "circle" | "triangle" | "diamond" | "star" | "wave" | "square";
-
-/**
- * The colour and symbol the room's screen shows for this participant. Typed
- * as strings too, so a name the backend adds later reaches the screen as an
- * unknown one instead of failing.
- */
-export type DisplayAlias = { color: AliasColor | (string & {}); symbol: AliasSymbol | (string & {}) };
+import type { MemoryStatus, MemoryState, MemoryStopResult, ReplayStatus } from "@/lib/api";
+export type { MemoryStatus, ReplayStatus } from "@/lib/api";
 
 /** The photo reminder's terms. The VAPID key is empty while TRACE_B cannot send. */
 export type NotificationConfig = {
@@ -56,24 +49,15 @@ export type MemoryCredential = { memorySessionId: string; participantToken: stri
 export type CreatedExperience = {
   experienceId: string;
   memory: MemoryCredential;
-  displayAlias: DisplayAlias;
+  status: MemoryStatus;
 };
-
-/**
- * Where the arrival's replay on the room's screen stands. completed and
- * skipped are final; skipped covers the participant's own skip, a full queue,
- * a wait past the deadline and a failed screen alike.
- */
-export type ReplayStatus = "queued" | "playing" | "completed" | "skipped";
 
 /** GET /v1/experiences/{id} never returns a position or participant tokens. */
 export type ExperienceStatus = {
-  memorySession: { sessionId: string; expiresAt: string; deleteAfter: string };
-  livePresenceSession?: { sessionId: string; trackingStatus: string; presencePhase: string; expiresAt: string; deleteAfter: string };
-  displayAlias: DisplayAlias;
+  memorySession: MemoryState;
   photoSummary: { ready: number; pending: number; failed: number; maxCount: number };
-  /** Empty until the participant has arrived at ShibaLab. */
-  replayStatus?: ReplayStatus | "" | (string & {});
+  /** No arrival has been accepted yet. */
+  replayStatus: ReplayStatus | null;
 };
 
 /** The photo reminder as TRACE_B holds it. nextSendAt is null while paused, and is never exact. */
@@ -86,14 +70,22 @@ export type PushSubscriptionState = { intervalMinutes: number; status: "active" 
  * rate-limited answer asked for.
  */
 export class TraceApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly requestId: string | null;
+  readonly retryAfter: number | null;
   constructor(
-    readonly status: number,
-    readonly code: string,
-    readonly requestId: string | null,
-    readonly retryAfter: number | null = null,
+    status: number,
+    code: string,
+    requestId: string | null,
+    retryAfter: number | null = null,
   ) {
     super(messageFor(code, requestId));
     this.name = "TraceApiError";
+    this.status = status;
+    this.code = code;
+    this.requestId = requestId;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -111,6 +103,7 @@ function messageFor(code: string, requestId: string | null): string {
     case "UNAUTHORIZED":
     case "NOT_FOUND":
       return "参加の記録が見つかりませんでした。期限が切れたか、削除されています。";
+    case "INVALID_ARRIVAL_PROOF":
     case "INVALID_CHECKPOINT":
       return "この QR コードでは\n到着を受け付けられませんでした。期限が切れたか、\n到着用の QR コードではありません。ブースにいま映っている\nQR コードを読み取ってください。";
     case "NOT_AVAILABLE":
@@ -173,8 +166,7 @@ export async function fetchPublicConfig(): Promise<PublicConfig> {
 
 type CreateResponse = {
   experienceId: string;
-  memorySession: { sessionId: string; participantToken: string; expiresAt: string; deleteAfter: string };
-  displayAlias: DisplayAlias;
+  memorySession: { sessionId: string; participantToken: string; expiresAt: string; deleteAfter: string; status: MemoryStatus };
 };
 
 /**
@@ -199,7 +191,7 @@ export async function createExperience(config: PublicConfig): Promise<CreatedExp
     experienceId: created.experienceId,
     memory: { memorySessionId: created.memorySession.sessionId, participantToken: created.memorySession.participantToken,
       expiresAt: created.memorySession.expiresAt, deleteAfter: created.memorySession.deleteAfter },
-    displayAlias: created.displayAlias,
+    status: created.memorySession.status,
   };
 }
 
@@ -212,7 +204,7 @@ export async function getExperience(experienceId: string, credential: MemoryCred
 /**
  * One try at arriving: the code read from the booth's QR (a signed token that
  * lives 25 seconds, not a URL) and the phone's time. A resend must carry this
- * same body with the same idempotency key (sendOnce in session.ts), as TRACE_B
+ * same body with the same idempotency key (sendMemoryAction in session.ts), as TRACE_B
  * compares the body too.
  */
 export type ArrivalAttempt = { checkpointToken: string; clientTime: string };
@@ -224,10 +216,10 @@ export function arrivalAttempt(checkpointToken: string): ArrivalAttempt {
 export type ArrivalResult = { arrivalId: string; status: ReplayStatus };
 
 /**
- * Tells TRACE_B the participant is at the booth. An expired or forged code is
- * INVALID_CHECKPOINT. Arriving again, with another code, is not an error: the
- * answer is the first arrival and where its replay stands, so the room's
- * screen never plays one person twice. /log joins memory-only, so there is no
+ * Tells TRACE_B the participant is at the booth. A new arrival with an expired
+ * or forged code is INVALID_ARRIVAL_PROOF. An existing arrival returns its current
+ * replay state, even when the code has expired. The arrival ID stays the same,
+ * so the screen never plays one person twice. /log joins memory-only, with no
  * experience link token to send.
  */
 export async function sendArrival(credential: MemoryCredential, attempt: ArrivalAttempt, idempotencyKey: string): Promise<ArrivalResult> {
@@ -247,6 +239,19 @@ export async function skipArrival(credential: MemoryCredential): Promise<void> {
     method: "POST",
     token: credential.participantToken,
   });
+}
+
+/** Terminally ends participation, retaining owner reads and deletion until deleteAfter. */
+export async function stopMemorySession(credential: MemoryCredential, idempotencyKey: string): Promise<MemoryStopResult> {
+  const state = await request<MemoryStopResult>(`/v1/memory-sessions/${encodeURIComponent(credential.memorySessionId)}/stop`, {
+    method: "POST",
+    token: credential.participantToken,
+    idempotencyKey,
+  });
+  if (!state || state.status !== "ended") {
+    throw new TraceApiError(0, "UNKNOWN", null);
+  }
+  return state;
 }
 
 /** Answers 204 again for a repeat with the same key, so a retry after a lost answer is safe. */
