@@ -102,6 +102,22 @@ export function elevatorExit(path: RoutePath, s: number): Vec3 | null {
   return null;
 }
 
+/**
+ * How far along the walk s is from the nearest elevator ride (0 while riding,
+ * Infinity on a walk without one). Near a car the walk stops rounding corners
+ * off, so it steps straight through the doors instead of brushing the door edge.
+ */
+export function elevatorDistance(path: RoutePath, s: number): number {
+  let best = Infinity;
+  path.kinds.forEach((kind, i) => {
+    if (kind !== "elevator") return;
+    const a = path.at[i];
+    const b = path.at[i + 1];
+    best = Math.min(best, s < a ? a - s : s > b ? s - b : 0);
+  });
+  return best;
+}
+
 function smooth(x: number): number {
   return x * x * (3 - 2 * x);
 }

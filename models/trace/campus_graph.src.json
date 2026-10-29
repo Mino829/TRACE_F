@@ -4646,14 +4646,15 @@
    "building": "交流棟",
    "floor": "4F",
    "blender": [
-    -190.02,
-    -24.83,
+    -200.05,
+    -35.2,
     16.0
    ],
    "radius": 3,
    "gpsSnap": false,
    "role": "waypoint",
-   "note": ""
+   "note": "reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.6m）",
+   "relocate": true
   },
   {
    "id": "x4-014",
@@ -4962,14 +4963,15 @@
    "building": "交流棟",
    "floor": "6F",
    "blender": [
-    -190.02,
-    -24.83,
+    -200.05,
+    -35.2,
     26.0
    ],
    "radius": 3,
    "gpsSnap": false,
    "role": "waypoint",
-   "note": ""
+   "note": "reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.6m）",
+   "relocate": true
   },
   {
    "id": "x6-015",
@@ -5098,15 +5100,16 @@
    "building": "交流棟",
    "floor": "2F",
    "blender": [
-    -190.02,
-    -24.83,
+    -200.05,
+    -35.2,
     6.0
    ],
    "radius": 3,
    "gpsSnap": false,
    "role": "waypoint",
-   "note": "2F は購買。階段室のところに置く",
-   "selectable": true
+   "note": "2F は購買。階段室のところに置く / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.6m）",
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "x2-002",
@@ -5222,15 +5225,16 @@
    "building": "交流棟",
    "floor": "3F",
    "blender": [
-    -190.02,
-    -24.83,
+    -200.05,
+    -35.2,
     11.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "3F は食堂。階段室の高さ 11m",
+   "note": "3F は食堂。階段室の高さ 11m / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.6m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "exchange-5f",
@@ -5238,15 +5242,16 @@
    "building": "交流棟",
    "floor": "5F",
    "blender": [
-    -190.02,
-    -24.83,
+    -200.05,
+    -35.2,
     21.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "階段室の高さ 21m",
+   "note": "階段室の高さ 21m / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.6m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "hq-2f",
@@ -5271,16 +5276,17 @@
    "building": "本部棟",
    "floor": "5F",
    "blender": [
-    -164.38,
-    -71.0,
+    -178.2,
+    -77.34,
     21.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "エレベーターホール",
+   "note": "エレベーターホール / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "hq-6f-hall",
@@ -5304,16 +5310,17 @@
    "building": "本部棟",
    "floor": "7F",
    "blender": [
-    -164.38,
-    -71.0,
+    -178.2,
+    -77.34,
     30.4
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "エレベーターホール",
+   "note": "エレベーターホール / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "hq-8f",
@@ -5321,16 +5328,17 @@
    "building": "本部棟",
    "floor": "8F",
    "blender": [
-    -164.38,
-    -71.0,
+    -178.19,
+    -77.7,
     34.8
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "エレベーターホール",
+   "note": "エレベーターホール / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.8m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "hq-9f",
@@ -5338,16 +5346,17 @@
    "building": "本部棟",
    "floor": "9F",
    "blender": [
-    -164.38,
-    -71.0,
+    -178.58,
+    -69.22,
     39.2
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "エレベーターホール",
+   "note": "エレベーターホール / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.3m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "research-1f",
@@ -5355,15 +5364,16 @@
    "building": "研究棟",
    "floor": "1F",
    "blender": [
-    -115.49,
-    41.7,
+    -128.81,
+    56.76,
     0.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.1m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-2f",
@@ -5371,15 +5381,16 @@
    "building": "研究棟",
    "floor": "2F",
    "blender": [
-    -115.49,
-    41.7,
+    -126.69,
+    56.84,
     6.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-3f",
@@ -5387,15 +5398,16 @@
    "building": "研究棟",
    "floor": "3F",
    "blender": [
-    -115.49,
-    41.7,
+    -131.63,
+    56.65,
     11.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.0m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-4f",
@@ -5403,15 +5415,16 @@
    "building": "研究棟",
    "floor": "4F",
    "blender": [
-    -115.49,
-    41.7,
+    -131.63,
+    56.65,
     16.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.0m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-5f",
@@ -5419,15 +5432,16 @@
    "building": "研究棟",
    "floor": "5F",
    "blender": [
-    -115.49,
-    41.7,
+    -131.63,
+    56.65,
     21.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.0m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-6f",
@@ -5435,15 +5449,16 @@
    "building": "研究棟",
    "floor": "6F",
    "blender": [
-    -115.49,
-    41.7,
+    -131.63,
+    56.65,
     26.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.6m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-7f",
@@ -5451,15 +5466,16 @@
    "building": "研究棟",
    "floor": "7F",
    "blender": [
-    -115.49,
-    41.7,
+    -124.57,
+    56.92,
     31.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.8m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-8f",
@@ -5467,15 +5483,16 @@
    "building": "研究棟",
    "floor": "8F",
    "blender": [
-    -115.49,
-    41.7,
+    -121.39,
+    57.04,
     36.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-9f",
@@ -5483,15 +5500,16 @@
    "building": "研究棟",
    "floor": "9F",
    "blender": [
-    -115.49,
-    41.7,
+    -115.38,
+    57.27,
     40.5
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.8m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-10f",
@@ -5499,15 +5517,16 @@
    "building": "研究棟",
    "floor": "10F",
    "blender": [
-    -115.49,
-    41.7,
+    -115.38,
+    57.27,
     44.4
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.8m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-11f",
@@ -5515,15 +5534,16 @@
    "building": "研究棟",
    "floor": "11F",
    "blender": [
-    -115.49,
-    41.7,
+    -115.38,
+    57.27,
     48.3
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.8m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-12f",
@@ -5531,15 +5551,16 @@
    "building": "研究棟",
    "floor": "12F",
    "blender": [
-    -115.49,
-    41.7,
+    -115.38,
+    57.27,
     52.2
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.8m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-13f",
@@ -5547,15 +5568,16 @@
    "building": "研究棟",
    "floor": "13F",
    "blender": [
-    -115.49,
-    41.7,
+    -115.38,
+    57.27,
     56.1
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.8m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "research-14f",
@@ -5563,15 +5585,16 @@
    "building": "研究棟",
    "floor": "14F",
    "blender": [
-    -115.49,
-    41.7,
+    -115.38,
+    57.27,
     60.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV A の橋の位置",
+   "note": "EV A の橋の位置 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.8m）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "relocate": true
   },
   {
    "id": "hq-10f",
@@ -5579,16 +5602,17 @@
    "building": "本部棟",
    "floor": "10F",
    "blender": [
-    -164.38,
-    -71.0,
+    -162.13,
+    -80.48,
     43.6
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "高層棟の中",
+   "note": "高層棟の中 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "hq-11f",
@@ -5596,16 +5620,17 @@
    "building": "本部棟",
    "floor": "11F",
    "blender": [
-    -164.38,
-    -71.0,
+    -162.13,
+    -80.48,
     48.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "高層棟の中",
+   "note": "高層棟の中 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "hq-12f",
@@ -5613,16 +5638,17 @@
    "building": "本部棟",
    "floor": "12F",
    "blender": [
-    -164.38,
-    -71.0,
+    -162.13,
+    -80.48,
     52.4
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "高層棟の中",
+   "note": "高層棟の中 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "hq-13f",
@@ -5630,16 +5656,17 @@
    "building": "本部棟",
    "floor": "13F",
    "blender": [
-    -164.38,
-    -71.0,
+    -162.48,
+    -80.5,
     56.8
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "高層棟の中",
+   "note": "高層棟の中 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.0m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "hq-14f",
@@ -5647,16 +5674,17 @@
    "building": "本部棟",
    "floor": "14F",
    "blender": [
-    -164.38,
-    -71.0,
+    -162.48,
+    -80.5,
     61.2
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "高層棟の中",
+   "note": "高層棟の中 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 1.0m）",
    "role": "waypoint",
    "selectable": true,
-   "fix8": true
+   "fix8": true,
+   "relocate": true
   },
   {
    "id": "hq-3f",
@@ -6421,19 +6449,286 @@
    "building": "研究棟",
    "floor": "1F",
    "blender": [
+    -81.64,
+    27.86,
+    0.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-2f-east",
+   "name": "研究棟2F 運河側",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -82.7,
+    27.82,
+    6.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-3f-east",
+   "name": "研究棟3F 運河側",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -82.7,
+    27.82,
+    11.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-4f-east",
+   "name": "研究棟4F 運河側",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -82.7,
+    27.82,
+    16.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-5f-east",
+   "name": "研究棟5F 運河側",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -82.7,
+    27.82,
+    21.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-6f-east",
+   "name": "研究棟6F 運河側",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -82.7,
+    27.82,
+    26.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-7f-east",
+   "name": "研究棟7F 運河側",
+   "building": "研究棟",
+   "floor": "7F",
+   "blender": [
+    -82.7,
+    27.82,
+    31.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-8f-east",
+   "name": "研究棟8F 運河側",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -83.4,
+    27.79,
+    36.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-9f-east",
+   "name": "研究棟9F 運河側",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -83.4,
+    27.79,
+    40.5
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-10f-east",
+   "name": "研究棟10F 運河側",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -83.4,
+    27.79,
+    44.4
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-11f-east",
+   "name": "研究棟11F 運河側",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -83.4,
+    27.79,
+    48.3
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-12f-east",
+   "name": "研究棟12F 運河側",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -83.4,
+    27.79,
+    52.2
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-13f-east",
+   "name": "研究棟13F 運河側",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -83.4,
+    27.79,
+    56.1
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-14f-east",
+   "name": "研究棟14F 運河側",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -83.4,
+    27.79,
+    60.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側 / reroute_walls.py：エレベーターの前から廊下を約 20m 歩いた所（壁まで 0.9m）",
+   "role": "waypoint",
+   "selectable": true,
+   "relocate": true
+  },
+  {
+   "id": "research-1f-car",
+   "name": "研究棟1F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -115.49,
+    41.7,
+    0.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-1f-east-car",
+   "name": "研究棟1F 運河側 かごの中",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
     -84.33,
     15.02,
     0.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-2f-east",
-   "name": "研究棟2F 運河側",
+   "id": "research-2f-car",
+   "name": "研究棟2F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -115.49,
+    41.7,
+    6.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-2f-east-car",
+   "name": "研究棟2F 運河側 かごの中",
    "building": "研究棟",
    "floor": "2F",
    "blender": [
@@ -6443,13 +6738,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-3f-east",
-   "name": "研究棟3F 運河側",
+   "id": "research-3f-car",
+   "name": "研究棟3F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -115.49,
+    41.7,
+    11.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-3f-east-car",
+   "name": "研究棟3F 運河側 かごの中",
    "building": "研究棟",
    "floor": "3F",
    "blender": [
@@ -6459,13 +6768,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-4f-east",
-   "name": "研究棟4F 運河側",
+   "id": "research-4f-car",
+   "name": "研究棟4F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -115.49,
+    41.7,
+    16.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-4f-east-car",
+   "name": "研究棟4F 運河側 かごの中",
    "building": "研究棟",
    "floor": "4F",
    "blender": [
@@ -6475,13 +6798,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-5f-east",
-   "name": "研究棟5F 運河側",
+   "id": "research-5f-car",
+   "name": "研究棟5F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -115.49,
+    41.7,
+    21.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-5f-east-car",
+   "name": "研究棟5F 運河側 かごの中",
    "building": "研究棟",
    "floor": "5F",
    "blender": [
@@ -6491,13 +6828,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-6f-east",
-   "name": "研究棟6F 運河側",
+   "id": "research-6f-car",
+   "name": "研究棟6F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -115.49,
+    41.7,
+    26.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-6f-east-car",
+   "name": "研究棟6F 運河側 かごの中",
    "building": "研究棟",
    "floor": "6F",
    "blender": [
@@ -6507,13 +6858,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-7f-east",
-   "name": "研究棟7F 運河側",
+   "id": "research-7f-car",
+   "name": "研究棟7F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "7F",
+   "blender": [
+    -115.49,
+    41.7,
+    31.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-7f-east-car",
+   "name": "研究棟7F 運河側 かごの中",
    "building": "研究棟",
    "floor": "7F",
    "blender": [
@@ -6523,13 +6888,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-8f-east",
-   "name": "研究棟8F 運河側",
+   "id": "research-8f-car",
+   "name": "研究棟8F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -115.49,
+    41.7,
+    36.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-8f-east-car",
+   "name": "研究棟8F 運河側 かごの中",
    "building": "研究棟",
    "floor": "8F",
    "blender": [
@@ -6539,13 +6918,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-9f-east",
-   "name": "研究棟9F 運河側",
+   "id": "research-9f-car",
+   "name": "研究棟9F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -115.49,
+    41.7,
+    40.5
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-9f-east-car",
+   "name": "研究棟9F 運河側 かごの中",
    "building": "研究棟",
    "floor": "9F",
    "blender": [
@@ -6555,13 +6948,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-10f-east",
-   "name": "研究棟10F 運河側",
+   "id": "research-10f-car",
+   "name": "研究棟10F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -115.49,
+    41.7,
+    44.4
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-10f-east-car",
+   "name": "研究棟10F 運河側 かごの中",
    "building": "研究棟",
    "floor": "10F",
    "blender": [
@@ -6571,13 +6978,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-11f-east",
-   "name": "研究棟11F 運河側",
+   "id": "research-11f-car",
+   "name": "研究棟11F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -115.49,
+    41.7,
+    48.3
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-11f-east-car",
+   "name": "研究棟11F 運河側 かごの中",
    "building": "研究棟",
    "floor": "11F",
    "blender": [
@@ -6587,13 +7008,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-12f-east",
-   "name": "研究棟12F 運河側",
+   "id": "research-12f-car",
+   "name": "研究棟12F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -115.49,
+    41.7,
+    52.2
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-12f-east-car",
+   "name": "研究棟12F 運河側 かごの中",
    "building": "研究棟",
    "floor": "12F",
    "blender": [
@@ -6603,13 +7038,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-13f-east",
-   "name": "研究棟13F 運河側",
+   "id": "research-13f-car",
+   "name": "研究棟13F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -115.49,
+    41.7,
+    56.1
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-13f-east-car",
+   "name": "研究棟13F 運河側 かごの中",
    "building": "研究棟",
    "floor": "13F",
    "blender": [
@@ -6619,13 +7068,27 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
-   "id": "research-14f-east",
-   "name": "研究棟14F 運河側",
+   "id": "research-14f-car",
+   "name": "研究棟14F 教室棟側 かごの中",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -115.49,
+    41.7,
+    60.0
+   ],
+   "radius": 15,
+   "gpsSnap": false,
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
+  },
+  {
+   "id": "research-14f-east-car",
+   "name": "研究棟14F 運河側 かごの中",
    "building": "研究棟",
    "floor": "14F",
    "blender": [
@@ -6635,9 +7098,8 @@
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
-   "role": "waypoint",
-   "selectable": true
+   "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）",
+   "role": "waypoint"
   },
   {
    "id": "exchange-1f-car-door",
@@ -6810,8 +7272,8 @@
    "building": "本部棟",
    "floor": "1F",
    "blender": [
-    -164.34,
-    -71.03,
+    -161.38,
+    -73.73,
     0.0
    ],
    "radius": 3,
@@ -6940,7 +7402,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-10f-door",
+   "id": "research-10f-car-door",
    "name": "研究棟10F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "10F",
@@ -6955,7 +7417,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-10f-east-door",
+   "id": "research-10f-east-car-door",
    "name": "研究棟10F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "10F",
@@ -6970,7 +7432,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-11f-door",
+   "id": "research-11f-car-door",
    "name": "研究棟11F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "11F",
@@ -6985,7 +7447,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-11f-east-door",
+   "id": "research-11f-east-car-door",
    "name": "研究棟11F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "11F",
@@ -7000,7 +7462,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-12f-door",
+   "id": "research-12f-car-door",
    "name": "研究棟12F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "12F",
@@ -7015,7 +7477,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-12f-east-door",
+   "id": "research-12f-east-car-door",
    "name": "研究棟12F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "12F",
@@ -7030,7 +7492,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-13f-door",
+   "id": "research-13f-car-door",
    "name": "研究棟13F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "13F",
@@ -7045,7 +7507,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-13f-east-door",
+   "id": "research-13f-east-car-door",
    "name": "研究棟13F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "13F",
@@ -7060,7 +7522,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-14f-door",
+   "id": "research-14f-car-door",
    "name": "研究棟14F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "14F",
@@ -7075,7 +7537,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-14f-east-door",
+   "id": "research-14f-east-car-door",
    "name": "研究棟14F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "14F",
@@ -7090,7 +7552,37 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-2f-door",
+   "id": "research-1f-car-door",
+   "name": "研究棟1F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -116.96,
+    43.06,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-1f-east-car-door",
+   "name": "研究棟1F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -82.86,
+    13.66,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-2f-car-door",
    "name": "研究棟2F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "2F",
@@ -7105,7 +7597,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-2f-east-door",
+   "id": "research-2f-east-car-door",
    "name": "研究棟2F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "2F",
@@ -7120,7 +7612,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-3f-door",
+   "id": "research-3f-car-door",
    "name": "研究棟3F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "3F",
@@ -7135,7 +7627,22 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-4f-door",
+   "id": "research-3f-east-car-door",
+   "name": "研究棟3F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -82.86,
+    13.66,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-4f-car-door",
    "name": "研究棟4F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "4F",
@@ -7150,7 +7657,22 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-5f-door",
+   "id": "research-4f-east-car-door",
+   "name": "研究棟4F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -82.86,
+    13.66,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-5f-car-door",
    "name": "研究棟5F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "5F",
@@ -7165,7 +7687,22 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-6f-door",
+   "id": "research-5f-east-car-door",
+   "name": "研究棟5F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -82.86,
+    13.66,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-6f-car-door",
    "name": "研究棟6F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "6F",
@@ -7180,7 +7717,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-6f-east-door",
+   "id": "research-6f-east-car-door",
    "name": "研究棟6F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "6F",
@@ -7195,7 +7732,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-7f-door",
+   "id": "research-7f-car-door",
    "name": "研究棟7F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "7F",
@@ -7210,7 +7747,22 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-8f-door",
+   "id": "research-7f-east-car-door",
+   "name": "研究棟7F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "7F",
+   "blender": [
+    -82.86,
+    13.66,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-8f-car-door",
    "name": "研究棟8F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "8F",
@@ -7225,7 +7777,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-8f-east-door",
+   "id": "research-8f-east-car-door",
    "name": "研究棟8F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "8F",
@@ -7240,7 +7792,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-9f-door",
+   "id": "research-9f-car-door",
    "name": "研究棟9F 教室棟側 エレベーターの前",
    "building": "研究棟",
    "floor": "9F",
@@ -7255,7 +7807,7 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "research-9f-east-door",
+   "id": "research-9f-east-car-door",
    "name": "研究棟9F 運河側 エレベーターの前",
    "building": "研究棟",
    "floor": "9F",
@@ -7915,21 +8467,6 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-1f--research-1f-door~1",
-   "name": "研究棟1F 教室棟側 → 研究棟1F 入口の扉（エントランスホール） 1",
-   "building": "研究棟",
-   "floor": "1F",
-   "blender": [
-    -126.4,
-    51.81,
-    0.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
    "id": "research-1f-door--classroom-research-corner~1",
    "name": "研究棟1F 入口の扉（エントランスホール） → 教室棟と研究棟の角 1",
    "building": "研究棟",
@@ -8027,36 +8564,6 @@
    "blender": [
     -174.57,
     12.48,
-    0.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
-   "id": "classroom-1f-kenkyu--research-1f~1",
-   "name": "教室棟1F 研究棟側 → 研究棟1F 教室棟側 1",
-   "building": "教室棟",
-   "floor": "1F",
-   "blender": [
-    -118.87,
-    57.74,
-    0.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
-   "id": "classroom-1f-kenkyu--research-1f~2",
-   "name": "教室棟1F 研究棟側 → 研究棟1F 教室棟側 2",
-   "building": "教室棟",
-   "floor": "1F",
-   "blender": [
-    -125.28,
-    50.9,
     0.0
    ],
    "radius": 3,
@@ -8490,8 +8997,8 @@
    "building": "交流棟",
    "floor": "2F",
    "blender": [
-    -187.81,
-    -22.52,
+    -187.99,
+    -22.35,
     6.0
    ],
    "radius": 3,
@@ -8520,8 +9027,8 @@
    "building": "交流棟",
    "floor": "3F",
    "blender": [
-    -187.81,
-    -22.52,
+    -187.99,
+    -22.35,
     11.0
    ],
    "radius": 3,
@@ -8550,8 +9057,8 @@
    "building": "交流棟",
    "floor": "4F",
    "blender": [
-    -187.81,
-    -22.52,
+    -187.99,
+    -22.35,
     16.0
    ],
    "radius": 3,
@@ -8580,8 +9087,8 @@
    "building": "交流棟",
    "floor": "5F",
    "blender": [
-    -187.81,
-    -22.52,
+    -187.99,
+    -22.35,
     21.0
    ],
    "radius": 3,
@@ -8610,8 +9117,8 @@
    "building": "交流棟",
    "floor": "6F",
    "blender": [
-    -187.81,
-    -22.52,
+    -187.99,
+    -22.35,
     26.0
    ],
    "radius": 3,
@@ -8620,7 +9127,652 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-10f-east-door--research-10f-door~1",
+   "id": "hq-10f-car-door--hq-10f~1",
+   "name": "本部棟10F エレベーターの前 → 本部棟10F 1",
+   "building": "本部棟",
+   "floor": "10F",
+   "blender": [
+    -167.79,
+    -74.82,
+    43.6
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-10f-car-door--hq-10f~2",
+   "name": "本部棟10F エレベーターの前 → 本部棟10F 2",
+   "building": "本部棟",
+   "floor": "10F",
+   "blender": [
+    -164.56,
+    -77.76,
+    43.6
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-10f-car-door--hq-10f~3",
+   "name": "本部棟10F エレベーターの前 → 本部棟10F 3",
+   "building": "本部棟",
+   "floor": "10F",
+   "blender": [
+    -161.86,
+    -74.81,
+    43.6
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-10f-car-door--hq-10f~4",
+   "name": "本部棟10F エレベーターの前 → 本部棟10F 4",
+   "building": "本部棟",
+   "floor": "10F",
+   "blender": [
+    -160.2,
+    -76.32,
+    43.6
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-10f-car-door--hq-10f~5",
+   "name": "本部棟10F エレベーターの前 → 本部棟10F 5",
+   "building": "本部棟",
+   "floor": "10F",
+   "blender": [
+    -163.14,
+    -79.56,
+    43.6
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-11f-car-door--hq-11f~1",
+   "name": "本部棟11F エレベーターの前 → 本部棟11F 1",
+   "building": "本部棟",
+   "floor": "11F",
+   "blender": [
+    -167.79,
+    -74.82,
+    48.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-11f-car-door--hq-11f~2",
+   "name": "本部棟11F エレベーターの前 → 本部棟11F 2",
+   "building": "本部棟",
+   "floor": "11F",
+   "blender": [
+    -164.56,
+    -77.76,
+    48.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-11f-car-door--hq-11f~3",
+   "name": "本部棟11F エレベーターの前 → 本部棟11F 3",
+   "building": "本部棟",
+   "floor": "11F",
+   "blender": [
+    -161.86,
+    -74.81,
+    48.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-11f-car-door--hq-11f~4",
+   "name": "本部棟11F エレベーターの前 → 本部棟11F 4",
+   "building": "本部棟",
+   "floor": "11F",
+   "blender": [
+    -160.2,
+    -76.32,
+    48.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-11f-car-door--hq-11f~5",
+   "name": "本部棟11F エレベーターの前 → 本部棟11F 5",
+   "building": "本部棟",
+   "floor": "11F",
+   "blender": [
+    -163.14,
+    -79.56,
+    48.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-12f-car-door--hq-12f~1",
+   "name": "本部棟12F エレベーターの前 → 本部棟12F 1",
+   "building": "本部棟",
+   "floor": "12F",
+   "blender": [
+    -167.79,
+    -74.82,
+    52.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-12f-car-door--hq-12f~2",
+   "name": "本部棟12F エレベーターの前 → 本部棟12F 2",
+   "building": "本部棟",
+   "floor": "12F",
+   "blender": [
+    -164.56,
+    -77.76,
+    52.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-12f-car-door--hq-12f~3",
+   "name": "本部棟12F エレベーターの前 → 本部棟12F 3",
+   "building": "本部棟",
+   "floor": "12F",
+   "blender": [
+    -161.86,
+    -74.81,
+    52.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-12f-car-door--hq-12f~4",
+   "name": "本部棟12F エレベーターの前 → 本部棟12F 4",
+   "building": "本部棟",
+   "floor": "12F",
+   "blender": [
+    -160.2,
+    -76.32,
+    52.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-12f-car-door--hq-12f~5",
+   "name": "本部棟12F エレベーターの前 → 本部棟12F 5",
+   "building": "本部棟",
+   "floor": "12F",
+   "blender": [
+    -163.14,
+    -79.56,
+    52.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-13f-car-door--hq-13f~1",
+   "name": "本部棟13F エレベーターの前 → 本部棟13F 1",
+   "building": "本部棟",
+   "floor": "13F",
+   "blender": [
+    -167.87,
+    -74.91,
+    56.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-13f-car-door--hq-13f~2",
+   "name": "本部棟13F エレベーターの前 → 本部棟13F 2",
+   "building": "本部棟",
+   "floor": "13F",
+   "blender": [
+    -164.64,
+    -77.86,
+    56.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-13f-car-door--hq-13f~3",
+   "name": "本部棟13F エレベーターの前 → 本部棟13F 3",
+   "building": "本部棟",
+   "floor": "13F",
+   "blender": [
+    -161.86,
+    -74.81,
+    56.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-13f-car-door--hq-13f~4",
+   "name": "本部棟13F エレベーターの前 → 本部棟13F 4",
+   "building": "本部棟",
+   "floor": "13F",
+   "blender": [
+    -160.2,
+    -76.32,
+    56.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-13f-car-door--hq-13f~5",
+   "name": "本部棟13F エレベーターの前 → 本部棟13F 5",
+   "building": "本部棟",
+   "floor": "13F",
+   "blender": [
+    -163.31,
+    -79.74,
+    56.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~1",
+   "name": "本部棟14F エレベーターの前 → 本部棟14F 1",
+   "building": "本部棟",
+   "floor": "14F",
+   "blender": [
+    -167.87,
+    -74.91,
+    61.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~2",
+   "name": "本部棟14F エレベーターの前 → 本部棟14F 2",
+   "building": "本部棟",
+   "floor": "14F",
+   "blender": [
+    -164.64,
+    -77.86,
+    61.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~3",
+   "name": "本部棟14F エレベーターの前 → 本部棟14F 3",
+   "building": "本部棟",
+   "floor": "14F",
+   "blender": [
+    -161.86,
+    -74.81,
+    61.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~4",
+   "name": "本部棟14F エレベーターの前 → 本部棟14F 4",
+   "building": "本部棟",
+   "floor": "14F",
+   "blender": [
+    -160.2,
+    -76.32,
+    61.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~5",
+   "name": "本部棟14F エレベーターの前 → 本部棟14F 5",
+   "building": "本部棟",
+   "floor": "14F",
+   "blender": [
+    -163.31,
+    -79.74,
+    61.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-1f-car-door--hq-1f-ev~1",
+   "name": "本部棟1F エレベーターの前 → 本部棟1F エレベーター 1",
+   "building": "本部棟",
+   "floor": "1F",
+   "blender": [
+    -152.05,
+    -82.23,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-1f-car-door--hq-1f-ev~2",
+   "name": "本部棟1F エレベーターの前 → 本部棟1F エレベーター 2",
+   "building": "本部棟",
+   "floor": "1F",
+   "blender": [
+    -153.98,
+    -84.36,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-1f-car-door--hq-1f-ev~3",
+   "name": "本部棟1F エレベーターの前 → 本部棟1F エレベーター 3",
+   "building": "本部棟",
+   "floor": "1F",
+   "blender": [
+    -166.27,
+    -73.16,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-5f-car-door--hq-5f~1",
+   "name": "本部棟5F エレベーターの前 → 本部棟5F 1",
+   "building": "本部棟",
+   "floor": "5F",
+   "blender": [
+    -166.65,
+    -68.93,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-5f-car-door--hq-5f~2",
+   "name": "本部棟5F エレベーターの前 → 本部棟5F 2",
+   "building": "本部棟",
+   "floor": "5F",
+   "blender": [
+    -170.19,
+    -72.81,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-5f-car-door--hq-5f~3",
+   "name": "本部棟5F エレベーターの前 → 本部棟5F 3",
+   "building": "本部棟",
+   "floor": "5F",
+   "blender": [
+    -172.31,
+    -70.87,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-7f-car-door--hq-7f~1",
+   "name": "本部棟7F エレベーターの前 → 本部棟7F 1",
+   "building": "本部棟",
+   "floor": "7F",
+   "blender": [
+    -166.65,
+    -68.93,
+    30.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-7f-car-door--hq-7f~2",
+   "name": "本部棟7F エレベーターの前 → 本部棟7F 2",
+   "building": "本部棟",
+   "floor": "7F",
+   "blender": [
+    -170.19,
+    -72.81,
+    30.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-7f-car-door--hq-7f~3",
+   "name": "本部棟7F エレベーターの前 → 本部棟7F 3",
+   "building": "本部棟",
+   "floor": "7F",
+   "blender": [
+    -172.31,
+    -70.87,
+    30.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-8f-car-door--hq-8f~1",
+   "name": "本部棟8F エレベーターの前 → 本部棟8F 1",
+   "building": "本部棟",
+   "floor": "8F",
+   "blender": [
+    -166.65,
+    -68.93,
+    34.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-8f-car-door--hq-8f~2",
+   "name": "本部棟8F エレベーターの前 → 本部棟8F 2",
+   "building": "本部棟",
+   "floor": "8F",
+   "blender": [
+    -170.35,
+    -72.99,
+    34.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-8f-car-door--hq-8f~3",
+   "name": "本部棟8F エレベーターの前 → 本部棟8F 3",
+   "building": "本部棟",
+   "floor": "8F",
+   "blender": [
+    -172.29,
+    -71.23,
+    34.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-9f-car-door--hq-9f~1",
+   "name": "本部棟9F エレベーターの前 → 本部棟9F 1",
+   "building": "本部棟",
+   "floor": "9F",
+   "blender": [
+    -166.65,
+    -68.93,
+    39.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-9f-car-door--hq-9f~2",
+   "name": "本部棟9F エレベーターの前 → 本部棟9F 2",
+   "building": "本部棟",
+   "floor": "9F",
+   "blender": [
+    -170.1,
+    -72.72,
+    39.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-9f-car-door--hq-9f~3",
+   "name": "本部棟9F エレベーターの前 → 本部棟9F 3",
+   "building": "本部棟",
+   "floor": "9F",
+   "blender": [
+    -176.48,
+    -66.91,
+    39.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-10f-car-door--research-10f~1",
+   "name": "研究棟10F 教室棟側 エレベーターの前 → 研究棟10F 教室棟側 1",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -109.15,
+    51.5,
+    44.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-east~1",
+   "name": "研究棟10F 運河側 エレベーターの前 → 研究棟10F 運河側 1",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -82.49,
+    13.32,
+    44.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-east~2",
+   "name": "研究棟10F 運河側 エレベーターの前 → 研究棟10F 運河側 2",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -75.7,
+    20.66,
+    44.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-car-door~1",
    "name": "研究棟10F 運河側 エレベーターの前 → 研究棟10F 教室棟側 エレベーターの前 1",
    "building": "研究棟",
    "floor": "10F",
@@ -8635,7 +9787,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-10f-east-door--research-10f-door~2",
+   "id": "research-10f-east-car-door--research-10f-car-door~2",
    "name": "研究棟10F 運河側 エレベーターの前 → 研究棟10F 教室棟側 エレベーターの前 2",
    "building": "研究棟",
    "floor": "10F",
@@ -8650,7 +9802,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-10f-east-door--research-10f-door~3",
+   "id": "research-10f-east-car-door--research-10f-car-door~3",
    "name": "研究棟10F 運河側 エレベーターの前 → 研究棟10F 教室棟側 エレベーターの前 3",
    "building": "研究棟",
    "floor": "10F",
@@ -8665,7 +9817,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-11f-east-door--research-11f-door~1",
+   "id": "research-11f-car-door--research-11f~1",
+   "name": "研究棟11F 教室棟側 エレベーターの前 → 研究棟11F 教室棟側 1",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -109.15,
+    51.5,
+    48.3
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-east~1",
+   "name": "研究棟11F 運河側 エレベーターの前 → 研究棟11F 運河側 1",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -82.49,
+    13.32,
+    48.3
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-east~2",
+   "name": "研究棟11F 運河側 エレベーターの前 → 研究棟11F 運河側 2",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -75.7,
+    20.66,
+    48.3
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-car-door~1",
    "name": "研究棟11F 運河側 エレベーターの前 → 研究棟11F 教室棟側 エレベーターの前 1",
    "building": "研究棟",
    "floor": "11F",
@@ -8680,7 +9877,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-11f-east-door--research-11f-door~2",
+   "id": "research-11f-east-car-door--research-11f-car-door~2",
    "name": "研究棟11F 運河側 エレベーターの前 → 研究棟11F 教室棟側 エレベーターの前 2",
    "building": "研究棟",
    "floor": "11F",
@@ -8695,7 +9892,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-11f-east-door--research-11f-door~3",
+   "id": "research-11f-east-car-door--research-11f-car-door~3",
    "name": "研究棟11F 運河側 エレベーターの前 → 研究棟11F 教室棟側 エレベーターの前 3",
    "building": "研究棟",
    "floor": "11F",
@@ -8710,7 +9907,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-12f-east-door--research-12f-door~1",
+   "id": "research-12f-car-door--research-12f~1",
+   "name": "研究棟12F 教室棟側 エレベーターの前 → 研究棟12F 教室棟側 1",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -109.15,
+    51.5,
+    52.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-east~1",
+   "name": "研究棟12F 運河側 エレベーターの前 → 研究棟12F 運河側 1",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -82.49,
+    13.32,
+    52.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-east~2",
+   "name": "研究棟12F 運河側 エレベーターの前 → 研究棟12F 運河側 2",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -75.7,
+    20.66,
+    52.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-car-door~1",
    "name": "研究棟12F 運河側 エレベーターの前 → 研究棟12F 教室棟側 エレベーターの前 1",
    "building": "研究棟",
    "floor": "12F",
@@ -8725,7 +9967,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-12f-east-door--research-12f-door~2",
+   "id": "research-12f-east-car-door--research-12f-car-door~2",
    "name": "研究棟12F 運河側 エレベーターの前 → 研究棟12F 教室棟側 エレベーターの前 2",
    "building": "研究棟",
    "floor": "12F",
@@ -8740,7 +9982,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-12f-east-door--research-12f-door~3",
+   "id": "research-12f-east-car-door--research-12f-car-door~3",
    "name": "研究棟12F 運河側 エレベーターの前 → 研究棟12F 教室棟側 エレベーターの前 3",
    "building": "研究棟",
    "floor": "12F",
@@ -8755,7 +9997,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-13f-east-door--research-13f-door~1",
+   "id": "research-13f-car-door--research-13f~1",
+   "name": "研究棟13F 教室棟側 エレベーターの前 → 研究棟13F 教室棟側 1",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -109.15,
+    51.5,
+    56.1
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-east~1",
+   "name": "研究棟13F 運河側 エレベーターの前 → 研究棟13F 運河側 1",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -82.49,
+    13.32,
+    56.1
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-east~2",
+   "name": "研究棟13F 運河側 エレベーターの前 → 研究棟13F 運河側 2",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -75.7,
+    20.66,
+    56.1
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-car-door~1",
    "name": "研究棟13F 運河側 エレベーターの前 → 研究棟13F 教室棟側 エレベーターの前 1",
    "building": "研究棟",
    "floor": "13F",
@@ -8770,7 +10057,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-13f-east-door--research-13f-door~2",
+   "id": "research-13f-east-car-door--research-13f-car-door~2",
    "name": "研究棟13F 運河側 エレベーターの前 → 研究棟13F 教室棟側 エレベーターの前 2",
    "building": "研究棟",
    "floor": "13F",
@@ -8785,7 +10072,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-13f-east-door--research-13f-door~3",
+   "id": "research-13f-east-car-door--research-13f-car-door~3",
    "name": "研究棟13F 運河側 エレベーターの前 → 研究棟13F 教室棟側 エレベーターの前 3",
    "building": "研究棟",
    "floor": "13F",
@@ -8800,7 +10087,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-14f-east-door--research-14f-door~1",
+   "id": "research-14f-car-door--research-14f~1",
+   "name": "研究棟14F 教室棟側 エレベーターの前 → 研究棟14F 教室棟側 1",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -109.15,
+    51.5,
+    60.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-east~1",
+   "name": "研究棟14F 運河側 エレベーターの前 → 研究棟14F 運河側 1",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -82.49,
+    13.32,
+    60.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-east~2",
+   "name": "研究棟14F 運河側 エレベーターの前 → 研究棟14F 運河側 2",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -75.7,
+    20.66,
+    60.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-car-door~1",
    "name": "研究棟14F 運河側 エレベーターの前 → 研究棟14F 教室棟側 エレベーターの前 1",
    "building": "研究棟",
    "floor": "14F",
@@ -8815,7 +10147,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-14f-east-door--research-14f-door~2",
+   "id": "research-14f-east-car-door--research-14f-car-door~2",
    "name": "研究棟14F 運河側 エレベーターの前 → 研究棟14F 教室棟側 エレベーターの前 2",
    "building": "研究棟",
    "floor": "14F",
@@ -8830,7 +10162,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-14f-east-door--research-14f-door~3",
+   "id": "research-14f-east-car-door--research-14f-car-door~3",
    "name": "研究棟14F 運河側 エレベーターの前 → 研究棟14F 教室棟側 エレベーターの前 3",
    "building": "研究棟",
    "floor": "14F",
@@ -8845,7 +10177,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-2f-door--research-gate~1",
+   "id": "research-1f-car-door--research-1f-door~1",
+   "name": "研究棟1F 教室棟側 エレベーターの前 → 研究棟1F 入口の扉（エントランスホール） 1",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -126.41,
+    51.81,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-1f-east-car-door--research-1f-east~1",
+   "name": "研究棟1F 運河側 エレベーターの前 → 研究棟1F 運河側 1",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -75.05,
+    22.1,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-1f-east-car-door--research-1f-east~2",
+   "name": "研究棟1F 運河側 エレベーターの前 → 研究棟1F 運河側 2",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -81.47,
+    28.04,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-car-door--research-gate~1",
    "name": "研究棟2F 教室棟側 エレベーターの前 → 研究棟ゲート 1",
    "building": "研究棟",
    "floor": "2F",
@@ -8860,7 +10237,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-2f-door--research-gate~2",
+   "id": "research-2f-car-door--research-gate~2",
    "name": "研究棟2F 教室棟側 エレベーターの前 → 研究棟ゲート 2",
    "building": "研究棟",
    "floor": "2F",
@@ -8875,7 +10252,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-2f-door--k2-008~1",
+   "id": "research-2f-car-door--k2-008~1",
    "name": "研究棟2F 教室棟側 エレベーターの前 → 教室棟2F エスカレーターの上り口 1",
    "building": "研究棟",
    "floor": "2F",
@@ -8890,7 +10267,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-2f-door--k2-008~2",
+   "id": "research-2f-car-door--k2-008~2",
    "name": "研究棟2F 教室棟側 エレベーターの前 → 教室棟2F エスカレーターの上り口 2",
    "building": "研究棟",
    "floor": "2F",
@@ -8905,7 +10282,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-2f-door--k2-008~3",
+   "id": "research-2f-car-door--k2-008~3",
    "name": "研究棟2F 教室棟側 エレベーターの前 → 教室棟2F エスカレーターの上り口 3",
    "building": "研究棟",
    "floor": "2F",
@@ -8920,7 +10297,22 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-2f-east-door--research-gate~1",
+   "id": "research-2f-car-door--research-2f~1",
+   "name": "研究棟2F 教室棟側 エレベーターの前 → 研究棟2F 教室棟側 1",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -114.58,
+    45.63,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-east-car-door--research-gate~1",
    "name": "研究棟2F 運河側 エレベーターの前 → 研究棟ゲート 1",
    "building": "研究棟",
    "floor": "2F",
@@ -8935,7 +10327,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-2f-east-door--research-gate~2",
+   "id": "research-2f-east-car-door--research-gate~2",
    "name": "研究棟2F 運河側 エレベーターの前 → 研究棟ゲート 2",
    "building": "研究棟",
    "floor": "2F",
@@ -8950,7 +10342,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-2f-east-door--research-gate~3",
+   "id": "research-2f-east-car-door--research-gate~3",
    "name": "研究棟2F 運河側 エレベーターの前 → 研究棟ゲート 3",
    "building": "研究棟",
    "floor": "2F",
@@ -8965,7 +10357,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-3f-door--classroom-3f-kenkyu~1",
+   "id": "research-2f-east-car-door--research-2f-east~1",
+   "name": "研究棟2F 運河側 エレベーターの前 → 研究棟2F 運河側 1",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -82.49,
+    13.32,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-east-car-door--research-2f-east~2",
+   "name": "研究棟2F 運河側 エレベーターの前 → 研究棟2F 運河側 2",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -75.61,
+    20.75,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-east-car-door--research-2f-east~3",
+   "name": "研究棟2F 運河側 エレベーターの前 → 研究棟2F 運河側 3",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -82.95,
+    27.54,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-3f-car-door--classroom-3f-kenkyu~1",
    "name": "研究棟3F 教室棟側 エレベーターの前 → 教室棟3F 研究棟側 1",
    "building": "研究棟",
    "floor": "3F",
@@ -8980,7 +10417,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-3f-door--classroom-3f-kenkyu~2",
+   "id": "research-3f-car-door--classroom-3f-kenkyu~2",
    "name": "研究棟3F 教室棟側 エレベーターの前 → 教室棟3F 研究棟側 2",
    "building": "研究棟",
    "floor": "3F",
@@ -8995,7 +10432,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-4f-door--classroom-4f-kenkyu~1",
+   "id": "research-3f-east-car-door--research-3f-east~1",
+   "name": "研究棟3F 運河側 エレベーターの前 → 研究棟3F 運河側 1",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -82.49,
+    13.32,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-3f-east-car-door--research-3f-east~2",
+   "name": "研究棟3F 運河側 エレベーターの前 → 研究棟3F 運河側 2",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -75.61,
+    20.75,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-3f-east-car-door--research-3f-east~3",
+   "name": "研究棟3F 運河側 エレベーターの前 → 研究棟3F 運河側 3",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -82.95,
+    27.54,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-4f-car-door--classroom-4f-kenkyu~1",
    "name": "研究棟4F 教室棟側 エレベーターの前 → 教室棟4F 研究棟側 1",
    "building": "研究棟",
    "floor": "4F",
@@ -9010,7 +10492,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-4f-door--classroom-4f-kenkyu~2",
+   "id": "research-4f-car-door--classroom-4f-kenkyu~2",
    "name": "研究棟4F 教室棟側 エレベーターの前 → 教室棟4F 研究棟側 2",
    "building": "研究棟",
    "floor": "4F",
@@ -9025,7 +10507,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-5f-door--classroom-5f-kenkyu~1",
+   "id": "research-4f-east-car-door--research-4f-east~1",
+   "name": "研究棟4F 運河側 エレベーターの前 → 研究棟4F 運河側 1",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -82.49,
+    13.32,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-4f-east-car-door--research-4f-east~2",
+   "name": "研究棟4F 運河側 エレベーターの前 → 研究棟4F 運河側 2",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -75.61,
+    20.75,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-4f-east-car-door--research-4f-east~3",
+   "name": "研究棟4F 運河側 エレベーターの前 → 研究棟4F 運河側 3",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -82.95,
+    27.54,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-5f-car-door--classroom-5f-kenkyu~1",
    "name": "研究棟5F 教室棟側 エレベーターの前 → 教室棟5F 研究棟側 1",
    "building": "研究棟",
    "floor": "5F",
@@ -9040,7 +10567,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-6f-door--classroom-research-6f-mouth~1",
+   "id": "research-5f-east-car-door--research-5f-east~1",
+   "name": "研究棟5F 運河側 エレベーターの前 → 研究棟5F 運河側 1",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -82.49,
+    13.32,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-5f-east-car-door--research-5f-east~2",
+   "name": "研究棟5F 運河側 エレベーターの前 → 研究棟5F 運河側 2",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -75.61,
+    20.75,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-5f-east-car-door--research-5f-east~3",
+   "name": "研究棟5F 運河側 エレベーターの前 → 研究棟5F 運河側 3",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -82.95,
+    27.54,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-car-door--classroom-research-6f-mouth~1",
    "name": "研究棟6F 教室棟側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 教室棟側の口 1",
    "building": "研究棟",
    "floor": "6F",
@@ -9055,7 +10627,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-6f-door--classroom-research-6f-mouth~2",
+   "id": "research-6f-car-door--classroom-research-6f-mouth~2",
    "name": "研究棟6F 教室棟側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 教室棟側の口 2",
    "building": "研究棟",
    "floor": "6F",
@@ -9070,7 +10642,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-6f-east-door--research-6f-bridge-end~1",
+   "id": "research-6f-east-car-door--research-6f-bridge-end~1",
    "name": "研究棟6F 運河側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 研究棟側の端 1",
    "building": "研究棟",
    "floor": "6F",
@@ -9085,7 +10657,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-6f-east-door--research-6f-bridge-end~2",
+   "id": "research-6f-east-car-door--research-6f-bridge-end~2",
    "name": "研究棟6F 運河側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 研究棟側の端 2",
    "building": "研究棟",
    "floor": "6F",
@@ -9100,7 +10672,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-6f-east-door--research-6f-bridge-end~3",
+   "id": "research-6f-east-car-door--research-6f-bridge-end~3",
    "name": "研究棟6F 運河側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 研究棟側の端 3",
    "building": "研究棟",
    "floor": "6F",
@@ -9115,7 +10687,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-6f-east-door--research-6f-bridge-end~4",
+   "id": "research-6f-east-car-door--research-6f-bridge-end~4",
    "name": "研究棟6F 運河側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 研究棟側の端 4",
    "building": "研究棟",
    "floor": "6F",
@@ -9130,7 +10702,82 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-8f-door--classroom-8f-kenkyu~1",
+   "id": "research-6f-east-car-door--research-6f-east~1",
+   "name": "研究棟6F 運河側 エレベーターの前 → 研究棟6F 運河側 1",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -82.49,
+    13.32,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-east-car-door--research-6f-east~2",
+   "name": "研究棟6F 運河側 エレベーターの前 → 研究棟6F 運河側 2",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -75.61,
+    20.75,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-east-car-door--research-6f-east~3",
+   "name": "研究棟6F 運河側 エレベーターの前 → 研究棟6F 運河側 3",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -82.95,
+    27.54,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-7f-east-car-door--research-7f-east~1",
+   "name": "研究棟7F 運河側 エレベーターの前 → 研究棟7F 運河側 1",
+   "building": "研究棟",
+   "floor": "7F",
+   "blender": [
+    -82.58,
+    13.41,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-7f-east-car-door--research-7f-east~2",
+   "name": "研究棟7F 運河側 エレベーターの前 → 研究棟7F 運河側 2",
+   "building": "研究棟",
+   "floor": "7F",
+   "blender": [
+    -75.45,
+    21.11,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-car-door--classroom-8f-kenkyu~1",
    "name": "研究棟8F 教室棟側 エレベーターの前 → 教室棟8F 研究棟側 1",
    "building": "研究棟",
    "floor": "8F",
@@ -9145,7 +10792,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~1",
+   "id": "research-8f-car-door--research-8f~1",
+   "name": "研究棟8F 教室棟側 エレベーターの前 → 研究棟8F 教室棟側 1",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -112.03,
+    48.38,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-car-door--research-8f-east~1",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 運河側 1",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -82.49,
+    13.32,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-car-door--research-8f-east~2",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 運河側 2",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -75.7,
+    20.66,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-car-door--research-8f-car-door~1",
    "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 1",
    "building": "研究棟",
    "floor": "8F",
@@ -9160,7 +10852,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~2",
+   "id": "research-8f-east-car-door--research-8f-car-door~2",
    "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 2",
    "building": "研究棟",
    "floor": "8F",
@@ -9175,7 +10867,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~3",
+   "id": "research-8f-east-car-door--research-8f-car-door~3",
    "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 3",
    "building": "研究棟",
    "floor": "8F",
@@ -9190,7 +10882,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~4",
+   "id": "research-8f-east-car-door--research-8f-car-door~4",
    "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 4",
    "building": "研究棟",
    "floor": "8F",
@@ -9205,7 +10897,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~5",
+   "id": "research-8f-east-car-door--research-8f-car-door~5",
    "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 5",
    "building": "研究棟",
    "floor": "8F",
@@ -9220,7 +10912,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~6",
+   "id": "research-8f-east-car-door--research-8f-car-door~6",
    "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 6",
    "building": "研究棟",
    "floor": "8F",
@@ -9235,7 +10927,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~7",
+   "id": "research-8f-east-car-door--research-8f-car-door~7",
    "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 7",
    "building": "研究棟",
    "floor": "8F",
@@ -9250,7 +10942,52 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-9f-east-door--research-9f-door~1",
+   "id": "research-9f-car-door--research-9f~1",
+   "name": "研究棟9F 教室棟側 エレベーターの前 → 研究棟9F 教室棟側 1",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -109.15,
+    51.5,
+    40.5
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-east~1",
+   "name": "研究棟9F 運河側 エレベーターの前 → 研究棟9F 運河側 1",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -82.49,
+    13.32,
+    40.5
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-east~2",
+   "name": "研究棟9F 運河側 エレベーターの前 → 研究棟9F 運河側 2",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -75.7,
+    20.66,
+    40.5
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-car-door~1",
    "name": "研究棟9F 運河側 エレベーターの前 → 研究棟9F 教室棟側 エレベーターの前 1",
    "building": "研究棟",
    "floor": "9F",
@@ -9265,7 +11002,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-9f-east-door--research-9f-door~2",
+   "id": "research-9f-east-car-door--research-9f-car-door~2",
    "name": "研究棟9F 運河側 エレベーターの前 → 研究棟9F 教室棟側 エレベーターの前 2",
    "building": "研究棟",
    "floor": "9F",
@@ -9280,7 +11017,7 @@
    "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   },
   {
-   "id": "research-9f-east-door--research-9f-door~3",
+   "id": "research-9f-east-car-door--research-9f-car-door~3",
    "name": "研究棟9F 運河側 エレベーターの前 → 研究棟9F 教室棟側 エレベーターの前 3",
    "building": "研究棟",
    "floor": "9F",
@@ -11307,81 +13044,81 @@
    "kind": "stairs"
   },
   {
-   "id": "research-1f--research-2f",
-   "from": "research-1f",
-   "to": "research-2f",
+   "id": "research-1f-car--research-2f-car",
+   "from": "research-1f-car",
+   "to": "research-2f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-2f--research-3f",
-   "from": "research-2f",
-   "to": "research-3f",
+   "id": "research-2f-car--research-3f-car",
+   "from": "research-2f-car",
+   "to": "research-3f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-3f--research-4f",
-   "from": "research-3f",
-   "to": "research-4f",
+   "id": "research-3f-car--research-4f-car",
+   "from": "research-3f-car",
+   "to": "research-4f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-4f--research-5f",
-   "from": "research-4f",
-   "to": "research-5f",
+   "id": "research-4f-car--research-5f-car",
+   "from": "research-4f-car",
+   "to": "research-5f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-5f--research-6f",
-   "from": "research-5f",
-   "to": "research-6f",
+   "id": "research-5f-car--research-6f-car",
+   "from": "research-5f-car",
+   "to": "research-6f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-6f--research-7f",
-   "from": "research-6f",
-   "to": "research-7f",
+   "id": "research-6f-car--research-7f-car",
+   "from": "research-6f-car",
+   "to": "research-7f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-7f--research-8f",
-   "from": "research-7f",
-   "to": "research-8f",
+   "id": "research-7f-car--research-8f-car",
+   "from": "research-7f-car",
+   "to": "research-8f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-8f--research-9f",
-   "from": "research-8f",
-   "to": "research-9f",
+   "id": "research-8f-car--research-9f-car",
+   "from": "research-8f-car",
+   "to": "research-9f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-9f--research-10f",
-   "from": "research-9f",
-   "to": "research-10f",
+   "id": "research-9f-car--research-10f-car",
+   "from": "research-9f-car",
+   "to": "research-10f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-10f--research-11f",
-   "from": "research-10f",
-   "to": "research-11f",
+   "id": "research-10f-car--research-11f-car",
+   "from": "research-10f-car",
+   "to": "research-11f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-11f--research-12f",
-   "from": "research-11f",
-   "to": "research-12f",
+   "id": "research-11f-car--research-12f-car",
+   "from": "research-11f-car",
+   "to": "research-12f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-12f--research-13f",
-   "from": "research-12f",
-   "to": "research-13f",
+   "id": "research-12f-car--research-13f-car",
+   "from": "research-12f-car",
+   "to": "research-13f-car",
    "kind": "elevator"
   },
   {
-   "id": "research-13f--research-14f",
-   "from": "research-13f",
-   "to": "research-14f",
+   "id": "research-13f-car--research-14f-car",
+   "from": "research-13f-car",
+   "to": "research-14f-car",
    "kind": "elevator"
   },
   {
@@ -11469,81 +13206,81 @@
    "kind": "indoor"
   },
   {
-   "id": "research-1f-east--research-2f-east",
-   "from": "research-1f-east",
-   "to": "research-2f-east",
+   "id": "research-1f-east-car--research-2f-east-car",
+   "from": "research-1f-east-car",
+   "to": "research-2f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-2f-east--research-3f-east",
-   "from": "research-2f-east",
-   "to": "research-3f-east",
+   "id": "research-2f-east-car--research-3f-east-car",
+   "from": "research-2f-east-car",
+   "to": "research-3f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-3f-east--research-4f-east",
-   "from": "research-3f-east",
-   "to": "research-4f-east",
+   "id": "research-3f-east-car--research-4f-east-car",
+   "from": "research-3f-east-car",
+   "to": "research-4f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-4f-east--research-5f-east",
-   "from": "research-4f-east",
-   "to": "research-5f-east",
+   "id": "research-4f-east-car--research-5f-east-car",
+   "from": "research-4f-east-car",
+   "to": "research-5f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-5f-east--research-6f-east",
-   "from": "research-5f-east",
-   "to": "research-6f-east",
+   "id": "research-5f-east-car--research-6f-east-car",
+   "from": "research-5f-east-car",
+   "to": "research-6f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-6f-east--research-7f-east",
-   "from": "research-6f-east",
-   "to": "research-7f-east",
+   "id": "research-6f-east-car--research-7f-east-car",
+   "from": "research-6f-east-car",
+   "to": "research-7f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-7f-east--research-8f-east",
-   "from": "research-7f-east",
-   "to": "research-8f-east",
+   "id": "research-7f-east-car--research-8f-east-car",
+   "from": "research-7f-east-car",
+   "to": "research-8f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-8f-east--research-9f-east",
-   "from": "research-8f-east",
-   "to": "research-9f-east",
+   "id": "research-8f-east-car--research-9f-east-car",
+   "from": "research-8f-east-car",
+   "to": "research-9f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-9f-east--research-10f-east",
-   "from": "research-9f-east",
-   "to": "research-10f-east",
+   "id": "research-9f-east-car--research-10f-east-car",
+   "from": "research-9f-east-car",
+   "to": "research-10f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-10f-east--research-11f-east",
-   "from": "research-10f-east",
-   "to": "research-11f-east",
+   "id": "research-10f-east-car--research-11f-east-car",
+   "from": "research-10f-east-car",
+   "to": "research-11f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-11f-east--research-12f-east",
-   "from": "research-11f-east",
-   "to": "research-12f-east",
+   "id": "research-11f-east-car--research-12f-east-car",
+   "from": "research-11f-east-car",
+   "to": "research-12f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-12f-east--research-13f-east",
-   "from": "research-12f-east",
-   "to": "research-13f-east",
+   "id": "research-12f-east-car--research-13f-east-car",
+   "from": "research-12f-east-car",
+   "to": "research-13f-east-car",
    "kind": "elevator"
   },
   {
-   "id": "research-13f-east--research-14f-east",
-   "from": "research-13f-east",
-   "to": "research-14f-east",
+   "id": "research-13f-east-car--research-14f-east-car",
+   "from": "research-13f-east-car",
+   "to": "research-14f-east-car",
    "kind": "elevator"
   },
   {
@@ -11661,21 +13398,9 @@
    "kind": "indoor"
   },
   {
-   "id": "hq-10f-car-door--hq-10f",
-   "from": "hq-10f-car-door",
-   "to": "hq-10f",
-   "kind": "indoor"
-  },
-  {
    "id": "hq-10f-car--hq-10f-car-door",
    "from": "hq-10f-car",
    "to": "hq-10f-car-door",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-11f-car-door--hq-11f",
-   "from": "hq-11f-car-door",
-   "to": "hq-11f",
    "kind": "indoor"
   },
   {
@@ -11685,21 +13410,9 @@
    "kind": "indoor"
   },
   {
-   "id": "hq-12f-car-door--hq-12f",
-   "from": "hq-12f-car-door",
-   "to": "hq-12f",
-   "kind": "indoor"
-  },
-  {
    "id": "hq-12f-car--hq-12f-car-door",
    "from": "hq-12f-car",
    "to": "hq-12f-car-door",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-13f-car-door--hq-13f",
-   "from": "hq-13f-car-door",
-   "to": "hq-13f",
    "kind": "indoor"
   },
   {
@@ -11709,21 +13422,9 @@
    "kind": "indoor"
   },
   {
-   "id": "hq-14f-car-door--hq-14f",
-   "from": "hq-14f-car-door",
-   "to": "hq-14f",
-   "kind": "indoor"
-  },
-  {
    "id": "hq-14f-car--hq-14f-car-door",
    "from": "hq-14f-car",
    "to": "hq-14f-car-door",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-1f-car-door--hq-1f-ev",
-   "from": "hq-1f-car-door",
-   "to": "hq-1f-ev",
    "kind": "indoor"
   },
   {
@@ -11769,12 +13470,6 @@
    "kind": "indoor"
   },
   {
-   "id": "hq-5f-car-door--hq-5f",
-   "from": "hq-5f-car-door",
-   "to": "hq-5f",
-   "kind": "indoor"
-  },
-  {
    "id": "hq-5f-car--hq-5f-car-door",
    "from": "hq-5f-car",
    "to": "hq-5f-car-door",
@@ -11793,21 +13488,9 @@
    "kind": "indoor"
   },
   {
-   "id": "hq-7f-car-door--hq-7f",
-   "from": "hq-7f-car-door",
-   "to": "hq-7f",
-   "kind": "indoor"
-  },
-  {
    "id": "hq-7f-car--hq-7f-car-door",
    "from": "hq-7f-car",
    "to": "hq-7f-car-door",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-8f-car-door--hq-8f",
-   "from": "hq-8f-car-door",
-   "to": "hq-8f",
    "kind": "indoor"
   },
   {
@@ -11817,195 +13500,267 @@
    "kind": "indoor"
   },
   {
-   "id": "hq-9f-car-door--hq-9f",
-   "from": "hq-9f-car-door",
-   "to": "hq-9f",
-   "kind": "indoor"
-  },
-  {
    "id": "hq-9f-car--hq-9f-car-door",
    "from": "hq-9f-car",
    "to": "hq-9f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-10f--research-10f-door",
-   "from": "research-10f",
-   "to": "research-10f-door",
+   "id": "research-10f-car--research-10f-car-door",
+   "from": "research-10f-car",
+   "to": "research-10f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-10f-east--research-10f-east-door",
-   "from": "research-10f-east",
-   "to": "research-10f-east-door",
+   "id": "research-10f-east-car--research-10f-east-car-door",
+   "from": "research-10f-east-car",
+   "to": "research-10f-east-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-11f--research-11f-door",
-   "from": "research-11f",
-   "to": "research-11f-door",
+   "id": "research-11f-car--research-11f-car-door",
+   "from": "research-11f-car",
+   "to": "research-11f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-11f-east--research-11f-east-door",
-   "from": "research-11f-east",
-   "to": "research-11f-east-door",
+   "id": "research-11f-east-car--research-11f-east-car-door",
+   "from": "research-11f-east-car",
+   "to": "research-11f-east-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-12f--research-12f-door",
-   "from": "research-12f",
-   "to": "research-12f-door",
+   "id": "research-12f-car--research-12f-car-door",
+   "from": "research-12f-car",
+   "to": "research-12f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-12f-east--research-12f-east-door",
-   "from": "research-12f-east",
-   "to": "research-12f-east-door",
+   "id": "research-12f-east-car--research-12f-east-car-door",
+   "from": "research-12f-east-car",
+   "to": "research-12f-east-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-13f--research-13f-door",
-   "from": "research-13f",
-   "to": "research-13f-door",
+   "id": "research-13f-car--research-13f-car-door",
+   "from": "research-13f-car",
+   "to": "research-13f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-13f-east--research-13f-east-door",
-   "from": "research-13f-east",
-   "to": "research-13f-east-door",
+   "id": "research-13f-east-car--research-13f-east-car-door",
+   "from": "research-13f-east-car",
+   "to": "research-13f-east-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-14f--research-14f-door",
-   "from": "research-14f",
-   "to": "research-14f-door",
+   "id": "research-14f-car--research-14f-car-door",
+   "from": "research-14f-car",
+   "to": "research-14f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-14f-east--research-14f-east-door",
-   "from": "research-14f-east",
-   "to": "research-14f-east-door",
+   "id": "research-14f-east-car--research-14f-east-car-door",
+   "from": "research-14f-east-car",
+   "to": "research-14f-east-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-door--classroom-2f-kenkyu",
-   "from": "research-2f-door",
+   "id": "research-1f-car-door--classroom-1f-kenkyu",
+   "from": "research-1f-car-door",
+   "to": "classroom-1f-kenkyu",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-car-door--research-1f",
+   "from": "research-1f-car-door",
+   "to": "research-1f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-car--research-1f-car-door",
+   "from": "research-1f-car",
+   "to": "research-1f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-east-car--research-1f-east-car-door",
+   "from": "research-1f-east-car",
+   "to": "research-1f-east-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-car-door--classroom-2f-kenkyu",
+   "from": "research-2f-car-door",
    "to": "classroom-2f-kenkyu",
    "kind": "indoor"
   },
   {
-   "id": "research-2f--research-2f-door",
-   "from": "research-2f",
-   "to": "research-2f-door",
+   "id": "research-2f-car--research-2f-car-door",
+   "from": "research-2f-car",
+   "to": "research-2f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-east--research-2f-east-door",
-   "from": "research-2f-east",
-   "to": "research-2f-east-door",
+   "id": "research-2f-east-car--research-2f-east-car-door",
+   "from": "research-2f-east-car",
+   "to": "research-2f-east-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-3f-door--k3-019",
-   "from": "research-3f-door",
+   "id": "research-3f-car-door--k3-019",
+   "from": "research-3f-car-door",
    "to": "k3-019",
    "kind": "indoor"
   },
   {
-   "id": "research-3f--research-3f-door",
-   "from": "research-3f",
-   "to": "research-3f-door",
+   "id": "research-3f-car-door--research-3f",
+   "from": "research-3f-car-door",
+   "to": "research-3f",
    "kind": "indoor"
   },
   {
-   "id": "research-4f-door--k4-019",
-   "from": "research-4f-door",
+   "id": "research-3f-car--research-3f-car-door",
+   "from": "research-3f-car",
+   "to": "research-3f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-east-car--research-3f-east-car-door",
+   "from": "research-3f-east-car",
+   "to": "research-3f-east-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-car-door--k4-019",
+   "from": "research-4f-car-door",
    "to": "k4-019",
    "kind": "indoor"
   },
   {
-   "id": "research-4f--research-4f-door",
-   "from": "research-4f",
-   "to": "research-4f-door",
+   "id": "research-4f-car-door--research-4f",
+   "from": "research-4f-car-door",
+   "to": "research-4f",
    "kind": "indoor"
   },
   {
-   "id": "research-5f-door--k5-021",
-   "from": "research-5f-door",
+   "id": "research-4f-car--research-4f-car-door",
+   "from": "research-4f-car",
+   "to": "research-4f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-east-car--research-4f-east-car-door",
+   "from": "research-4f-east-car",
+   "to": "research-4f-east-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f-car-door--k5-021",
+   "from": "research-5f-car-door",
    "to": "k5-021",
    "kind": "indoor"
   },
   {
-   "id": "research-5f--research-5f-door",
-   "from": "research-5f",
-   "to": "research-5f-door",
+   "id": "research-5f-car-door--research-5f",
+   "from": "research-5f-car-door",
+   "to": "research-5f",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-door--k6-015",
-   "from": "research-6f-door",
+   "id": "research-5f-car--research-5f-car-door",
+   "from": "research-5f-car",
+   "to": "research-5f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f-east-car--research-5f-east-car-door",
+   "from": "research-5f-east-car",
+   "to": "research-5f-east-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-car-door--k6-015",
+   "from": "research-6f-car-door",
    "to": "k6-015",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-door--classroom-6f-kenkyu",
-   "from": "research-6f-door",
+   "id": "research-6f-car-door--classroom-6f-kenkyu",
+   "from": "research-6f-car-door",
    "to": "classroom-6f-kenkyu",
    "kind": "indoor"
   },
   {
-   "id": "research-6f--research-6f-door",
-   "from": "research-6f",
-   "to": "research-6f-door",
+   "id": "research-6f-car-door--research-6f",
+   "from": "research-6f-car-door",
+   "to": "research-6f",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-east--research-6f-east-door",
-   "from": "research-6f-east",
-   "to": "research-6f-east-door",
+   "id": "research-6f-car--research-6f-car-door",
+   "from": "research-6f-car",
+   "to": "research-6f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-7f-door--classroom-7f-kenkyu",
-   "from": "research-7f-door",
+   "id": "research-6f-east-car--research-6f-east-car-door",
+   "from": "research-6f-east-car",
+   "to": "research-6f-east-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-7f-car-door--classroom-7f-kenkyu",
+   "from": "research-7f-car-door",
    "to": "classroom-7f-kenkyu",
    "kind": "indoor"
   },
   {
-   "id": "research-7f--research-7f-door",
-   "from": "research-7f",
-   "to": "research-7f-door",
+   "id": "research-7f-car-door--research-7f",
+   "from": "research-7f-car-door",
+   "to": "research-7f",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-door--classroom-8f",
-   "from": "research-8f-door",
+   "id": "research-7f-car--research-7f-car-door",
+   "from": "research-7f-car",
+   "to": "research-7f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-7f-east-car--research-7f-east-car-door",
+   "from": "research-7f-east-car",
+   "to": "research-7f-east-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-car-door--classroom-8f",
+   "from": "research-8f-car-door",
    "to": "classroom-8f",
    "kind": "indoor"
   },
   {
-   "id": "research-8f--research-8f-door",
-   "from": "research-8f",
-   "to": "research-8f-door",
+   "id": "research-8f-car--research-8f-car-door",
+   "from": "research-8f-car",
+   "to": "research-8f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east--research-8f-east-door",
-   "from": "research-8f-east",
-   "to": "research-8f-east-door",
+   "id": "research-8f-east-car--research-8f-east-car-door",
+   "from": "research-8f-east-car",
+   "to": "research-8f-east-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-9f--research-9f-door",
-   "from": "research-9f",
-   "to": "research-9f-door",
+   "id": "research-9f-car--research-9f-car-door",
+   "from": "research-9f-car",
+   "to": "research-9f-car-door",
    "kind": "indoor"
   },
   {
-   "id": "research-9f-east--research-9f-east-door",
-   "from": "research-9f-east",
-   "to": "research-9f-east-door",
+   "id": "research-9f-east-car--research-9f-east-car-door",
+   "from": "research-9f-east-car",
+   "to": "research-9f-east-car-door",
    "kind": "indoor"
   },
   {
@@ -12429,18 +14184,6 @@
    "kind": "indoor"
   },
   {
-   "id": "research-1f--research-1f--research-1f-door~1",
-   "from": "research-1f",
-   "to": "research-1f--research-1f-door~1",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-1f--research-1f-door~1--research-1f-door",
-   "from": "research-1f--research-1f-door~1",
-   "to": "research-1f-door",
-   "kind": "indoor"
-  },
-  {
    "id": "research-1f-door--research-1f-door--classroom-research-corner~1",
    "from": "research-1f-door",
    "to": "research-1f-door--classroom-research-corner~1",
@@ -12498,24 +14241,6 @@
    "id": "classroom-1f-kenkyu--k1-005~4--k1-005",
    "from": "classroom-1f-kenkyu--k1-005~4",
    "to": "k1-005",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-1f-kenkyu--classroom-1f-kenkyu--research-1f~1",
-   "from": "classroom-1f-kenkyu",
-   "to": "classroom-1f-kenkyu--research-1f~1",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-1f-kenkyu--research-1f~1--classroom-1f-kenkyu--research-1f~2",
-   "from": "classroom-1f-kenkyu--research-1f~1",
-   "to": "classroom-1f-kenkyu--research-1f~2",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-1f-kenkyu--research-1f~2--research-1f",
-   "from": "classroom-1f-kenkyu--research-1f~2",
-   "to": "research-1f",
    "kind": "indoor"
   },
   {
@@ -12825,369 +14550,1059 @@
    "kind": "indoor"
   },
   {
-   "id": "research-10f-east-door--research-10f-east-door--research-10f-door~1",
-   "from": "research-10f-east-door",
-   "to": "research-10f-east-door--research-10f-door~1",
+   "id": "hq-10f-car-door--hq-10f-car-door--hq-10f~1",
+   "from": "hq-10f-car-door",
+   "to": "hq-10f-car-door--hq-10f~1",
    "kind": "indoor"
   },
   {
-   "id": "research-10f-east-door--research-10f-door~1--research-10f-east-door--research-10f-door~2",
-   "from": "research-10f-east-door--research-10f-door~1",
-   "to": "research-10f-east-door--research-10f-door~2",
+   "id": "hq-10f-car-door--hq-10f~1--hq-10f-car-door--hq-10f~2",
+   "from": "hq-10f-car-door--hq-10f~1",
+   "to": "hq-10f-car-door--hq-10f~2",
    "kind": "indoor"
   },
   {
-   "id": "research-10f-east-door--research-10f-door~2--research-10f-east-door--research-10f-door~3",
-   "from": "research-10f-east-door--research-10f-door~2",
-   "to": "research-10f-east-door--research-10f-door~3",
+   "id": "hq-10f-car-door--hq-10f~2--hq-10f-car-door--hq-10f~3",
+   "from": "hq-10f-car-door--hq-10f~2",
+   "to": "hq-10f-car-door--hq-10f~3",
    "kind": "indoor"
   },
   {
-   "id": "research-10f-east-door--research-10f-door~3--research-10f-door",
-   "from": "research-10f-east-door--research-10f-door~3",
-   "to": "research-10f-door",
+   "id": "hq-10f-car-door--hq-10f~3--hq-10f-car-door--hq-10f~4",
+   "from": "hq-10f-car-door--hq-10f~3",
+   "to": "hq-10f-car-door--hq-10f~4",
    "kind": "indoor"
   },
   {
-   "id": "research-11f-east-door--research-11f-east-door--research-11f-door~1",
-   "from": "research-11f-east-door",
-   "to": "research-11f-east-door--research-11f-door~1",
+   "id": "hq-10f-car-door--hq-10f~4--hq-10f-car-door--hq-10f~5",
+   "from": "hq-10f-car-door--hq-10f~4",
+   "to": "hq-10f-car-door--hq-10f~5",
    "kind": "indoor"
   },
   {
-   "id": "research-11f-east-door--research-11f-door~1--research-11f-east-door--research-11f-door~2",
-   "from": "research-11f-east-door--research-11f-door~1",
-   "to": "research-11f-east-door--research-11f-door~2",
+   "id": "hq-10f-car-door--hq-10f~5--hq-10f",
+   "from": "hq-10f-car-door--hq-10f~5",
+   "to": "hq-10f",
    "kind": "indoor"
   },
   {
-   "id": "research-11f-east-door--research-11f-door~2--research-11f-east-door--research-11f-door~3",
-   "from": "research-11f-east-door--research-11f-door~2",
-   "to": "research-11f-east-door--research-11f-door~3",
+   "id": "hq-11f-car-door--hq-11f-car-door--hq-11f~1",
+   "from": "hq-11f-car-door",
+   "to": "hq-11f-car-door--hq-11f~1",
    "kind": "indoor"
   },
   {
-   "id": "research-11f-east-door--research-11f-door~3--research-11f-door",
-   "from": "research-11f-east-door--research-11f-door~3",
-   "to": "research-11f-door",
+   "id": "hq-11f-car-door--hq-11f~1--hq-11f-car-door--hq-11f~2",
+   "from": "hq-11f-car-door--hq-11f~1",
+   "to": "hq-11f-car-door--hq-11f~2",
    "kind": "indoor"
   },
   {
-   "id": "research-12f-east-door--research-12f-east-door--research-12f-door~1",
-   "from": "research-12f-east-door",
-   "to": "research-12f-east-door--research-12f-door~1",
+   "id": "hq-11f-car-door--hq-11f~2--hq-11f-car-door--hq-11f~3",
+   "from": "hq-11f-car-door--hq-11f~2",
+   "to": "hq-11f-car-door--hq-11f~3",
    "kind": "indoor"
   },
   {
-   "id": "research-12f-east-door--research-12f-door~1--research-12f-east-door--research-12f-door~2",
-   "from": "research-12f-east-door--research-12f-door~1",
-   "to": "research-12f-east-door--research-12f-door~2",
+   "id": "hq-11f-car-door--hq-11f~3--hq-11f-car-door--hq-11f~4",
+   "from": "hq-11f-car-door--hq-11f~3",
+   "to": "hq-11f-car-door--hq-11f~4",
    "kind": "indoor"
   },
   {
-   "id": "research-12f-east-door--research-12f-door~2--research-12f-east-door--research-12f-door~3",
-   "from": "research-12f-east-door--research-12f-door~2",
-   "to": "research-12f-east-door--research-12f-door~3",
+   "id": "hq-11f-car-door--hq-11f~4--hq-11f-car-door--hq-11f~5",
+   "from": "hq-11f-car-door--hq-11f~4",
+   "to": "hq-11f-car-door--hq-11f~5",
    "kind": "indoor"
   },
   {
-   "id": "research-12f-east-door--research-12f-door~3--research-12f-door",
-   "from": "research-12f-east-door--research-12f-door~3",
-   "to": "research-12f-door",
+   "id": "hq-11f-car-door--hq-11f~5--hq-11f",
+   "from": "hq-11f-car-door--hq-11f~5",
+   "to": "hq-11f",
    "kind": "indoor"
   },
   {
-   "id": "research-13f-east-door--research-13f-east-door--research-13f-door~1",
-   "from": "research-13f-east-door",
-   "to": "research-13f-east-door--research-13f-door~1",
+   "id": "hq-12f-car-door--hq-12f-car-door--hq-12f~1",
+   "from": "hq-12f-car-door",
+   "to": "hq-12f-car-door--hq-12f~1",
    "kind": "indoor"
   },
   {
-   "id": "research-13f-east-door--research-13f-door~1--research-13f-east-door--research-13f-door~2",
-   "from": "research-13f-east-door--research-13f-door~1",
-   "to": "research-13f-east-door--research-13f-door~2",
+   "id": "hq-12f-car-door--hq-12f~1--hq-12f-car-door--hq-12f~2",
+   "from": "hq-12f-car-door--hq-12f~1",
+   "to": "hq-12f-car-door--hq-12f~2",
    "kind": "indoor"
   },
   {
-   "id": "research-13f-east-door--research-13f-door~2--research-13f-east-door--research-13f-door~3",
-   "from": "research-13f-east-door--research-13f-door~2",
-   "to": "research-13f-east-door--research-13f-door~3",
+   "id": "hq-12f-car-door--hq-12f~2--hq-12f-car-door--hq-12f~3",
+   "from": "hq-12f-car-door--hq-12f~2",
+   "to": "hq-12f-car-door--hq-12f~3",
    "kind": "indoor"
   },
   {
-   "id": "research-13f-east-door--research-13f-door~3--research-13f-door",
-   "from": "research-13f-east-door--research-13f-door~3",
-   "to": "research-13f-door",
+   "id": "hq-12f-car-door--hq-12f~3--hq-12f-car-door--hq-12f~4",
+   "from": "hq-12f-car-door--hq-12f~3",
+   "to": "hq-12f-car-door--hq-12f~4",
    "kind": "indoor"
   },
   {
-   "id": "research-14f-east-door--research-14f-east-door--research-14f-door~1",
-   "from": "research-14f-east-door",
-   "to": "research-14f-east-door--research-14f-door~1",
+   "id": "hq-12f-car-door--hq-12f~4--hq-12f-car-door--hq-12f~5",
+   "from": "hq-12f-car-door--hq-12f~4",
+   "to": "hq-12f-car-door--hq-12f~5",
    "kind": "indoor"
   },
   {
-   "id": "research-14f-east-door--research-14f-door~1--research-14f-east-door--research-14f-door~2",
-   "from": "research-14f-east-door--research-14f-door~1",
-   "to": "research-14f-east-door--research-14f-door~2",
+   "id": "hq-12f-car-door--hq-12f~5--hq-12f",
+   "from": "hq-12f-car-door--hq-12f~5",
+   "to": "hq-12f",
    "kind": "indoor"
   },
   {
-   "id": "research-14f-east-door--research-14f-door~2--research-14f-east-door--research-14f-door~3",
-   "from": "research-14f-east-door--research-14f-door~2",
-   "to": "research-14f-east-door--research-14f-door~3",
+   "id": "hq-13f-car-door--hq-13f-car-door--hq-13f~1",
+   "from": "hq-13f-car-door",
+   "to": "hq-13f-car-door--hq-13f~1",
    "kind": "indoor"
   },
   {
-   "id": "research-14f-east-door--research-14f-door~3--research-14f-door",
-   "from": "research-14f-east-door--research-14f-door~3",
-   "to": "research-14f-door",
+   "id": "hq-13f-car-door--hq-13f~1--hq-13f-car-door--hq-13f~2",
+   "from": "hq-13f-car-door--hq-13f~1",
+   "to": "hq-13f-car-door--hq-13f~2",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-door--research-2f-door--research-gate~1",
-   "from": "research-2f-door",
-   "to": "research-2f-door--research-gate~1",
+   "id": "hq-13f-car-door--hq-13f~2--hq-13f-car-door--hq-13f~3",
+   "from": "hq-13f-car-door--hq-13f~2",
+   "to": "hq-13f-car-door--hq-13f~3",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-door--research-gate~1--research-2f-door--research-gate~2",
-   "from": "research-2f-door--research-gate~1",
-   "to": "research-2f-door--research-gate~2",
+   "id": "hq-13f-car-door--hq-13f~3--hq-13f-car-door--hq-13f~4",
+   "from": "hq-13f-car-door--hq-13f~3",
+   "to": "hq-13f-car-door--hq-13f~4",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-door--research-gate~2--research-gate",
-   "from": "research-2f-door--research-gate~2",
+   "id": "hq-13f-car-door--hq-13f~4--hq-13f-car-door--hq-13f~5",
+   "from": "hq-13f-car-door--hq-13f~4",
+   "to": "hq-13f-car-door--hq-13f~5",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-13f-car-door--hq-13f~5--hq-13f",
+   "from": "hq-13f-car-door--hq-13f~5",
+   "to": "hq-13f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f-car-door--hq-14f~1",
+   "from": "hq-14f-car-door",
+   "to": "hq-14f-car-door--hq-14f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~1--hq-14f-car-door--hq-14f~2",
+   "from": "hq-14f-car-door--hq-14f~1",
+   "to": "hq-14f-car-door--hq-14f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~2--hq-14f-car-door--hq-14f~3",
+   "from": "hq-14f-car-door--hq-14f~2",
+   "to": "hq-14f-car-door--hq-14f~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~3--hq-14f-car-door--hq-14f~4",
+   "from": "hq-14f-car-door--hq-14f~3",
+   "to": "hq-14f-car-door--hq-14f~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~4--hq-14f-car-door--hq-14f~5",
+   "from": "hq-14f-car-door--hq-14f~4",
+   "to": "hq-14f-car-door--hq-14f~5",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f~5--hq-14f",
+   "from": "hq-14f-car-door--hq-14f~5",
+   "to": "hq-14f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-1f-car-door--hq-1f-car-door--hq-1f-ev~1",
+   "from": "hq-1f-car-door",
+   "to": "hq-1f-car-door--hq-1f-ev~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-1f-car-door--hq-1f-ev~1--hq-1f-car-door--hq-1f-ev~2",
+   "from": "hq-1f-car-door--hq-1f-ev~1",
+   "to": "hq-1f-car-door--hq-1f-ev~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-1f-car-door--hq-1f-ev~2--hq-1f-car-door--hq-1f-ev~3",
+   "from": "hq-1f-car-door--hq-1f-ev~2",
+   "to": "hq-1f-car-door--hq-1f-ev~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-1f-car-door--hq-1f-ev~3--hq-1f-ev",
+   "from": "hq-1f-car-door--hq-1f-ev~3",
+   "to": "hq-1f-ev",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-5f-car-door--hq-5f-car-door--hq-5f~1",
+   "from": "hq-5f-car-door",
+   "to": "hq-5f-car-door--hq-5f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-5f-car-door--hq-5f~1--hq-5f-car-door--hq-5f~2",
+   "from": "hq-5f-car-door--hq-5f~1",
+   "to": "hq-5f-car-door--hq-5f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-5f-car-door--hq-5f~2--hq-5f-car-door--hq-5f~3",
+   "from": "hq-5f-car-door--hq-5f~2",
+   "to": "hq-5f-car-door--hq-5f~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-5f-car-door--hq-5f~3--hq-5f",
+   "from": "hq-5f-car-door--hq-5f~3",
+   "to": "hq-5f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-7f-car-door--hq-7f-car-door--hq-7f~1",
+   "from": "hq-7f-car-door",
+   "to": "hq-7f-car-door--hq-7f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-7f-car-door--hq-7f~1--hq-7f-car-door--hq-7f~2",
+   "from": "hq-7f-car-door--hq-7f~1",
+   "to": "hq-7f-car-door--hq-7f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-7f-car-door--hq-7f~2--hq-7f-car-door--hq-7f~3",
+   "from": "hq-7f-car-door--hq-7f~2",
+   "to": "hq-7f-car-door--hq-7f~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-7f-car-door--hq-7f~3--hq-7f",
+   "from": "hq-7f-car-door--hq-7f~3",
+   "to": "hq-7f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-8f-car-door--hq-8f-car-door--hq-8f~1",
+   "from": "hq-8f-car-door",
+   "to": "hq-8f-car-door--hq-8f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-8f-car-door--hq-8f~1--hq-8f-car-door--hq-8f~2",
+   "from": "hq-8f-car-door--hq-8f~1",
+   "to": "hq-8f-car-door--hq-8f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-8f-car-door--hq-8f~2--hq-8f-car-door--hq-8f~3",
+   "from": "hq-8f-car-door--hq-8f~2",
+   "to": "hq-8f-car-door--hq-8f~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-8f-car-door--hq-8f~3--hq-8f",
+   "from": "hq-8f-car-door--hq-8f~3",
+   "to": "hq-8f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-9f-car-door--hq-9f-car-door--hq-9f~1",
+   "from": "hq-9f-car-door",
+   "to": "hq-9f-car-door--hq-9f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-9f-car-door--hq-9f~1--hq-9f-car-door--hq-9f~2",
+   "from": "hq-9f-car-door--hq-9f~1",
+   "to": "hq-9f-car-door--hq-9f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-9f-car-door--hq-9f~2--hq-9f-car-door--hq-9f~3",
+   "from": "hq-9f-car-door--hq-9f~2",
+   "to": "hq-9f-car-door--hq-9f~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-9f-car-door--hq-9f~3--hq-9f",
+   "from": "hq-9f-car-door--hq-9f~3",
+   "to": "hq-9f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-car-door--research-10f-car-door--research-10f~1",
+   "from": "research-10f-car-door",
+   "to": "research-10f-car-door--research-10f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-car-door--research-10f~1--research-10f",
+   "from": "research-10f-car-door--research-10f~1",
+   "to": "research-10f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-east-car-door--research-10f-east~1",
+   "from": "research-10f-east-car-door",
+   "to": "research-10f-east-car-door--research-10f-east~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-east~1--research-10f-east-car-door--research-10f-east~2",
+   "from": "research-10f-east-car-door--research-10f-east~1",
+   "to": "research-10f-east-car-door--research-10f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-east~2--research-10f-east",
+   "from": "research-10f-east-car-door--research-10f-east~2",
+   "to": "research-10f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-east-car-door--research-10f-car-door~1",
+   "from": "research-10f-east-car-door",
+   "to": "research-10f-east-car-door--research-10f-car-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-car-door~1--research-10f-east-car-door--research-10f-car-door~2",
+   "from": "research-10f-east-car-door--research-10f-car-door~1",
+   "to": "research-10f-east-car-door--research-10f-car-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-car-door~2--research-10f-east-car-door--research-10f-car-door~3",
+   "from": "research-10f-east-car-door--research-10f-car-door~2",
+   "to": "research-10f-east-car-door--research-10f-car-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-car-door--research-10f-car-door~3--research-10f-car-door",
+   "from": "research-10f-east-car-door--research-10f-car-door~3",
+   "to": "research-10f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-car-door--research-11f-car-door--research-11f~1",
+   "from": "research-11f-car-door",
+   "to": "research-11f-car-door--research-11f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-car-door--research-11f~1--research-11f",
+   "from": "research-11f-car-door--research-11f~1",
+   "to": "research-11f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-east-car-door--research-11f-east~1",
+   "from": "research-11f-east-car-door",
+   "to": "research-11f-east-car-door--research-11f-east~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-east~1--research-11f-east-car-door--research-11f-east~2",
+   "from": "research-11f-east-car-door--research-11f-east~1",
+   "to": "research-11f-east-car-door--research-11f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-east~2--research-11f-east",
+   "from": "research-11f-east-car-door--research-11f-east~2",
+   "to": "research-11f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-east-car-door--research-11f-car-door~1",
+   "from": "research-11f-east-car-door",
+   "to": "research-11f-east-car-door--research-11f-car-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-car-door~1--research-11f-east-car-door--research-11f-car-door~2",
+   "from": "research-11f-east-car-door--research-11f-car-door~1",
+   "to": "research-11f-east-car-door--research-11f-car-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-car-door~2--research-11f-east-car-door--research-11f-car-door~3",
+   "from": "research-11f-east-car-door--research-11f-car-door~2",
+   "to": "research-11f-east-car-door--research-11f-car-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-car-door--research-11f-car-door~3--research-11f-car-door",
+   "from": "research-11f-east-car-door--research-11f-car-door~3",
+   "to": "research-11f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-car-door--research-12f-car-door--research-12f~1",
+   "from": "research-12f-car-door",
+   "to": "research-12f-car-door--research-12f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-car-door--research-12f~1--research-12f",
+   "from": "research-12f-car-door--research-12f~1",
+   "to": "research-12f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-east-car-door--research-12f-east~1",
+   "from": "research-12f-east-car-door",
+   "to": "research-12f-east-car-door--research-12f-east~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-east~1--research-12f-east-car-door--research-12f-east~2",
+   "from": "research-12f-east-car-door--research-12f-east~1",
+   "to": "research-12f-east-car-door--research-12f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-east~2--research-12f-east",
+   "from": "research-12f-east-car-door--research-12f-east~2",
+   "to": "research-12f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-east-car-door--research-12f-car-door~1",
+   "from": "research-12f-east-car-door",
+   "to": "research-12f-east-car-door--research-12f-car-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-car-door~1--research-12f-east-car-door--research-12f-car-door~2",
+   "from": "research-12f-east-car-door--research-12f-car-door~1",
+   "to": "research-12f-east-car-door--research-12f-car-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-car-door~2--research-12f-east-car-door--research-12f-car-door~3",
+   "from": "research-12f-east-car-door--research-12f-car-door~2",
+   "to": "research-12f-east-car-door--research-12f-car-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-car-door--research-12f-car-door~3--research-12f-car-door",
+   "from": "research-12f-east-car-door--research-12f-car-door~3",
+   "to": "research-12f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-car-door--research-13f-car-door--research-13f~1",
+   "from": "research-13f-car-door",
+   "to": "research-13f-car-door--research-13f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-car-door--research-13f~1--research-13f",
+   "from": "research-13f-car-door--research-13f~1",
+   "to": "research-13f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-east-car-door--research-13f-east~1",
+   "from": "research-13f-east-car-door",
+   "to": "research-13f-east-car-door--research-13f-east~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-east~1--research-13f-east-car-door--research-13f-east~2",
+   "from": "research-13f-east-car-door--research-13f-east~1",
+   "to": "research-13f-east-car-door--research-13f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-east~2--research-13f-east",
+   "from": "research-13f-east-car-door--research-13f-east~2",
+   "to": "research-13f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-east-car-door--research-13f-car-door~1",
+   "from": "research-13f-east-car-door",
+   "to": "research-13f-east-car-door--research-13f-car-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-car-door~1--research-13f-east-car-door--research-13f-car-door~2",
+   "from": "research-13f-east-car-door--research-13f-car-door~1",
+   "to": "research-13f-east-car-door--research-13f-car-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-car-door~2--research-13f-east-car-door--research-13f-car-door~3",
+   "from": "research-13f-east-car-door--research-13f-car-door~2",
+   "to": "research-13f-east-car-door--research-13f-car-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-car-door--research-13f-car-door~3--research-13f-car-door",
+   "from": "research-13f-east-car-door--research-13f-car-door~3",
+   "to": "research-13f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-car-door--research-14f-car-door--research-14f~1",
+   "from": "research-14f-car-door",
+   "to": "research-14f-car-door--research-14f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-car-door--research-14f~1--research-14f",
+   "from": "research-14f-car-door--research-14f~1",
+   "to": "research-14f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-east-car-door--research-14f-east~1",
+   "from": "research-14f-east-car-door",
+   "to": "research-14f-east-car-door--research-14f-east~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-east~1--research-14f-east-car-door--research-14f-east~2",
+   "from": "research-14f-east-car-door--research-14f-east~1",
+   "to": "research-14f-east-car-door--research-14f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-east~2--research-14f-east",
+   "from": "research-14f-east-car-door--research-14f-east~2",
+   "to": "research-14f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-east-car-door--research-14f-car-door~1",
+   "from": "research-14f-east-car-door",
+   "to": "research-14f-east-car-door--research-14f-car-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-car-door~1--research-14f-east-car-door--research-14f-car-door~2",
+   "from": "research-14f-east-car-door--research-14f-car-door~1",
+   "to": "research-14f-east-car-door--research-14f-car-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-car-door~2--research-14f-east-car-door--research-14f-car-door~3",
+   "from": "research-14f-east-car-door--research-14f-car-door~2",
+   "to": "research-14f-east-car-door--research-14f-car-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-car-door--research-14f-car-door~3--research-14f-car-door",
+   "from": "research-14f-east-car-door--research-14f-car-door~3",
+   "to": "research-14f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-car-door--research-1f-car-door--research-1f-door~1",
+   "from": "research-1f-car-door",
+   "to": "research-1f-car-door--research-1f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-car-door--research-1f-door~1--research-1f-door",
+   "from": "research-1f-car-door--research-1f-door~1",
+   "to": "research-1f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-east-car-door--research-1f-east-car-door--research-1f-east~1",
+   "from": "research-1f-east-car-door",
+   "to": "research-1f-east-car-door--research-1f-east~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-east-car-door--research-1f-east~1--research-1f-east-car-door--research-1f-east~2",
+   "from": "research-1f-east-car-door--research-1f-east~1",
+   "to": "research-1f-east-car-door--research-1f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-east-car-door--research-1f-east~2--research-1f-east",
+   "from": "research-1f-east-car-door--research-1f-east~2",
+   "to": "research-1f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-car-door--research-2f-car-door--research-gate~1",
+   "from": "research-2f-car-door",
+   "to": "research-2f-car-door--research-gate~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-car-door--research-gate~1--research-2f-car-door--research-gate~2",
+   "from": "research-2f-car-door--research-gate~1",
+   "to": "research-2f-car-door--research-gate~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-car-door--research-gate~2--research-gate",
+   "from": "research-2f-car-door--research-gate~2",
    "to": "research-gate",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-door--research-2f-door--k2-008~1",
-   "from": "research-2f-door",
-   "to": "research-2f-door--k2-008~1",
+   "id": "research-2f-car-door--research-2f-car-door--k2-008~1",
+   "from": "research-2f-car-door",
+   "to": "research-2f-car-door--k2-008~1",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-door--k2-008~1--research-2f-door--k2-008~2",
-   "from": "research-2f-door--k2-008~1",
-   "to": "research-2f-door--k2-008~2",
+   "id": "research-2f-car-door--k2-008~1--research-2f-car-door--k2-008~2",
+   "from": "research-2f-car-door--k2-008~1",
+   "to": "research-2f-car-door--k2-008~2",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-door--k2-008~2--research-2f-door--k2-008~3",
-   "from": "research-2f-door--k2-008~2",
-   "to": "research-2f-door--k2-008~3",
+   "id": "research-2f-car-door--k2-008~2--research-2f-car-door--k2-008~3",
+   "from": "research-2f-car-door--k2-008~2",
+   "to": "research-2f-car-door--k2-008~3",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-door--k2-008~3--k2-008",
-   "from": "research-2f-door--k2-008~3",
+   "id": "research-2f-car-door--k2-008~3--k2-008",
+   "from": "research-2f-car-door--k2-008~3",
    "to": "k2-008",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-east-door--research-2f-east-door--research-gate~1",
-   "from": "research-2f-east-door",
-   "to": "research-2f-east-door--research-gate~1",
+   "id": "research-2f-car-door--research-2f-car-door--research-2f~1",
+   "from": "research-2f-car-door",
+   "to": "research-2f-car-door--research-2f~1",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-east-door--research-gate~1--research-2f-east-door--research-gate~2",
-   "from": "research-2f-east-door--research-gate~1",
-   "to": "research-2f-east-door--research-gate~2",
+   "id": "research-2f-car-door--research-2f~1--research-2f",
+   "from": "research-2f-car-door--research-2f~1",
+   "to": "research-2f",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-east-door--research-gate~2--research-2f-east-door--research-gate~3",
-   "from": "research-2f-east-door--research-gate~2",
-   "to": "research-2f-east-door--research-gate~3",
+   "id": "research-2f-east-car-door--research-2f-east-car-door--research-gate~1",
+   "from": "research-2f-east-car-door",
+   "to": "research-2f-east-car-door--research-gate~1",
    "kind": "indoor"
   },
   {
-   "id": "research-2f-east-door--research-gate~3--research-gate",
-   "from": "research-2f-east-door--research-gate~3",
+   "id": "research-2f-east-car-door--research-gate~1--research-2f-east-car-door--research-gate~2",
+   "from": "research-2f-east-car-door--research-gate~1",
+   "to": "research-2f-east-car-door--research-gate~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-east-car-door--research-gate~2--research-2f-east-car-door--research-gate~3",
+   "from": "research-2f-east-car-door--research-gate~2",
+   "to": "research-2f-east-car-door--research-gate~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-east-car-door--research-gate~3--research-gate",
+   "from": "research-2f-east-car-door--research-gate~3",
    "to": "research-gate",
    "kind": "indoor"
   },
   {
-   "id": "research-3f-door--research-3f-door--classroom-3f-kenkyu~1",
-   "from": "research-3f-door",
-   "to": "research-3f-door--classroom-3f-kenkyu~1",
+   "id": "research-2f-east-car-door--research-2f-east-car-door--research-2f-east~1",
+   "from": "research-2f-east-car-door",
+   "to": "research-2f-east-car-door--research-2f-east~1",
    "kind": "indoor"
   },
   {
-   "id": "research-3f-door--classroom-3f-kenkyu~1--research-3f-door--classroom-3f-kenkyu~2",
-   "from": "research-3f-door--classroom-3f-kenkyu~1",
-   "to": "research-3f-door--classroom-3f-kenkyu~2",
+   "id": "research-2f-east-car-door--research-2f-east~1--research-2f-east-car-door--research-2f-east~2",
+   "from": "research-2f-east-car-door--research-2f-east~1",
+   "to": "research-2f-east-car-door--research-2f-east~2",
    "kind": "indoor"
   },
   {
-   "id": "research-3f-door--classroom-3f-kenkyu~2--classroom-3f-kenkyu",
-   "from": "research-3f-door--classroom-3f-kenkyu~2",
+   "id": "research-2f-east-car-door--research-2f-east~2--research-2f-east-car-door--research-2f-east~3",
+   "from": "research-2f-east-car-door--research-2f-east~2",
+   "to": "research-2f-east-car-door--research-2f-east~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-east-car-door--research-2f-east~3--research-2f-east",
+   "from": "research-2f-east-car-door--research-2f-east~3",
+   "to": "research-2f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-car-door--research-3f-car-door--classroom-3f-kenkyu~1",
+   "from": "research-3f-car-door",
+   "to": "research-3f-car-door--classroom-3f-kenkyu~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-car-door--classroom-3f-kenkyu~1--research-3f-car-door--classroom-3f-kenkyu~2",
+   "from": "research-3f-car-door--classroom-3f-kenkyu~1",
+   "to": "research-3f-car-door--classroom-3f-kenkyu~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-car-door--classroom-3f-kenkyu~2--classroom-3f-kenkyu",
+   "from": "research-3f-car-door--classroom-3f-kenkyu~2",
    "to": "classroom-3f-kenkyu",
    "kind": "indoor"
   },
   {
-   "id": "research-4f-door--research-4f-door--classroom-4f-kenkyu~1",
-   "from": "research-4f-door",
-   "to": "research-4f-door--classroom-4f-kenkyu~1",
+   "id": "research-3f-east-car-door--research-3f-east-car-door--research-3f-east~1",
+   "from": "research-3f-east-car-door",
+   "to": "research-3f-east-car-door--research-3f-east~1",
    "kind": "indoor"
   },
   {
-   "id": "research-4f-door--classroom-4f-kenkyu~1--research-4f-door--classroom-4f-kenkyu~2",
-   "from": "research-4f-door--classroom-4f-kenkyu~1",
-   "to": "research-4f-door--classroom-4f-kenkyu~2",
+   "id": "research-3f-east-car-door--research-3f-east~1--research-3f-east-car-door--research-3f-east~2",
+   "from": "research-3f-east-car-door--research-3f-east~1",
+   "to": "research-3f-east-car-door--research-3f-east~2",
    "kind": "indoor"
   },
   {
-   "id": "research-4f-door--classroom-4f-kenkyu~2--classroom-4f-kenkyu",
-   "from": "research-4f-door--classroom-4f-kenkyu~2",
+   "id": "research-3f-east-car-door--research-3f-east~2--research-3f-east-car-door--research-3f-east~3",
+   "from": "research-3f-east-car-door--research-3f-east~2",
+   "to": "research-3f-east-car-door--research-3f-east~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-east-car-door--research-3f-east~3--research-3f-east",
+   "from": "research-3f-east-car-door--research-3f-east~3",
+   "to": "research-3f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-car-door--research-4f-car-door--classroom-4f-kenkyu~1",
+   "from": "research-4f-car-door",
+   "to": "research-4f-car-door--classroom-4f-kenkyu~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-car-door--classroom-4f-kenkyu~1--research-4f-car-door--classroom-4f-kenkyu~2",
+   "from": "research-4f-car-door--classroom-4f-kenkyu~1",
+   "to": "research-4f-car-door--classroom-4f-kenkyu~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-car-door--classroom-4f-kenkyu~2--classroom-4f-kenkyu",
+   "from": "research-4f-car-door--classroom-4f-kenkyu~2",
    "to": "classroom-4f-kenkyu",
    "kind": "indoor"
   },
   {
-   "id": "research-5f-door--research-5f-door--classroom-5f-kenkyu~1",
-   "from": "research-5f-door",
-   "to": "research-5f-door--classroom-5f-kenkyu~1",
+   "id": "research-4f-east-car-door--research-4f-east-car-door--research-4f-east~1",
+   "from": "research-4f-east-car-door",
+   "to": "research-4f-east-car-door--research-4f-east~1",
    "kind": "indoor"
   },
   {
-   "id": "research-5f-door--classroom-5f-kenkyu~1--classroom-5f-kenkyu",
-   "from": "research-5f-door--classroom-5f-kenkyu~1",
+   "id": "research-4f-east-car-door--research-4f-east~1--research-4f-east-car-door--research-4f-east~2",
+   "from": "research-4f-east-car-door--research-4f-east~1",
+   "to": "research-4f-east-car-door--research-4f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-east-car-door--research-4f-east~2--research-4f-east-car-door--research-4f-east~3",
+   "from": "research-4f-east-car-door--research-4f-east~2",
+   "to": "research-4f-east-car-door--research-4f-east~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-east-car-door--research-4f-east~3--research-4f-east",
+   "from": "research-4f-east-car-door--research-4f-east~3",
+   "to": "research-4f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f-car-door--research-5f-car-door--classroom-5f-kenkyu~1",
+   "from": "research-5f-car-door",
+   "to": "research-5f-car-door--classroom-5f-kenkyu~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f-car-door--classroom-5f-kenkyu~1--classroom-5f-kenkyu",
+   "from": "research-5f-car-door--classroom-5f-kenkyu~1",
    "to": "classroom-5f-kenkyu",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-door--research-6f-door--classroom-research-6f-mouth~1",
-   "from": "research-6f-door",
-   "to": "research-6f-door--classroom-research-6f-mouth~1",
+   "id": "research-5f-east-car-door--research-5f-east-car-door--research-5f-east~1",
+   "from": "research-5f-east-car-door",
+   "to": "research-5f-east-car-door--research-5f-east~1",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-door--classroom-research-6f-mouth~1--research-6f-door--classroom-research-6f-mouth~2",
-   "from": "research-6f-door--classroom-research-6f-mouth~1",
-   "to": "research-6f-door--classroom-research-6f-mouth~2",
+   "id": "research-5f-east-car-door--research-5f-east~1--research-5f-east-car-door--research-5f-east~2",
+   "from": "research-5f-east-car-door--research-5f-east~1",
+   "to": "research-5f-east-car-door--research-5f-east~2",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-door--classroom-research-6f-mouth~2--classroom-research-6f-mouth",
-   "from": "research-6f-door--classroom-research-6f-mouth~2",
+   "id": "research-5f-east-car-door--research-5f-east~2--research-5f-east-car-door--research-5f-east~3",
+   "from": "research-5f-east-car-door--research-5f-east~2",
+   "to": "research-5f-east-car-door--research-5f-east~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f-east-car-door--research-5f-east~3--research-5f-east",
+   "from": "research-5f-east-car-door--research-5f-east~3",
+   "to": "research-5f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-car-door--research-6f-car-door--classroom-research-6f-mouth~1",
+   "from": "research-6f-car-door",
+   "to": "research-6f-car-door--classroom-research-6f-mouth~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-car-door--classroom-research-6f-mouth~1--research-6f-car-door--classroom-research-6f-mouth~2",
+   "from": "research-6f-car-door--classroom-research-6f-mouth~1",
+   "to": "research-6f-car-door--classroom-research-6f-mouth~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-car-door--classroom-research-6f-mouth~2--classroom-research-6f-mouth",
+   "from": "research-6f-car-door--classroom-research-6f-mouth~2",
    "to": "classroom-research-6f-mouth",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-east-door--research-6f-east-door--research-6f-bridge-end~1",
-   "from": "research-6f-east-door",
-   "to": "research-6f-east-door--research-6f-bridge-end~1",
+   "id": "research-6f-east-car-door--research-6f-east-car-door--research-6f-bridge-end~1",
+   "from": "research-6f-east-car-door",
+   "to": "research-6f-east-car-door--research-6f-bridge-end~1",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-east-door--research-6f-bridge-end~1--research-6f-east-door--research-6f-bridge-end~2",
-   "from": "research-6f-east-door--research-6f-bridge-end~1",
-   "to": "research-6f-east-door--research-6f-bridge-end~2",
+   "id": "research-6f-east-car-door--research-6f-bridge-end~1--research-6f-east-car-door--research-6f-bridge-end~2",
+   "from": "research-6f-east-car-door--research-6f-bridge-end~1",
+   "to": "research-6f-east-car-door--research-6f-bridge-end~2",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-east-door--research-6f-bridge-end~2--research-6f-east-door--research-6f-bridge-end~3",
-   "from": "research-6f-east-door--research-6f-bridge-end~2",
-   "to": "research-6f-east-door--research-6f-bridge-end~3",
+   "id": "research-6f-east-car-door--research-6f-bridge-end~2--research-6f-east-car-door--research-6f-bridge-end~3",
+   "from": "research-6f-east-car-door--research-6f-bridge-end~2",
+   "to": "research-6f-east-car-door--research-6f-bridge-end~3",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-east-door--research-6f-bridge-end~3--research-6f-east-door--research-6f-bridge-end~4",
-   "from": "research-6f-east-door--research-6f-bridge-end~3",
-   "to": "research-6f-east-door--research-6f-bridge-end~4",
+   "id": "research-6f-east-car-door--research-6f-bridge-end~3--research-6f-east-car-door--research-6f-bridge-end~4",
+   "from": "research-6f-east-car-door--research-6f-bridge-end~3",
+   "to": "research-6f-east-car-door--research-6f-bridge-end~4",
    "kind": "indoor"
   },
   {
-   "id": "research-6f-east-door--research-6f-bridge-end~4--research-6f-bridge-end",
-   "from": "research-6f-east-door--research-6f-bridge-end~4",
+   "id": "research-6f-east-car-door--research-6f-bridge-end~4--research-6f-bridge-end",
+   "from": "research-6f-east-car-door--research-6f-bridge-end~4",
    "to": "research-6f-bridge-end",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-door--research-8f-door--classroom-8f-kenkyu~1",
-   "from": "research-8f-door",
-   "to": "research-8f-door--classroom-8f-kenkyu~1",
+   "id": "research-6f-east-car-door--research-6f-east-car-door--research-6f-east~1",
+   "from": "research-6f-east-car-door",
+   "to": "research-6f-east-car-door--research-6f-east~1",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-door--classroom-8f-kenkyu~1--classroom-8f-kenkyu",
-   "from": "research-8f-door--classroom-8f-kenkyu~1",
+   "id": "research-6f-east-car-door--research-6f-east~1--research-6f-east-car-door--research-6f-east~2",
+   "from": "research-6f-east-car-door--research-6f-east~1",
+   "to": "research-6f-east-car-door--research-6f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-east-car-door--research-6f-east~2--research-6f-east-car-door--research-6f-east~3",
+   "from": "research-6f-east-car-door--research-6f-east~2",
+   "to": "research-6f-east-car-door--research-6f-east~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-east-car-door--research-6f-east~3--research-6f-east",
+   "from": "research-6f-east-car-door--research-6f-east~3",
+   "to": "research-6f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-7f-east-car-door--research-7f-east-car-door--research-7f-east~1",
+   "from": "research-7f-east-car-door",
+   "to": "research-7f-east-car-door--research-7f-east~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-7f-east-car-door--research-7f-east~1--research-7f-east-car-door--research-7f-east~2",
+   "from": "research-7f-east-car-door--research-7f-east~1",
+   "to": "research-7f-east-car-door--research-7f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-7f-east-car-door--research-7f-east~2--research-7f-east",
+   "from": "research-7f-east-car-door--research-7f-east~2",
+   "to": "research-7f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-car-door--research-8f-car-door--classroom-8f-kenkyu~1",
+   "from": "research-8f-car-door",
+   "to": "research-8f-car-door--classroom-8f-kenkyu~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-car-door--classroom-8f-kenkyu~1--classroom-8f-kenkyu",
+   "from": "research-8f-car-door--classroom-8f-kenkyu~1",
    "to": "classroom-8f-kenkyu",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east-door--research-8f-east-door--research-8f-door~1",
-   "from": "research-8f-east-door",
-   "to": "research-8f-east-door--research-8f-door~1",
+   "id": "research-8f-car-door--research-8f-car-door--research-8f~1",
+   "from": "research-8f-car-door",
+   "to": "research-8f-car-door--research-8f~1",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~1--research-8f-east-door--research-8f-door~2",
-   "from": "research-8f-east-door--research-8f-door~1",
-   "to": "research-8f-east-door--research-8f-door~2",
+   "id": "research-8f-car-door--research-8f~1--research-8f",
+   "from": "research-8f-car-door--research-8f~1",
+   "to": "research-8f",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~2--research-8f-east-door--research-8f-door~3",
-   "from": "research-8f-east-door--research-8f-door~2",
-   "to": "research-8f-east-door--research-8f-door~3",
+   "id": "research-8f-east-car-door--research-8f-east-car-door--research-8f-east~1",
+   "from": "research-8f-east-car-door",
+   "to": "research-8f-east-car-door--research-8f-east~1",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~3--research-8f-east-door--research-8f-door~4",
-   "from": "research-8f-east-door--research-8f-door~3",
-   "to": "research-8f-east-door--research-8f-door~4",
+   "id": "research-8f-east-car-door--research-8f-east~1--research-8f-east-car-door--research-8f-east~2",
+   "from": "research-8f-east-car-door--research-8f-east~1",
+   "to": "research-8f-east-car-door--research-8f-east~2",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~4--research-8f-east-door--research-8f-door~5",
-   "from": "research-8f-east-door--research-8f-door~4",
-   "to": "research-8f-east-door--research-8f-door~5",
+   "id": "research-8f-east-car-door--research-8f-east~2--research-8f-east",
+   "from": "research-8f-east-car-door--research-8f-east~2",
+   "to": "research-8f-east",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~5--research-8f-east-door--research-8f-door~6",
-   "from": "research-8f-east-door--research-8f-door~5",
-   "to": "research-8f-east-door--research-8f-door~6",
+   "id": "research-8f-east-car-door--research-8f-east-car-door--research-8f-car-door~1",
+   "from": "research-8f-east-car-door",
+   "to": "research-8f-east-car-door--research-8f-car-door~1",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~6--research-8f-east-door--research-8f-door~7",
-   "from": "research-8f-east-door--research-8f-door~6",
-   "to": "research-8f-east-door--research-8f-door~7",
+   "id": "research-8f-east-car-door--research-8f-car-door~1--research-8f-east-car-door--research-8f-car-door~2",
+   "from": "research-8f-east-car-door--research-8f-car-door~1",
+   "to": "research-8f-east-car-door--research-8f-car-door~2",
    "kind": "indoor"
   },
   {
-   "id": "research-8f-east-door--research-8f-door~7--research-8f-door",
-   "from": "research-8f-east-door--research-8f-door~7",
-   "to": "research-8f-door",
+   "id": "research-8f-east-car-door--research-8f-car-door~2--research-8f-east-car-door--research-8f-car-door~3",
+   "from": "research-8f-east-car-door--research-8f-car-door~2",
+   "to": "research-8f-east-car-door--research-8f-car-door~3",
    "kind": "indoor"
   },
   {
-   "id": "research-9f-east-door--research-9f-east-door--research-9f-door~1",
-   "from": "research-9f-east-door",
-   "to": "research-9f-east-door--research-9f-door~1",
+   "id": "research-8f-east-car-door--research-8f-car-door~3--research-8f-east-car-door--research-8f-car-door~4",
+   "from": "research-8f-east-car-door--research-8f-car-door~3",
+   "to": "research-8f-east-car-door--research-8f-car-door~4",
    "kind": "indoor"
   },
   {
-   "id": "research-9f-east-door--research-9f-door~1--research-9f-east-door--research-9f-door~2",
-   "from": "research-9f-east-door--research-9f-door~1",
-   "to": "research-9f-east-door--research-9f-door~2",
+   "id": "research-8f-east-car-door--research-8f-car-door~4--research-8f-east-car-door--research-8f-car-door~5",
+   "from": "research-8f-east-car-door--research-8f-car-door~4",
+   "to": "research-8f-east-car-door--research-8f-car-door~5",
    "kind": "indoor"
   },
   {
-   "id": "research-9f-east-door--research-9f-door~2--research-9f-east-door--research-9f-door~3",
-   "from": "research-9f-east-door--research-9f-door~2",
-   "to": "research-9f-east-door--research-9f-door~3",
+   "id": "research-8f-east-car-door--research-8f-car-door~5--research-8f-east-car-door--research-8f-car-door~6",
+   "from": "research-8f-east-car-door--research-8f-car-door~5",
+   "to": "research-8f-east-car-door--research-8f-car-door~6",
    "kind": "indoor"
   },
   {
-   "id": "research-9f-east-door--research-9f-door~3--research-9f-door",
-   "from": "research-9f-east-door--research-9f-door~3",
-   "to": "research-9f-door",
+   "id": "research-8f-east-car-door--research-8f-car-door~6--research-8f-east-car-door--research-8f-car-door~7",
+   "from": "research-8f-east-car-door--research-8f-car-door~6",
+   "to": "research-8f-east-car-door--research-8f-car-door~7",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-car-door--research-8f-car-door~7--research-8f-car-door",
+   "from": "research-8f-east-car-door--research-8f-car-door~7",
+   "to": "research-8f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-car-door--research-9f-car-door--research-9f~1",
+   "from": "research-9f-car-door",
+   "to": "research-9f-car-door--research-9f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-car-door--research-9f~1--research-9f",
+   "from": "research-9f-car-door--research-9f~1",
+   "to": "research-9f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-east-car-door--research-9f-east~1",
+   "from": "research-9f-east-car-door",
+   "to": "research-9f-east-car-door--research-9f-east~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-east~1--research-9f-east-car-door--research-9f-east~2",
+   "from": "research-9f-east-car-door--research-9f-east~1",
+   "to": "research-9f-east-car-door--research-9f-east~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-east~2--research-9f-east",
+   "from": "research-9f-east-car-door--research-9f-east~2",
+   "to": "research-9f-east",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-east-car-door--research-9f-car-door~1",
+   "from": "research-9f-east-car-door",
+   "to": "research-9f-east-car-door--research-9f-car-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-car-door~1--research-9f-east-car-door--research-9f-car-door~2",
+   "from": "research-9f-east-car-door--research-9f-car-door~1",
+   "to": "research-9f-east-car-door--research-9f-car-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-car-door~2--research-9f-east-car-door--research-9f-car-door~3",
+   "from": "research-9f-east-car-door--research-9f-car-door~2",
+   "to": "research-9f-east-car-door--research-9f-car-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-car-door--research-9f-car-door~3--research-9f-car-door",
+   "from": "research-9f-east-car-door--research-9f-car-door~3",
+   "to": "research-9f-car-door",
    "kind": "indoor"
   }
  ]
