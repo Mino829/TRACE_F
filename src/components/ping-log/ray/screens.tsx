@@ -2,7 +2,7 @@
 
 import { useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
 
-import { CONSENT_LEAD, CONSENT_SECTIONS } from "@/lib/ping-log/consent";
+import { CONSENT_LEAD, CONSENT_SECTIONS, CONSENT_VERSION, type Consent } from "@/lib/ping-log/consent";
 import type { EntryCheck, PushSupport } from "@/lib/ping-log/environment";
 import { REMINDER_PLAN } from "@/lib/ping-log/push";
 import type { LogEntry } from "@/lib/ping-log/store";
@@ -208,7 +208,7 @@ export function TitleScreen({
 /* ---------------------------------------------------------------- consent */
 
 /** The consent text. Before joining it ends in the two answers; from the menu, in a close button. */
-export function ConsentBody({ answer, onClose }: { answer?: { busy: boolean; error: string; onAgree: () => void }; onClose: () => void }) {
+export function ConsentBody({ terms, answer, onClose }: { terms: Pick<Consent, "version" | "body" | "language"> | null; answer?: { busy: boolean; error: string; onAgree: () => void }; onClose: () => void }) {
   return (
     <>
       <div className="topbar">
@@ -225,6 +225,13 @@ export function ConsentBody({ answer, onClose }: { answer?: { busy: boolean; err
       <h1 className="h1 consent__head">
         <Phrases text="参加の前に読んでください" />
       </h1>
+      {terms?.body ? (
+        <section className="sec" lang={terms.language}>
+          <p className="mono">{terms.version}</p>
+          <p className="body" style={{ whiteSpace: "pre-wrap" }}>{terms.body}</p>
+        </section>
+      ) : terms?.version === CONSENT_VERSION && !answer ? (
+        <>
       <p className="body consent__lead">
         <Sentences text={CONSENT_LEAD} />
       </p>
@@ -240,13 +247,17 @@ export function ConsentBody({ answer, onClose }: { answer?: { busy: boolean; err
           </ul>
         </section>
       ))}
+        </>
+      ) : (
+        <p className="body">{terms ? `同意した説明の版: ${terms.version}。この端末には本文が保存されていません。` : "参加の説明を取得できていません。通信を確認して、説明を読み込んでください。"}</p>
+      )}
       <div className="dock">
         {answer ? (
           <>
             <NoteBar text={answer.error} alert />
             <div className="btns">
               <button type="button" className="btn" disabled={answer.busy} onClick={answer.onAgree}>
-                {answer.busy ? "参加しています…" : "同意して参加する"}
+                {answer.busy ? "通信しています…" : terms?.body ? "同意して参加する" : "説明を読み込む"}
               </button>
               <button type="button" className="btn btn--line" disabled={answer.busy} onClick={onClose}>
                 同意しない
@@ -266,11 +277,11 @@ export function ConsentBody({ answer, onClose }: { answer?: { busy: boolean; err
   );
 }
 
-export function ConsentScreen({ busy, error, inert, onAgree, onDecline }: { busy: boolean; error: string; inert: boolean; onAgree: () => void; onDecline: () => void }) {
+export function ConsentScreen({ terms, busy, error, inert, onAgree, onDecline }: { terms: Pick<Consent, "version" | "body" | "language"> | null; busy: boolean; error: string; inert: boolean; onAgree: () => void; onDecline: () => void }) {
   useField("day", DAY);
   return (
     <Screen className="screen--read" inert={inert}>
-      <ConsentBody answer={{ busy, error, onAgree }} onClose={onDecline} />
+      <ConsentBody terms={terms} answer={{ busy, error, onAgree }} onClose={onDecline} />
     </Screen>
   );
 }

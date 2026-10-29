@@ -26,13 +26,11 @@ import { TraceScreen } from "./trace";
 import { Icon, Phrases, Screen, Sentences, SWAP, TitleMark, useField, useRay } from "./stage";
 
 /**
- * Arriving at ShibaLab for real, while /log works with TRACE_B: the phone's
- * rear camera reads the QR code in the booth's projected picture, the arrival
- * goes to TRACE_B, and the phone follows the replay on the room's screen
- * until it has played or been skipped. Then the photos taken before arriving
- * become the keepsake (keepsake.tsx), and the way between their places
- * 振り返り3D (trace.tsx). Without the backend, the home's button
- * opens the demo (demo.tsx) instead.
+ * Arriving at ShibaLab: the phone's rear camera reads the QR code in the
+ * booth's projected picture, the arrival goes to TRACE_B, and the phone
+ * follows the replay on the room's screen until it has played or been skipped.
+ * Then the photos taken before arriving become the keepsake (keepsake.tsx),
+ * and the way between their places 振り返り3D (trace.tsx).
  *
  * As in the demo, the phone shows no queue, no wait and no symbol. The camera
  * picture never leaves the phone: only the code read from it is sent.

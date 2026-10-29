@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { Shot } from "@/lib/ping-log/photo-entry";
-import { CONSENT_VERSION, clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
+import { clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
 import { networkInfo } from "@/lib/ping-log/context";
 import { pushSupport, type PushSupport } from "@/lib/ping-log/environment";
 import {
@@ -26,7 +26,6 @@ import { dropPromptFromUrl } from "@/lib/ping-log/url";
 import { clearEntries, clearSessionEntries, deleteEntry, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
 import { LockTimeout, onOtherTabs, withLock } from "@/lib/ping-log/tabs";
 import {
-  TRACE_API_URL,
   TraceApiError,
   createExperience,
   deleteMemorySession,
@@ -73,15 +72,14 @@ import "./developer.css";
  * shows on home. Both offer "写真を撮る" and "スキップ", and both end on the
  * clear screen.
  *
- * With NEXT_PUBLIC_TRACE_API_URL set, agreeing also creates the experience on
- * the work's backend (TRACE_B), and joining lasts until its memory session
- * expires, through reloads and in every tab of the browser (session.ts,
- * tabs.ts): the photo limit comes from the backend's config and counts per
- * memory session, and terminal stopping is separate from deleting its data.
+ * Agreeing creates the experience on the work's backend (TRACE_B), and the
+ * same participation continues through reloads and every browser tab
+ * (session.ts, tabs.ts). The backend config supplies the consent and photo
+ * limit; terminal stopping is separate from deleting the retained data.
  * The arrival QR is read with the camera and sent to the backend (ray/arrival.tsx),
  * and the photo reminder goes through TRACE_B as well (trace-api/reminder.ts).
- * A participant's photos and their records stay on the phone, with or without
- * the variable (#54): photos go to no server. Only the checkpoint and time of
+ * A participant's photos and their records stay on the phone: photos go to
+ * no server. Only the checkpoint and time of
  * each photo taken before the arrival go to TRACE_B (#13), which draws the way
  * between them on to ShibaLab.
  *
@@ -145,7 +143,7 @@ function initialPending(): string | null {
  * user-journey.md's, with this page's button).
  */
 function initialLostNote(): string {
-  if (!TRACE_API_URL || initialView() !== "participant") return "";
+  if (initialView() !== "participant") return "";
   if (experienceLapsed()) return `前の参加は、\n記録を残す期限が過ぎたので削除されました。${START_AGAIN}`;
   const fromReminder = new URLSearchParams(window.location.search).has("prompt");
   return (loadConsent() || fromReminder) && !loadTabExperience()
@@ -241,9 +239,9 @@ export function PingLogScreen() {
   const [message, setMessage] = useState("");
   // Shown until this browser joins again, in this tab or another.
   const [lostNote, setLostNote] = useState(initialLostNote);
-  // The backend's side, while NEXT_PUBLIC_TRACE_API_URL is set.
+  // Public terms and the retained owner credential for this participation.
   const [traceConfig, setTraceConfig] = useState<PublicConfig | null>(null);
-  const [experience, setExperience] = useState<TabExperience | null>(() => (TRACE_API_URL ? loadTabExperience() : null));
+  const [experience, setExperience] = useState<TabExperience | null>(loadTabExperience);
   const experienceRef = useRef(experience);
   useEffect(() => {
     experienceRef.current = experience;
@@ -462,7 +460,6 @@ export function PingLogScreen() {
 
   // The backend's config and, after a reload, whether this tab's experience still stands.
   useEffect(() => {
-    if (!TRACE_API_URL) return;
     // Fetched again on agreeing when this fails.
     fetchPublicConfig().then(setTraceConfig, () => undefined);
     // A participation that is gone takes its consent along: the next visit starts as a new one, without a note.
@@ -509,12 +506,10 @@ export function PingLogScreen() {
     () =>
       onOtherTabs(() => {
         setConsent(loadConsent());
-        if (TRACE_API_URL) {
-          const next = loadTabExperience();
-          setExperience(next);
-          // Joined there: the note about the old participation no longer applies here.
-          if (next) setLostNote("");
-        }
+        const next = loadTabExperience();
+        setExperience(next);
+        // Joined there: the note about the old participation no longer applies here.
+        if (next) setLostNote("");
         listEntries().then(setEntries, () => undefined);
       }),
     [],
@@ -535,24 +530,23 @@ export function PingLogScreen() {
 
   // An ended session remains readable and deletable until deleteAfter.
   const sessionExpired = experience !== null && (experience.status === "ended" || Date.parse(experience.memory.expiresAt) <= now);
-  const joined = consent?.version === CONSENT_VERSION && (!TRACE_API_URL || experience !== null);
+  const joined = experience !== null;
   const memorySessionId = experience?.memory.memorySessionId ?? null;
   const arrived = memorySessionId !== null && (arrivedIn === memorySessionId || experience?.status === "arrived");
-  const maxPhotos = (TRACE_API_URL && traceConfig?.photo.maxCount) || MAX_PHOTOS;
+  const maxPhotos = traceConfig?.photo.maxCount ?? MAX_PHOTOS;
 
-  // This participation's photos: the memory session's with the backend, the day's without.
-  // Kept stable through the clock's ticks, so the photos' object URLs are not remade every second.
-  const day = new Date(now).toDateString();
+  // Only this retained participation's photos belong on its home screen.
+  // Kept stable through clock ticks so object URLs are not remade every second.
   const memoryPhotos = useMemo(
     () =>
       entries
         .filter(
           (entry) =>
             purposeOf(entry.record) === "photo-memory" &&
-            (TRACE_API_URL ? memorySessionId !== null && entry.memorySessionId === memorySessionId : new Date(entry.record.takenAt).toDateString() === day),
+            memorySessionId !== null && entry.memorySessionId === memorySessionId,
         )
         .reverse(),
-    [entries, day, memorySessionId],
+    [entries, memorySessionId],
   );
 
   /**
@@ -581,40 +575,40 @@ export function PingLogScreen() {
     setMessage("");
   };
 
-  /** Keep an existing memory session and its delete key when consent text changes. */
+  /** Accept only the backend terms already displayed on the consent screen. */
   const agree = async () => {
-    if (TRACE_API_URL) {
-      setJoining(true);
-      setJoinError("");
-      try {
-        if (experience) {
-          if (experience.status === "ended" || Date.parse(experience.memory.expiresAt) <= Date.now()) {
-            throw new Error("以前の参加は終了しています。メニューの「参加をやめる」から記録を削除してから、もう一度参加してください。");
-          }
-        } else {
-          const config = traceConfig ?? (await fetchPublicConfig());
-          setTraceConfig(config);
-          if (!config.registrationOpen) throw new TraceApiError(503, "REGISTRATION_CLOSED", null);
-          const created = await createExperience(config);
-          const tab: TabExperience = { ...created, consentVersion: config.consent.version, createdAt: new Date().toISOString() };
-          saveTabExperience(tab);
-          setExperience(tab);
-          // A photo reminder through the push worker belonged to the participation before; TRACE_B's takes its place once switched on.
-          if (subscription && subscribed && plan.purpose === "photo") {
-            void unsubscribe(subscription)
-              .catch(() => dropExpired(subscription))
-              .then(() => setSubscription(null), () => undefined);
-          }
-        }
-      } catch (error) {
-        if (error instanceof TraceApiError && error.code === "CONSENT_VERSION_MISMATCH") fetchPublicConfig().then(setTraceConfig, () => setTraceConfig(null));
-        setJoinError(error instanceof Error ? error.message : "うまくいきませんでした。");
+    setJoining(true);
+    setJoinError("");
+    try {
+      // Never accept terms fetched only after the tap: first show them, then
+      // require another explicit agreement to that displayed version.
+      if (!traceConfig) {
+        setTraceConfig(await fetchPublicConfig());
         return;
-      } finally {
-        setJoining(false);
       }
+      if (!traceConfig.registrationOpen) throw new TraceApiError(503, "REGISTRATION_CLOSED", null);
+      const created = await createExperience(traceConfig);
+      const tab: TabExperience = { ...created, consentVersion: traceConfig.consent.version, createdAt: new Date().toISOString() };
+      saveTabExperience(tab);
+      experienceRef.current = tab;
+      setExperience(tab);
+      setConsent(saveConsent(traceConfig.consent));
+      // Retire the old worker's photo reminder; new reminders belong to TRACE_B.
+      if (subscription && subscribed && plan.purpose === "photo") {
+        void unsubscribe(subscription)
+          .catch(() => dropExpired(subscription))
+          .then(() => setSubscription(null), () => undefined);
+      }
+    } catch (error) {
+      if (error instanceof TraceApiError && error.code === "CONSENT_VERSION_MISMATCH") {
+        setTraceConfig(null);
+        fetchPublicConfig().then(setTraceConfig, () => undefined);
+      }
+      setJoinError(error instanceof Error ? error.message : "うまくいきませんでした。");
+      return;
+    } finally {
+      setJoining(false);
     }
-    setConsent(saveConsent());
     setLostNote("");
     setConsentOpen(false);
     setMessage("");
@@ -702,7 +696,7 @@ export function PingLogScreen() {
 
   const save = async (entry: LogEntry): Promise<SaveOutcome> => {
     const photo = purposeOf(entry.record) === "photo-memory";
-    if (photo && TRACE_API_URL && (!memorySessionId || !canWriteMemory(memorySessionId))) {
+    if (photo && (!memorySessionId || !canWriteMemory(memorySessionId))) {
       throw new TraceApiError(409, "STATE_CONFLICT", null);
     }
     // A photo taken after the arrival stays off TRACE_B: TRACE_B draws the way on to ShibaLab only from a last photo taken before it.
@@ -742,7 +736,7 @@ export function PingLogScreen() {
   const withdraw = () => run(async () => {
     // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
     let removed = "この端末の写真を削除しました。";
-    if (TRACE_API_URL && experience) {
+    if (experience) {
       try {
         await deleteMemorySession(experience.memory, memoryDeleteKey(experience.memory.memorySessionId));
         removed = "この端末の写真と、参加の記録を削除しました。";
@@ -845,6 +839,7 @@ export function PingLogScreen() {
           ended={sessionExpired}
           onStop={experience && !sessionExpired ? stopParticipation : undefined}
           consent={consent}
+          consentTerms={traceConfig?.consent ?? null}
           consentOpen={consentOpen}
           onOpenConsent={() => setConsentOpen(true)}
           onCloseConsent={() => {
@@ -877,7 +872,7 @@ export function PingLogScreen() {
           skipped={skipped}
           onCloseSkip={() => setSkipped(null)}
           demo={demo}
-          // With the backend, home's button reads the booth's real QR code and follows the replay; without it, the button opens the demo.
+          // Participant arrival always reads the booth's authenticated QR.
           arrival={experience}
           onArrive={() => setDemo("home")}
           arrived={arrived}

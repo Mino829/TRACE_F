@@ -5,12 +5,11 @@
 //   npm run release            (from push-worker)
 //   npm --prefix push-worker run release   (from the repository root)
 //
-// The page is built against PUSH_API_URL from .env when it is set. When .env
-// also sets TRACE_API_URL (/api/backend), /log joins on TRACE_B through this
-// site's relay; set trace-log's two backend secrets before that. When .env sets
-// both DISPLAY_API_URL and GOOGLE_CLIENT_ID, /display signs the operator in with
-// Google and connects to TRACE_B directly (no relay); otherwise it stays on its
-// test playback.
+// The page is built against PUSH_API_URL from .env when it is set. /log joins
+// TRACE_B through the site's /api/backend by default; set trace-log's two
+// backend secrets before deployment. TRACE_API_URL can override this base path.
+// When .env sets both DISPLAY_API_URL and GOOGLE_CLIENT_ID, /display signs the
+// operator in with Google and connects to TRACE_B directly (no relay).
 
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -32,8 +31,7 @@ function fromEnvFile(name) {
 }
 
 const pushUrl = fromEnvFile("PUSH_API_URL") || "https://trace-push.async5855.workers.dev";
-// Unset, /log keeps everything on the phone and the push worker.
-const traceApiUrl = fromEnvFile("TRACE_API_URL");
+const traceApiUrl = fromEnvFile("TRACE_API_URL") || "/api/backend";
 // Public arrival proof context: /log reconstructs the exact signed QR payload.
 const arrivalVenue = fromEnvFile("ARRIVAL_VENUE");
 const arrivalCheckpointId = fromEnvFile("ARRIVAL_CHECKPOINT_ID");
@@ -45,7 +43,7 @@ const googleClientId = fromEnvFile("GOOGLE_CLIENT_ID");
 const pageEnv = {
   NEXT_STATIC_EXPORT: "1",
   NEXT_PUBLIC_PUSH_API_URL: pushUrl,
-  ...(traceApiUrl ? { NEXT_PUBLIC_TRACE_API_URL: traceApiUrl } : {}),
+  NEXT_PUBLIC_TRACE_API_URL: traceApiUrl,
   ...(arrivalVenue && arrivalCheckpointId ? { NEXT_PUBLIC_ARRIVAL_VENUE: arrivalVenue, NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID: arrivalCheckpointId } : {}),
   NEXT_PUBLIC_ARRIVAL_PROOF_KEY_ID: arrivalProofKeyId,
   NEXT_PUBLIC_ARRIVAL_ISSUER_URL: arrivalIssuerUrl,

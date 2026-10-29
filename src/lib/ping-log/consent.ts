@@ -72,7 +72,7 @@ export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
 
 const CONSENT_KEY = "trace-consent";
 
-export type Consent = { version: string; at: string };
+export type Consent = { version: string; at: string; body?: string; language?: string };
 
 /** Saved consent, including older versions retained solely to allow withdrawal. */
 export function loadConsent(): Consent | null {
@@ -84,8 +84,8 @@ export function loadConsent(): Consent | null {
   }
 }
 
-export function saveConsent(): Consent {
-  const consent = { version: CONSENT_VERSION, at: new Date().toISOString() };
+export function saveConsent(terms: { version: string; body: string; language: string }): Consent {
+  const consent = { ...terms, at: new Date().toISOString() };
   try {
     window.localStorage.setItem(CONSENT_KEY, JSON.stringify(consent));
   } catch {

@@ -287,11 +287,11 @@ export function InstallLayer({
   );
 }
 
-export function ConsentLayer({ onClose }: { onClose: () => void }) {
+export function ConsentLayer({ terms, onClose }: { terms: Parameters<typeof ConsentBody>[0]["terms"]; onClose: () => void }) {
   return (
     <Layer kind="full" label="同意した内容" onClose={onClose}>
       <div className="full">
-        <ConsentBody onClose={onClose} />
+        <ConsentBody terms={terms} onClose={onClose} />
       </div>
     </Layer>
   );
