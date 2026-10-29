@@ -620,6 +620,10 @@ for (y0, y1) in ((SY0, SY1), (NY0, NY1)):
         Q(ext, *f, y0, y1, 0.005, z, z + 0.03, "rib")
 f = ('y', GX1, -1)
 Q(ext, *f, -12.3, -9.5, 0.02, FZ[6], FZ[6] + 2.9, "glass")     # 渡り廊下の先の扉
+# 東の壁の南棟と北棟のあいだ（光庭の幅）：芝生から光庭がのぞけていたのでふさぐ（ユーザーの指示 2026-10-29）
+B(ext, *f, SY1, NY0, -0.3, 0, DECK, GATE_TOP, "concrete")
+for z in range(int(DECK) + 4, int(GATE_TOP), 3):
+    Q(ext, *f, SY1, NY0, 0.005, z, z + 0.03, "rib")
 # 西の壁（北棟の部分。+X を向く。教室棟.blend の曲がり角の「頭」の切り口の前）
 f = ('y', KX + 0.5, +1)
 B(ext, *f, NY0W, NY1, -0.3, 0, DECK, GATE_TOP, "concrete")
@@ -629,11 +633,24 @@ for z in range(int(DECK) + 4, int(GATE_TOP), 3):
 # 床（ゲートの下の 1F の天井 = 大階段の上の広場）
 ext.box(GX0, GX1, SY0, NY1, DECK - 0.5, DECK, "paving", skip=(1,))
 ext.hquad(GX0, GX1, SY0, NY1, DECK, "turf")      # ゲートの下も奥まで人工芝（ユーザーの指示 2026-10-12）
-# 北の口：植え込みと手すり（その先は写真がないので作らない）
-ext.box(GX0 + 0.5, GX1 - 0.5, NY1 - 1.6, NY1, DECK, DECK + 0.6, "stone")
-ext.box(GX0 + 0.6, GX1 - 0.6, NY1 - 1.5, NY1 - 0.1, DECK + 0.6, DECK + 1.2, "hedge")
+# 北の口：植え込みと手すり。まん中は道路へ下りる外階段（芝生を歩いて道路側へ出られる。ユーザーの指示 2026-10-29）
+#   TRACE の道の網の「研究棟ゲート → 道路側へ下りる」線（ゲートの真ん中、道路側の点 Y = NY1 + 8.2）に合わせる
+NS_X0, NS_X1 = (GX0 + GX1) / 2 - 2.0, (GX0 + GX1) / 2 + 2.0     # 階段の幅 4m
+NS_Y1 = NY1 + 8.2                                                # 階段の下の端（道路側の歩道）
+for xa, xb in ((GX0 + 0.5, NS_X0 - 0.3), (NS_X1 + 0.3, GX1 - 0.5)):
+    ext.box(xa, xb, NY1 - 1.6, NY1, DECK, DECK + 0.6, "stone")
+    ext.box(xa + 0.1, xb - 0.1, NY1 - 1.5, NY1 - 0.1, DECK + 0.6, DECK + 1.2, "hedge")
 for x in (GX0 + 1.0, GX1 - 1.0):
     ext.box(x - 0.3, x + 0.3, NY1 - 1.5, NY1, DECK, DECK + 1.8, "stone")
+n_ns = 36                                                        # 蹴上 1/6 m、踏面 0.23m
+for i in range(n_ns - 1):
+    ya, yb = NY1 + (NS_Y1 - NY1) * i / n_ns, NY1 + (NS_Y1 - NY1) * (i + 1) / n_ns
+    ext.box(NS_X0, NS_X1, ya, yb, 0, DECK * (n_ns - 1 - i) / n_ns, "step")
+for xa, xb in ((NS_X0 - 0.3, NS_X0), (NS_X1, NS_X1 + 0.3)):     # 両側の石の袖壁（上の端は芝生の植え込みにつながる）
+    ext.prism_x([(NY1, 0), (NS_Y1, 0), (NS_Y1, 0.6), (NY1, DECK + 0.6), (NY1 - 1.6, DECK + 0.6), (NY1 - 1.6, DECK), (NY1, DECK)], xa, xb, "stone")
+for x in (NS_X0 + 0.15, NS_X1 - 0.15):                           # 手すり
+    ext.prism_x([(NY1 - 1.6, DECK + 0.95), (NY1, DECK + 0.95), (NS_Y1, 0.95), (NS_Y1, 1.0), (NY1, DECK + 1.0), (NY1 - 1.6, DECK + 1.0)],
+                x - 0.03, x + 0.03, "steel")
 
 # ---------- 大階段とゲート前の広場（写真 6720・6721） ----------
 ST_Y0, ST_Y1 = -65.5, -39.5     # 階段（下の端・上の端）。上の端からゲートまでは 6.0m の広場
@@ -852,6 +869,27 @@ def ev_cell(mb, tx, fl, z_top_extra=0.0):
         add_text(tx, str(fl), (x1 - 0.055, c, 1.8), (-1, 0), 1.0, key="strip")             # 階の数字（明るいパネルに黒）
 
 
+# EV B の +X の廊下に面した 2 台のうち、Y = 1.6 の 1 台をくり抜いて扉を開ける（展示の点がこのかごを真上に動く。2026-10-29）
+#   前は EV B 全体が黒い塊で、点（u 16, v 0）は扉と扉のあいだの塊の中にあった
+EVB_DOOR_Y = 1.6
+EVB_CELL = (EVB[1] - 2.5, EVB[1] - 0.12, EVB_DOOR_Y - 1.3, EVB_DOOR_Y + 1.3)
+
+
+def evb_open(mb, y0, y1, h, closed):
+    """EV B（X EVB[0]〜EVB[1]、Y y0〜y1、高さ h）：開いた 1 台のかごと、closed の Y の閉じた扉"""
+    for r in sub([(EVB[0], EVB[1] - 0.12, y0, y1)], EVB_CELL):
+        mb.box(r[0], r[1], r[2], r[3], 0, h, "ev_b")
+    wall(mb, 'y', EVB[1] - 0.06, y0, y1, 0, h, [(EVB_DOOR_Y, 1.1, 2.3)], key="ev_b", base=False)
+    ev_doors(mb, 'y', EVB[1], closed, 0, +1)
+    ev_doors_open(mb, EVB[1], [EVB_DOOR_Y], 0, +1)
+    x0, x1, c0, c1 = EVB_CELL
+    mb.box(x0, x0 + 0.04, c0, c1, 0, h, "ev_in")                                      # 奥の壁
+    mb.box(x0, x1, c0, c0 + 0.04, 0, h, "ev_in")                                      # 両側の壁
+    mb.box(x0, x1, c1 - 0.04, c1, 0, h, "ev_in")
+    mb.box(x0, x1, c0, c1, h - 0.05, h, "ev_in")                                      # 天井
+    mb.box(x0 + 0.04, x0 + 0.047, EVB_DOOR_Y - 0.95, EVB_DOOR_Y + 0.95, 0.3, h - 0.3, "ev_lamp")   # 奥の壁の発光パネル
+
+
 def row_rooms(mb, xs, labels, y_corr, y_far, z, h, side, door_at=0.75):
     """X 方向に部屋を並べる。xs = 境の X（小さい順）、labels[i] = xs[i]〜xs[i+1] の部屋（None = 壁だけ、"" = 扉なし）。
     y_corr = 廊下側の壁、side = 廊下のある向き（+1/-1）"""
@@ -919,8 +957,7 @@ for r in R1:
 # 1F の EV B と階段（EV の扉は +X の廊下を向く）・トイレ
 g1.box(EVB[0], EVB[1], -11.6, -4.5, 0, H1, "wall")
 steel_door(g1, 'y', EVB[1], -8.0, 0, +1)
-g1.box(EVB[0], EVB[1], -4.5, 3.75, 0, H1, "ev_b")
-ev_doors(g1, 'y', EVB[1], [-2.3, 1.5], 0, +1)
+evb_open(g1, -4.5, 3.75, H1, [-2.3])
 add_text(g1, "B", (EVB[1] + 0.09, -0.4, 2.65), (1, 0), 0.4)
 room1(g1, "WC", EVB[0], EVB[1], 3.75, 11.9, "+x")
 # 搬入口の奥（灰色の所。作らない）・EV A の手前の詰め
@@ -1136,8 +1173,7 @@ def typical_floor(fl, spec):
         mb.hquad(x0, x1, y0, y1, 0.005, "lab_floor")
         mb.box(x0, x1, y0, y1, HR, HR + 0.05, "lab_ceil")
     # EV B（光庭の上、扉は +X の廊下を向く）と大きな階の数字（写真 6751）
-    mb.box(EVB[0], EVB[1], SY1, NY0, 0, HC + 0.7, "ev_b")
-    ev_doors(mb, 'y', EVB[1], [-2.0, 1.6], 0, +1)
+    evb_open(mb, SY1, NY0, HC + 0.7, [-2.0])
     add_text(tx, str(fl), (EVB[1] + 0.09, -3.6, 2.2), (1, 0), 0.9)
     add_text(tx, "B", (EVB[1] + 0.09, -0.2, 2.6), (1, 0), 0.3)
     steel_door(mb, 'y', EVB[1], (S_C1 + S_IN) / 2, 0, +1)

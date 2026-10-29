@@ -128,11 +128,13 @@ for o in list(bpy.data.objects):
             bpy.data.meshes.remove(me)
 
 
-# エレベーターのかご（交流棟の座標）。教室棟側の端の EV・トイレのかたまり（CORE_X + 5.0〜）の 1 台目の扉の奥（2026-10-24）
-#   かごは 1F〜6F を貫く縦穴。床・天井のスラブと、1F の塊に穴をあける。1F は小さな前室（床と扉の前の空間だけ）
-SHAFT = (20.875, 23.2, -6.9, -5.2)       # x0, x1, y0, y1（扉は -X 側のホールに面する。扉の幅 1.1m は y -6.6〜-5.5）
+# エレベーターのかご（交流棟の座標）。教室棟側の端の EV・トイレのかたまり（CORE_X + 5.0〜10.5）の本部棟側の端（2026-10-24）
+#   扉は渡り廊下側（+X）の面（4F の案内図とユーザーの確認、2026-10-29。前は -X の教室側の面だった）
+#   かごは 1F〜6F を貫く縦穴。床・天井のスラブと、1F の塊に穴をあける。1F は前室と、+X の妻の入口からの通路
+SHAFT = (24.05, 26.375, -6.9, -5.2)      # x0, x1, y0, y1（扉は +X 側のホールに面する。扉の幅 1.1m は y -6.6〜-5.5）
 SHAFT_DOOR = (-6.6, -5.5)
-VEST = (17.9, 20.875, -7.55, -4.55)      # 1F の前室
+VEST = (26.375, 29.1, -7.55, -4.55)      # 1F の前室（扉の前）
+VEST_LINK = (29.1, 32.1, -7.55, 8.8)     # 1F の入口（扉 y 6.4〜9.5）から前室までの通路
 VEST_H = 3.0
 
 
@@ -267,7 +269,7 @@ for z0 in FLOORS[IN_FROM + 1:]:
     body.boxh(-EX, EX, CW + 0.02, WP - 0.3, z0 - 0.45, z0, "inner", [SHAFT])
 body.box(-EX, EX, CW + 0.02, WP - 0.3, RZ - 0.6, RZ, "inner", keys6=["inner", "roof", "inner", "inner", "inner", "inner"])
 # 1F の中の塊（ガラスの奥）
-body.boxh(-EX, 32.1, -GF + 0.1, GF - 0.1, 0, VEST_H, "inner", [SHAFT, VEST])             # 下の層：かごと前室
+body.boxh(-EX, 32.1, -GF + 0.1, GF - 0.1, 0, VEST_H, "inner", [SHAFT, VEST, VEST_LINK])  # 下の層：かごと前室と入口からの通路
 body.boxh(-EX, 32.1, -GF + 0.1, GF - 0.1, VEST_H, SLAB0, "inner", [SHAFT])
 # 2F の床（上の階が 1F より張り出した部分の天井）
 body.boxh(-EX, EX, CW - 0.1, W2, SLAB0, F1, "soffit", [SHAFT], keys6=["soffit", "soffit", "cw_band", "soffit", "stone", "soffit"])
