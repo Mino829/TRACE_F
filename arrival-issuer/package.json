@@ -7,9 +7,6 @@
   },
   "scripts": {
     "start": "node issuer.mjs",
-    "test": "node --test test/issuer.test.mjs test/relay.test.mjs"
-  },
-  "dependencies": {
-    "ws": "8.22.0"
+    "test": "node --test test/issuer.test.mjs"
   }
 }
