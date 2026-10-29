@@ -27,6 +27,9 @@ export interface GraphEdge {
 }
 
 export const CAMPUS_GRAPH_VERSION: string = graph.campusGraphVersion;
+/** The other two versions TRACE_B checks on every display frame (Spatial Contract). */
+export const COORDINATE_VERSION: string = graph.coordinateVersion;
+export const THREE_D_MAP_VERSION: string = graph.threeDMapVersion;
 export const NODES: ReadonlyMap<string, GraphNode> = new Map(
   (graph.nodes as GraphNode[]).map((n) => [n.id, n]),
 );

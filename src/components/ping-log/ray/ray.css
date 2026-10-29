@@ -718,11 +718,17 @@ html:has(.ray) body {
     flex: 0 1 38%;
     min-height: 132px;
     position: relative;
+    container-type: size; /* cqh below is this part's own height */
   }
+  /*
+   * RAY keeps 93px clear above the line (TRACE rises 37px over it): when a note
+   * or a short phone shrinks the upper part, RAY moves up and off the top
+   * rather than onto TRACE.
+   */
   & .ghost {
     position: absolute;
     left: -14px;
-    top: 26px;
+    top: min(26px, calc(100cqh + var(--safe-top) - 93px - 0.8 * 238px));
     pointer-events: none;
     mix-blend-mode: multiply;
     font-family: var(--latin);

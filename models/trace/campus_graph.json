@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "campusGraphVersion": "toyosu-graph-2026-10-26.1.draft",
  "coordinateVersion": "toyosu-2026-08-28.1",
- "threeDMapVersion": "キャンパス全体.blend 2026-10-26",
+ "threeDMapVersion": "toyosu-3dmap-2026-10-26",
  "exportedAt": "2026-10-26",
  "coordinates": {
   "local": "アプリのローカル ENU（原点 = 教室棟1F南面の自動ドア, east/north はメートル）。coordinateVersion の式で緯度経度から計算",

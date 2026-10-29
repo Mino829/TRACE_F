@@ -237,7 +237,8 @@ def export():
         "schemaVersion": 1,
         "campusGraphVersion": GRAPH_VERSION,
         "coordinateVersion": trace_geo.APP_COORDINATE_VERSION,
-        "threeDMapVersion": "キャンパス全体.blend " + date.today().isoformat(),
+        # 英数字だけにする：TRACE_B の設定値と、描画の資格の照合に使うため（2026-10-28）
+        "threeDMapVersion": "toyosu-3dmap-" + date.today().isoformat(),
         "exportedAt": date.today().isoformat(),
         "coordinates": {
             "local": "アプリのローカル ENU（原点 = 教室棟1F南面の自動ドア, east/north はメートル）。coordinateVersion の式で緯度経度から計算",
