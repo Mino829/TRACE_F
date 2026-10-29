@@ -4,7 +4,8 @@ name: Deploy to Cloudflare
 # after "Verify frontend and Workers" passes on a push to main.
 # Repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
 # Optional repository variables, written to push-worker/.env only when set:
-# PUSH_API_URL, TRACE_API_URL, ARRIVAL_VENUE, ARRIVAL_CHECKPOINT_ID, ARRIVAL_PROOF_KEY_ID.
+# PUSH_API_URL, TRACE_API_URL, ARRIVAL_VENUE, ARRIVAL_CHECKPOINT_ID,
+# ARRIVAL_PROOF_KEY_ID, ARRIVAL_ISSUER_URL, DISPLAY_API_URL, GOOGLE_CLIENT_ID.
 
 on:
   workflow_run:
@@ -45,8 +46,11 @@ jobs:
           ARRIVAL_VENUE: ${{ vars.ARRIVAL_VENUE }}
           ARRIVAL_CHECKPOINT_ID: ${{ vars.ARRIVAL_CHECKPOINT_ID }}
           ARRIVAL_PROOF_KEY_ID: ${{ vars.ARRIVAL_PROOF_KEY_ID }}
+          ARRIVAL_ISSUER_URL: ${{ vars.ARRIVAL_ISSUER_URL }}
+          DISPLAY_API_URL: ${{ vars.DISPLAY_API_URL }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
         run: |
-          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PUSH_API_URL TRACE_API_URL ARRIVAL_VENUE ARRIVAL_CHECKPOINT_ID ARRIVAL_PROOF_KEY_ID; do
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PUSH_API_URL TRACE_API_URL ARRIVAL_VENUE ARRIVAL_CHECKPOINT_ID ARRIVAL_PROOF_KEY_ID ARRIVAL_ISSUER_URL DISPLAY_API_URL GOOGLE_CLIENT_ID; do
             if [ -n "${!name}" ]; then echo "$name=${!name}" >> .env; fi
           done
       - run: npm run release

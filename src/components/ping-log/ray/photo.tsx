@@ -141,9 +141,9 @@ export function PhotoScreen(props: Props) {
       <Screen key="preview" inert={props.inert}>
         <div className="topbar">
           <span>
-            <button type="button" className="link" onClick={() => void go(close)}>
-              <Icon name="close" />
-              やめる
+            <button type="button" className="link" onClick={props.onRetake}>
+              <Icon name="camera" />
+              撮り直す
             </button>
           </span>
           <span className="mono">Photo</span>
@@ -169,12 +169,12 @@ export function PhotoScreen(props: Props) {
         </div>
         <div className="actionbar">
           <NoteBar text={error} alert />
-          <button type="button" className="btn btn--line" onClick={props.onRetake}>
-            撮り直す
+          <button type="button" className="btn btn--line" onClick={() => void go(close)}>
+            残さない
           </button>
           <button type="button" className="btn" disabled={!photo} onClick={() => setStep("place")}>
             <Icon name="arrow" />
-            場所を選ぶ
+            次へ
           </button>
         </div>
       </Screen>
@@ -200,7 +200,7 @@ export function PhotoScreen(props: Props) {
         </div>
       )}
       <h1 className="h2 clear__msg" role="status">
-        <Phrases text={`${shot.number}枚目のメモリーを残しました`} />
+        <Phrases text={`${shot.number}枚目の写真を残しました`} />
       </h1>
       {props.reminderOn && props.nextReminderAt !== null && (
         <p className="small clear__sub">

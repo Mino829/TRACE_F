@@ -33,4 +33,4 @@ export async function saveImage(file: File): Promise<SaveResult> {
 }
 
 /** What to say when the file could not be handed over: the picture on the screen can still be saved by hand. */
-export const LONG_PRESS = "この端末では、ボタンから保存できませんでした。画像を長く押すと出るメニューから保存してください。";
+export const LONG_PRESS = "この端末では、ボタンから保存できませんでした。画像を長押しすると出るメニューから保存してください。";

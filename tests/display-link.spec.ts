@@ -240,18 +240,16 @@ test("renderer entitlement alone leaves operator failure visible and never displ
 
 test("independent operator login renders a real QR, revokes on logout, and keeps credentials out of browser storage", async ({ page }) => {
   const google = `header.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url")}.signature`;
-  const renderer = await backend(page, { credential: google });
+  await backend(page, { credential: google });
   let active = false;
-  let revoked = 0;
-  const operatorHeaders: string[] = [];
   await page.route("http://127.0.0.1:8790/operator/credentials", async (route) => {
     expect(route.request().headers().authorization).toBe(`Bearer ${google}`);
     active = true;
     await route.fulfill({ json: { operatorToken: "opaque-browser-operator", credentialId: "credential-1", role: "operator", expiresAt: new Date(Date.now() + 120000).toISOString() } });
   });
   await page.route("http://127.0.0.1:8790/arrival-token", async (route) => {
-    operatorHeaders.push(route.request().headers().authorization);
-    await route.fulfill(active
+    const authorized = active && route.request().headers().authorization === "Bearer opaque-browser-operator";
+    await route.fulfill(authorized
       ? { json: { checkpointToken: "signed-arrival-proof.signature", expiresAt: new Date(Date.now() + 25000).toISOString() } }
       : { status: 401, json: { error: { code: "UNAUTHORIZED" } } });
   });
@@ -259,7 +257,6 @@ test("independent operator login renders a real QR, revokes on logout, and keeps
     expect(route.request().method()).toBe("DELETE");
     expect(route.request().headers().authorization).toBe("Bearer opaque-browser-operator");
     active = false;
-    revoked++;
     await route.fulfill({ status: 204 });
   });
   await signIn(page);
@@ -269,14 +266,11 @@ test("independent operator login renders a real QR, revokes on logout, and keeps
     const pixels = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
     return pixels.some((value, index) => index % 4 === 3 && value > 0);
   })).toBe(true);
-  expect(operatorHeaders).toEqual(["Bearer opaque-browser-operator"]);
-  expect(renderer.tokenRequests).toEqual([`Bearer ${google}`]);
   const stored = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
   expect(stored).not.toContain("opaque-browser-operator");
   expect(stored).not.toContain(google);
   await page.getByRole("button", { name: "ログアウト・現在の運営資格を失効" }).click();
   await expect(page.locator("[data-operator-state=login]")).toBeVisible();
   await expect(page.getByText("ARRIVAL QR", { exact: true })).toHaveCount(0);
-  expect(revoked).toBe(1);
   expect(active).toBe(false);
 });

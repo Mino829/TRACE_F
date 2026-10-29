@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Player } from "@/lib/display/player";
 import type { RoutePath } from "@/lib/display/route-path";
+import { createSound, type Cue, type SoundEngine } from "@/lib/display/sound";
 
 import { ArrivalQr } from "./arrival-qr";
 import { GoogleSignIn } from "./google-sign-in";
@@ -31,6 +32,12 @@ import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/rende
  * until 終了する (or Esc). Query: ?speed=1.5 (pace; 1 walks at WALK_SPEED),
  * ?duration=30 (fit every walk into that many seconds instead), ?fps=1
  * (frames per second in the corner, to check the booth PC keeps up).
+ *
+ * Sound (issue #27, src/lib/display/sound.ts): music while waiting and while
+ * replaying, a cue as a walk starts and one at ShibaLab. The browser needs one
+ * click before it makes sound, so 音を出す shows until then (the test buttons
+ * count too). ?volume=0.6 sets the level, ?mute=1 silences it, ?sound=1 shows
+ * which sounds are the real files and which are still placeholders.
  */
 type Screen = "loading" | "top" | "playback" | "arrived";
 
@@ -59,6 +66,33 @@ export function DisplayClient() {
   const [status, setStatus] = useState({ stop: "", place: "", progress: 0 });
   const [arrivedAt, setArrivedAt] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const soundRef = useRef<SoundEngine | null>(null);
+  const [sound, setSound] = useState<{ unlocked: boolean; sources: Record<Cue, string> } | null>(null);
+  const [showSources, setShowSources] = useState(false);
+
+  // Sound: made on mount, told which screen is up, unlocked by the first click or key.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const volume = params.has("volume") ? Number(params.get("volume")) : 1;
+    const engine = createSound({ volume: Number.isFinite(volume) ? volume : 1, muted: params.get("mute") === "1" });
+    soundRef.current = engine;
+    const sync = () => setSound({ unlocked: engine.unlocked, sources: { ...engine.sources } });
+    const off = engine.subscribe(sync);
+    const first = window.setTimeout(() => {
+      sync();
+      setShowSources(params.get("sound") === "1");
+    }, 0);
+    return () => {
+      window.clearTimeout(first);
+      off();
+      engine.dispose();
+      soundRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (screen !== "loading") soundRef.current?.scene(screen);
+  }, [screen]);
 
   useEffect(() => {
     let disposed = false;
@@ -117,6 +151,7 @@ export function DisplayClient() {
     const player = playerRef.current;
     const routes = routesRef.current;
     if (!player || !routes) return;
+    void soundRef.current?.unlock();
     testRef.current = which;
     setStatus({ stop: "", place: "", progress: 0 });
     playingRef.current = true;
@@ -236,7 +271,7 @@ export function DisplayClient() {
         <header className="dsp-mast dsp-mast--room">
           <p className="dsp-mark">
             <span className="wordmark">TRACE</span>
-            <span className="dsp-mono">SHIBALAB 301</span>
+            <span className="dsp-mono keep-case">ShibaLab 301</span>
           </p>
           <div className="dsp-tests">
             <span className="dsp-mono">{live ? "ARRIVAL" : "TEST · 繰り返し再生中"}</span>
@@ -271,7 +306,7 @@ export function DisplayClient() {
             <p className="dsp-mono">
               54TH SHIBAURA FESTIVAL
               <br />
-              SHIBALAB 301 / RAY
+              <span className="keep-case">ShibaLab</span> 301 / RAY
             </p>
             <div className="dsp-tests">
               {link && <LinkBadge link={link} />}
@@ -301,9 +336,9 @@ export function DisplayClient() {
               <h1 className="dsp-title">TRACE</h1>
               <p className="dsp-catch">あなたの歩いた一日を、光でたどる。</p>
               <p className="dsp-text">
-                スマホの TRACE で「ShibaLab へ」を開いて、
+                スマホの TRACE で「QR コードを読み取る」を押して、
                 <br />
-                この QR コードを読み取ってください。
+                この QR コードを枠に入れてください。
                 <br />
                 あなたの歩いてきた軌跡が、このスクリーンに映ります。
               </p>
@@ -312,7 +347,7 @@ export function DisplayClient() {
                   <span className="dsp-mono">1</span>TRACE を開く
                 </li>
                 <li>
-                  <span className="dsp-mono">2</span>QR を読み取る
+                  <span className="dsp-mono">2</span>QR コードを読み取る
                 </li>
                 <li>
                   <span className="dsp-mono">3</span>スクリーンを見る
@@ -329,6 +364,16 @@ export function DisplayClient() {
         </div>
       )}
 
+      {sound && !sound.unlocked && (
+        <button type="button" className="dsp-test dsp-sound" onClick={() => void soundRef.current?.unlock()}>
+          ♪ 音を出す
+        </button>
+      )}
+      {sound && showSources && (
+        <p className="dsp-mono dsp-sound-sources">
+          SOUND {Object.entries(sound.sources).map(([cue, src]) => `${cue}:${src}`).join(" / ")}
+        </p>
+      )}
       <Hud screen={screen} />
       {fps !== null && screen !== "top" && <p className="dsp-fps">{fps} FPS</p>}
     </div>
@@ -374,7 +419,7 @@ function Hud({ screen }: { screen: Screen }) {
       <i className="dsp-hud__c dsp-hud__c--bl" />
       <i className="dsp-hud__c dsp-hud__c--br" />
       <p className="dsp-hud__read">
-        <span>{screen === "top" || screen === "loading" ? "TRACE / FES.54 10.31-11.01 / ASYNC BOOTH" : "TRACE / SHIBALAB 301"}</span>
+        <span>{screen === "top" || screen === "loading" ? "TRACE / FES.54 10.31-11.01 / ASYNC BOOTH" : "TRACE / ShibaLab 301"}</span>
         <span>{now ? clock(now) : ""}</span>
       </p>
     </div>

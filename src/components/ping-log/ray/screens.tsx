@@ -72,7 +72,7 @@ const ENTRY_STOP: Partial<Record<EntryCheck, { head: string; text: string }>> = 
   },
   "no-camera": {
     head: "このブラウザでは参加できません",
-    text: "TRACE ではカメラで写真を撮り、\nShibaLab で QR コードを読み取ります。このブラウザではカメラを使えないので、\nSafari か Chrome で開いてください。",
+    text: "TRACE ではカメラで写真を撮ります。このブラウザではカメラを使えないので、\nSafari か Chrome で開いてください。",
   },
 };
 
@@ -124,18 +124,19 @@ function EntryCta({ entry, onStart, onInstall }: { entry: EntryCheck; onStart: (
  */
 export function TitleScreen({
   notes,
-  entry,
+  foot,
   inert,
-  onStart,
-  onInstall,
   onDeveloper,
   onMenu,
 }: {
   notes: string[];
-  entry: EntryCheck;
+  /**
+   * 「はじめる」, or for someone already taking part, back here from the TRACE
+   * mark, the way home: how to play and the consent would join a second
+   * time, and this browser is not checked again.
+   */
+  foot: { entry: EntryCheck; onStart: () => void; onInstall: () => void } | { onHome: () => void };
   inert: boolean;
-  onStart: () => void;
-  onInstall: () => void;
   onDeveloper: () => void;
   onMenu: () => void;
 }) {
@@ -159,7 +160,7 @@ export function TitleScreen({
           <p className="mono">
             54th Shibaura Festival
             <br />
-            ShibaLab 301 / Ray
+            <span className="keep-case">ShibaLab</span> 301 / Ray
           </p>
           <MastButtons onDeveloper={onDeveloper} onMenu={onMenu} />
         </div>
@@ -171,7 +172,7 @@ export function TitleScreen({
         ))}
         <p className="title__tag">写真で残す、学祭の一日</p>
         <p className="title__lead">
-          <Sentences text={"学祭で残したい瞬間を、写真に撮ってください。撮った写真は、\nあなたの一日のメモリーになります。"} />
+          <Sentences text="学祭で残したい瞬間を、写真に撮ってください。" />
         </p>
         <ol className="steps" aria-label="参加の流れ">
           <li>
@@ -190,7 +191,15 @@ export function TitleScreen({
           <Info info={info} label="写真の扱いについて" />
         </p>
         <Pop info={info} text="撮った写真は、展示に出しません。参加は任意です。" />
-        <EntryCta entry={entry} onStart={onStart} onInstall={onInstall} />
+        {"onHome" in foot ? (
+          <div className="title__cta">
+            <button type="button" className="btn" onClick={foot.onHome}>
+              ホームへもどる
+            </button>
+          </div>
+        ) : (
+          <EntryCta {...foot} />
+        )}
       </div>
     </Screen>
   );
@@ -352,6 +361,7 @@ type HomeProps = {
   onDeveloper: () => void;
   onMenu: () => void;
   onInstall: () => void;
+  onTitle: () => void;
 };
 
 /**
@@ -375,7 +385,7 @@ export function HomeScreen(props: HomeProps) {
 
   return (
     <Screen className="home" inert={props.inert}>
-      <Mast onDeveloper={props.onDeveloper} onMenu={props.onMenu} />
+      <Mast onTitle={props.onTitle} onDeveloper={props.onDeveloper} onMenu={props.onMenu} />
       <NoteBar text={props.message} />
 
       {pendingAt && (
@@ -405,15 +415,15 @@ export function HomeScreen(props: HomeProps) {
 
       <header className="home__head">
         <p className="home__meta mono">
-          <span>Memory</span>
+          <span>Photos</span>
           <span aria-hidden="true">
             {count} / {maxPhotos}
           </span>
           <span className="sr-only">{`${count}枚（${maxPhotos}枚まで）`}</span>
         </p>
         <h1 className="h1 home__title">
-          きょうのメモリー
-          <Info info={memoryInfo} label="きょうのメモリーについて" />
+          撮った写真
+          <Info info={memoryInfo} label="撮った写真について" />
         </h1>
         {count === 0 && (
           <p className="body home__lead">
@@ -433,7 +443,7 @@ export function HomeScreen(props: HomeProps) {
           </div>
         </div>
       ) : (
-        <Strip label="きょうの写真（新しい順）" one={count === 1}>
+        <Strip label="撮った写真（新しい順）" one={count === 1}>
           {[...photos].reverse().map((entry, index) => {
             const meta = entry.record.photo;
             return (
@@ -461,7 +471,7 @@ export function HomeScreen(props: HomeProps) {
       {props.ended && <p className="note-bar" role="status">参加は終了しました。保存期限までは写真の確認と記録の削除ができます。</p>}
       {full && (
         <p className="small limit">
-          <Sentences text={`${maxPhotos}枚撮り終えました。撮影は${maxPhotos}枚までです。`} />
+          <Sentences text={`${maxPhotos}枚撮り終えました。新しく撮るときは、\n写真を1枚削除してください。`} />
         </p>
       )}
 
@@ -512,7 +522,7 @@ export function HomeScreen(props: HomeProps) {
           301
         </p>
         <div className="lab__head">
-          <span className="mono">ShibaLab</span>
+          <span className="mono keep-case">ShibaLab</span>
           <span className="mono">Room 301</span>
         </div>
         {props.ended && !props.arrived ? (

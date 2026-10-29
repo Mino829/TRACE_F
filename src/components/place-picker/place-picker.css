@@ -59,6 +59,7 @@
     z-index: 5;
     flex: none;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
     margin: 0 -20px;
     padding: 10px 20px calc(var(--safe-bottom) + 12px);
@@ -77,6 +78,7 @@
     min-height: 24px;
   }
 
+  /* The hint wraps: on one line it set the footer's width and pushed the save button off a narrow screen. */
   & .pp-summary {
     flex: 1;
     min-width: 0;
@@ -84,9 +86,6 @@
     font-size: 0.86rem;
     line-height: 1.35;
     opacity: 0.72;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   & .pp-summary[data-picked] {

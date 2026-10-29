@@ -16,14 +16,14 @@ import {
   type ReplayStatus,
 } from "@/lib/trace-api/client";
 import type { LogEntry } from "@/lib/ping-log/store";
-import { sendMemoryAction } from "@/lib/trace-api/session";
+import { loadTabExperience, sendMemoryAction } from "@/lib/trace-api/session";
 
 import { useLayer } from "../layer";
 import { clock } from "../ui";
 import { ScanWindow, placeTrackers, useBeam } from "./demo";
 import { KeepsakeScreen } from "./keepsake";
 import { TraceScreen } from "./trace";
-import { HomeMark, Icon, Phrases, Screen, Sentences, SWAP, useField, useRay } from "./stage";
+import { Icon, Phrases, Screen, Sentences, SWAP, TitleMark, useField, useRay } from "./stage";
 
 /**
  * Arriving at ShibaLab for real, while /log works with TRACE_B: the phone's
@@ -72,6 +72,8 @@ export function ArrivalFlow({
   ended,
   inert,
   onClose,
+  onTitle,
+  beforeArrival,
   onArrived,
   onDelete,
 }: {
@@ -84,6 +86,10 @@ export function ArrivalFlow({
   ended: boolean;
   inert: boolean;
   onClose: () => void;
+  /** The TRACE mark: this closes, and the title shows. */
+  onTitle: () => void;
+  /** Gives the photos' places still on their way a moment to reach TRACE_B (#13); never rejects. */
+  beforeArrival: () => Promise<void>;
   onArrived: (memorySessionId: string) => void;
   /** Asks before deleting a photo (#51). */
   onDelete: (entry: LogEntry, number: number) => void;
@@ -95,15 +101,36 @@ export function ArrivalFlow({
   const [arrivedAt, setArrivedAt] = useState<string | null>(null);
   const close = useLayer("#arrival", onClose);
   const leave = useCallback(() => void go(close), [go, close]);
+  const title = useCallback(
+    () =>
+      void go(() => {
+        close();
+        onTitle();
+      }),
+    [go, close, onTitle],
+  );
   const attempt = useRef<ArrivalAttempt | null>(null);
   // A code is on its way, or has arrived: the check below no longer moves the screen.
   const reading = useRef(false);
   const arrived = useRef(false);
+  const endedRef = useRef(ended);
+  useEffect(() => {
+    endedRef.current = ended;
+  }, [ended]);
   const { experienceId, memory } = target;
   const onArrivedRef = useRef(onArrived);
   useEffect(() => {
     onArrivedRef.current = onArrived;
   }, [onArrived]);
+  const beforeArrivalRef = useRef(beforeArrival);
+  useEffect(() => {
+    beforeArrivalRef.current = beforeArrival;
+  }, [beforeArrival]);
+
+  // The places still on their way start for TRACE_B while the camera starts, so reading the code seldom waits for them.
+  useEffect(() => {
+    if (!ended) void beforeArrivalRef.current();
+  }, [ended]);
 
   // Arrived already (a reload, or the button pressed again): straight to where the replay stands.
   useEffect(() => {
@@ -133,7 +160,16 @@ export function ArrivalFlow({
       if (attempt.current?.checkpointToken !== code) attempt.current = arrivalAttempt(code);
       const current = attempt.current;
       try {
-        const result = await sendMemoryAction(memory.memorySessionId, "arrival", current, (key) => sendArrival(memory, current, key));
+        // The room's screen draws the way from the places TRACE_B has when the arrival comes.
+        await beforeArrivalRef.current();
+        const result = await sendMemoryAction(memory.memorySessionId, "arrival", current, (key) => {
+          const stored = loadTabExperience();
+          if (endedRef.current || Date.parse(memory.expiresAt) <= Date.now() ||
+            (stored && (stored.status === "ended" || stored.memory.memorySessionId !== memory.memorySessionId))) {
+            throw new TraceApiError(409, "STATE_CONFLICT", null);
+          }
+          return sendArrival(memory, current, key);
+        });
         arrived.current = true;
         onArrivedRef.current(memory.memorySessionId);
         setStatus(replayStatus(result.status) ?? "queued");
@@ -161,6 +197,7 @@ export function ArrivalFlow({
         onDelete={onDelete}
         onTrace={() => void go(() => setStep("trace"))}
         onLeave={leave}
+        onTitle={title}
       />
     );
   }
@@ -175,6 +212,7 @@ export function ArrivalFlow({
       onStatus={setStatus}
       onKeepsake={() => void go(() => setStep("keepsake"))}
       onLeave={leave}
+      onTitle={title}
     />
   );
 }
@@ -520,6 +558,7 @@ function Replay({
   onStatus,
   onKeepsake,
   onLeave,
+  onTitle,
 }: {
   target: ArrivalTarget;
   status: ReplayStatus | null;
@@ -530,6 +569,7 @@ function Replay({
   onStatus: (status: ReplayStatus) => void;
   onKeepsake: () => void;
   onLeave: () => void;
+  onTitle: () => void;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const final = isFinal(status);
@@ -610,8 +650,10 @@ function Replay({
     <Screen inert={inert}>
       <header className="mast">
         <div className="mast__mark">
-          <HomeMark onHome={onLeave} />
-          <span className="mono">ShibaLab 301</span>
+          <TitleMark onTitle={onTitle} />
+          <span className="mono">
+            <span className="keep-case">ShibaLab</span> 301
+          </span>
         </div>
         <button type="button" className="icon-btn" aria-label="ホームへもどる" onClick={onLeave}>
           <Icon name="close" />

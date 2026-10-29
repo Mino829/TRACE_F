@@ -5,7 +5,9 @@ import {
   TRACE_API_URL,
   createExperience,
   deleteMemorySession,
+  deletePhotoMoment,
   getExperience,
+  listPhotoMoments,
   sendArrival,
   stopMemorySession,
 } from "../../src/lib/trace-api/client.ts";
@@ -85,4 +87,26 @@ test("arrival retry exposes the latest replay status for the same arrival", asyn
   const attempt = { checkpointToken: "expired-on-retry", clientTime: "2026-10-31T15:00:00Z" };
   assert.deepEqual(await sendArrival(memory, attempt, "arrival-key"), { arrivalId: "arrival-1", status: "queued" });
   assert.deepEqual(await sendArrival(memory, attempt, "arrival-key"), { arrivalId: "arrival-1", status: "completed" });
+});
+
+test("retained owners read and delete photo metadata without recreating it after participation expires", async () => {
+  const expired = { ...memory, expiresAt: "2026-10-01T18:00:00Z" };
+  const photo = { photoMomentId: "photo/1", clientPhotoId: "local-1", checkpointId: "cp-a", capturedAt: "2026-10-01T15:00:00Z", sequenceNo: 1 };
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push({ url, options });
+    assert.equal(options.headers.Authorization, "Bearer owner-token");
+    assert.equal(options.body, undefined);
+    if (options.method === "GET") {
+      assert.equal(url, `${TRACE_API_URL}/v2/memory-sessions/memory%2Fowner/photos`);
+      return Response.json({ photos: [photo] });
+    }
+    assert.equal(options.method, "DELETE");
+    assert.equal(url, `${TRACE_API_URL}/v2/memory-sessions/memory%2Fowner/photos/photo%2F1`);
+    assert.equal(options.headers["Idempotency-Key"], "delete-photo-key");
+    return new Response(null, { status: 204 });
+  };
+  assert.deepEqual(await listPhotoMoments(expired), [photo]);
+  await deletePhotoMoment(expired, photo.photoMomentId, "delete-photo-key");
+  assert.deepEqual(requests.map(({ options }) => options.method), ["GET", "DELETE"]);
 });

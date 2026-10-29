@@ -1,8 +1,8 @@
 /**
  * The keepsake (作品, #14): the photos a participant took before arriving at
  * ShibaLab, in the order taken, on one image the shape of a phone's screen.
- * One line of light runs through the brightest point of each photo, where
- * the screen puts its RAY mark, from the first photo to the last.
+ * One line of light runs through the brightest point of each photo, from the
+ * first photo to the last.
  *
  * Drawn on a canvas in the room's ink and handed back as a JPEG, which
  * carries no metadata: no place, no time stamp, no phone.
@@ -28,7 +28,7 @@ const DIM = "#a2a4a7";
 const GAP_X = 36;
 const GAP_Y = 40;
 const CAPTION = 46;
-/** The square around each photo's brightest point, as the screen's RAY mark. */
+/** The square around each photo's brightest point, where the line of light passes. */
 const MARK = 30;
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -157,7 +157,7 @@ export async function drawKeepsake(photos: KeepsakePhoto[], root: Element): Prom
     const date = `${first.getMonth() + 1}.${pad(first.getDate())}`;
     const span = photos.length > 1 ? `${clockOf(first)} → ${clockOf(last)}` : clockOf(first);
     const captions = photos.map((photo) => [`${photo.number}枚目`, clockOf(new Date(photo.takenAt))] as const);
-    const fonts = await fontsFor(root, `SHIBALAB 301 ${span} ${photos.length}枚 ${captions.flat().join(" ")} 54TH SHIBAURA FESTIVAL END OF LOG RAY`);
+    const fonts = await fontsFor(root, `ShibaLab 301 ${span} ${photos.length}枚 ${captions.flat().join(" ")} 54TH SHIBAURA FESTIVAL END OF LOG`);
 
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(W * SCALE);
@@ -182,7 +182,7 @@ export async function drawKeepsake(photos: KeepsakePhoto[], root: Element): Prom
     spaced(context, "TRACE", MARGIN, 128, -0.045);
     context.fillStyle = DIM;
     context.font = `500 24px ${fonts.mono}`;
-    spaced(context, "SHIBALAB 301", W - MARGIN, 124, 0.14, "right");
+    spaced(context, "ShibaLab 301", W - MARGIN, 124, 0.14, "right");
     context.fillStyle = PAPER;
     context.fillRect(MARGIN, 154, W - MARGIN * 2, 3);
     context.font = `800 232px ${fonts.latin}`;
@@ -240,16 +240,6 @@ export async function drawKeepsake(photos: KeepsakePhoto[], root: Element): Prom
     });
     rays.forEach((point) => context.strokeRect(point.x - MARK / 2, point.y - MARK / 2, MARK, MARK));
     context.restore();
-
-    // The first mark is named, as on the screen: a tag beside it, on the side away from the edge.
-    context.font = `500 18px ${fonts.mono}`;
-    const tagWidth = context.measureText("RAY").width + 18 * 0.1 * 2 + 10;
-    const start = rays[0];
-    const tagX = start.x > W * 0.6 ? start.x - MARK / 2 - 6 - tagWidth : start.x + MARK / 2 + 6;
-    context.fillStyle = INK;
-    context.fillRect(tagX, start.y - MARK / 2, tagWidth, MARK);
-    context.fillStyle = PAPER;
-    spaced(context, "RAY", tagX + 5, start.y + 6, 0.1);
 
     // Each photo's frame number and time under it.
     context.font = `500 24px ${fonts.mono}`;

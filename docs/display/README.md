@@ -44,6 +44,25 @@ http://localhost:3000/display を開き、右上の「▶ テスト再生」（�
 
 e2e テスト：`TRACE_TEST_FRONTEND_URL=http://localhost:3000 npx playwright test tests/display.spec.ts`
 
+## 音（#27）
+
+| 場面 | 鳴る音 |
+|---|---|
+| トップ画面（到着QR） | 待っているときの BGM（ループ） |
+| 再生が始まる | 到着QR を読めた音 → 再生中の BGM（ループ）へ |
+| ShibaLab に着く | 再生中の BGM を 1 秒で消して、着いた音 |
+| トップに戻る | 待っているときの BGM へ |
+
+- 音のファイルは `public/display/sound/` に置く（ファイル名・形式・ループの決め方は、そのフォルダの README）。ないものは仮の音が鳴る
+- ブラウザは一度クリックするまで音を出さないので、展示のはじめに「♪ 音を出す」を押す（テスト再生のボタンやスペースキーでも鳴りはじめる）
+- BGM どうしは 1.5 秒のフェードでつなぐ
+
+| URL のパラメーター | 意味 |
+|---|---|
+| `?volume=0.6` | 全体の音の大きさ（0〜1） |
+| `?mute=1` | 音を出さない |
+| `?sound=1` | 右下に、どの音が本物のファイルで、どれがまだ仮の音かを出す |
+
 ## しくみ
 
 - 3D：`public/display/campus.glb`（`models/scripts/export_web.py` で Blender から書き出し。Draco 圧縮で約 1.4MB）

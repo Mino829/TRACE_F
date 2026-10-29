@@ -2,8 +2,7 @@
  * RAY prints and overlays.
  *
  * RayPrint copies a photo onto a small canvas, one cell per 2 CSS px, in its
- * own colours. tear() pulls the channels apart for a moment, and the brightest
- * point of the photo is kept in `ray` for the "RAY" mark.
+ * own colours. tear() pulls the channels apart for a moment.
  *
  * RayFX owns two full-screen canvases above the interface: a shutter that
  * drops 1-bit strips to hide a screen change, and a tear layer (difference
@@ -41,7 +40,7 @@ function rgb(hex: string): [number, number, number] {
 
 /**
  * The brightest small area of a picture's pixels, ignoring a thin border, as
- * fractions of its width and height: where the RAY mark goes.
+ * fractions of its width and height: where the keepsake's line of light passes.
  */
 export function brightest(data: Uint8ClampedArray, width: number, height: number): { x: number; y: number } {
   let best = -1;
@@ -68,7 +67,6 @@ export function brightest(data: Uint8ClampedArray, width: number, height: number
 
 export class RayPrint {
   readonly canvas: HTMLCanvasElement;
-  ray = { x: 0.5, y: 0.5 };
   private img: HTMLImageElement;
   private cell: number;
   private ctx: CanvasRenderingContext2D | null;
@@ -110,7 +108,6 @@ export class RayPrint {
     }
     this.orig = new Uint8ClampedArray(data);
     this.out = ctx.createImageData(width, height);
-    this.ray = brightest(data, width, height);
     return this;
   }
 

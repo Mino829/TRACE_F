@@ -26,7 +26,7 @@ async function join(page: Page) {
 
 async function takePhoto(page: Page) {
   await page.locator('input[type="file"][capture]').setInputFiles(PHOTO);
-  await page.getByRole("button", { name: "場所を選ぶ" }).click();
+  await page.getByRole("button", { name: "次へ", exact: true }).click();
   await expect(page.getByRole("heading", { name: /どこで撮りましたか/ })).toBeVisible();
 }
 
@@ -67,7 +67,7 @@ test("a photo saves its chosen checkpoint without requesting the phone's positio
   await expect(save).toBeEnabled();
   await shoot(page, "03-selected");
   await save.click();
-  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible();
+  await expect(page.getByText("1枚目の写真を残しました")).toBeVisible();
   await shoot(page, "04-clear");
 
   expect(await page.evaluate(() => Reflect.get(window, "__locationCalls"))).toEqual([]);
@@ -99,7 +99,7 @@ test("the next photo opens on the last place and can take it again in one tap", 
   await page.getByRole("radio", { name: "5F", exact: true }).click();
   await page.getByRole("radio", { name: /本部棟5F/ }).click();
   await page.getByRole("button", { name: "ここで保存" }).click();
-  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible();
+  await expect(page.getByText("1枚目の写真を残しました")).toBeVisible();
   await page.getByRole("button", { name: "ホームへもどる" }).click();
 
   await page.getByRole("button", { name: "写真を撮る" }).first().click({ trial: true }).catch(() => undefined);
@@ -108,7 +108,7 @@ test("the next photo opens on the last place and can take it again in one tap", 
   await page.getByRole("button", { name: /さっきと同じ/ }).click();
   await expect(page.getByRole("button", { name: "ここで保存" })).toBeEnabled();
   await page.getByRole("button", { name: "ここで保存" }).click();
-  await expect(page.getByText("2枚目のメモリーを残しました")).toBeVisible();
+  await expect(page.getByText("2枚目の写真を残しました")).toBeVisible();
 });
 
 test("the list offers every building, floor and checkpoint without the map", async ({ page }) => {
@@ -122,14 +122,14 @@ test("the list offers every building, floor and checkpoint without the map", asy
   await page.getByRole("button", { name: "地図で選ぶ" }).click();
   await expect(page.getByRole("button", { name: "ここで保存" })).toBeEnabled();
   await page.getByRole("button", { name: "写真にもどる" }).click();
-  await expect(page.getByRole("button", { name: "場所を選ぶ" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "次へ", exact: true })).toBeVisible();
 });
 
 test("the phone's back button steps back from the place screen to the photo and keeps the photo", async ({ page }) => {
   await join(page);
   await takePhoto(page);
   await page.goBack();
-  await expect(page.getByRole("button", { name: "場所を選ぶ" })).toBeVisible();
-  await page.getByRole("button", { name: "場所を選ぶ" }).click();
+  await expect(page.getByRole("button", { name: "次へ", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "次へ", exact: true }).click();
   await expect(page.getByRole("heading", { name: /どこで撮りましたか/ })).toBeVisible();
 });

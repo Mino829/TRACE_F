@@ -79,7 +79,7 @@ async function join(page: Page) {
 
 async function savePhoto(page: Page) {
   await page.locator('input[type="file"][capture]').setInputFiles(PHOTO);
-  await page.getByRole("button", { name: "場所を選ぶ" }).click();
+  await page.getByRole("button", { name: "次へ", exact: true }).click();
   await page.getByRole("button", { name: "一覧で選ぶ" }).click();
   await page.getByRole("radio", { name: "本部棟", exact: true }).click();
   await page.getByRole("radio", { name: "5F", exact: true }).click();
@@ -223,7 +223,7 @@ test("a photo stays on the phone: no tab sends it anywhere, and both tabs show i
   await expect(second.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
 
   await savePhoto(page);
-  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("1枚目の写真を残しました")).toBeVisible({ timeout: 15000 });
   // The other tab hears of it without a reload, and a reload there sends nothing either.
   await expect(second.getByText("1枚（12枚まで）")).toBeAttached();
   await second.reload();
@@ -238,7 +238,7 @@ test("a participation the backend no longer knows is forgotten, with a note and 
   const backend = await standIn(context);
   await join(page);
   await savePhoto(page);
-  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("1枚目の写真を残しました")).toBeVisible({ timeout: 15000 });
   expect(await kept(page)).toEqual({ photos: 1, others: 0 });
   backend.deleted = true;
   await page.reload();
@@ -263,7 +263,7 @@ test("past its deleteAfter the participation is forgotten without asking the bac
   const backend = await standIn(context);
   await join(page);
   await savePhoto(page);
-  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("1枚目の写真を残しました")).toBeVisible({ timeout: 15000 });
   await putDeveloperRecord(page);
   expect(await kept(page)).toEqual({ photos: 1, others: 1 });
   await page.evaluate(() => {
