@@ -3,7 +3,7 @@
 import { useCallback, useState, type RefObject } from "react";
 
 import { dropExpired, madeWith, unsubscribe } from "@/lib/ping-log/push";
-import { TRACE_API_URL, fetchPublicConfig, type PublicConfig } from "@/lib/trace-api/client";
+import { fetchPublicConfig, type PublicConfig } from "@/lib/trace-api/client";
 import {
   ENDED_MESSAGE,
   ReminderError,
@@ -46,7 +46,7 @@ type Options = {
 };
 
 export function useTraceReminder({ experience, config, setConfig, subscription, setSubscription, setWorkerExpiresAt, registration, now }: Options) {
-  const [stored, setStored] = useState<TraceReminder | null>(() => (TRACE_API_URL ? loadTraceReminder() : null));
+  const [stored, setStored] = useState<TraceReminder | null>(loadTraceReminder);
 
   const key = config?.notification?.vapidPublicKey ?? "";
   const owned = subscription !== null && ((key !== "" && madeWith(subscription, key) === true) || subscription.endpoint === stored?.active?.endpoint);

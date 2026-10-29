@@ -6,9 +6,8 @@ import path from "node:path";
  * /log after arriving at ShibaLab (#14): the keepsake drawn from the photos
  * kept on the phone, each photo saved or deleted (#51) on its own, and
  * 振り返り3D (#50) from the keepsake; and what of each photo goes to TRACE_B
- * on the way there (#13). Like log-tabs.spec.ts,
- * the dev server runs with NEXT_PUBLIC_TRACE_API_URL=/api/backend and a
- * stand-in inside the test answers for TRACE_B. Chrome on a computer saves
+ * on the way there (#13). Like log-tabs.spec.ts, a stand-in answers for
+ * TRACE_B at the standard same-origin /api/backend path. Chrome on a computer saves
  * by downloading, which is what is checked here; an iPhone's share sheet is not.
  */
 
@@ -47,7 +46,7 @@ async function standIn(context: BrowserContext): Promise<StandIn> {
     const where = `${request.method()} ${new URL(request.url()).pathname.replace("/api/backend", "")}`;
     if (where === "GET /v1/public/config") {
       return route.fulfill({ json: {
-        registrationOpen: true, consent: { version: "consent-1", language: "ja", body: "" }, livePresenceConsentVersion: "live-1",
+        registrationOpen: true, consent: { version: "consent-1", language: "ja", body: "写真は端末に保存し、選択した場所と撮影時刻のみをサーバーに記録します。テスト用の参加説明です。" }, livePresenceConsentVersion: "live-1",
         photo: { enabled: true, maxCount: 12, maxUploadBytes: 3_000_000, maxLongEdgePixels: 1600, publicDisplay: false }, contact: "",
       } });
     }

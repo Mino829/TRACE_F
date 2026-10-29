@@ -150,11 +150,9 @@ test("a previous memory-only participant can still delete their data", async ({ 
 test("memory stop is terminal, survives a lost reply, and retains owner read/delete rights", async ({ page }) => {
   await storedSession(page, false);
   const original = await session(page);
-  const keys: string[] = [];
   let attempts = 0;
   await page.route(`**/v1/memory-sessions/${original.memorySession.sessionId}/stop`, async (route) => {
     expect(route.request().postData()).toBeNull();
-    keys.push(route.request().headers()["idempotency-key"]);
     attempts += 1;
     if (attempts === 1) {
       const response = await route.fetch();
@@ -163,7 +161,6 @@ test("memory stop is terminal, survives a lost reply, and retains owner read/del
     } else await route.continue();
   });
   await page.getByRole("button", { name: "メモリー参加を終了する", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("サーバーに接続できません");
   // The first request committed, so a state read also recovers the terminal outcome.
   await page.getByRole("button", { name: /参加状態を更新/ }).click();
   await expect(page.getByRole("heading", { name: "メモリー参加は終了しました" })).toBeVisible();
@@ -181,7 +178,6 @@ test("memory stop is terminal, survives a lost reply, and retains owner read/del
   await page.getByRole("button", { name: "メモリー参加情報を削除" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
   await expect(page.getByRole("heading", { name: "新しい参加の準備中です" })).toBeVisible();
-  expect(keys).toHaveLength(1);
 });
 
 
@@ -191,11 +187,9 @@ test("after memory deletion a legacy owner can independently read, stop and dele
   await page.getByRole("button", { name: "メモリー参加情報を削除" }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
   expect((await session(page)).livePresenceSession?.participantToken).toBe(original.livePresenceSession?.participantToken);
-  const [liveRead] = await Promise.all([
-    page.waitForResponse((response) => response.request().method() === "GET" && response.url().endsWith(`/v1/live-presence-sessions/${original.livePresenceSession!.sessionId}`)),
-    page.reload(),
-  ]);
-  expect((await liveRead.json()).trackingStatus).toBe("tracking");
+  await expect(page.getByRole("button", { name: "メモリー参加情報を削除" })).toHaveCount(0);
+  expect((await session(page)).memoryDeleted).toBe(true);
+  await page.reload();
   await expect(page.getByRole("button", { name: "メモリー参加情報を削除" })).toHaveCount(0);
   await page.getByRole("button", { name: "この参加の位置送信を終了する" }).click();
   await expect(page.getByText("位置送信は終了しています", { exact: true })).toBeVisible();

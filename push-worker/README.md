@@ -67,9 +67,9 @@ npm install
 マイグレーションの適用、通知サーバーのデプロイ、ページの静的書き出し、ページのデプロイを、この順に行います。
 途中で失敗すると、その段階で止まります。
 ページは `.env` の `PUSH_API_URL` に向けて書き出します（書いていなければ `https://trace-push.async5855.workers.dev`）。
-`.env` に `TRACE_API_URL=/api/backend` を書くと、/log はこのサイトの `/api/backend` を通して、TRACE_B に参加を作るようになります。
-書いていなければ、/log は今までどおり端末と通知サーバーだけで動きます。
-この行を書くのは、下の2つの secret を `trace-log` に設定し、TRACE_B につながることを確かめてからにしてください。
+`/log`は既定でこのサイトの`/api/backend`を通してTRACE_Bに参加を作ります。`TRACE_API_URL`は別の参加者gatewayを使う場合だけ指定する上書き設定です。
+API設定の省略・空文字を理由に、端末と通知サーバーだけの参加へ退避しません。Backend未接続・未設定503・受付停止では参加を開始しません。
+配信前に、下の2つのsecretを`trace-log`へ設定し、TRACE_Bへの接続と公開設定を確認してください。受付・同意の承認は別です。
 `.env` に `ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID`、`ARRIVAL_PROOF_KEY_ID`（省略時 `arrival-proof-v1`）も書きます。Go の同名 `TRACE_*` 設定と一致させます。key ID は公開識別子で、署名鍵ではありません。
 `/log` はこの3値と固定 purpose `arrival` を使い、短い T2 到着 QR から署名済みトークンを復元します。値が異なる場合は QR を短縮しません（arrival-issuer/README.md）。
 

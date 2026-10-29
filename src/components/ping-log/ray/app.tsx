@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 
-import { CONSENT_VERSION } from "@/lib/ping-log/consent";
 import type { Consent } from "@/lib/ping-log/consent";
 import { entryCheck, type EntryCheck, type PushSupport } from "@/lib/ping-log/environment";
 import type { Shot } from "@/lib/ping-log/photo-entry";
 import type { LogEntry, SaveOutcome } from "@/lib/ping-log/store";
-import { TRACE_API_URL } from "@/lib/trace-api/client";
 import { reducedMotion } from "@/lib/ray/fx";
 
 import { ArrivalFlow, type ArrivalTarget } from "./arrival";
@@ -30,6 +28,7 @@ export type RayAppProps = {
   ended: boolean;
   onStop?: () => Promise<string | null>;
   consent: Consent | null;
+  consentTerms: { version: string; language: string; body: string } | null;
   /** The consent screen before joining. */
   consentOpen: boolean;
   onOpenConsent: () => void;
@@ -62,7 +61,7 @@ export type RayAppProps = {
   onCloseSkip: () => void;
   /** Where the arrival demo was opened from, while it is up. */
   demo: "home" | "developer" | null;
-  /** The experience on TRACE_B, while /log works with it: home's QR button then reads the booth's real code instead of opening the demo. */
+  /** The retained experience; home's QR button reads the booth's real code. */
   arrival: ArrivalTarget | null;
   onArrive: () => void;
   /** TRACE_B has this participation's arrival: home leads to the keepsake. */
@@ -98,9 +97,9 @@ export function RayApp(props: RayAppProps) {
 
   const menuItems: MenuItem[] = [
     { label: "遊び方", onSelect: () => setOverlay("howto") },
-    ...(props.consent?.version === CONSENT_VERSION ? [{ label: "同意した内容", onSelect: () => setOverlay("consent") }] : []),
+    ...(props.consent ? [{ label: "同意した内容", onSelect: () => setOverlay("consent") }] : []),
     ...(props.onStop ? [{ label: "記録を残して参加を終了", onSelect: () => setOverlay("stop"), disabled: props.busy }] : []),
-    ...(props.consent ? [{ label: "参加をやめる", onSelect: () => setOverlay("withdraw"), disabled: props.busy }] : []),
+    ...(props.consent || props.joined ? [{ label: "参加をやめる", onSelect: () => setOverlay("withdraw"), disabled: props.busy }] : []),
   ];
 
   const layer = deleting ? (
@@ -134,7 +133,7 @@ export function RayApp(props: RayAppProps) {
         onClose={close}
       />
     ) : overlay === "consent" ? (
-      <ConsentLayer onClose={close} />
+      <ConsentLayer terms={props.consent} onClose={close} />
     ) : overlay === "stop" && props.onStop ? (
       <StopLayer onConfirm={props.onStop} onClose={close} />
     ) : overlay === "withdraw" ? (
@@ -210,10 +209,10 @@ function Current(
     );
   }
 
-  if (props.demo && !(props.ended && props.arrival)) {
+  if (props.demo === "developer") {
     return (
       <DemoFlow
-        closeLabel={props.demo === "home" ? "ホームへもどる" : "開発者の画面にもどる"}
+        closeLabel="開発者の画面にもどる"
         inert={inert}
         onClose={props.onCloseDemo}
         onTitle={() => {
@@ -228,11 +227,11 @@ function Current(
     if (props.consentOpen) {
       return (
         <ConsentScreen
+          terms={props.consentTerms}
           busy={props.joining}
           error={props.joinError}
           inert={inert}
-          // With the backend, joining waits for the network: the screen changes once it has.
-          onAgree={() => (TRACE_API_URL ? void props.onAgree() : void go(() => void props.onAgree()))}
+          onAgree={() => void props.onAgree()}
           onDecline={() => void go(props.onCloseConsent)}
         />
       );

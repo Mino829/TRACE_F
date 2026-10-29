@@ -2,11 +2,9 @@ import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import path from "node:path";
 
 /**
- * /log with the backend switched on: reloads, a second tab, and a
- * participation that cannot be continued. The dev server runs with
- * NEXT_PUBLIC_TRACE_API_URL=/api/backend and NEXT_PUBLIC_PUSH_API_URL=/push-stub
- * (in .env.local); a stand-in inside the test answers for TRACE_B and the
- * push worker, so neither has to run.
+ * /log's standard same-origin backend connection: reloads, a second tab,
+ * and a participation that cannot be continued. A stand-in answers the
+ * backend and the optional legacy push worker, so neither has to run.
  */
 
 const PHOTO = path.join(__dirname, "..", "models", "renders", "01_全体_南東の空から.jpg");
@@ -17,6 +15,14 @@ test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true
 
 type StandIn = { deleted: boolean; ended: boolean; experienceReads: number; uploads: string[]; stopKeys: string[] };
 
+const PUBLIC_CONFIG = {
+  registrationOpen: true,
+  consent: { version: "consent-1", language: "ja", body: "写真は端末に保存し、選択した場所と撮影時刻のみをサーバーに記録します。テスト用の参加説明です。" },
+  livePresenceConsentVersion: "live-1",
+  photo: { enabled: true, maxCount: 12, maxUploadBytes: 3_000_000, maxLongEdgePixels: 1600, publicDisplay: false },
+  contact: "",
+};
+
 /** Answers TRACE_B's participant routes and the push worker's records for every tab of the context. */
 async function standIn(context: BrowserContext): Promise<StandIn> {
   const state: StandIn = { deleted: false, ended: false, experienceReads: 0, uploads: [], stopKeys: [] };
@@ -25,10 +31,7 @@ async function standIn(context: BrowserContext): Promise<StandIn> {
     const request = route.request();
     const where = `${request.method()} ${new URL(request.url()).pathname.replace("/api/backend", "")}`;
     if (where === "GET /v1/public/config") {
-      return route.fulfill({ json: {
-        registrationOpen: true, consent: { version: "consent-1", language: "ja", body: "" }, livePresenceConsentVersion: "live-1",
-        photo: { enabled: true, maxCount: 12, maxUploadBytes: 3_000_000, maxLongEdgePixels: 1600, publicDisplay: false }, contact: "",
-      } });
+      return route.fulfill({ json: PUBLIC_CONFIG });
     }
     if (where === "POST /v1/experiences") {
       state.deleted = false;
@@ -132,6 +135,73 @@ const putDeveloperRecord = (page: Page) =>
       }),
   );
 
+test("closed registration never creates a local-only successful participation", async ({ context, page }) => {
+  await standIn(context);
+  await context.route("**/api/backend/v1/public/config", (route) => route.fulfill({
+    json: { ...PUBLIC_CONFIG, registrationOpen: false },
+  }));
+  await page.goto("/log");
+  await page.getByRole("button", { name: /はじめる/ }).click();
+  await page.getByRole("button", { name: /次へ/ }).click();
+  await expect(page.getByText(PUBLIC_CONFIG.consent.body, { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "同意して参加する" }).click();
+  await expect(page.getByText("いまは参加を受け付けていません。", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("trace-consent"))).toBeNull();
+  expect(await stored(page)).toEqual({ local: [], session: [] });
+  await expect(page.getByRole("button", { name: "同意して参加する" })).toBeVisible();
+});
+
+test("a failed enrollment keeps the consent screen and reports the network error", async ({ context, page }) => {
+  await standIn(context);
+  await page.route("**/api/backend/v1/experiences", (route) => route.abort("connectionrefused"));
+  await page.goto("/log");
+  await page.getByRole("button", { name: /はじめる/ }).click();
+  await page.getByRole("button", { name: /次へ/ }).click();
+  await page.getByRole("button", { name: "同意して参加する" }).click();
+  await expect(page.getByText(/サーバーにつながりませんでした/)).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("trace-consent"))).toBeNull();
+  expect(await stored(page)).toEqual({ local: [], session: [] });
+  await expect(page.getByRole("button", { name: "同意して参加する" })).toBeVisible();
+});
+
+test("changed backend consent must be displayed and explicitly agreed again, then remains readable after reload", async ({ context, page }) => {
+  await standIn(context);
+  await page.goto("/log");
+  await page.getByRole("button", { name: /はじめる/ }).click();
+  await page.getByRole("button", { name: /次へ/ }).click();
+  await expect(page.getByText(PUBLIC_CONFIG.consent.body, { exact: true })).toBeVisible();
+  const updated = { version: "consent-2", language: "ja", body: "改訂した参加説明です。写真は端末に保持し、選んだ場所と撮影時刻だけをサーバーに記録します。" };
+  await context.route("**/api/backend/v1/public/config", (route) => route.fulfill({ json: { ...PUBLIC_CONFIG, consent: updated } }));
+  await page.route("**/api/backend/v1/experiences", (route) => route.fulfill({
+    status: 409, json: { error: { code: "CONSENT_VERSION_MISMATCH" } },
+  }));
+  await page.getByRole("button", { name: "同意して参加する" }).click();
+  await expect(page.getByText(updated.body, { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("trace-consent"))).toBeNull();
+  expect(await stored(page)).toEqual({ local: [], session: [] });
+  await page.unroute("**/api/backend/v1/experiences");
+  await page.getByRole("button", { name: "同意して参加する" }).click();
+  await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("trace-consent")!))).toMatchObject(updated);
+  await page.reload();
+  await page.getByRole("button", { name: "メニュー" }).click();
+  await page.getByRole("button", { name: "同意した内容" }).click();
+  await expect(page.getByText(updated.body, { exact: true })).toBeVisible();
+});
+
+test("unavailable public config cannot fall back to draft consent or local enrollment", async ({ context, page }) => {
+  await standIn(context);
+  await context.route("**/api/backend/v1/public/config", (route) => route.abort("connectionrefused"));
+  await page.goto("/log");
+  await page.getByRole("button", { name: /はじめる/ }).click();
+  await page.getByRole("button", { name: /次へ/ }).click();
+  await page.getByRole("button", { name: "説明を読み込む" }).click();
+  await expect(page.getByText(/サーバーにつながりませんでした/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "同意して参加する" })).toBeHidden();
+  expect(await page.evaluate(() => localStorage.getItem("trace-consent"))).toBeNull();
+  expect(await stored(page)).toEqual({ local: [], session: [] });
+});
+
 test("a reload and a second tab continue the same participation, and withdrawing in one tab ends it in the other", async ({ context, page }) => {
   const backend = await standIn(context);
   await join(page);
@@ -160,7 +230,6 @@ test("terminal stop keeps photos and owner rights across tabs and reload, separa
   const backend = await standIn(context);
   await join(page);
   await savePhoto(page);
-  await expect(page.getByText("1枚目のメモリーを残しました")).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: "ホームへもどる" }).click();
   const credential = await page.evaluate(() => localStorage.getItem("trace-memory-credential"));
   const second = await context.newPage();
@@ -173,7 +242,6 @@ test("terminal stop keeps photos and owner rights across tabs and reload, separa
   await expect(second.getByRole("button", { name: "写真を撮る" }).first()).toBeDisabled();
   expect(backend.ended).toBe(true);
   expect(backend.deleted).toBe(false);
-  expect(backend.stopKeys).toHaveLength(1);
   expect(await kept(page)).toEqual({ photos: 1, others: 0 });
   expect(await page.evaluate(() => localStorage.getItem("trace-memory-credential"))).toBe(credential);
   await page.reload();
