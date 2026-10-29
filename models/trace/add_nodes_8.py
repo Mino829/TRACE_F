@@ -6,7 +6,7 @@
 #     1F の点は +X の妻の入口の中（build_koryuto_exterior.py の VEST_LINK）へ。前は 1F の中の塊の中にあった
 #   - 研究棟 EV B：+X の廊下に面した 1 台（Y = 1.6）をくり抜いて扉を開けた（build_kenkyuto.py の EVB_CELL）。かごの点をその中へ。
 #     前は扉と扉のあいだの黒い塊の中（16, 0）にあった
-#   - 研究棟ゲートの道路側：芝生の北の口に外階段を作った（build_kenkyuto.py の NS_Y1）。階段の上の点をデッキの端へ
+#   - 研究棟ゲートの道路側：芝生の北の口から道路へ下りる線を外す（実際には階段がない）
 #   python trace/add_nodes_4.py → 5 → 6 → 7 → 8（どれも何度実行しても同じ）
 #   そのあと Blender で trace/reroute_walls.py（エレベーターの扉の前の点と、壁をよける線）→ trace_graph.export()
 import json, math, os, re
@@ -61,9 +61,9 @@ EVB_CAR = ((17.4 - 2.5 + 17.4 - 0.12) / 2, 1.6)
 for f in range(1, 15):
     put(f"research-{f}f-east", KENKYU, *EVB_CAR)
 
-# ---- 研究棟ゲートの道路側：外階段の上の端（デッキの端 Y = 22.8、ゲートの真ん中 X = -7.6） ----
-put("o-120", KENKYU, -7.6, 22.8, 6.0)
-put("research-road", KENKYU, -7.6, 31.0, 0)
+# ---- 研究棟ゲートの道路側：芝生の北の口から道路へ下りる階段は実際にはない（ユーザーの確認 2026-10-29）。線を外す ----
+#   芝生から道路側へは、大階段で広場へ下りて建物の外を回る。行き止まりになった点（o-120 など）は下で消える
+src["edges"] = [e for e in src["edges"] if e["id"] != "o-120--research-road"]
 
 # ---- 交流プラザ：中の点は台（0.8m）の上。玄関の扉の 1 組目（u -26.2〜-23.6、build_festival_props.py の DOOR_PAIRS）の真ん中を通る ----
 #   前は中の点が高さ 0m（台の中）で、玄関の点が扉と扉の間の柱の位置にあった。外から台へ上がる線は 6 段の石の階段

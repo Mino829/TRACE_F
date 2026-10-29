@@ -55,9 +55,9 @@ export const TEST_ROUTES: TestRoute[] = [
   },
   {
     id: "F",
-    name: "SIT の芝生 → ゲート → 北の外階段で道路へ → 教室棟の道路側 → ShibaLab",
-    stops: ["sit-lawn", "research-gate", "research-road", "classroom-road", "shibalab"],
-    floorChanges: ["6→0 stairs", "0→6 escalator", "6→11 escalator"],
+    name: "SIT の芝生 → 大階段で広場へ → 教室棟の入口 → ShibaLab",
+    stops: ["sit-lawn", "grand-stairs-bottom", "classroom-entrance", "shibalab"],
+    floorChanges: ["6→4 stairs", "4→2 stairs", "2→0 stairs", "0→6 escalator", "6→11 escalator"],
     bridges: [],
   },
   {

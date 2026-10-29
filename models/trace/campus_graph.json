@@ -2,8 +2,8 @@
  "schemaVersion": 1,
  "campusGraphVersion": "toyosu-graph-2026-10-29.1.draft",
  "coordinateVersion": "toyosu-2026-08-28.1",
- "threeDMapVersion": "toyosu-3dmap-2026-10-29",
- "exportedAt": "2026-10-29",
+ "threeDMapVersion": "toyosu-3dmap-2026-10-30",
+ "exportedAt": "2026-10-30",
  "coordinates": {
   "local": "アプリのローカル ENU（原点 = 教室棟1F南面の自動ドア, east/north はメートル）。coordinateVersion の式で緯度経度から計算",
   "threeD": "キャンパス全体.blend の座標（1 = 1m, Z 上, 地面 = 0）。平面直角座標系 第IX系 (X=-37645, Y=-3322) を原点にずらしたもの",
@@ -3238,75 +3238,6 @@
    "threeD": {
     "x": -108.06,
     "y": 24.26,
-    "z": 6.0
-   },
-   "radiusMetres": 5,
-   "gpsSnap": false,
-   "selectable": false,
-   "note": ""
-  },
-  {
-   "id": "o-118",
-   "name": "研究棟ゲート 4",
-   "role": "waypoint",
-   "building": null,
-   "floor": "屋外",
-   "lat": 35.6610017,
-   "lon": 139.7955649,
-   "local": {
-    "east": 91.11,
-    "north": 29.79
-   },
-   "heightMetres": 6.0,
-   "threeD": {
-    "x": -97.51,
-    "y": 35.57,
-    "z": 6.0
-   },
-   "radiusMetres": 5,
-   "gpsSnap": false,
-   "selectable": false,
-   "note": ""
-  },
-  {
-   "id": "o-119",
-   "name": "研究棟ゲート 5",
-   "role": "waypoint",
-   "building": null,
-   "floor": "屋外",
-   "lat": 35.6610525,
-   "lon": 139.7956233,
-   "local": {
-    "east": 96.39,
-    "north": 35.44
-   },
-   "heightMetres": 6.0,
-   "threeD": {
-    "x": -92.22,
-    "y": 41.2,
-    "z": 6.0
-   },
-   "radiusMetres": 5,
-   "gpsSnap": false,
-   "selectable": false,
-   "note": ""
-  },
-  {
-   "id": "o-120",
-   "name": "研究棟ゲート 6",
-   "role": "waypoint",
-   "building": null,
-   "floor": "屋外",
-   "lat": 35.6611018,
-   "lon": 139.7956776,
-   "local": {
-    "east": 101.29,
-    "north": 40.93
-   },
-   "heightMetres": 6.0,
-   "threeD": {
-    "x": -87.31,
-    "y": 46.67,
     "z": 6.0
    },
    "radiusMetres": 5,
@@ -11779,98 +11710,6 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "o-099--research-road~1",
-   "name": "研究棟の道路側（東） 6 → 研究棟 道路側の口 1",
-   "role": "waypoint",
-   "building": null,
-   "floor": "屋外",
-   "lat": 35.6612198,
-   "lon": 139.7956701,
-   "local": {
-    "east": 100.62,
-    "north": 54.07
-   },
-   "heightMetres": 0.0,
-   "threeD": {
-    "x": -87.98,
-    "y": 59.76,
-    "z": 0.0
-   },
-   "radiusMetres": 3,
-   "gpsSnap": false,
-   "selectable": false,
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
-   "id": "o-099--research-road~2",
-   "name": "研究棟の道路側（東） 6 → 研究棟 道路側の口 2",
-   "role": "waypoint",
-   "building": null,
-   "floor": "屋外",
-   "lat": 35.6611619,
-   "lon": 139.7957456,
-   "local": {
-    "east": 107.45,
-    "north": 47.63
-   },
-   "heightMetres": 0.0,
-   "threeD": {
-    "x": -81.15,
-    "y": 53.34,
-    "z": 0.0
-   },
-   "radiusMetres": 3,
-   "gpsSnap": false,
-   "selectable": false,
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
-   "id": "research-road--o-100~1",
-   "name": "研究棟 道路側の口 → 研究棟の道路側（東） 7 1",
-   "role": "waypoint",
-   "building": "研究棟",
-   "floor": "屋外",
-   "lat": 35.661161,
-   "lon": 139.7957448,
-   "local": {
-    "east": 107.38,
-    "north": 47.53
-   },
-   "heightMetres": 0,
-   "threeD": {
-    "x": -81.22,
-    "y": 53.24,
-    "z": 0
-   },
-   "radiusMetres": 3,
-   "gpsSnap": false,
-   "selectable": false,
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
-   "id": "research-road--o-100~2",
-   "name": "研究棟 道路側の口 → 研究棟の道路側（東） 7 2",
-   "role": "waypoint",
-   "building": "研究棟",
-   "floor": "屋外",
-   "lat": 35.6611036,
-   "lon": 139.7958208,
-   "local": {
-    "east": 114.25,
-    "north": 41.14
-   },
-   "heightMetres": 0,
-   "threeD": {
-    "x": -74.34,
-    "y": 46.87,
-    "z": 0
-   },
-   "radiusMetres": 3,
-   "gpsSnap": false,
-   "selectable": false,
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
    "id": "o-121--o-122~1",
    "name": "ピロティから正面の道へ 1 → ピロティから正面の道へ 2 1",
    "role": "waypoint",
@@ -17711,6 +17550,24 @@
    "passable": true
   },
   {
+   "id": "o-099--research-road",
+   "from": "o-099",
+   "to": "research-road",
+   "kind": "ground",
+   "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
+   "passable": true
+  },
+  {
+   "id": "research-road--o-100",
+   "from": "research-road",
+   "to": "o-100",
+   "kind": "ground",
+   "lengthMetres": 9.4,
+   "planarLengthMetres": 9.4,
+   "passable": true
+  },
+  {
    "id": "o-100--o-101",
    "from": "o-100",
    "to": "o-101",
@@ -17888,42 +17745,6 @@
    "kind": "ground",
    "lengthMetres": 7.8,
    "planarLengthMetres": 7.8,
-   "passable": true
-  },
-  {
-   "id": "research-gate--o-118",
-   "from": "research-gate",
-   "to": "o-118",
-   "kind": "ground",
-   "lengthMetres": 7.7,
-   "planarLengthMetres": 7.7,
-   "passable": true
-  },
-  {
-   "id": "o-118--o-119",
-   "from": "o-118",
-   "to": "o-119",
-   "kind": "ground",
-   "lengthMetres": 7.7,
-   "planarLengthMetres": 7.7,
-   "passable": true
-  },
-  {
-   "id": "o-119--o-120",
-   "from": "o-119",
-   "to": "o-120",
-   "kind": "ground",
-   "lengthMetres": 7.4,
-   "planarLengthMetres": 7.4,
-   "passable": true
-  },
-  {
-   "id": "o-120--research-road",
-   "from": "o-120",
-   "to": "research-road",
-   "kind": "stairs",
-   "lengthMetres": 10.2,
-   "planarLengthMetres": 8.2,
    "passable": true
   },
   {
@@ -20795,60 +20616,6 @@
    "kind": "indoor",
    "lengthMetres": 2.0,
    "planarLengthMetres": 2.0,
-   "passable": true
-  },
-  {
-   "id": "o-099--o-099--research-road~1",
-   "from": "o-099",
-   "to": "o-099--research-road~1",
-   "kind": "ground",
-   "lengthMetres": 0.9,
-   "planarLengthMetres": 0.9,
-   "passable": true
-  },
-  {
-   "id": "o-099--research-road~1--o-099--research-road~2",
-   "from": "o-099--research-road~1",
-   "to": "o-099--research-road~2",
-   "kind": "ground",
-   "lengthMetres": 9.4,
-   "planarLengthMetres": 9.4,
-   "passable": true
-  },
-  {
-   "id": "o-099--research-road~2--research-road",
-   "from": "o-099--research-road~2",
-   "to": "research-road",
-   "kind": "ground",
-   "lengthMetres": 0.9,
-   "planarLengthMetres": 0.9,
-   "passable": true
-  },
-  {
-   "id": "research-road--research-road--o-100~1",
-   "from": "research-road",
-   "to": "research-road--o-100~1",
-   "kind": "ground",
-   "lengthMetres": 0.8,
-   "planarLengthMetres": 0.8,
-   "passable": true
-  },
-  {
-   "id": "research-road--o-100~1--research-road--o-100~2",
-   "from": "research-road--o-100~1",
-   "to": "research-road--o-100~2",
-   "kind": "ground",
-   "lengthMetres": 9.4,
-   "planarLengthMetres": 9.4,
-   "passable": true
-  },
-  {
-   "id": "research-road--o-100~2--o-100",
-   "from": "research-road--o-100~2",
-   "to": "o-100",
-   "kind": "ground",
-   "lengthMetres": 0.8,
-   "planarLengthMetres": 0.8,
    "passable": true
   },
   {

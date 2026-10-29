@@ -2117,51 +2117,6 @@
    "note": ""
   },
   {
-   "id": "o-118",
-   "name": "研究棟ゲート 4",
-   "building": null,
-   "floor": "屋外",
-   "blender": [
-    -97.51,
-    35.57,
-    6.0
-   ],
-   "radius": 5,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "o-119",
-   "name": "研究棟ゲート 5",
-   "building": null,
-   "floor": "屋外",
-   "blender": [
-    -92.22,
-    41.2,
-    6.0
-   ],
-   "radius": 5,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "o-120",
-   "name": "研究棟ゲート 6",
-   "building": null,
-   "floor": "屋外",
-   "blender": [
-    -87.31,
-    46.67,
-    6.0
-   ],
-   "radius": 5,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
    "id": "o-121",
    "name": "ピロティから正面の道へ 1",
    "building": null,
@@ -7822,66 +7777,6 @@
    "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
   },
   {
-   "id": "o-099--research-road~1",
-   "name": "研究棟の道路側（東） 6 → 研究棟 道路側の口 1",
-   "building": null,
-   "floor": "屋外",
-   "blender": [
-    -87.98,
-    59.76,
-    0.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
-   "id": "o-099--research-road~2",
-   "name": "研究棟の道路側（東） 6 → 研究棟 道路側の口 2",
-   "building": null,
-   "floor": "屋外",
-   "blender": [
-    -81.15,
-    53.34,
-    0.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
-   "id": "research-road--o-100~1",
-   "name": "研究棟 道路側の口 → 研究棟の道路側（東） 7 1",
-   "building": "研究棟",
-   "floor": "屋外",
-   "blender": [
-    -81.22,
-    53.24,
-    0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
-   "id": "research-road--o-100~2",
-   "name": "研究棟 道路側の口 → 研究棟の道路側（東） 7 2",
-   "building": "研究棟",
-   "floor": "屋外",
-   "blender": [
-    -74.34,
-    46.87,
-    0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
-  },
-  {
    "id": "o-121--o-122~1",
    "name": "ピロティから正面の道へ 1 → ピロティから正面の道へ 2 1",
    "building": null,
@@ -11706,6 +11601,18 @@
    "kind": "ground"
   },
   {
+   "id": "o-099--research-road",
+   "from": "o-099",
+   "to": "research-road",
+   "kind": "ground"
+  },
+  {
+   "id": "research-road--o-100",
+   "from": "research-road",
+   "to": "o-100",
+   "kind": "ground"
+  },
+  {
    "id": "o-100--o-101",
    "from": "o-100",
    "to": "o-101",
@@ -11824,30 +11731,6 @@
    "from": "o-117",
    "to": "research-gate",
    "kind": "ground"
-  },
-  {
-   "id": "research-gate--o-118",
-   "from": "research-gate",
-   "to": "o-118",
-   "kind": "ground"
-  },
-  {
-   "id": "o-118--o-119",
-   "from": "o-118",
-   "to": "o-119",
-   "kind": "ground"
-  },
-  {
-   "id": "o-119--o-120",
-   "from": "o-119",
-   "to": "o-120",
-   "kind": "ground"
-  },
-  {
-   "id": "o-120--research-road",
-   "from": "o-120",
-   "to": "research-road",
-   "kind": "stairs"
   },
   {
    "id": "o-122--o-123",
@@ -13762,42 +13645,6 @@
    "from": "research-9f-east-car",
    "to": "research-9f-east-car-door",
    "kind": "indoor"
-  },
-  {
-   "id": "o-099--o-099--research-road~1",
-   "from": "o-099",
-   "to": "o-099--research-road~1",
-   "kind": "ground"
-  },
-  {
-   "id": "o-099--research-road~1--o-099--research-road~2",
-   "from": "o-099--research-road~1",
-   "to": "o-099--research-road~2",
-   "kind": "ground"
-  },
-  {
-   "id": "o-099--research-road~2--research-road",
-   "from": "o-099--research-road~2",
-   "to": "research-road",
-   "kind": "ground"
-  },
-  {
-   "id": "research-road--research-road--o-100~1",
-   "from": "research-road",
-   "to": "research-road--o-100~1",
-   "kind": "ground"
-  },
-  {
-   "id": "research-road--o-100~1--research-road--o-100~2",
-   "from": "research-road--o-100~1",
-   "to": "research-road--o-100~2",
-   "kind": "ground"
-  },
-  {
-   "id": "research-road--o-100~2--o-100",
-   "from": "research-road--o-100~2",
-   "to": "o-100",
-   "kind": "ground"
   },
   {
    "id": "o-121--o-121--o-122~1",
