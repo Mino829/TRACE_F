@@ -1,0 +1,23 @@
+/* Whether the booth takes arrivals from TRACE_B (use-renderer-link.ts), next to the test buttons. */
+.dsp-link {
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  opacity: 0.7;
+}
+
+.dsp-link[data-state="primary"] {
+  opacity: 1;
+  font-weight: 700;
+}
+
+.dsp-link[data-state="rejected"] {
+  opacity: 1;
+  text-decoration: underline wavy;
+}
+
+/* The operator's Google sign-in button, next to the link badge. */
+.dsp-signin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
