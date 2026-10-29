@@ -1,8 +1,9 @@
 /**
  * Client for TRACE_B public config, memory-only experience creation and
- * status, the arrival at ShibaLab and its replay, individual memory deletion,
- * and the photo reminder's push subscription. The /log demo does not create
- * live presence or upload photos to TRACE_B.
+ * status, where and when each photo was taken (/v2), the arrival at ShibaLab
+ * and its replay, individual memory deletion, and the photo reminder's push
+ * subscription. The /log demo does not create live presence, and a photo
+ * itself never goes to TRACE_B.
  *
  * The backend's URL comes from NEXT_PUBLIC_TRACE_API_URL. Unset, /log keeps
  * everything on the phone and the push worker, as before.
@@ -239,6 +240,53 @@ export async function sendArrival(credential: MemoryCredential, attempt: Arrival
   });
   if (!result?.arrivalId || typeof result.status !== "string") throw new TraceApiError(0, "UNKNOWN", null);
   return result;
+}
+
+/**
+ * What TRACE_B keeps of one photo (#13): the checkpoint the participant chose
+ * for it and when it was taken, under the id the phone keeps the photo by.
+ * TRACE_B draws the way between the photos' checkpoints, in the order they
+ * were taken, and on to ShibaLab.
+ */
+export type PhotoMoment = { clientPhotoId: string; checkpointId: string; capturedAt: string };
+
+export type SentPhotoMoment = PhotoMoment & { photoMomentId: string; sequenceNo: number };
+
+function photosPath(credential: MemoryCredential): string {
+  return `/v2/memory-sessions/${encodeURIComponent(credential.memorySessionId)}/photos`;
+}
+
+/**
+ * Sends one photo's checkpoint and capture time; the photo stays on the phone.
+ * A resend of the same photo gets the same record back. A photo that was
+ * deleted on TRACE_B is NOT_FOUND, and so is every photo of a memory session
+ * from before TRACE_B kept photos this way; the thirteenth is
+ * PHOTO_LIMIT_REACHED; a checkpoint TRACE_B does not know is
+ * INVALID_CHECKPOINT; and PHOTO_DISABLED while TRACE_B does not take photos
+ * at all.
+ */
+export async function sendPhotoMoment(credential: MemoryCredential, moment: PhotoMoment, idempotencyKey: string): Promise<SentPhotoMoment> {
+  const result = await request<SentPhotoMoment>(photosPath(credential), {
+    method: "POST",
+    body: { clientPhotoId: moment.clientPhotoId, checkpointId: moment.checkpointId, capturedAt: moment.capturedAt },
+    token: credential.participantToken,
+    idempotencyKey,
+  });
+  if (!result?.photoMomentId) throw new TraceApiError(0, "UNKNOWN", null);
+  return result;
+}
+
+/**
+ * Deletes one photo's record, and TRACE_B draws the way again without it. A
+ * repeat with the same key answers 204 again; one that is already gone is
+ * NOT_FOUND.
+ */
+export async function deletePhotoMoment(credential: MemoryCredential, photoMomentId: string, idempotencyKey: string): Promise<void> {
+  await request(`${photosPath(credential)}/${encodeURIComponent(photoMomentId)}`, {
+    method: "DELETE",
+    token: credential.participantToken,
+    idempotencyKey,
+  });
 }
 
 /** Gives up the place in the replay queue. Only a queued replay can be skipped: once it plays, this is STATE_CONFLICT. */

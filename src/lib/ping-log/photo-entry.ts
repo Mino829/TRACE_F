@@ -49,8 +49,7 @@ export async function photoEntry(shot: Shot, photo: { blob: Blob; meta: PhotoMet
       truth: null,
       truthSkipped: false,
       selfReport: { wifi: null },
-      // The consent names the phone and the network, not the battery.
-      device: { ...(await deviceContext()), battery: null },
+      device: await deviceContext(),
       network: shot.network,
       networkAtSend: networkInfo(),
       orientation: null,

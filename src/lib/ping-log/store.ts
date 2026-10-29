@@ -1,10 +1,12 @@
 /**
  * Device-local store for the timed log (`/log`).
  *
- * Every record is written here first. The developer screen's are sent to the
- * push worker afterwards, so one taken without signal is kept and sent later;
- * `sentAt` marks the ones the worker has acknowledged. A participant's photos
- * stay here and are never sent (#54). Every change is told to /log's other tabs.
+ * Every record is written here and stays: a participant's photos are never
+ * sent (#54), only the checkpoint and time of each go to TRACE_B (#13), and
+ * the developer screen's older records carry where they were taken, which
+ * never leaves the phone (#39); `sentAt` marks the ones the push worker
+ * acknowledged before. They stay until the participant deletes them. Every
+ * change is told to /log's other tabs.
  */
 
 import type { LogRecord } from "./record";
@@ -22,6 +24,12 @@ export type LogEntry = {
    * push worker gets the record, not this.
    */
   memorySessionId?: string;
+  /**
+   * TRACE_B's record of the photo's checkpoint and time (#13), once it has
+   * one. Absent while that is still to be sent; null when it never will be:
+   * the photo was taken after the arrival, or TRACE_B turned it down.
+   */
+  photoMomentId?: string | null;
 };
 
 /** Where a saved entry ended up: with the worker, waiting here for a signal, or here only (no worker configured). */
@@ -29,7 +37,7 @@ export type SaveOutcome = "sent" | "queued" | "local";
 
 const DB_NAME = "trace-ping-log";
 const STORE_NAME = "entries";
-/** 2: records replaced the photo-first entries of version 1, which are dropped. */
+/** Keep old object stores intact when opening an earlier database version. */
 const VERSION = 2;
 
 function openDb(): Promise<IDBDatabase> {
@@ -37,8 +45,7 @@ function openDb(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (db.objectStoreNames.contains(STORE_NAME)) db.deleteObjectStore(STORE_NAME);
-      db.createObjectStore(STORE_NAME, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "id" });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error ?? new Error("IndexedDBを開けませんでした。"));
@@ -49,7 +56,9 @@ export async function listEntries(): Promise<LogEntry[]> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();
-    request.onsuccess = () => resolve((request.result as LogEntry[]).sort((a, b) => b.record.takenAt.localeCompare(a.record.takenAt)));
+    request.onsuccess = () => resolve((request.result as LogEntry[])
+      .filter((entry) => typeof entry?.record?.takenAt === "string")
+      .sort((a, b) => b.record.takenAt.localeCompare(a.record.takenAt)));
     request.onerror = () => reject(request.error ?? new Error("記録を読み込めませんでした。"));
   });
 }

@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { api, ApiError, errorMessage, type DeleteResult, type Experience, type ExperienceState, type PublicConfig } from "@/lib/api";
+import { api, errorMessage, type DeleteResult, type ExperienceState, type PublicConfig } from "@/lib/api";
 import { readSession, saveSession, type ParticipantSession } from "@/lib/session";
-import { usePresence } from "@/hooks/use-presence";
 
 function date(value: string) {
   return new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
@@ -31,32 +30,23 @@ export default function ParticipantApp() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [agreed, setAgreed] = useState(false);
-  const [liveAgreed, setLiveAgreed] = useState(false);
-  const [onSiteAgreed, setOnSiteAgreed] = useState(false);
-  const [wantsPosition, setWantsPosition] = useState(false);
+  const [clock, setClock] = useState(Date.now);
   const [busy, setBusy] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<"memory" | "live" | "all" | null>(null);
   const locked = useRef(false);
   const tracking = session?.livePresenceSession?.trackingStatus === "tracking";
   const pendingDelete = !!session && !!(session.operationKeys["delete-all"] || session.operationKeys["delete-memory"] || session.operationKeys["delete-live"]);
-  const presence = usePresence(session, wantsPosition && tracking && !busy && !pendingDelete, config?.positionIntervalSeconds ?? 5);
-  const expired = session ? Date.parse(session.memorySession.expiresAt) <= presence.clock &&
-    (!session.livePresenceSession || Date.parse(session.livePresenceSession.expiresAt) <= presence.clock) : false;
-  const active = !!session?.livePresenceSession && tracking && Date.parse(session.livePresenceSession.expiresAt) > presence.clock;
+  const expired = session ? Date.parse(session.memorySession.expiresAt) <= clock &&
+    (!session.livePresenceSession || Date.parse(session.livePresenceSession.expiresAt) <= clock) : false;
+  const active = !!session?.livePresenceSession && tracking && Date.parse(session.livePresenceSession.expiresAt) > clock;
+  useEffect(() => {
+    const timer = setInterval(() => setClock(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const persist = useCallback((value: ParticipantSession | null) => {
     saveSession(value);
     setSession(value);
-  }, []);
-
-  const loadConfig = useCallback(async () => {
-    setError("");
-    try {
-      setConfig(await api<PublicConfig>("/v1/public/config"));
-      setSession(readSession());
-    } catch (failure) { setError(errorMessage(failure)); }
-    finally { setReady(true); }
   }, []);
 
   useEffect(() => {
@@ -64,9 +54,9 @@ export default function ParticipantApp() {
     async function initialize() {
       try {
         const stored = readSession();
+        if (!cancelled) setSession(stored);
         const settings = await api<PublicConfig>("/v1/public/config");
         if (cancelled) return;
-        setSession(stored);
         setConfig(settings);
       } catch (failure) {
         if (!cancelled) setError(errorMessage(failure));
@@ -105,7 +95,6 @@ export default function ParticipantApp() {
       } catch (failure) {
         if (!disposed) {
           setError(errorMessage(failure));
-          if (failure instanceof ApiError && ["NOT_FOUND", "UNAUTHORIZED"].includes(failure.code)) setWantsPosition(false);
         }
       }
     }
@@ -119,14 +108,8 @@ export default function ParticipantApp() {
     locked.current = true;
     setBusy(label); setError(""); setNotice("");
     try { await action(); }
-    catch (failure) {
-      setError(errorMessage(failure));
-      if (failure instanceof ApiError && failure.code === "CONSENT_VERSION_MISMATCH") {
-        setAgreed(false); setLiveAgreed(false); setOnSiteAgreed(false);
-        await loadConfig();
-        setError(errorMessage(failure));
-      }
-    } finally { locked.current = false; setBusy(""); }
+    catch (failure) { setError(errorMessage(failure)); }
+    finally { locked.current = false; setBusy(""); }
   }
 
   function withKey(current: ParticipantSession, operation: string): ParticipantSession {
@@ -135,24 +118,8 @@ export default function ParticipantApp() {
     return updated;
   }
 
-  async function create() {
-    if (!config || !agreed || !config.registrationOpen) return;
-    await run("参加を開始しています…", async () => {
-      sessionStorage.setItem("trace.storage-check", "1");
-      sessionStorage.removeItem("trace.storage-check");
-      const result = await api<Experience>("/v1/experiences", { method: "POST", body: {
-        memoryConsentVersion: config.consent.version,
-        livePresenceConsentVersion: liveAgreed ? config.livePresenceConsentVersion : "",
-        enableLivePresence: liveAgreed, consentLanguage: config.consent.language, clientTime: new Date().toISOString(),
-      } });
-      persist({ ...result, operationKeys: {} });
-      setNotice("参加を開始しました。位置情報は「位置送信を開始」から許可してください。");
-    });
-  }
-
   async function stop() {
     if (!session?.livePresenceSession) return;
-    setWantsPosition(false);
     await run("位置送信を終了しています…", async () => {
       const current = withKey(session, "stop");
       const live = current.livePresenceSession!;
@@ -163,22 +130,8 @@ export default function ParticipantApp() {
     });
   }
 
-  async function onSite() {
-    if (!session?.livePresenceSession || session.livePresenceSession.presencePhase !== "arrived" ||
-      session.livePresenceSession.trackingStatus !== "tracking" || Date.parse(session.livePresenceSession.expiresAt) <= Date.now() ||
-      !config || !onSiteAgreed || pendingDelete) return;
-    await run("会場内の体験へ切り替えています…", async () => {
-      const live = session.livePresenceSession!;
-      await api(`/v1/live-presence-sessions/${live.sessionId}/on-site`, { method: "POST", token: live.participantToken,
-        body: { continue: true, consentVersion: config.onSiteConsentVersion } });
-      persist({ ...session, livePresenceSession: { ...live, presencePhase: "on_site" } });
-      setNotice("会場内の体験に切り替えました。位置はエリア単位の表現に使われます。");
-    });
-  }
-
   async function remove(kind: "memory" | "live" | "all") {
     if (!session) return;
-    setWantsPosition(false);
     await run("参加データを削除しています…", async () => {
       let current = session;
       if (kind === "all" && !current.memoryDeleted && current.livePresenceSession) {
@@ -217,9 +170,6 @@ export default function ParticipantApp() {
         if (current.memoryDeleted && !current.livePresenceSession) persist(null);
         else persist(current);
       }
-      if (kind === "all" || current.memoryDeleted && !current.livePresenceSession) {
-        setAgreed(false); setLiveAgreed(false); setOnSiteAgreed(false);
-      }
       setConfirmDelete(null);
       setNotice(kind === "all" ? "この参加のデータをすべて削除しました。" : "選択した参加データを削除しました。");
     });
@@ -233,22 +183,20 @@ export default function ParticipantApp() {
       </header>
       <main className="main-grid">
         <section className="intro">
-          <p className="eyebrow"><span className="tiny-line" /> EVERY STEP LEAVES A TRACE</p>
-          <h1>歩いた時間が、<br />光になる。</h1>
-          <p className="intro-copy">何気ない一歩も、立ち止まった瞬間も。<br />キャンパスで過ごすあなたの時間が、<br />展示のなかでひとつの光になります。</p>
+          <p className="eyebrow"><span className="tiny-line" /> TRACE CAMPUS EXPERIENCE</p>
+          <h1>あなたの参加が、<br />光になる。</h1>
+          <p className="intro-copy">キャンパスで過ごすひとときを、<br />展示のなかでひとつの光に。<br />参加情報はいつでも削除できます。</p>
           <div className="route-art" aria-hidden="true">
             <svg viewBox="0 0 560 300" fill="none">
               <defs><pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#c9c9bc" /></pattern></defs>
               <rect width="560" height="300" fill="url(#grid)" />
-              <path d="M20 218H117V176H187V96H306V150H387V75H523" stroke="#d7d6cb" strokeWidth="1" />
-              <path d="M55 273V218H117V176H187V96H306V150H387V75H482" stroke="#e96f3c" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="55" cy="273" r="5" fill="#e96f3c" /><circle cx="187" cy="96" r="6" fill="#faf9f3" stroke="#e96f3c" strokeWidth="2" />
-              <circle cx="306" cy="150" r="6" fill="#faf9f3" stroke="#e96f3c" strokeWidth="2" />
+              <circle cx="72" cy="220" r="12" fill="#e96f3c" fillOpacity=".08" /><circle cx="72" cy="220" r="4" fill="#e96f3c" />
+              <circle cx="210" cy="98" r="20" fill="#e96f3c" fillOpacity=".08" /><circle cx="210" cy="98" r="5" fill="#e96f3c" />
               <circle cx="482" cy="75" r="24" fill="#e96f3c" fillOpacity=".08" /><circle cx="482" cy="75" r="12" fill="#e96f3c" fillOpacity=".15" /><circle cx="482" cy="75" r="5" fill="#e96f3c" />
-              <text x="72" y="273" className="art-label">YOUR FIRST STEP</text><text x="417" y="40" className="art-label">BECOMES LIGHT</text>
+              <text x="72" y="273" className="art-label">YOUR PARTICIPATION</text><text x="417" y="40" className="art-label">BECOMES LIGHT</text>
             </svg>
           </div>
-          <div className="intro-foot"><span>あなたのペースで。あなたの一歩から。</span><span>↗</span></div>
+          <div className="intro-foot"><span>あなたのペースで。</span><span>↗</span></div>
         </section>
         <section className="experience-panel" aria-label={session ? "参加状況" : "参加の準備"}>
           <div className="panel-top"><span className="eyebrow">{session ? "YOUR EXPERIENCE" : "BEFORE YOU BEGIN"}</span><span className="step-number">{session ? "02 / 02" : "01 / 02"}</span></div>
@@ -256,36 +204,28 @@ export default function ParticipantApp() {
             {error && <div className="message error" role="alert">{error}</div>}
             {notice && <div className="message success">{notice}</div>}
           </div>
-          {!ready && <div className="loading"><span className="status-dot pulse" /> 参加受付を確認しています…</div>}
-          {ready && !config && <div className="connection-state"><h2>接続を確認してください</h2><p>参加受付の情報を取得できませんでした。</p><button className="primary-button" onClick={loadConfig}>もう一度接続する <span>↻</span></button></div>}
-          {ready && config && !session && <>
-            <h2>体験をはじめる</h2>
-            <p className="panel-description">参加する前に、データの使い方をご確認ください。</p>
-            <div className="consent-copy"><p>{config.consent.body}</p><div className="retention-row"><span>データの保存期間</span><strong>参加期限の {config.photoLocationRetentionHours} 時間後まで</strong></div></div>
-            <label className="consent-option"><input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} disabled={!!busy} /><span><strong>内容を確認し、参加に同意します</strong><small>参加情報は匿名で管理されます。</small></span></label>
-            <label className="consent-option live-option"><input type="checkbox" checked={liveAgreed} onChange={(event) => setLiveAgreed(event.target.checked)} disabled={!!busy} /><span><strong>位置情報を使った光の表現に参加する <em>任意</em></strong><small>画面を開いている間、約{config.positionIntervalSeconds}秒ごとに現在地を送ります。生の位置履歴は保存せず、最新の表示位置は{config.livePositionTtlSeconds}秒で消去されます。</small></span></label>
-            <div className="feature-note"><span className="outline-icon">◎</span><p>写真メモリーは準備中です。<br /><span>現在は位置情報による体験をお試しいただけます。</span></p></div>
-            <button className="primary-button" disabled={!agreed || !config.registrationOpen || !!busy} onClick={create}>{busy || (config.registrationOpen ? "同意して参加する" : "ただいま受付を休止しています")}<span>↗</span></button>
-            <p className="permission-note">位置情報の許可は、参加後にご自身の操作で行います。</p>
-          </>}
-          {ready && config && session && <>
+          {!ready && <div className="loading"><span className="status-dot pulse" /> 参加状態を確認しています…</div>}
+          {ready && !session && <div className="connection-state">
+            <h2>新しい参加の準備中です</h2>
+            <p>GPSを使わない参加方法と同意文を確認しています。この画面からの新規参加は、確認が済むまで受け付けません。</p>
+            <p>以前の参加を停止・削除する場合は、参加したときと同じタブでこの画面を開いてください。</p>
+            <Link href="/log" className="text-button">写真メモリーの試作を見る →</Link>
+          </div>}
+          {ready && session && <>
             {pendingDelete && <div className="message error" role="status">{session.deleteResult
               ? `削除は保留中です（メモリー: ${session.deleteResult.memory === "deleted" ? "削除済み" : "保留"}、位置情報: ${session.deleteResult.live === "deleted" ? "削除済み" : "保留"}）。同じ操作を再度実行してください。`
               : "前回の削除結果を確認できていません。同じ操作を再度実行してください。"}</div>}
-            <h2>{expired ? "参加期限が終了しました" : "あなたの一歩を、展示へ。"}</h2>
+            <h2>{expired ? "参加期限が終了しました" : "あなたの参加を、展示へ。"}</h2>
             <p className="panel-description">{session.livePresenceSession ? phases[session.livePresenceSession.presencePhase] ?? "参加状態を確認しています" : "位置情報を使わずに参加しています。"}</p>
             <div className="alias-card"><span className={`alias-symbol alias-${session.displayAlias.color}`}>{symbols[session.displayAlias.symbol] ?? "●"}</span><div><small>展示でのあなたの目印</small><strong>{colorNames[session.displayAlias.color] ?? session.displayAlias.color}</strong></div><span className="anonymous-tag">ANONYMOUS</span></div>
             {session.livePresenceSession && <div className="presence-card">
-              <div className="status-heading"><span className={`status-dot ${presence.fresh ? "is-live" : ""}`} /><strong>{!active ? "位置送信は終了しています" : wantsPosition && !busy ? "位置情報の参加中" : "位置送信は一時停止中"}</strong></div>
-              <p role="status">{active ? presence.message : "現在地は送信されません。"}</p>
-              {presence.lastAccepted && <dl className="position-details"><div><dt>最終送信</dt><dd>{date(presence.lastAccepted.at)}</dd></div><div><dt>測位精度</dt><dd>約 {Math.round(presence.lastAccepted.accuracy)} m</dd></div><div><dt>サーバーの最新位置</dt><dd>{presence.fresh ? "保持中" : "保持を終了"}</dd></div></dl>}
-              {active && !pendingDelete && <div className="button-row"><button className="primary-button" disabled={!!busy} onClick={() => setWantsPosition(!wantsPosition)}>{wantsPosition ? "端末からの送信を一時停止" : "位置送信を開始"}<span>{wantsPosition ? "Ⅱ" : "↗"}</span></button><button className="text-button" disabled={!!busy} onClick={stop}>この参加の位置送信を終了する</button></div>}
-              <small className="muted">一時停止中の表示位置は最大{config.livePositionTtlSeconds}秒で消去されます。「終了」は即時消去し、この参加では再開しません。</small>
+              <div className="status-heading"><span className="status-dot" /><strong>{active ? "この画面からの位置送信は停止しています" : "位置送信は終了しています"}</strong></div>
+              <p role="status">この画面は現在地を取得・送信しません。</p>
+              {active && !pendingDelete && <div className="button-row"><button className="text-button" disabled={!!busy} onClick={stop}>この参加の位置送信を終了する</button></div>}
             </div>}
-            {active && !pendingDelete && session.livePresenceSession?.presencePhase === "arrived" && <div className="on-site-card"><p className="eyebrow">AT THE EXHIBITION</p><h3>展示場に着いたら</h3><p>会場内では位置をエリア単位の表現に使います。引き続き参加する場合は、ここで同意してください。</p><label className="inline-check"><input type="checkbox" checked={onSiteAgreed} onChange={(event) => setOnSiteAgreed(event.target.checked)} disabled={!!busy} />会場内の位置表現に同意する</label><button className="secondary-button" disabled={!onSiteAgreed || !!busy} onClick={onSite}>会場内の体験へ進む <span>→</span></button></div>}
             {!session.memoryDeleted && <div className="session-dates"><span>メモリー参加期限 <strong>{date(session.memorySession.expiresAt)}</strong></span><span>メモリーデータ削除期限 <strong>{date(session.memorySession.deleteAfter)}</strong></span></div>}
             {session.livePresenceSession && <div className="session-dates"><span>位置参加期限 <strong>{date(session.livePresenceSession.expiresAt)}</strong></span><span>位置データ削除期限 <strong>{date(session.livePresenceSession.deleteAfter)}</strong></span></div>}
-            <div className="manage-section"><h3>参加データの管理</h3><p>写真メモリーと位置情報の参加は、個別に削除できます。</p><div className="manage-links">
+            <div className="manage-section"><h3>参加データの管理</h3><p>参加情報は個別に削除できます。</p><div className="manage-links">
               {!session.memoryDeleted && !session.operationKeys["delete-all"] && !session.operationKeys["delete-live"] && <button disabled={!!busy} onClick={() => setConfirmDelete("memory")}>メモリー参加情報を削除</button>}
               {session.livePresenceSession && !session.operationKeys["delete-all"] && !session.operationKeys["delete-memory"] && <button disabled={!!busy} onClick={() => setConfirmDelete("live")}>位置参加情報を削除</button>}
               {!session.operationKeys["delete-memory"] && !session.operationKeys["delete-live"] && <button disabled={!!busy} onClick={() => setConfirmDelete("all")}>すべて削除して終了</button>}
@@ -296,7 +236,7 @@ export default function ParticipantApp() {
           {config && <div className="contact"><span>お困りのときは</span><p>{config.contact}</p></div>}
         </section>
       </main>
-      <footer className="site-footer"><span>TRACE — CAMPUS MOVEMENT INSTALLATION</span><span>A MOMENT. A WALK. A TRACE.</span></footer>
+      <footer className="site-footer"><span>TRACE — CAMPUS EXPERIENCE</span><span>A MOMENT. A TRACE.</span></footer>
     </div>
   );
 }

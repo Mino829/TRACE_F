@@ -4,8 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Player } from "@/lib/display/player";
 import type { RoutePath } from "@/lib/display/route-path";
+import { createSound, type Cue, type SoundEngine } from "@/lib/display/sound";
 
 import { ArrivalQr } from "./arrival-qr";
+import { GoogleSignIn } from "./google-sign-in";
+import { useRendererLink, type DisplayLink } from "./use-renderer-link";
+import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/renderer-link";
 
 /**
  * The booth projector (issue #24), in ShibaLab's RAY theme like the phone
@@ -17,11 +21,22 @@ import { ArrivalQr } from "./arrival-qr";
  *   (right) replay the visitor's walk.
  * - arrived: a short card, then back to the top.
  *
- * Prototype: nothing arrives from TRACE_B yet, so the top screen has test
+ * Arrivals: with TRACE_B configured (NEXT_PUBLIC_DISPLAY_API_URL and
+ * NEXT_PUBLIC_GOOGLE_CLIENT_ID, use-renderer-link.ts) an operator signs in with
+ * Google on the top screen, and the booth takes TRACE_B's arrivals one at a
+ * time as the primary renderer: the visitor's route (pathNodeIds), then the
+ * arrived card, then the next visitor or the QR. A visitor without a route
+ * (no photos) gets the card alone. The top screen keeps test
  * buttons (Space also plays). A test keeps going, one walk after another,
  * until 終了する (or Esc). Query: ?speed=1.5 (pace; 1 walks at WALK_SPEED),
  * ?duration=30 (fit every walk into that many seconds instead), ?fps=1
  * (frames per second in the corner, to check the booth PC keeps up).
+ *
+ * Sound (issue #27, src/lib/display/sound.ts): music while waiting and while
+ * replaying, a cue as a walk starts and one at ShibaLab. The browser needs one
+ * click before it makes sound, so 音を出す shows until then (the test buttons
+ * count too). ?volume=0.6 sets the level, ?mute=1 silences it, ?sound=1 shows
+ * which sounds are the real files and which are still placeholders.
  */
 type Screen = "loading" | "top" | "playback" | "arrived";
 
@@ -36,6 +51,12 @@ export function DisplayClient() {
   const labelsRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
   const routesRef = useRef<Record<TestRoute, () => RoutePath> | null>(null);
+  /** Builds an arrival's walk from its route's graph node ids; null when there is no route to walk. */
+  const arrivalRouteRef = useRef<((pathNodeIds: string[]) => RoutePath | null) | null>(null);
+  /** The arrival walking, settled when its walk ends or TRACE_B takes it back. */
+  const liveRef = useRef<{ resolve: (result: ReplayResult) => void } | null>(null);
+  /** True while the booth shows a visitor's arrival (walk and card) rather than a test. */
+  const [live, setLive] = useState(false);
   /** True from play until the walk ends or the top screen takes over. */
   const playingRef = useRef(false);
   /** The test running, if any: after each walk the next one starts until 終了する. */
@@ -44,6 +65,33 @@ export function DisplayClient() {
   const [status, setStatus] = useState({ stop: "", place: "", progress: 0 });
   const [arrivedAt, setArrivedAt] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const soundRef = useRef<SoundEngine | null>(null);
+  const [sound, setSound] = useState<{ unlocked: boolean; sources: Record<Cue, string> } | null>(null);
+  const [showSources, setShowSources] = useState(false);
+
+  // Sound: made on mount, told which screen is up, unlocked by the first click or key.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const volume = params.has("volume") ? Number(params.get("volume")) : 1;
+    const engine = createSound({ volume: Number.isFinite(volume) ? volume : 1, muted: params.get("mute") === "1" });
+    soundRef.current = engine;
+    const sync = () => setSound({ unlocked: engine.unlocked, sources: { ...engine.sources } });
+    const off = engine.subscribe(sync);
+    const first = window.setTimeout(() => {
+      sync();
+      setShowSources(params.get("sound") === "1");
+    }, 0);
+    return () => {
+      window.clearTimeout(first);
+      off();
+      engine.dispose();
+      soundRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (screen !== "loading") soundRef.current?.scene(screen);
+  }, [screen]);
 
   useEffect(() => {
     let disposed = false;
@@ -63,6 +111,7 @@ export function DisplayClient() {
         sample: () => buildRoutePath(graph.routeThrough(graph.SAMPLE_STOPS, graph.INDOOR_FIRST)),
         random: () => buildRoutePath(graph.routeThrough(graph.randomIndoorStops(), graph.INDOOR_FIRST)),
       };
+      arrivalRouteRef.current = (pathNodeIds) => (pathNodeIds.length >= 2 ? buildRoutePath(graph.routeThrough(pathNodeIds, graph.METRES)) : null);
       const player = await createPlayer({
         overview: mapRef.current!,
         follow: droneRef.current!,
@@ -77,6 +126,9 @@ export function DisplayClient() {
             playingRef.current = false;
             setArrivedAt(clock(new Date()).slice(0, 5));
             setScreen("arrived");
+            // A visitor's walk is complete here; TRACE_B is told, and the card then holds the booth.
+            liveRef.current?.resolve("completed");
+            liveRef.current = null;
           }
         },
       });
@@ -98,6 +150,7 @@ export function DisplayClient() {
     const player = playerRef.current;
     const routes = routesRef.current;
     if (!player || !routes) return;
+    void soundRef.current?.unlock();
     testRef.current = which;
     setStatus({ stop: "", place: "", progress: 0 });
     playingRef.current = true;
@@ -108,20 +161,68 @@ export function DisplayClient() {
   const backToTop = useCallback(() => {
     playingRef.current = false;
     testRef.current = null;
+    setLive(false);
+    // A visitor's walk stopped by hand (終了する, Esc) is reported as failed rather than left hanging.
+    liveRef.current?.resolve("failed");
+    liveRef.current = null;
     playerRef.current?.stop();
     setScreen("top");
   }, []);
 
-  // The arrived card stays a few seconds; a test then plays its next walk,
-  // a real arrival hands the booth back to the top screen.
+  /** One arrival from TRACE_B: its walk fitted into the replay time TRACE_B gives, over a test walk if one is running. */
+  const replayArrival = useCallback(
+    (arrival: ArrivalToPlay, signal: AbortSignal) =>
+      new Promise<ReplayResult>((resolve) => {
+        const player = playerRef.current;
+        const build = arrivalRouteRef.current;
+        if (!player || !build) return resolve("failed");
+        let path: RoutePath | null;
+        try {
+          path = build(arrival.pathNodeIds);
+        } catch (problem) {
+          console.error(`display: arrival ${arrival.arrivalId} has a route the campus graph cannot walk`, problem);
+          return resolve("failed");
+        }
+        testRef.current = null;
+        setLive(true);
+        if (!path) {
+          // No route to walk (no photos, or none on this graph version): the arrived card alone.
+          playingRef.current = false;
+          setArrivedAt(clock(new Date()).slice(0, 5));
+          setScreen("arrived");
+          return resolve("completed");
+        }
+        liveRef.current = { resolve };
+        setStatus({ stop: "", place: "", progress: 0 });
+        playingRef.current = true;
+        player.play(path, arrival.durationSeconds ?? undefined);
+        setScreen("playback");
+        // TRACE_B skipped it, or the lease went: back to the top without reporting.
+        signal.addEventListener(
+          "abort",
+          () => {
+            if (liveRef.current?.resolve !== resolve) return;
+            liveRef.current = null;
+            backToTop();
+            resolve("failed");
+          },
+          { once: true },
+        );
+      }),
+    [backToTop],
+  );
+  // After a visitor's card, the link starts the next visitor or hands the booth back to the QR.
+  const link = useRendererLink(screen !== "loading", replayArrival, backToTop);
+
+  // The arrived card stays a few seconds; a test then plays its next walk. A visitor's card is timed by the link.
   useEffect(() => {
-    if (screen !== "arrived") return;
+    if (screen !== "arrived" || live) return;
     const id = window.setTimeout(() => {
       if (testRef.current) play(testRef.current);
       else backToTop();
     }, ARRIVED_SECONDS * 1000);
     return () => window.clearTimeout(id);
-  }, [screen, play, backToTop]);
+  }, [screen, live, play, backToTop]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -159,7 +260,7 @@ export function DisplayClient() {
             <span className="dsp-mono keep-case">ShibaLab 301</span>
           </p>
           <div className="dsp-tests">
-            <span className="dsp-mono">TEST · 繰り返し再生中</span>
+            <span className="dsp-mono">{live ? "ARRIVAL" : "TEST · 繰り返し再生中"}</span>
             <button type="button" className="dsp-test" onClick={backToTop}>
               ■ 終了する <span className="dsp-mono">ESC</span>
             </button>
@@ -194,6 +295,7 @@ export function DisplayClient() {
               <span className="keep-case">ShibaLab</span> 301 / RAY
             </p>
             <div className="dsp-tests">
+              {link && <LinkBadge link={link} />}
               <span className="dsp-mono">TEST</span>
               <button type="button" className="dsp-test" disabled={screen !== "top"} onClick={() => play("sample")}>
                 ▶ テスト再生 <span className="dsp-mono">SPACE</span>
@@ -236,9 +338,40 @@ export function DisplayClient() {
         </div>
       )}
 
+      {sound && !sound.unlocked && (
+        <button type="button" className="dsp-test dsp-sound" onClick={() => void soundRef.current?.unlock()}>
+          ♪ 音を出す
+        </button>
+      )}
+      {sound && showSources && (
+        <p className="dsp-mono dsp-sound-sources">
+          SOUND {Object.entries(sound.sources).map(([cue, src]) => `${cue}:${src}`).join(" / ")}
+        </p>
+      )}
       <Hud screen={screen} />
       {fps !== null && screen !== "top" && <p className="dsp-fps">{fps} FPS</p>}
     </div>
+  );
+}
+
+const LINK_LABEL: Record<LinkState, string> = {
+  login: "LINK · 運営の Google ログインが必要です",
+  connecting: "LINK · 接続中",
+  standby: "LINK · 待機（別の画面が再生担当）",
+  primary: "LINK · 再生担当",
+  rejected: "LINK · つなげません",
+};
+
+/** Whether the booth is taking arrivals from TRACE_B, and the operator's sign-in when it is needed. */
+function LinkBadge({ link }: { link: DisplayLink }) {
+  return (
+    <>
+      <span className="dsp-mono dsp-link" data-state={link.state} role="status">
+        {LINK_LABEL[link.state]}
+        {link.detail ? `：${link.detail}` : ""}
+      </span>
+      {link.state === "login" && <GoogleSignIn clientId={link.googleClientId} onToken={link.signIn} />}
+    </>
   );
 }
 

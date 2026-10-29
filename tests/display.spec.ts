@@ -65,3 +65,27 @@ test("a random test walk ends at ShibaLab", async ({ page }) => {
   await expect(page.locator(".dsp-play__stop")).toHaveText("ShibaLab（教室棟3F 301）");
   expect(errors).toEqual([]);
 });
+
+test("sound: placeholders stand in for missing files, and 音を出す goes once sound is on", async ({ page }) => {
+  const errors = await open(page, "?sound=1&duration=4");
+  // All four cues are ready; with no files in public/display/sound/ they are the placeholders.
+  const sources = page.locator(".dsp-sound-sources");
+  await expect(sources).toContainText(/wait:\S+ \/ scan:\S+ \/ play:\S+ \/ arrive:\S+/);
+  await expect(sources).not.toContainText("…");
+  // Headless Chromium may allow sound without a click; when it doesn't, the button unlocks it.
+  const button = page.getByRole("button", { name: "♪ 音を出す" });
+  if (await button.isVisible()) await button.click();
+  await expect(button).toBeHidden();
+  // A walk with sound plays through to the arrival, and on to the next.
+  await page.getByRole("button", { name: /テスト再生/ }).click();
+  await expect(page.getByText("ShibaLab に到着しました")).toBeVisible({ timeout: 15000 });
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback", { timeout: 15000 });
+  await page.getByRole("button", { name: /終了する/ }).click();
+  expect(errors).toEqual([]);
+});
+
+test("sound: ?mute=1 never asks for sound", async ({ page }) => {
+  const errors = await open(page, "?mute=1");
+  await expect(page.getByRole("button", { name: "♪ 音を出す" })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

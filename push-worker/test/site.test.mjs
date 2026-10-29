@@ -16,17 +16,17 @@ test("serves non-API assets without backend configuration", async () => {
 
 test("allows only participant API paths and forwards credentials without URL leakage", async () => {
   let forwarded;
-  const request = new Request(`${site}/api/backend/v1/live-presence-sessions/live_abc/position`, {
+  const request = new Request(`${site}/api/backend/v1/live-presence-sessions/live_abc/stop`, {
     method: "POST",
     headers: { "Origin": site, "Content-Type": "application/json", "Authorization": "Bearer participant", "X-Untrusted": "discard" },
-    body: JSON.stringify({ point: { latitude: 35 } }),
+    body: JSON.stringify({}),
   });
   const response = await handleSiteRequest(request, env, async (upstream) => {
     forwarded = upstream;
     return Response.json({ ok: true }, { headers: { "X-Request-ID": "req-1", "Set-Cookie": "private=1" } });
   });
   assert.equal(response.status, 200);
-  assert.equal(forwarded.url, "https://go.example.test/v1/live-presence-sessions/live_abc/position");
+  assert.equal(forwarded.url, "https://go.example.test/v1/live-presence-sessions/live_abc/stop");
   assert.equal(forwarded.headers.get("Authorization"), "Bearer participant");
   assert.equal(forwarded.headers.get("X-Trace-Edge-Secret"), env.TRACE_EDGE_SHARED_SECRET);
   assert.equal(forwarded.headers.get("X-Untrusted"), null);
@@ -56,21 +56,19 @@ test("two-token delete forwards the live token only for the dedicated experience
   assert.equal(requests[0].headers.get("Idempotency-Key"), "same-key");
 });
 
-test("relays the photo, arrival and reminder routes with their bodies", async () => {
+test("relays the arrival, reminder, photo place and photo-delete routes with their bodies", async () => {
   const memory = "v1/memory-sessions/mem_abc";
+  const moments = "v2/memory-sessions/mem_abc/photos";
   const subscription = JSON.stringify({ consent: true, subscription: { endpoint: "https://push.example.test/1", keys: { p256dh: "k", auth: "a" } }, intervalMinutes: 30 });
   const cases = [
-    ["GET", `${memory}/photos`],
-    ["GET", `${memory}/memory`],
-    ["POST", `${memory}/photos`, JSON.stringify({ clientPhotoId: "p1", mimeType: "image/jpeg" })],
-    ["POST", `${memory}/photos/photo_xyz/upload-url`, ""],
-    ["POST", `${memory}/photos/photo_xyz/complete`, ""],
     ["POST", `${memory}/arrival`, JSON.stringify({ checkpointToken: "token" })],
     ["POST", `${memory}/arrival/skip`, ""],
     ["PUT", `${memory}/push-subscription`, subscription],
     ["PATCH", `${memory}/push-subscription`, JSON.stringify({ status: "paused" })],
     ["DELETE", `${memory}/photos/photo_xyz`],
     ["DELETE", `${memory}/push-subscription`],
+    ["POST", moments, JSON.stringify({ clientPhotoId: "photo-1", checkpointId: "cp_kyoshitsu_3f_301", capturedAt: "2026-10-31T01:00:00.000Z" })],
+    ["DELETE", `${moments}/photo_xyz`],
   ];
   for (const [method, path, body] of cases) {
     const headers = { Origin: site, Authorization: "Bearer memory-token", "Idempotency-Key": "key-1" };
@@ -100,8 +98,20 @@ test("keeps operator and display routes closed", async () => {
     new Request(`${site}/api/backend/v1/operator/arrivals`),
     new Request(`${site}/api/backend/v1/display/ws`),
     new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/abc/complete`, { method: "POST", headers: json }),
+    // Photos stay on the phone: no v1 upload, listing or story; no live position without GPS.
+    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos`, { method: "POST", headers: json, body: "{}" }),
+    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/photo_xyz/upload-url`, { method: "POST", headers: json, body: "" }),
+    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/photo_xyz/complete`, { method: "POST", headers: json, body: "" }),
+    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos`),
+    new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/memory`),
+    new Request(`${site}/api/backend/v1/live-presence-sessions/live_abc/position`, { method: "POST", headers: json, body: "{}" }),
     new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos`, { method: "PUT", headers: json, body: "{}" }),
     new Request(`${site}/api/backend/v1/experiences/exp_abc`, { method: "PATCH", headers: json, body: "{}" }),
+    // /log neither lists its photos' places nor reads the memory from TRACE_B.
+    new Request(`${site}/api/backend/v2/memory-sessions/mem_abc/photos`),
+    new Request(`${site}/api/backend/v2/memory-sessions/mem_abc/memory`),
+    new Request(`${site}/api/backend/v2/memory-sessions/mem_abc/photos/photo_xyz`, { method: "POST", headers: json, body: "{}" }),
+    new Request(`${site}/api/backend/v2/memory-sessions/mem_abc/photos/other_xyz`, { method: "DELETE", headers: { Origin: site } }),
   ];
   for (const request of cases) {
     const response = await handleSiteRequest(request, env, noCall);
@@ -152,7 +162,7 @@ test("rejects unexpected requests before calling the backend", async () => {
     [new Request(`${site}/api/backend/v1/experiences`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "x".repeat(16385) }), 413],
     [new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/push-subscription`, { method: "PUT", headers: { "Content-Type": "text/plain" }, body: "{}" }), 415],
     [new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/push-subscription`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: "x".repeat(16385) }), 413],
-    [new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/photos/photo_xyz/complete`, { method: "POST", headers: { Origin: "https://other.example", "Content-Type": "application/json" } }), 403],
+    [new Request(`${site}/api/backend/v1/memory-sessions/mem_abc/arrival/skip`, { method: "POST", headers: { Origin: "https://other.example", "Content-Type": "application/json" } }), 403],
   ];
   for (const [request, expected] of cases) {
     const response = await handleSiteRequest(request, env, noCall);

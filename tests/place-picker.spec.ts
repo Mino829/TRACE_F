@@ -35,15 +35,19 @@ async function useList(page: Page) {
   await page.getByRole("button", { name: "一覧で選ぶ" }).click();
 }
 
-test("a photo is saved with the checkpoint chosen for it, and the phone's position is never asked for", async ({ page }) => {
-  const asked: string[] = [];
+test("a photo saves its chosen checkpoint without requesting the phone's position or location permission", async ({ page }) => {
   await page.addInitScript(() => {
-    const original = navigator.geolocation?.getCurrentPosition?.bind(navigator.geolocation);
-    (window as unknown as { __geo: number }).__geo = 0;
-    if (original) {
-      navigator.geolocation.getCurrentPosition = (...args) => {
-        (window as unknown as { __geo: number }).__geo += 1;
-        return original(...args);
+    const locationCalls: string[] = [];
+    Object.defineProperty(window, "__locationCalls", { value: locationCalls, configurable: true });
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition = () => { locationCalls.push("getCurrentPosition"); throw new Error("location disabled"); };
+      navigator.geolocation.watchPosition = () => { locationCalls.push("watchPosition"); throw new Error("location disabled"); };
+    }
+    if (navigator.permissions) {
+      const original = navigator.permissions.query.bind(navigator.permissions);
+      navigator.permissions.query = (descriptor) => {
+        if (descriptor.name === "geolocation") locationCalls.push("permission query");
+        return original(descriptor);
       };
     }
   });
@@ -66,8 +70,7 @@ test("a photo is saved with the checkpoint chosen for it, and the phone's positi
   await expect(page.getByText("1枚目の写真を残しました")).toBeVisible();
   await shoot(page, "04-clear");
 
-  asked.push(String(await page.evaluate(() => (window as unknown as { __geo: number }).__geo)));
-  expect(asked).toEqual(["0"]);
+  expect(await page.evaluate(() => Reflect.get(window, "__locationCalls"))).toEqual([]);
 
   const stored = await page.evaluate(
     () =>

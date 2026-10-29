@@ -1,32 +1,9 @@
 /**
- * What one record sends to the push worker. A record is one of two things:
- *
- * - photo-memory: a participant's photo, with the one fix taken when the
- *   camera handed it over. This is what the finished work is built from.
- * - accuracy: the team's accuracy run from the developer screen, answered by
- *   pointing at where one stands. It is deliberately raw. It is collected to
- *   find out how wrong a phone's position is on campus and what could correct
- *   it, and a correction thought of later is only testable against data that
- *   was kept: every fix in the window rather than one, the browser's own
- *   fields rather than a summary, and whatever hints exist about where a fix
- *   came from (the Geolocation API does not say whether GPS or Wi-Fi produced it).
+ * Schema 3 photos contain participant-selected checkpoints, never a phone
+ * position. Older accuracy and photo records remain typed for local viewing
+ * and deletion; they are not eligible for upload.
  */
-
-import {
-  COORDINATE_VERSION,
-  PLAN_PLACEMENT_VERSION,
-  campusPxToLocal,
-  campusPxToPlanPx,
-  insideGeofence,
-  localToWgs84,
-  structuresAt,
-  wgs84ToLocal,
-  type CampusPx,
-  type LocalEnu,
-  type Wgs84,
-} from "@/lib/geo/campus-georeference";
-import { levelLabel, toyosuClassroom } from "@/lib/map/buildings";
-import coordinates from "@/lib/map/toyosu-campus.coordinates.json";
+import { COORDINATE_VERSION, type CampusPx, type LocalEnu, type Wgs84 } from "@/lib/geo/campus-georeference";
 
 import type { DeviceContext, NetworkInfo, OrientationSample } from "./context";
 import type { PhotoPlace } from "@/lib/places/types";
@@ -46,11 +23,7 @@ export const PURPOSE_LABEL: Record<RecordPurpose, string> = {
   accuracy: "精度テスト",
 };
 
-/**
- * The work's documents allow twelve photos per participation (one memory
- * session; photo-memory.md, a provisional figure until the network and
- * storage tests). This page has no session yet, so it counts the day's photos.
- */
+/** Offline fallback limit; with the backend the public config sets the session limit. */
 export const MAX_PHOTOS = 12;
 
 export type Fix = {
@@ -72,16 +45,16 @@ export type GeoError = { at: number; code: number; message: string };
 export type Capture = {
   startedAt: number;
   endedAt: number | null;
-  /** The watch: high accuracy, no cached fixes. */
+  /** Legacy watch options; new photo records use an empty object. */
   options: PositionOptions;
   fixes: Fix[];
-  /** One extra low-accuracy fix asked for at the start, the network-only answer to compare against. */
+  /** Legacy low-accuracy reading, never requested for new photos. */
   coarse: Fix | null;
   coarseError: string | null;
   errors: GeoError[];
 };
 
-/** What every way of marking the truth records. */
+/** A legacy accuracy run's participant-marked location. */
 type TruthBase = {
   wgs84: Wgs84;
   level: number;
@@ -89,13 +62,7 @@ type TruthBase = {
   markedAt: number;
 };
 
-/**
- * Where the person said they were standing. On the Toyosu campus it is marked
- * on the drawings, which know floors and buildings; anywhere else on a map.
- * Instead of asking how sure they were, the zoom they marked at is kept: a
- * point placed at street-level zoom is a looser claim than one placed on a
- * single room.
- */
+/** Historical map/plan truth, read for existing records only. */
 export type Truth =
   | (TruthBase & {
       method: "campus-plan";
@@ -182,33 +149,6 @@ export const SOURCE_LABEL: Record<SourceGuess, string> = {
   cell: "基地局など",
 };
 
-/**
- * A guess, because browsers never say. Satellite fixes come with an altitude
- * whose accuracy is a few metres to about fifteen. An iPhone indoors at Toyosu
- * (2026-09-02) reported altitude on every fix but always with an accuracy of
- * 30 m, and its fixes were 18-36 m off, so a 30 m altitude accuracy is read as
- * "not satellites". Wi-Fi fixes are usually within about a hundred metres;
- * anything coarser is the cell network or the IP address. The raw fields are
- * kept for a better rule later.
- */
-export function guessSource(fix: Fix): SourceGuess {
-  if (fix.altitudeAccuracy !== null && fix.altitudeAccuracy < 20 && fix.accuracy <= 30) return "gnss";
-  if (fix.accuracy <= 100) return "wifi";
-  return "cell";
-}
-
-/** How far outside the drawn campus a fix may sit and still count as on campus. */
-const CAMPUS_MARGIN_METRES = 100;
-
-/**
- * On or near the Toyosu campus, where the drawings are offered for marking. A
- * fix is judged by the best case its accuracy allows, so a poor fix taken on
- * campus still gets the drawings.
- */
-export function nearCampus(fix: Pick<Fix, "latitude" | "longitude" | "accuracy">): boolean {
-  return insideGeofence(wgs84ToLocal({ lat: fix.latitude, lon: fix.longitude }), CAMPUS_MARGIN_METRES + fix.accuracy);
-}
-
 /** Great-circle distance in metres, for errors anywhere rather than only near the campus origin. */
 export function haversineMetres(a: Wgs84, b: Wgs84): number {
   const radians = Math.PI / 180;
@@ -216,29 +156,6 @@ export function haversineMetres(a: Wgs84, b: Wgs84): number {
   const dLon = (b.lon - a.lon) * radians;
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * radians) * Math.cos(b.lat * radians) * Math.sin(dLon / 2) ** 2;
   return 2 * 6371008.8 * Math.asin(Math.sqrt(h));
-}
-
-export function campusTruth(mark: CampusPx, level: number, markedAt: number, viewScale: number): Truth {
-  const local = campusPxToLocal(mark);
-  return {
-    method: "campus-plan",
-    coordinateVersion: COORDINATE_VERSION,
-    planPlacementVersion: PLAN_PLACEMENT_VERSION,
-    campusPx: mark,
-    planPx: campusPxToPlanPx(toyosuClassroom.id, mark),
-    local,
-    wgs84: localToWgs84(local),
-    level,
-    levelLabel: levelLabel(level),
-    floorHeightMetres: (level - 1) * coordinates.scale.storeyMetres,
-    buildingIds: structuresAt(local, level),
-    viewScale,
-    markedAt,
-  };
-}
-
-export function mapTruth(pin: Wgs84, level: number, markedAt: number, zoom: number, layer: MapLayer): Truth {
-  return { method: "map", wgs84: pin, level, levelLabel: levelLabel(level), zoom, layer, markedAt };
 }
 
 export { COORDINATE_VERSION };

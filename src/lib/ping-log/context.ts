@@ -1,8 +1,4 @@
-/**
- * The circumstances of a record that might explain its error later: which
- * phone and browser, which network, the battery, the compass. Every field is
- * best effort; a browser that lacks an API leaves its field null.
- */
+/** Network and device context for photos; legacy orientation fields remain readable. */
 
 export type NetworkInfo = {
   /** "wifi" | "cellular" | ...; Android Chrome only. */
@@ -41,7 +37,6 @@ export type OrientationSample = {
 type NavigatorExtras = Navigator & {
   connection?: { type?: string; effectiveType?: string; downlink?: number; rtt?: number; saveData?: boolean };
   userAgentData?: { platform?: string; mobile?: boolean; getHighEntropyValues?: (hints: string[]) => Promise<Record<string, unknown>> };
-  getBattery?: () => Promise<{ level: number; charging: boolean }>;
   standalone?: boolean;
 };
 
@@ -65,13 +60,6 @@ export function networkInfo(): NetworkInfo | null {
   };
 }
 
-async function permission(name: PermissionName): Promise<string | null> {
-  try {
-    return (await navigator.permissions.query({ name })).state;
-  } catch {
-    return null;
-  }
-}
 
 export async function deviceContext(): Promise<DeviceContext> {
   const nav = navigator as NavigatorExtras;
@@ -85,7 +73,6 @@ export async function deviceContext(): Promise<DeviceContext> {
       mobile: typeof nav.userAgentData.mobile === "boolean" ? nav.userAgentData.mobile : null,
     };
   }
-  const battery = await nav.getBattery?.().then((value) => ({ level: value.level, charging: value.charging }), () => null) ?? null;
   return {
     userAgent: navigator.userAgent,
     userAgentData,
@@ -93,37 +80,8 @@ export async function deviceContext(): Promise<DeviceContext> {
     language: navigator.language,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     standalone: window.matchMedia("(display-mode: standalone)").matches || nav.standalone === true,
-    geolocationPermission: await permission("geolocation"),
+    geolocationPermission: null,
     notificationPermission: typeof Notification === "undefined" ? null : Notification.permission,
-    battery,
-  };
-}
-
-/**
- * Listens to the compass while a record is being taken and returns the last
- * reading. Android delivers it without asking; iOS stays silent unless the
- * page was granted motion access, which this page does not ask for.
- */
-export function watchOrientation(): () => OrientationSample | null {
-  let last: OrientationSample | null = null;
-  const onEvent = (event: DeviceOrientationEvent) => {
-    const ios = event as DeviceOrientationEvent & { webkitCompassHeading?: number; webkitCompassAccuracy?: number };
-    if (event.alpha === null && ios.webkitCompassHeading === undefined) return;
-    last = {
-      at: Date.now(),
-      absolute: event.absolute || event.type === "deviceorientationabsolute",
-      alpha: event.alpha,
-      beta: event.beta,
-      gamma: event.gamma,
-      compassHeading: numberOrNull(ios.webkitCompassHeading),
-      compassAccuracy: numberOrNull(ios.webkitCompassAccuracy),
-    };
-  };
-  const absolute = "ondeviceorientationabsolute" in window;
-  const type = absolute ? "deviceorientationabsolute" : "deviceorientation";
-  window.addEventListener(type, onEvent as EventListener);
-  return () => {
-    window.removeEventListener(type, onEvent as EventListener);
-    return last;
+    battery: null,
   };
 }

@@ -1,25 +1,10 @@
 /**
- * The consent shown before anything is recorded, following the seven items
- * trace-campus-installation/docs/privacy.md asks a consent screen to carry.
- *
- * It covers the photo memory only. The accuracy runs on the developer screen
- * are the team's own and never ask for it; their records carry
- * DEVELOPER_CONSENT_VERSION instead.
- *
- * What the exhibition does with the places stays unsaid until the visitor
- * arrives at ShibaLab: the location is disclosed in "取得する情報" and used,
- * in general terms, for the exhibition, and nowhere else before arrival.
- *
- * Draft: the retention period, the contact and the university's approval are
- * still open in privacy.md. Bump CONSENT_VERSION whenever the text changes;
- * every phone is then asked again, and each record carries the version it was
- * given under.
+ * Draft consent for photo memory. GPS is not requested: places are selected
+ * checkpoints, not phone measurements. Retention, contact and institutional
+ * review are still open; changing the text requires fresh consent for photos.
+ * Older saved consent remains readable for withdrawal and deletion.
  */
-
-export const CONSENT_VERSION = "2026-10-26-photo-draft-3";
-
-/** What the developer screen's records and accuracy pings carry in place of a participant's consent. */
-export const DEVELOPER_CONSENT_VERSION = "developer-accuracy";
+export const CONSENT_VERSION = "2026-10-26-photo-no-gps-draft-3";
 
 export const CONSENT_LEAD = "参加は任意です。同意しなくても、\n不利益になることはありません。";
 
@@ -36,14 +21,15 @@ export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
     title: "取得する情報",
     items: [
       "撮った写真と、撮影した時刻",
-      "撮影したときの位置情報\n（撮影のたびに1回だけ測ります。\nそれ以外のときは測りません）",
-      "端末の種類（機種、OS、ブラウザ）と、\n通信の種類\n（Wi-Fi かモバイル回線か、通信事業者名）",
+      "写真ごとに自分で選ぶ、\nキャンパス内のチェックポイント\n（端末の位置情報は取得しません）",
+      "端末の種類（機種、OS、ブラウザ）と、\n通信の状態\n（端末から得られる場合）",
       "この端末で作る匿名の ID",
     ],
   },
   {
     title: "取得しない情報",
     items: [
+      "端末の位置情報（GPS など）",
       "氏名、学籍番号、メールアドレス、電話番号",
       "端末の製造番号や広告 ID",
       "IP アドレス（記録には残しません）",
@@ -74,7 +60,7 @@ export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
   {
     title: "保存期間と削除",
     items: [
-      "送られたデータは\nTRACE の展示が終わるまで保存し、\nその後削除します。",
+      "保存期間と問い合わせ先は現在確認中です。この同意文はまだ草案で、\n大学による承認済みの案内ではありません。",
       "「参加をやめる」を押すと、この端末から\n送ったデータをすべて削除できます。",
     ],
   },
@@ -88,11 +74,11 @@ const CONSENT_KEY = "trace-consent";
 
 export type Consent = { version: string; at: string };
 
-/** The consent this phone gave to the current text, or null. */
+/** Saved consent, including older versions retained solely to allow withdrawal. */
 export function loadConsent(): Consent | null {
   try {
     const stored = JSON.parse(window.localStorage.getItem(CONSENT_KEY) ?? "null") as Consent | null;
-    return stored?.version === CONSENT_VERSION ? stored : null;
+    return stored && typeof stored.version === "string" && typeof stored.at === "string" ? stored : null;
   } catch {
     return null;
   }

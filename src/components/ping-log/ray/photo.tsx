@@ -78,7 +78,7 @@ export function PhotoScreen(props: Props) {
 
   useEffect(() => {
     let alive = true;
-    preparePhoto(shot.file, { exif: false }).then(
+    preparePhoto(shot.file).then(
       (value) => {
         if (alive) setPhoto(value);
       },
