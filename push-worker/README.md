@@ -9,7 +9,7 @@
 main に push され、GitHub Actions の「Verify frontend and Workers」が通ると、`.github/workflows/deploy.yml` が `npm run release` を実行してデプロイします。
 Actions の画面から「Deploy to Cloudflare」を手で実行することもできます。
 このワークフローには、リポジトリの secret に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要です。
-`PUSH_API_URL`、`TRACE_API_URL`、`ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID` は、リポジトリの variable に設定したものだけを `.env` に書きます。
+`PUSH_API_URL`、`TRACE_API_URL`、`ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID`、`DISPLAY_API_URL`、`GOOGLE_CLIENT_ID` は、リポジトリの variable に設定したものだけを `.env` に書きます。
 
 ## 構成
 
@@ -72,6 +72,10 @@ npm install
 この行を書くのは、下の2つの secret を `trace-log` に設定し、TRACE_B につながることを確かめてからにしてください。
 `.env` に `ARRIVAL_VENUE` と `ARRIVAL_CHECKPOINT_ID` も書きます。値は TRACE_B の `TRACE_ARRIVAL_VENUE` と `TRACE_ARRIVAL_CHECKPOINT_ID` と同じにします。
 /log はこの2つを使って、ブースの短い到着 QR を TRACE_B のトークンに組み立て直します（arrival-issuer/README.md）。
+`.env` に `DISPLAY_API_URL` と `GOOGLE_CLIENT_ID` を両方書くと、/display は運営に Google でログインしてもらい、TRACE_B へ直接 WebSocket でつないで到着を再生します。
+`DISPLAY_API_URL` は TRACE_B のオリジン（このサイトの `/api/backend` ではありません）、`GOOGLE_CLIENT_ID` は TRACE_B の `TRACE_DISPLAY_GOOGLE_CLIENT_ID` と同じ値です。
+どちらかが無ければ、/display は今までどおりテスト再生だけで動きます。
+TRACE_B の `TRACE_DISPLAY_ALLOWED_ORIGINS` と、Google 側の「承認済みの JavaScript 生成元」には、`trace-log` のオリジンを入れておきます。
 
 ```bash
 npm --prefix push-worker run release
