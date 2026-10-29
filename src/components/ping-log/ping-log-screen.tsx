@@ -94,7 +94,7 @@ const SEND_LOCK = "trace-log-send";
 const SEND_WAIT_MS = 10_000;
 /** How long reading the arrival QR waits for photos' places still on their way to TRACE_B; the code lives 25 seconds. */
 const PLACES_BEFORE_ARRIVAL_MS = 3_000;
-const START_AGAIN = "続けるときは、\nもう一度「はじめる」から参加してください。";
+const START_AGAIN = "もう一度参加するときは、\n「はじめる」を押してください。";
 
 type View = "participant" | "developer";
 
@@ -687,11 +687,11 @@ export function PingLogScreen() {
 
   const withdraw = () => run(async () => {
     // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
-    let backendNote = "";
+    let removed = "この端末の写真を削除しました。";
     if (TRACE_API_URL && experience) {
       try {
         await deleteMemorySession(experience.memory, memoryDeleteKey(experience.memory.memorySessionId));
-        backendNote = "参加の記録も削除しました。";
+        removed = "この端末の写真と、参加の記録を削除しました。";
       } catch (error) {
         throw new Error(`参加をやめられませんでした。${error instanceof Error ? error.message : ""}`);
       }
@@ -702,7 +702,7 @@ export function PingLogScreen() {
     if (subscription && trace.owned) await subscription.unsubscribe().catch(() => undefined);
     else if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
     trace.forget();
-    const deleted = PUSH_API_URL ? await forgetMe() : 0;
+    if (PUSH_API_URL) await forgetMe();
     // A place already on its way finishes first, so it cannot put its photo back.
     await withLock(SEND_LOCK, clearEntries, { waitMs: SEND_WAIT_MS }).catch(() => clearEntries());
     clearConsent();
@@ -711,7 +711,7 @@ export function PingLogScreen() {
     setExpiresAt(null);
     setEntries([]);
     setConsent(null);
-    setMessage(`参加をやめました。送られたデータ ${deleted}件を削除しました。${backendNote}`);
+    setMessage(`参加をやめました。${removed}`);
   });
 
   /**

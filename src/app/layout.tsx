@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "TRACE",
-  description: "TRACE campus experience web app",
+  description: "芝浦祭で撮った写真で、学祭の一日を残す Web アプリです。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

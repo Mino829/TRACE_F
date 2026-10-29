@@ -78,7 +78,7 @@ export type RayAppProps = {
   contact: string;
   onWithdraw: () => Promise<void>;
   onDeveloper: () => void;
-  /** The participant's home, from the TRACE mark: from the demo, even one opened on the developer screen. */
+  /** Back to the participant's screens, for the TRACE mark in the demo, even one opened on the developer screen. */
   onHome: () => void;
 };
 
@@ -90,6 +90,9 @@ export function RayApp(props: RayAppProps) {
   // Checked once, on the title: whether this phone and browser can join, and how.
   const [entry] = useState<EntryCheck>(entryCheck);
   const entrance = !props.joined && (entry === "in-app" || entry === "ios-browser");
+  // Back at the title from the TRACE mark while taking part; it goes with the participation.
+  const [title, setTitle] = useState(false);
+  if (title && !props.joined) setTitle(false);
 
   const menuItems: MenuItem[] = [
     { label: "遊び方", onSelect: () => setOverlay("howto") },
@@ -145,6 +148,8 @@ export function RayApp(props: RayAppProps) {
         <Current
           {...props}
           entry={entry}
+          title={title}
+          onTitle={setTitle}
           inert={overlay !== null || deleting !== null}
           openOverlay={setOverlay}
           askDelete={(photo, number) => setDeleting({ entry: photo, number })}
@@ -155,13 +160,22 @@ export function RayApp(props: RayAppProps) {
 }
 
 function Current(
-  props: RayAppProps & { entry: EntryCheck; inert: boolean; openOverlay: (name: OverlayName) => void; askDelete: (entry: LogEntry, number: number) => void },
+  props: RayAppProps & {
+    entry: EntryCheck;
+    title: boolean;
+    onTitle: (title: boolean) => void;
+    inert: boolean;
+    openOverlay: (name: OverlayName) => void;
+    askDelete: (entry: LogEntry, number: number) => void;
+  },
 ) {
   const { go, field, fx } = useRay();
   const { inert } = props;
   const full = props.photos.length >= props.maxPhotos;
   const onMenu = () => props.openOverlay("menu");
   const onInstall = () => props.openOverlay("install");
+  // The TRACE mark leads to the title from every screen that has it.
+  const toTitle = () => void go(() => props.onTitle(true));
 
   // A skip still clears: the screen tears and flashes negative, as a photo does.
   const skip = async () => {
@@ -182,6 +196,7 @@ function Current(
         toKeepsake={props.arrived}
         inert={inert}
         onClose={props.onCloseDemo}
+        onTitle={() => props.onTitle(true)}
         beforeArrival={props.onBeforeArrival}
         onArrived={props.onArrived}
         onDelete={props.askDelete}
@@ -190,7 +205,17 @@ function Current(
   }
 
   if (props.demo) {
-    return <DemoFlow closeLabel={props.demo === "home" ? "ホームへもどる" : "開発者の画面にもどる"} inert={inert} onClose={props.onCloseDemo} onHome={props.onHome} />;
+    return (
+      <DemoFlow
+        closeLabel={props.demo === "home" ? "ホームへもどる" : "開発者の画面にもどる"}
+        inert={inert}
+        onClose={props.onCloseDemo}
+        onTitle={() => {
+          props.onHome();
+          props.onTitle(true);
+        }}
+      />
+    );
   }
 
   if (!props.joined) {
@@ -209,11 +234,9 @@ function Current(
     return (
       <TitleScreen
         notes={props.notes}
-        entry={props.entry}
-        inert={inert}
         // How to play comes first, and its 「次へ」 opens the consent.
-        onStart={() => props.openOverlay("start")}
-        onInstall={onInstall}
+        foot={{ entry: props.entry, onStart: () => props.openOverlay("start"), onInstall }}
+        inert={inert}
         onDeveloper={props.onDeveloper}
         onMenu={onMenu}
       />
@@ -261,6 +284,19 @@ function Current(
     );
   }
 
+  // A reminder, a photo or a skip above still comes first; the notes are for the home screen.
+  if (props.title) {
+    return (
+      <TitleScreen
+        notes={[]}
+        foot={{ onHome: () => void go(() => props.onTitle(false)) }}
+        inert={inert}
+        onDeveloper={props.onDeveloper}
+        onMenu={onMenu}
+      />
+    );
+  }
+
   return (
     <HomeScreen
       photos={props.photos}
@@ -283,6 +319,7 @@ function Current(
       onDeveloper={props.onDeveloper}
       onMenu={onMenu}
       onInstall={onInstall}
+      onTitle={toTitle}
     />
   );
 }

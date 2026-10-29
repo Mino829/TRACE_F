@@ -257,7 +257,7 @@ export function DisplayClient() {
         <header className="dsp-mast dsp-mast--room">
           <p className="dsp-mark">
             <span className="wordmark">TRACE</span>
-            <span className="dsp-mono">SHIBALAB 301</span>
+            <span className="dsp-mono keep-case">ShibaLab 301</span>
           </p>
           <div className="dsp-tests">
             <span className="dsp-mono">{live ? "ARRIVAL" : "TEST · 繰り返し再生中"}</span>
@@ -292,7 +292,7 @@ export function DisplayClient() {
             <p className="dsp-mono">
               54TH SHIBAURA FESTIVAL
               <br />
-              SHIBALAB 301 / RAY
+              <span className="keep-case">ShibaLab</span> 301 / RAY
             </p>
             <div className="dsp-tests">
               {link && <LinkBadge link={link} />}
@@ -310,9 +310,9 @@ export function DisplayClient() {
               <h1 className="dsp-title">TRACE</h1>
               <p className="dsp-catch">あなたの歩いた一日を、光でたどる。</p>
               <p className="dsp-text">
-                スマホの TRACE で「ShibaLab へ」を開いて、
+                スマホの TRACE で「QR コードを読み取る」を押して、
                 <br />
-                この QR コードを読み取ってください。
+                この QR コードを枠に入れてください。
                 <br />
                 あなたの歩いてきた軌跡が、このスクリーンに映ります。
               </p>
@@ -321,7 +321,7 @@ export function DisplayClient() {
                   <span className="dsp-mono">1</span>TRACE を開く
                 </li>
                 <li>
-                  <span className="dsp-mono">2</span>QR を読み取る
+                  <span className="dsp-mono">2</span>QR コードを読み取る
                 </li>
                 <li>
                   <span className="dsp-mono">3</span>スクリーンを見る
@@ -394,7 +394,7 @@ function Hud({ screen }: { screen: Screen }) {
       <i className="dsp-hud__c dsp-hud__c--bl" />
       <i className="dsp-hud__c dsp-hud__c--br" />
       <p className="dsp-hud__read">
-        <span>{screen === "top" || screen === "loading" ? "TRACE / FES.54 10.31-11.01 / ASYNC BOOTH" : "TRACE / SHIBALAB 301"}</span>
+        <span>{screen === "top" || screen === "loading" ? "TRACE / FES.54 10.31-11.01 / ASYNC BOOTH" : "TRACE / ShibaLab 301"}</span>
         <span>{now ? clock(now) : ""}</span>
       </p>
     </div>

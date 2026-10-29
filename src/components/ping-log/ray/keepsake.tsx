@@ -10,7 +10,7 @@ import { drawKeepsake, imageName } from "@/lib/ray/keepsake";
 
 import { clock } from "../ui";
 import { Print } from "./prints";
-import { HomeMark, Icon, NoteBar, Phrases, ROOM, Screen, Sentences, useField, useRay } from "./stage";
+import { Icon, NoteBar, Phrases, ROOM, Screen, Sentences, TitleMark, useField, useRay } from "./stage";
 
 /**
  * The keepsake (作品, #14), after the replay: the photos taken before
@@ -43,7 +43,7 @@ export function SavePhoto({ entry, number }: { entry: LogEntry; number: number }
       aria-label={`${number}枚目の写真を保存`}
       onClick={() =>
         void saveImage(file).then((result) => {
-          if (result === "unsupported") toast("画像を長く押して、保存してください。");
+          if (result === "unsupported") toast("画像を長押しして、保存してください。");
         })
       }
     >
@@ -92,6 +92,7 @@ export function KeepsakeScreen({
   onDelete,
   onTrace,
   onLeave,
+  onTitle,
 }: {
   /** This participation's photos, oldest first. */
   photos: LogEntry[];
@@ -103,6 +104,7 @@ export function KeepsakeScreen({
   /** Opens 振り返り3D (#50). */
   onTrace: () => void;
   onLeave: () => void;
+  onTitle: () => void;
 }) {
   useField("room", ROOM);
   const artRef = useRef<HTMLDivElement>(null);
@@ -148,8 +150,10 @@ export function KeepsakeScreen({
     <Screen className="keep" inert={inert}>
       <header className="mast">
         <div className="mast__mark">
-          <HomeMark onHome={onLeave} />
-          <span className="mono">ShibaLab 301</span>
+          <TitleMark onTitle={onTitle} />
+          <span className="mono">
+            <span className="keep-case">ShibaLab</span> 301
+          </span>
         </div>
         <button type="button" className="icon-btn" aria-label="ホームへもどる" onClick={onLeave}>
           <Icon name="close" />

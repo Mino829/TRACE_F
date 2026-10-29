@@ -10,9 +10,7 @@ import { useRay } from "./stage";
 
 /**
  * Photos as prints. The photo is an <img> in its own colours; a pixel copy on
- * a canvas above it shows only while it tears. The brightest point of the
- * photo carries the "RAY" mark, with no number: a value on each photo would
- * read as a score.
+ * a canvas above it shows only while it tears.
  */
 
 /** Each mounted photo's tear, so a strip or a screen can tear the ones inside it. */
@@ -29,16 +27,12 @@ export function tearOne(element: Element | null, ms: number, amount: number): Pr
 /** Where a photo comes from: a Blob kept on the phone, or a file the page serves. */
 export type PhotoSource = { blob: Blob } | { src: string };
 
-/**
- * The photo and its tearing copy, filling the box it is put in. `mark` adds
- * the RAY mark at its brightest point.
- */
-export function PrintPhoto({ source, alt, mark = false }: { source: PhotoSource; alt: string; mark?: boolean }) {
+/** The photo and its tearing copy, filling the box it is put in. */
+export function PrintPhoto({ source, alt }: { source: PhotoSource; alt: string }) {
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const boxRef = useRef<HTMLSpanElement>(null);
   const printRef = useRef<RayPrint | null>(null);
-  const [ray, setRay] = useState<{ x: number; y: number } | null>(null);
   const [tearing, setTearing] = useState(false);
   const blob = "blob" in source ? source.blob : null;
   const src = "src" in source ? source.src : null;
@@ -57,7 +51,6 @@ export function PrintPhoto({ source, alt, mark = false }: { source: PhotoSource;
       const print = new RayPrint(img, canvas, 2).fit(rect.width || 268, rect.height || 357);
       print.draw();
       printRef.current = print;
-      setRay(print.ray);
     };
     img.addEventListener("load", ready);
     img.src = url;
@@ -88,13 +81,6 @@ export function PrintPhoto({ source, alt, mark = false }: { source: PhotoSource;
     <span ref={boxRef} data-print="" className={tearing ? "is-tear" : undefined} style={{ position: "absolute", inset: 0 }}>
       <img ref={imgRef} className="print__img" alt={alt} />
       <canvas ref={canvasRef} className="print__bits" aria-hidden="true" />
-      {mark && ray && (
-        <i
-          className={`ray-mark${ray.x > 0.6 ? " ray-mark--l" : ""}`}
-          style={{ left: `${(ray.x * 100).toFixed(1)}%`, top: `${(ray.y * 100).toFixed(1)}%` }}
-          aria-hidden="true"
-        />
-      )}
     </span>
   );
 }
@@ -124,7 +110,7 @@ export function Print({
   return (
     <figure className={`print${small ? " print--small" : ""}${ratio > 1 ? " print--wide" : ""}`}>
       <span className="print__frame" style={{ ["--ratio" as string]: ratio }}>
-        <PrintPhoto source={source} alt={`${time} の写真`} mark />
+        <PrintPhoto source={source} alt={`${time} の写真`} />
       </span>
       <figcaption className="print__cap">
         {caption ?? (

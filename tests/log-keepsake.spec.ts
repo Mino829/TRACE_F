@@ -107,13 +107,13 @@ async function join(page: Page) {
 /** Takes a photo and saves it at a place picked from the list: building, floor, place. */
 async function savePhoto(page: Page, number: number, [building, floor, place] = ["本部棟", "5F", "本部棟5F"]) {
   await page.locator('input[type="file"][capture]').setInputFiles(PHOTO);
-  await page.getByRole("button", { name: "場所を選ぶ" }).click();
+  await page.getByRole("button", { name: "次へ", exact: true }).click();
   await page.getByRole("button", { name: "一覧で選ぶ" }).click();
   await page.getByRole("radio", { name: building, exact: true }).click();
   await page.getByRole("radio", { name: floor, exact: true }).click();
   await page.getByRole("radio", { name: place }).click();
   await page.getByRole("button", { name: "ここで保存" }).click();
-  await expect(page.getByText(`${number}枚目のメモリーを残しました`)).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText(`${number}枚目の写真を残しました`)).toBeVisible({ timeout: 15000 });
   await page.getByRole("button", { name: "ホームへもどる" }).click();
   await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
 }
@@ -209,6 +209,38 @@ test("after the replay, home leads to the keepsake, which saves as one picture w
   // Each photo saves from the keepsake's own list too.
   const [again] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "1枚目の写真を保存" }).click()]);
   expect((await jpeg(again)).exif).toBe(false);
+});
+
+test("the TRACE mark leads to the title, which leads home without joining again; the developer button waits for ?dev", async ({ context, page }) => {
+  const backend = await standIn(context);
+  let joins = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/v1/experiences")) joins += 1;
+  });
+  await join(page);
+  await savePhoto(page, 1);
+  await expect(page.getByRole("button", { name: "開発者" })).toHaveCount(0);
+
+  // From home: the title, whose foot leads back instead of to the consent.
+  await page.getByRole("button", { name: "TRACE（タイトルへ）" }).click();
+  await expect(page.getByRole("heading", { name: "撮った写真" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /はじめる/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "ホームへもどる" }).click();
+  await expect(page.getByRole("button", { name: "1枚目の写真を保存" })).toBeVisible();
+
+  // From the keepsake after arriving, the same.
+  backend.replay = "completed";
+  await page.reload();
+  await page.getByRole("button", { name: "作品を見る" }).click();
+  await expect(page.getByRole("heading", { name: "あなたの作品" })).toBeVisible();
+  await page.getByRole("button", { name: "TRACE（タイトルへ）" }).click();
+  await expect(page.getByRole("heading", { name: "あなたの作品" })).toHaveCount(0);
+  await page.getByRole("button", { name: "ホームへもどる" }).click();
+  await expect(page.getByRole("button", { name: "作品を見る" })).toBeVisible();
+  expect(joins).toBe(1);
+
+  await page.goto("/log?dev");
+  await expect(page.getByRole("button", { name: "開発者" })).toBeVisible();
 });
 
 test("a browser without the photos says the keepsake cannot be made here", async ({ context, page }) => {

@@ -104,11 +104,8 @@ export function MenuLayer({ items, onClose }: { items: MenuItem[]; onClose: () =
 function steps(reminderMinutes: number) {
   return [
     { title: "芝浦祭を楽しむ", text: "第54回芝浦祭を、\n思いっきり楽しんでください。" },
-    { title: "写真を撮る", text: `${reminderMinutes}分毎にお使いの端末に\n通知が送られます。学祭の思い出を切り取りましょう。` },
-    {
-      title: "ShibaLab に行く",
-      text: "教室棟301で、\nあなたの歩んだ軌跡を元に\n演出が楽しめます。ぜひ、お帰りの前に\nShibaLab に立ち寄ってください。",
-    },
+    { title: "写真を撮る", text: `リマインダーをオンにすると、${reminderMinutes}分ごとに\n撮影の通知が届きます。学祭の思い出を切り取りましょう。` },
+    { title: "ShibaLab に行く", text: "写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。" },
   ];
 }
 
@@ -202,7 +199,7 @@ export function InstallLayer({
     {
       icon: "bell",
       text: beforeJoining
-        ? "ホーム画面にできた TRACE の\nアイコンからご参加ください。"
+        ? "ホーム画面にできた TRACE の\nアイコンから開いてください。"
         : "ホーム画面にできた TRACE の\nアイコンから開き直すと、\nリマインダーをオンにできます。",
     },
   ];
@@ -224,7 +221,7 @@ export function InstallLayer({
               <Sentences
                 text={
                   beforeJoining
-                    ? "追加後、このタブは消去してください。"
+                    ? "追加後、このタブは閉じてください。"
                     : "アイコンから開くと、\n参加の同意からやり直しになります。ここで撮った写真は、\nアイコンから開いた画面には表示されません。"
                 }
               />
@@ -389,7 +386,7 @@ export function WithdrawLayer({ onConfirm, onClose }: { onConfirm: () => Promise
           参加をやめますか？
         </h2>
         <p className="body">
-          <Sentences text={"リマインダーを止め、この端末から送った\n写真と記録をすべて削除します。削除したものは元に戻せません。"} />
+          <Sentences text={"リマインダーを止め、この端末の写真と、\n参加の記録をすべて削除します。削除したものは元に戻せません。"} />
         </p>
         <div className="btns" style={{ marginTop: 16 }}>
           <button type="button" className="btn btn--danger" disabled={working} onClick={() => void confirm()}>

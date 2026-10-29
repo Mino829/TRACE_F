@@ -384,6 +384,10 @@ html:has(.ray) body {
   & .mono--dim {
     color: var(--fg-2);
   }
+  /* ShibaLab is written as its name is, in a readout set in capitals. */
+  & .keep-case {
+    text-transform: none;
+  }
   & .latin {
     font-family: var(--latin);
   }
@@ -1143,37 +1147,6 @@ html:has(.ray) body {
     font-size: 11.5px;
     letter-spacing: 0.1em;
   }
-  & .ray-mark {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    margin: -8px 0 0 -8px;
-    box-shadow: 0 0 0 1px var(--bg), inset 0 0 0 1px var(--fg);
-    pointer-events: none;
-    transition:
-      left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
-      top 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  & .ray-mark::after {
-    content: "RAY";
-    position: absolute;
-    left: 20px;
-    top: -1px;
-    font-family: var(--mono);
-    font-size: 9.5px;
-    letter-spacing: 0.1em;
-    color: var(--fg);
-    background: var(--bg);
-    padding: 0 3px;
-    line-height: 16px;
-    white-space: nowrap;
-  }
-  /* The label goes left when the point is near the right edge. */
-  & .ray-mark--l::after {
-    left: auto;
-    right: 20px;
-  }
-
   /* Windows of light: each draws its light on its own canvas, inside the box (LightWindow). */
   & .lightwindow {
     position: relative;
@@ -1636,9 +1609,12 @@ html:has(.ray) body {
     min-height: 38px;
     font-size: 13px;
   }
+  /* Lowered so the arrow's bar lies on the same line as the underlines of 保存 and 削除. */
   & .save-photo svg {
     width: 16px;
     height: 16px;
+    position: relative;
+    top: 3px;
   }
   /* Its save on the left, its delete on the right in the quieter grey. */
   & .print-actions {
@@ -2156,7 +2132,6 @@ html:has(.ray) body {
     & .clearword__s.is-in {
       animation: none;
     }
-    & .ray-mark,
     & .toast {
       transition: none;
     }
