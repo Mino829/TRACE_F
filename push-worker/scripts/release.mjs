@@ -10,7 +10,8 @@
 // site's relay; set trace-log's two backend secrets before that. When .env sets
 // both DISPLAY_API_URL and GOOGLE_CLIENT_ID, /display signs the operator in with
 // Google and connects to TRACE_B directly (no relay); otherwise it stays on its
-// test playback.
+// test playback. When .env sets ARRIVAL_ISSUER_URL (the booth PC's arrival-issuer,
+// http://127.0.0.1:8790), /display shows the real arrival QR; otherwise the demo one.
 
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -40,12 +41,15 @@ const arrivalCheckpointId = fromEnvFile("ARRIVAL_CHECKPOINT_ID");
 // TRACE_B's own origin (not this site's /api/backend) and the Web client ID in TRACE_B's TRACE_DISPLAY_GOOGLE_CLIENT_ID.
 const displayApiUrl = fromEnvFile("DISPLAY_API_URL");
 const googleClientId = fromEnvFile("GOOGLE_CLIENT_ID");
+// Where /display reads the arrival QR token from: arrival-issuer on the booth PC (arrival-issuer/README.md).
+const arrivalIssuerUrl = fromEnvFile("ARRIVAL_ISSUER_URL");
 const pageEnv = {
   NEXT_STATIC_EXPORT: "1",
   NEXT_PUBLIC_PUSH_API_URL: pushUrl,
   ...(traceApiUrl ? { NEXT_PUBLIC_TRACE_API_URL: traceApiUrl } : {}),
   ...(arrivalVenue && arrivalCheckpointId ? { NEXT_PUBLIC_ARRIVAL_VENUE: arrivalVenue, NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID: arrivalCheckpointId } : {}),
   ...(displayApiUrl && googleClientId ? { NEXT_PUBLIC_DISPLAY_API_URL: displayApiUrl, NEXT_PUBLIC_GOOGLE_CLIENT_ID: googleClientId } : {}),
+  ...(arrivalIssuerUrl ? { NEXT_PUBLIC_ARRIVAL_ISSUER_URL: arrivalIssuerUrl } : {}),
 };
 
 const steps = [

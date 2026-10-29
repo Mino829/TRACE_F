@@ -9,7 +9,7 @@
 main に push され、GitHub Actions の「Verify frontend and Workers」が通ると、`.github/workflows/deploy.yml` が `npm run release` を実行してデプロイします。
 Actions の画面から「Deploy to Cloudflare」を手で実行することもできます。
 このワークフローには、リポジトリの secret に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` が必要です。
-`PUSH_API_URL`、`TRACE_API_URL`、`ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID`、`DISPLAY_API_URL`、`GOOGLE_CLIENT_ID` は、リポジトリの variable に設定したものだけを `.env` に書きます。
+`PUSH_API_URL`、`TRACE_API_URL`、`ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID`、`DISPLAY_API_URL`、`GOOGLE_CLIENT_ID`、`ARRIVAL_ISSUER_URL` は、リポジトリの variable に設定したものだけを `.env` に書きます。
 
 ## 構成
 
@@ -76,6 +76,8 @@ npm install
 `DISPLAY_API_URL` は TRACE_B のオリジン（このサイトの `/api/backend` ではありません）、`GOOGLE_CLIENT_ID` は TRACE_B の `TRACE_DISPLAY_GOOGLE_CLIENT_ID` と同じ値です。
 どちらかが無ければ、/display は今までどおりテスト再生だけで動きます。
 TRACE_B の `TRACE_DISPLAY_ALLOWED_ORIGINS` と、Google 側の「承認済みの JavaScript 生成元」には、`trace-log` のオリジンを入れておきます。
+`.env` に `ARRIVAL_ISSUER_URL=http://127.0.0.1:8790` を書くと、/display は展示用 PC で動かす arrival-issuer からトークンを受け取り、本物の到着 QR を映します（arrival-issuer/README.md）。
+書いていなければ、/display の QR は見本（ARRIVAL QR · DEMO）のままです。
 
 ```bash
 npm --prefix push-worker run release
