@@ -1,57 +1,189 @@
-name: Deploy to Cloudflare
+name: Cloudflare read-only metadata diagnostic
 
-# Runs push-worker's release (D1 migrations, trace-push, static export, trace-log)
-# after "Verify frontend and Workers" passes on a push to main.
-# Repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
-# Optional repository variables, written to push-worker/.env only when set:
-# PUSH_API_URL, TRACE_API_URL, ARRIVAL_VENUE, ARRIVAL_CHECKPOINT_ID,
-# ARRIVAL_PROOF_KEY_ID, ARRIVAL_ISSUER_URL, DISPLAY_API_URL, GOOGLE_CLIENT_ID.
-
+# Dedicated diagnostic branch only; existing Actions credentials, metadata GETs.
+# No checkout, package installation, application execution, or resource changes.
 on:
-  workflow_run:
-    workflows: [Verify frontend and Workers]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
 
-concurrency:
-  group: cloudflare-deploy
-  cancel-in-progress: false
+permissions:
+  contents: read
 
 jobs:
-  release:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+  metadata:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/diag/cloudflare-readonly'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            push-worker/package-lock.json
-      - run: npm ci
-      - run: npm ci
-        working-directory: push-worker
-      - name: Write push-worker/.env
-        working-directory: push-worker
+      - name: Read Cloudflare Worker metadata only
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          PUSH_API_URL: ${{ vars.PUSH_API_URL }}
-          TRACE_API_URL: ${{ vars.TRACE_API_URL }}
-          ARRIVAL_VENUE: ${{ vars.ARRIVAL_VENUE }}
-          ARRIVAL_CHECKPOINT_ID: ${{ vars.ARRIVAL_CHECKPOINT_ID }}
-          ARRIVAL_PROOF_KEY_ID: ${{ vars.ARRIVAL_PROOF_KEY_ID }}
-          ARRIVAL_ISSUER_URL: ${{ vars.ARRIVAL_ISSUER_URL }}
-          DISPLAY_API_URL: ${{ vars.DISPLAY_API_URL }}
-          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+        shell: bash
         run: |
-          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PUSH_API_URL TRACE_API_URL ARRIVAL_VENUE ARRIVAL_CHECKPOINT_ID ARRIVAL_PROOF_KEY_ID ARRIVAL_ISSUER_URL DISPLAY_API_URL GOOGLE_CLIENT_ID; do
-            if [ -n "${!name}" ]; then echo "$name=${!name}" >> .env; fi
-          done
-      - run: npm run release
-        working-directory: push-worker
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import sys
+          import urllib.error
+          import urllib.request
+
+          token = os.environ.get("CLOUDFLARE_API_TOKEN", "")
+          account = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "")
+          expected_subdomain = "async5855"
+          failures = []
+
+          def scalar(value):
+              if not isinstance(value, (str, int, float, bool)) and value is not None:
+                  return None
+              if isinstance(value, str):
+                  for credential in (token, account):
+                      if credential:
+                          value = value.replace(credential, "[redacted]")
+                  value = re.sub(r"[\x00-\x1f\x7f]", " ", value)[:400]
+              return value
+
+          def emit(label, value):
+              print(label + " " + json.dumps(value, ensure_ascii=True, sort_keys=True), flush=True)
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          opener = urllib.request.build_opener(NoRedirect)
+
+          def api(path):
+              request = urllib.request.Request(
+                  "https://api.cloudflare.com/client/v4/accounts/" + account + path,
+                  headers={"Authorization": "Bearer " + token, "Accept": "application/json"},
+                  method="GET",
+              )
+              status = None
+              try:
+                  with opener.open(request, timeout=20) as response:
+                      status = response.status
+                      payload = json.load(response)
+              except urllib.error.HTTPError as error:
+                  status = error.code
+                  try:
+                      payload = json.loads(error.read())
+                  except (ValueError, UnicodeError):
+                      payload = {}
+              except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+                  failures.append(path)
+                  emit("api_error", {"path": path, "message": "Transport or JSON decoding failure"})
+                  return None
+              if not isinstance(payload, dict):
+                  payload = {}
+              errors = payload.get("errors", [])
+              if status != 200 or not payload.get("success"):
+                  failures.append(path)
+                  emit("api_error", {
+                      "path": path,
+                      "http_status": status,
+                      "errors": [
+                          {"code": scalar(item.get("code")), "message": scalar(item.get("message"))}
+                          for item in errors if isinstance(item, dict)
+                      ] if isinstance(errors, list) else [],
+                  })
+                  return None
+              emit("api_ok", {"path": path, "http_status": status})
+              return payload.get("result")
+
+          def bindings(value):
+              if not isinstance(value, list):
+                  return []
+              return sorted(
+                  [
+                      {"name": scalar(item.get("name")), "type": scalar(item.get("type"))}
+                      for item in value if isinstance(item, dict)
+                  ],
+                  key=lambda item: str(item["name"]),
+              )
+
+          def items(value, key):
+              if isinstance(value, list):
+                  return value
+              if isinstance(value, dict) and isinstance(value.get(key), list):
+                  return value[key]
+              return []
+
+          if not token or not re.fullmatch(r"[a-fA-F0-9]{32}", account):
+              emit("diagnostic_error", {"message": "Required Actions credentials missing or account identifier malformed"})
+              sys.exit(1)
+
+          identity = api("/workers/subdomain")
+          subdomain = identity.get("subdomain") if isinstance(identity, dict) else None
+          emit("account_origin_check", {
+              "expected_subdomain": expected_subdomain,
+              "actual_subdomain": scalar(subdomain),
+              "matches": subdomain == expected_subdomain,
+          })
+          if subdomain != expected_subdomain:
+              emit("diagnostic_error", {"message": "Account origin not confirmed; Worker inspection stopped"})
+              sys.exit(1)
+
+          for script in ("trace-log", "trace-staging-preview", "trace-push"):
+              prefix = "/workers/scripts/" + script
+              emit("worker", {
+                  "script": script,
+                  "expected_public_origin": "https://" + script + "." + expected_subdomain + ".workers.dev",
+              })
+              published = api(prefix + "/subdomain")
+              if isinstance(published, dict):
+                  emit("worker_subdomain", {
+                      "script": script,
+                      "enabled": scalar(published.get("enabled")),
+                      "previews_enabled": scalar(published.get("previews_enabled")),
+                  })
+              settings = api(prefix + "/settings")
+              if isinstance(settings, dict):
+                  names = bindings(settings.get("bindings"))
+                  emit("settings_bindings", {"script": script, "bindings": names})
+                  for name in ("TRACE_BACKEND_URL", "TRACE_EDGE_SHARED_SECRET"):
+                      matches = [item["type"] for item in names if item["name"] == name]
+                      emit("backend_binding_presence", {
+                          "script": script, "name": name, "present": bool(matches), "types": matches,
+                      })
+              deployment_result = api(prefix + "/deployments")
+              deployments = [item for item in items(deployment_result, "deployments") if isinstance(item, dict)]
+              deployments.sort(key=lambda item: str(item.get("created_on", "")), reverse=True)
+              for index, deployment in enumerate(deployments[:10]):
+                  emit("deployment", {
+                      "script": script,
+                      "latest_in_response": index == 0,
+                      "id": scalar(deployment.get("id")),
+                      "created_on": scalar(deployment.get("created_on")),
+                      "strategy": scalar(deployment.get("strategy")),
+                      "source": scalar(deployment.get("source")),
+                      "versions": [
+                          {"version_id": scalar(item.get("version_id")), "percentage": scalar(item.get("percentage"))}
+                          for item in items(deployment.get("versions"), "items") if isinstance(item, dict)
+                      ],
+                  })
+              version_result = api(prefix + "/versions")
+              for version in items(version_result, "items")[:15]:
+                  if not isinstance(version, dict):
+                      continue
+                  metadata = version.get("metadata") if isinstance(version.get("metadata"), dict) else {}
+                  emit("version", {
+                      "script": script,
+                      "id": scalar(version.get("id")),
+                      "number": scalar(version.get("number")),
+                      "created_on": scalar(metadata.get("created_on")),
+                  })
+              active = deployments[0].get("versions", []) if deployments else []
+              for version in active if isinstance(active, list) else []:
+                  version_id = version.get("version_id") if isinstance(version, dict) else None
+                  if not isinstance(version_id, str) or not re.fullmatch(r"[a-fA-F0-9-]{36}", version_id):
+                      continue
+                  details = api(prefix + "/versions/" + version_id)
+                  if isinstance(details, dict):
+                      resources = details.get("resources") if isinstance(details.get("resources"), dict) else {}
+                      emit("active_version_bindings", {
+                          "script": script, "version_id": version_id,
+                          "bindings": bindings(resources.get("bindings")),
+                      })
+          emit("diagnostic_complete", {"failed_requests": len(failures), "method": "GET"})
+          sys.exit(1 if failures else 0)
+          PY
