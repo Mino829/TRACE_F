@@ -48,8 +48,8 @@ Google の Client ID は本人確認の公開設定で、本人確認を共有�
 
 ```dotenv
 TRACE_COORDINATE_VERSION=toyosu-2026-08-28.1
-TRACE_CAMPUS_GRAPH_VERSION=toyosu-graph-2026-10-26.1.draft
-TRACE_THREE_D_MAP_VERSION=toyosu-3dmap-2026-10-26
+TRACE_CAMPUS_GRAPH_VERSION=toyosu-graph-2026-10-29.1.draft
+TRACE_THREE_D_MAP_VERSION=toyosu-3dmap-2026-10-29
 ```
 
 ブラウザはこの同梱グラフの版と `schemaVersion: 1` を WS の初回認証と後続メッセージに付けます。不一致は Go が close code `4409` で拒否します。版の文字列だけを変更して異なるグラフを接続しないでください。
