@@ -48,7 +48,7 @@ function failure(code: string, status: number): Response {
   return Response.json({ error: { code } }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-async function limitedBody(request: Request): Promise<ArrayBuffer | null> {
+async function limitedBody(request: Request, maxBytes = MAX_JSON_BODY): Promise<ArrayBuffer | null> {
   if (!request.body) return new ArrayBuffer(0);
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -58,7 +58,7 @@ async function limitedBody(request: Request): Promise<ArrayBuffer | null> {
       const { done, value } = await reader.read();
       if (done) break;
       length += value.byteLength;
-      if (length > MAX_JSON_BODY) {
+      if (length > maxBytes) {
         await reader.cancel();
         return null;
       }
@@ -110,7 +110,9 @@ export async function handleSiteRequest(
   if (WITH_BODY.has(request.method) && !/^application\/json(?:\s*;|$)/i.test(request.headers.get("Content-Type") ?? "")) {
     return failure("UNSUPPORTED_MEDIA_TYPE", 415);
   }
-  if (request.method === "DELETE" && request.body) return failure("BODY_NOT_ALLOWED", 400);
+  // Cloudflare can expose a stream even for a bodyless DELETE; inspect bytes,
+  // cancelling at the first nonempty chunk instead of trusting stream presence.
+  if (request.method === "DELETE" && await limitedBody(request, 0) === null) return failure("BODY_NOT_ALLOWED", 400);
   if (!env.TRACE_BACKEND_URL || !env.TRACE_EDGE_SHARED_SECRET) return failure("BACKEND_UNAVAILABLE", 503);
 
   let backend: URL;
