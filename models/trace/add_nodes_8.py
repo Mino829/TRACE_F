@@ -6,7 +6,7 @@
 #     1F の点は +X の妻の入口の中（build_koryuto_exterior.py の VEST_LINK）へ。前は 1F の中の塊の中にあった
 #   - 研究棟 EV B：+X の廊下に面した 1 台（Y = 1.6）をくり抜いて扉を開けた（build_kenkyuto.py の EVB_CELL）。かごの点をその中へ。
 #     前は扉と扉のあいだの黒い塊の中（16, 0）にあった
-#   - 研究棟ゲートの道路側：芝生の北の口に外階段を作った（build_kenkyuto.py の NS_Y1）。階段の上の点をデッキの端へ
+#   - 研究棟ゲートの道路側：芝生の北の口から道路へ下りる線を外す（実際には階段がない）
 #   python trace/add_nodes_4.py → 5 → 6 → 7 → 8（どれも何度実行しても同じ）
 #   そのあと Blender で trace/reroute_walls.py（エレベーターの扉の前の点と、壁をよける線）→ trace_graph.export()
 import json, math, os, re
@@ -61,9 +61,9 @@ EVB_CAR = ((17.4 - 2.5 + 17.4 - 0.12) / 2, 1.6)
 for f in range(1, 15):
     put(f"research-{f}f-east", KENKYU, *EVB_CAR)
 
-# ---- 研究棟ゲートの道路側：外階段の上の端（デッキの端 Y = 22.8、ゲートの真ん中 X = -7.6） ----
-put("o-120", KENKYU, -7.6, 22.8, 6.0)
-put("research-road", KENKYU, -7.6, 31.0, 0)
+# ---- 研究棟ゲートの道路側：芝生の北の口から道路へ下りる階段は実際にはない（ユーザーの確認 2026-10-29）。線を外す ----
+#   芝生から道路側へは、大階段で広場へ下りて建物の外を回る。行き止まりになった点（o-120 など）は下で消える
+src["edges"] = [e for e in src["edges"] if e["id"] != "o-120--research-road"]
 
 # ---- 交流プラザ：中の点は台（0.8m）の上。玄関の扉の 1 組目（u -26.2〜-23.6、build_festival_props.py の DOOR_PAIRS）の真ん中を通る ----
 #   前は中の点が高さ 0m（台の中）で、玄関の点が扉と扉の間の柱の位置にあった。外から台へ上がる線は 6 段の石の階段
@@ -86,6 +86,31 @@ put("classroom-2f-koryu", KYOSHITSU, -26.94, -2.5)
 #   モデルの研究棟 1F は、曲がり角に近い西の端が部屋（01I25・01K28）と詰め物の壁で、EV A へ向かう廊下がない（案内図 6730 の
 #   この辺りの廊下の形は分からない）。線が部屋と壁を抜けていたので外す。運河側からは EV B で 2F へ上がって芝生を渡るか、8F 以上で渡る
 src["edges"] = [e for e in src["edges"] if e["id"] != "research-1f--research-1f-east"]
+
+# ---- 選べる点を、エレベーターの前から少し歩いた所へ移す（ユーザーの指示 2026-10-29） ----
+#   研究棟・本部棟・交流棟の各階の選べる点は、エレベーターのかごの中・扉の前にあった。その階に用がある人は
+#   その階の奥まで歩くので、点の位置は reroute_walls.py が「扉の前から廊下を 20m ほど歩いた所」へ移す（印 relocate）。
+#   点の id は変えない（アプリ・TRACE_B・テストがそのまま使える）。研究棟の点はかごそのものだったので、
+#   かごの役目は新しい点 <id>-car に移し、元の id の点とつなぐ
+for f in range(1, 15):
+    for nid in (f"research-{f}f", f"research-{f}f-east"):
+        car = nid + "-car"
+        if car in NODES:
+            continue
+        n = NODES[nid]
+        c = {k: v for k, v in n.items() if k not in ("selectable",)}
+        c.update({"id": car, "name": n["name"] + " かごの中", "note": "エレベーターのかごの中（選べる点は reroute_walls.py がその階の奥へ移す）"})
+        src["nodes"].append(c)
+        NODES[car] = c
+        for e in src["edges"]:
+            for k in ("from", "to"):
+                if e[k] == nid:
+                    e[k] = car
+            e["id"] = f"{e['from']}--{e['to']}"
+        src["edges"].append({"id": f"{car}--{nid}", "from": car, "to": nid, "kind": "indoor"})
+        n["relocate"] = True
+for nid in [f"hq-{f}f" for f in (5, 7, 8, 9, 10, 11, 12, 13, 14)] + ["x2-001", "exchange-3f", "x4-013", "exchange-5f", "x6-014"]:
+    NODES[nid]["relocate"] = True
 
 # ---- 行き止まりの道の点を消す ----
 #   教室棟の階段室へ入る枝（10/24 に階段の線を消したので行き止まり。階段室の鉄の扉は壁に貼った板なので、線が壁を抜けていた）と、

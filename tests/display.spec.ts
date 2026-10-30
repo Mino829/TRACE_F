@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { TEST_ROUTES } from "./test-routes";
 
 /**
  * The booth projector (/display, issue #24). No backend: the top screen's test
@@ -66,18 +67,14 @@ test("a random test walk ends at ShibaLab", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-// ?stops= walks through the given points (issue #76). The floors and the way between them are checked in tests/unit/test-routes.test.mjs.
-for (const [name, stops, start] of [
-  ["研究棟 11F → 6F の渡り廊下 → 教室棟のエスカレーター → ShibaLab", "research-11f-east,research-6f-east,classroom-research-6f-bridge,k6-019,shibalab", "研究棟 11F"],
-  ["本部棟 11F → 4F の渡り廊下 → 交流棟 4F → 教室棟 4F → ShibaLab", "hq-11f,hq-4f-bridge,x4-025,x4-024,classroom-4f-lobby,classroom-3f-lobby,shibalab", "本部棟 11F"],
-] as const) {
-  test(`?stops: ${name}`, async ({ page }) => {
-    test.setTimeout(120000);
-    // Long enough that the first floor stays on the caption for a moment.
-    const errors = await open(page, `?duration=30&stops=${stops}`);
+// ?stops= walks through the given points (issue #76): every test walk (tests/test-routes.ts) plays through to ShibaLab.
+//   The floors and the way between them are checked in tests/unit/test-routes.test.mjs.
+for (const route of TEST_ROUTES) {
+  test(`?stops ${route.id}: ${route.name}`, async ({ page }) => {
+    const errors = await open(page, `?duration=8&stops=${route.stops.join(",")}`);
     await page.getByRole("button", { name: /テスト再生/ }).click();
-    await expect(page.locator(".dsp-play__place")).toHaveText(start);
-    await expect(page.getByText("ShibaLab に到着しました")).toBeVisible({ timeout: 45000 });
+    await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback");
+    await expect(page.getByText("ShibaLab に到着しました")).toBeVisible({ timeout: 20000 });
     await expect(page.locator(".dsp-play__stop")).toHaveText("ShibaLab（教室棟3F 301）");
     expect(errors).toEqual([]);
   });
