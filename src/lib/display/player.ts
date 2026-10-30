@@ -9,6 +9,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import { EDGES, GRID_THETA, NODES, toScene, type Vec3 } from "./campus-graph";
 import {
   buildTimeline,
+  elevatorDistance,
   elevatorExit,
   elevatorRiding,
   escalatorWeight,
@@ -86,8 +87,13 @@ const FOLLOW_TURN = THREE.MathUtils.degToRad(35);
  * rounded off by WALK_ROUND metres, the eye faces the rounded line WALK_AHEAD
  * metres on, turns at up to WALK_TURN per second and looks a little down. It
  * glides without any step bob or sway: on the big projector that made people dizzy.
+ * Near an elevator the rounding fades out (none from LIFT_STRAIGHT metres before
+ * the car, full again WALK_ROUND further out), so the walk turns at the doors
+ * without cutting the corner into the doors of the car next to it (walkRound).
  */
 const WALK_ROUND = 2;
+const LIFT_STRAIGHT = 2.5;
+const walkRound = (path: RoutePath, s: number) => Math.min(WALK_ROUND, Math.max(0.2, elevatorDistance(path, s) - LIFT_STRAIGHT));
 const WALK_AHEAD = 4.5;
 const WALK_TURN = THREE.MathUtils.degToRad(240);
 const WALK_TILT = THREE.MathUtils.degToRad(6);
@@ -254,8 +260,9 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
     // line with its corners rounded off and faces where it is about to walk;
     // riding an escalator it looks out of the window at the flower beds over the
     // middle of the ride.
-    const body = new THREE.Vector3(...roundedPointAt(path, s, WALK_ROUND));
-    const aim = new THREE.Vector3(...roundedPointAt(path, Math.min(path.length, s + WALK_AHEAD), WALK_ROUND)).sub(body);
+    const body = new THREE.Vector3(...roundedPointAt(path, s, walkRound(path, s)));
+    const sAim = Math.min(path.length, s + WALK_AHEAD);
+    const aim = new THREE.Vector3(...roundedPointAt(path, sAim, walkRound(path, sAim))).sub(body);
     // In an elevator the eye turns round to the doors it will step out of.
     const walkTarget: Vec3 | null = riding ? elevatorExit(path, s) : aim.x * aim.x + aim.z * aim.z > 0.25 ? [aim.x, 0, aim.z] : null;
     walkYaw = turnToward(walkYaw, walkTarget, dt, 6, WALK_TURN);
