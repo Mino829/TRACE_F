@@ -4,11 +4,15 @@ ASYNC のブース（ShibaLab・教室棟301）のプロジェクターに出す
 来場者が到着QR を読むと、その人が歩いてきた道を、キャンパスの 3D の上で光の線として再生します。
 デザインは参加者の画面（/log、RAY）にそろえています。
 
+同梱 bundle（Frontend #81・Backend #50）は座標 `toyosu-2026-08-28.1`、Graph `toyosu-graph-2026-10-29.1.draft`、3D Map `toyosu-3dmap-2026-10-30` です。Go にも同一の `campus_graph.json`（718 nodes / 754 edges）と3つの版が必要です。版の検証を緩めたり、版の文字列だけを替えたりして接続しないでください。実接続・運営認証の設定は [arrival-issuer/README.md](../../arrival-issuer/README.md) を参照してください。
+
 ## 動画
 
 ![教室棟 6F からエスカレーターで 4F へ](00_テスト再生_エスカレーター.gif)
 
 テスト再生の全体（トップ → 再生 → 到着 → 終了、2 倍速、約 50 秒）：[00_テスト再生.mp4](00_テスト再生.mp4)
+
+動画・画像は画面デザインの参考です。現在の認証・到着 QR の契約は以下とブローカーの README に従います。
 
 ## 画面
 
@@ -20,7 +24,7 @@ ASYNC のブース（ShibaLab・教室棟301）のプロジェクターに出す
 | **到着** | |
 | ![](05_到着.jpg) | |
 
-- **トップ画面**：到着QR（30秒ごとに切りかわる）と、読み取り方の案内
+- **トップ画面**：運営認証後のみ署名済み到着QR を表示（15秒ごとに取得）。未認証・未設定時は空欄で、仮の `DEMO` QR は出さない
 - **再生**：3つの画面
   - 左（大）：ドローン。光の先頭を斜め上から追いかける。建物は線画で、中を通る線も見える
   - 左上（小）：ミニマップ。キャンパス全体、建物の名前、ShibaLab の印、今いる建物と階
@@ -41,8 +45,21 @@ http://localhost:3000/display を開き、右上の「▶ テスト再生」（�
 | `?speed=1.5` | 歩く速さの倍率（標準：外 18m/秒、建物の中・渡り廊下 8m/秒、エスカレーター 4m/秒、階段 5m/秒） |
 | `?duration=30` | 速さの割合はそのままで、1 本の道を 30 秒に収める |
 | `?fps=1` | 1 秒に描けた回数を右下に出す（展示用の PC で確かめる用） |
+| `?stops=hq-11f,hq-4f-bridge,shibalab` | 指定した node ID を順に通る（各区間は実到着と同じ距離最短）。`tests/test-routes.ts` に14ルート A〜N を定義 |
 
-e2e テスト：`TRACE_TEST_FRONTEND_URL=http://localhost:3000 npx playwright test tests/display.spec.ts`
+14ルートの目視確認は `http://localhost:3000/display?duration=60&stops=<tests/test-routes.ts の stops をカンマ区切り>` を開き、「テスト再生」を押します。3視点、階移動、渡り廊下、ShibaLab 到着を確認します。自動テストは再生完了・到着表示・ブラウザ例外を確認しますが、一人称が壁を抜けないことの目視確認は別に必要です。
+
+開発サーバーはテストが自動起動しません。`playwright.config.ts` はインストール済み Google Chrome を使い、1 worker で動きます。実データを使わない描画・運営フローの確認は、別ターミナルで次のテスト専用設定のサーバーを起動します。
+
+```sh
+NEXT_PUBLIC_DISPLAY_API_URL=https://api.test NEXT_PUBLIC_GOOGLE_CLIENT_ID=test-client NEXT_PUBLIC_ARRIVAL_ISSUER_URL=http://127.0.0.1:8790 npm run dev -- --hostname 127.0.0.1 --port 3001
+```
+
+```sh
+TRACE_TEST_FRONTEND_URL=http://127.0.0.1:3001 npx playwright test tests/display.spec.ts tests/display-link.spec.ts
+```
+
+`tests/display.spec.ts` の `?stops` 14本だけなら `--grep '\?stops [A-N]:'` を付けます。`display-link.spec.ts` は Google・API・WS・ブローカーを模擬するため、この成功を実 Go との版一致や実 Google 認証の証明とは扱いません。実接続のスモークはブローカーの README に従って別に行います。
 
 ## 音（#27）
 
@@ -67,11 +84,11 @@ e2e テスト：`TRACE_TEST_FRONTEND_URL=http://localhost:3000 npx playwright te
 
 - 3D：`public/display/campus.glb`（`models/scripts/export_web.py` で Blender から書き出し。Draco 圧縮で約 1.4MB）
 - 道の網：`models/trace/campus_graph.json` をそのまま読む（#8）
-- 道の選び方（テスト用）：建物の中・渡り廊下・エスカレーターを通りやすく、外の道と階段を通りにくくして最短の道を探す（`src/lib/display/campus-graph.ts` の `INDOOR_FIRST`）
+- 道の選び方（テスト用）：通常の見本・ランダム再生は屋内を優先する`INDOOR_FIRST`、`?stops=`指定と実到着の経路はGoと同じ距離基準の`METRES`で接続する（`src/lib/display/campus-graph.ts`）
 - three.js は `/display` を開いたときだけ読み込むので、参加者のスマホの画面は重くならない
 
-## まだのこと
+## 実接続と機材確認
 
-- 到着QR の中身は仮（`DEMO`）。本番では TRACE_B が出す、署名つきで期限のある到着トークンに替える（#10、TRACE_B #8）
-- TRACE_B から WebSocket で到着イベント（通った点の id の列と `campusGraphVersion`）を受け取り、その人の道を再生する（TRACE_B #7・#9）。今のテストボタンの代わりに、届いたイベントで `play()` を呼ぶ
-- 展示用の PC で、`?fps=1` を付けて速さを確かめる
+- 到着QR は Go が署名し、loopback ブローカー経由で独立した運営資格を持つ場合だけ発行する。描画資格だけでは発行できない
+- 描画ブラウザは Go へ直接 WSS 接続し、版一致・主描画権・開始 ACK の後に到着経路を再生する。写真0枚または同じ bundle の経路がない場合は到着カードのみを表示する
+- 展示用の PC では `?fps=1` を付けて速さを確認し、実スマホの QR 読み取り・カメラ許可・音・投影機材も別に確認する
