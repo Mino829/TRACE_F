@@ -6,9 +6,9 @@ import { flushSync } from "react-dom";
 import { reducedMotion } from "@/lib/ray/fx";
 
 import { useLayer } from "../layer";
-import { clock } from "../ui";
 import { PrintPhoto, frameLabel, tearOne } from "./prints";
-import { Icon, Phrases, ROOM, Screen, Sentences, SWAP, TitleMark, useField, useRay, useScroller } from "./stage";
+import { Relay } from "./relay";
+import { Icon, Phrases, ROOM, Screen, Sentences, SWAP, useField, useRay } from "./stage";
 
 /**
  * The demo of arriving at ShibaLab, after a day of nine sample photos:
@@ -32,6 +32,8 @@ const PHOTOS = ["10:08", "10:41", "11:26", "12:14", "13:32", "14:20", "15:47", "
 const FIRST = PHOTOS[0].time;
 const LAST = PHOTOS[PHOTOS.length - 1].time;
 const REPLAY_MS = 12_000;
+/** Before the room's screen starts it, as when the phone has not yet heard that it plays. */
+const QUEUED_MS = 3_000;
 
 function minutes(time: string): number {
   const [hours, mins] = time.split(":").map(Number);
@@ -40,24 +42,15 @@ function minutes(time: string): number {
 
 type Step = "scan" | "arrived" | "story" | "thanks";
 
-/** onTitle: the TRACE mark, which leads to the participant's title even when the demo was opened from the developer screen. */
-export function DemoFlow({ closeLabel, inert, onClose, onTitle }: { closeLabel: string; inert: boolean; onClose: () => void; onTitle: () => void }) {
+export function DemoFlow({ closeLabel, inert, onClose }: { closeLabel: string; inert: boolean; onClose: () => void }) {
   const { go, toast } = useRay();
   const [step, setStep] = useState<Step>("scan");
   const close = useLayer("#demo", onClose);
   const leave = useCallback(() => void go(close), [go, close]);
-  const title = useCallback(
-    () =>
-      void go(() => {
-        close();
-        onTitle();
-      }),
-    [go, close, onTitle],
-  );
   const say = useCallback((text: string) => toast(text), [toast]);
 
   if (step === "scan") return <Scan inert={inert} onCancel={leave} onRead={() => setStep("arrived")} />;
-  if (step === "arrived") return <Arrived inert={inert} onLeave={leave} onTitle={title} onStory={() => void go(() => setStep("story"))} />;
+  if (step === "arrived") return <Arrived inert={inert} onLeave={leave} onStory={() => void go(() => setStep("story"))} />;
   if (step === "story") return <Story inert={inert} onLeave={leave} say={say} onFinish={() => void go(() => setStep("thanks"))} />;
   return <Thanks inert={inert} closeLabel={closeLabel} say={say} onClose={leave} />;
 }
@@ -285,7 +278,7 @@ function Scan({ inert, onCancel, onRead }: { inert: boolean; onCancel: () => voi
         <span className="mono mono--dim">Demo</span>
       </div>
       <h1 className="h2 scan__head">
-        <Phrases text="ASYNC のブースの QR コードを、枠に入れてください" />
+        <Phrases text="展示場の QR コードを読み取ってください" />
       </h1>
       <ScanWindow windowRef={windowRef} trackers={trackers} locked={locked} />
       <div className="scan__status">
@@ -304,113 +297,40 @@ function Scan({ inert, onCancel, onRead }: { inert: boolean; onCancel: () => voi
 /* ---------------------------------------------------------------- arrived */
 
 /**
- * The beam that leaves the phone upward, toward the room's screen, while the
- * replay is ahead or playing. It goes out once `played`.
+ * The arrival screen as the visitor sees it (Replay in arrival.tsx), with the
+ * replay standing in for the room's screen: it waits a moment, plays for
+ * REPLAY_MS, and then its light comes back into the ring.
  */
-export function useBeam(stageRef: RefObject<HTMLDivElement | null>, played: boolean) {
-  const { field } = useRay();
-  useField("room", { scene: 1, splitOn: 0, invert: 0, beam: 1, grow: 1, flow: 16, pool: 1, poolAt: 0, poolR: [0.085, 0.02] });
+function Arrived({ inert, onLeave, onStory }: { inert: boolean; onLeave: () => void; onStory: () => void }) {
+  const [stage, setStage] = useState<"queued" | "playing" | "played">("queued");
+  const [settled, setSettled] = useState(false);
 
-  // The beam starts low in the stage, on the right, and runs straight up past the top edge. It follows the page.
-  const scroller = useScroller();
   useEffect(() => {
-    const stage = stageRef.current;
-    if (!field || !stage) return;
-    const update = () => {
-      const rect = stage.getBoundingClientRect();
-      const canvas = field.canvas.getBoundingClientRect();
-      if (!canvas.height) return;
-      const x = (rect.left + rect.width * 0.8 - canvas.left) / canvas.width;
-      const y = 1 - (rect.top + rect.height * 0.8 - canvas.top) / canvas.height;
-      field.set({ beamA: [x, y], beamB: [x, 1.3] });
-    };
-    update();
-    const scroll = scroller?.current;
-    scroll?.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    const playing = window.setTimeout(() => setStage("playing"), QUEUED_MS);
+    const played = window.setTimeout(() => setStage("played"), QUEUED_MS + REPLAY_MS);
     return () => {
-      scroll?.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      window.clearTimeout(playing);
+      window.clearTimeout(played);
     };
-  }, [field, scroller, stageRef]);
-
-  // A point of light comes on, then the beam shoots up out of the top of the screen.
-  useEffect(() => {
-    if (!field || reducedMotion()) return;
-    let alive = true;
-    field.set({ grow: 0, pool: 0 });
-    void field.to({ pool: 1 }, 420, "out").then(() => {
-      if (!alive) return;
-      field.burst(0.45);
-      return field.to({ grow: 1 }, 700, "in");
-    });
-    return () => {
-      alive = false;
-    };
-  }, [field]);
-
-  // The beam has done its job: it goes out, and the field stops redrawing.
-  useEffect(() => {
-    if (played) void field?.to({ beam: 0, pool: 0.35 }, 900, "inOut");
-  }, [played, field]);
-}
-
-function Arrived({ inert, onLeave, onTitle, onStory }: { inert: boolean; onLeave: () => void; onTitle: () => void; onStory: () => void }) {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const [arrivedAt] = useState(() => clock(Date.now()));
-  const [progress, setProgress] = useState(0);
-  const played = progress >= 1;
-  useBeam(stageRef, played);
-
-  // The replay runs on the room's screen; the phone shows how far along it is.
-  useEffect(() => {
-    const t0 = performance.now();
-    let raf = 0;
-    const step = (now: number) => {
-      const value = Math.min(1, (now - t0) / REPLAY_MS);
-      setProgress(value);
-      if (value < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
   }, []);
 
   return (
-    <Screen inert={inert}>
-      <header className="mast">
-        <div className="mast__mark">
-          <TitleMark onTitle={onTitle} />
-          <span className="mono">
-            <span className="keep-case">ShibaLab</span> 301
-          </span>
-        </div>
+    <Screen className={`screen--relay${settled ? " is-over" : ""}`} inert={inert}>
+      <header className="mast relay__mast">
         <DemoClose onLeave={onLeave} />
       </header>
-      <div ref={stageRef} className="arrived__stage" aria-hidden="true" />
-      <p className="mono">
-        Arrived <span className="latin">{arrivedAt}</span>
-      </p>
-      <section className="play" aria-labelledby="ray-play">
-        <p className="mono">{played ? "■ Played" : <><span className="blink">▶</span> Playback</>}</p>
-        <h2 className="h2" id="ray-play">
-          {played ? "再生が終わりました" : "スクリーンを見てください"}
+      <Relay state={stage === "played" ? "gather" : "send"} onSettled={() => setSettled(true)} />
+      <section className="relay__say" aria-live="polite">
+        <h2 className="h2">
+          <Phrases text={settled ? "再生が終わりました" : stage === "queued" ? "スクリーンの前でお待ちください" : "スクリーンを見てください"} />
         </h2>
-        <p className="body">
-          <Sentences text={`あなたの歩んできた軌跡を、スクリーンで再生しています。${FIRST} から ${LAST} までを、${REPLAY_MS / 1000}秒に縮めています。`} />
-        </p>
-        <div className="play__line" role="progressbar" aria-label="再生" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
-          <div className="play__run" style={{ width: `${(progress * 100).toFixed(2)}%` }} />
-        </div>
-        <div className="play__ends mono">
-          <span>{FIRST}</span>
-          <span>{LAST}</span>
-        </div>
       </section>
-      <p className="float-note small">撮影のリマインダーは終わりました。</p>
-      {played && (
-        <button type="button" className="btn" style={{ marginTop: 18 }} onClick={onStory}>
-          写真ストーリーを見る
-        </button>
+      {settled && (
+        <div className="relay__after">
+          <button type="button" className="btn" style={{ marginTop: 18 }} onClick={onStory}>
+            写真ストーリーを見る
+          </button>
+        </div>
       )}
     </Screen>
   );

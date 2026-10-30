@@ -3,7 +3,8 @@
  *
  * One WebGL1 canvas, two passes. SCENE draws light into R for one of three
  * scenes: 0 paper lit from the side, 1 one beam of light with a pool at one
- * end, 2 an image in a rectangle (the camera at the QR code). POST tears the
+ * end (and the light that leaves the phone along it or falls back into the
+ * pool, relay.tsx), 2 an image in a rectangle (the camera at the QR code). POST tears the
  * frame (strips, shear, blocks), splits the channels while glitching,
  * thresholds with an 8x8 ordered (Bayer) matrix and maps the bits to paper
  * and ink.
@@ -48,6 +49,7 @@ uniform float uSun, uGlow, uBands;
 uniform vec4 uBeamAB;
 uniform float uBeam, uGrow, uFlow, uPool, uPoolAt;
 uniform vec2 uPoolR;
+uniform float uTip, uWave, uGather;
 uniform sampler2D uImg;
 uniform vec4 uRect;
 uniform vec2 uCover;
@@ -102,6 +104,38 @@ void main(){
     float r = length((p - c) / uPoolR);
     float pool = uPool * max((1.0 - smoothstep(0.1, 1.0, r)) * 0.6, 1.0 - smoothstep(0.0, 0.24, r));
     L = max(beam, pool);
+    // The light leaving: a head at the tip of the growing beam, its tail drawn out behind it.
+    if (uTip > 0.001) {
+      float along = dot(p - b, dir);
+      float side = length(p - b - dir * along);
+      float rt = length(vec2(side, along * (along < 0.0 ? 0.22 : 1.0)));
+      // The tail stays on the beam: none of it behind the pool the light left from.
+      float onBeam = 1.0 - smoothstep(len * 0.8, len, -along);
+      L = max(L, uTip * onBeam * max(1.0 - smoothstep(0.008, 0.016, rt), (1.0 - smoothstep(0.0, 0.075, rt)) * 0.55));
+    }
+    // A ring of light that runs out from the pool as the light leaves or lands.
+    if (uWave > 0.001 && uWave < 0.999) {
+      float ring = abs(length(p - c) - mix(0.03, 0.5, uWave));
+      L = max(L, (1.0 - smoothstep(0.0, 0.006 + 0.03 * uWave, ring)) * pow(1.0 - uWave, 1.6) * 0.9);
+    }
+    // The light coming back: streaks fall in from the top edge, each down its own line, and gather in the pool.
+    if (uGather > 0.001) {
+      for (int i = 0; i < 17; i++) {
+        float fi = float(i);
+        vec2 from = vec2(((fi + 0.5) / 17.0 * 1.4 - 0.2 + (h1(fi + 4.0) - 0.5) * 0.06) * asp, 1.04 + h1(fi + 9.0) * 0.16);
+        // Each falls for under half the run, the starts spread over the rest, so they keep coming until the end.
+        float q = clamp((uGather - h1(fi + 1.7) * 0.56) / 0.44, 0.0, 1.0);
+        if (q <= 0.0 || q >= 1.0) continue;
+        float e = q * q;
+        vec2 head = mix(from, c, e);
+        vec2 back = normalize(from - c);
+        float tail = 0.26 * (1.0 - e * 0.55);
+        float u = clamp(dot(p - head, back), 0.0, tail);
+        float ds = length(p - head - back * u);
+        float fade = 1.0 - u / tail;
+        L = max(L, max(1.0 - smoothstep(0.0025, 0.0065, ds), (1.0 - smoothstep(0.0, 0.022, ds)) * 0.4) * fade * fade);
+      }
+    }
   } else {
     vec2 iuv = (v - uRect.xy) / (uRect.zw - uRect.xy);
     if (iuv.x >= 0.0 && iuv.x <= 1.0 && iuv.y >= 0.0 && iuv.y <= 1.0) {
@@ -161,6 +195,12 @@ export type FieldValues = {
   pool: number;
   poolAt: number;
   poolR: Vec2;
+  /** A head of light riding the tip of the growing beam (0 none, 1 full). */
+  tip: number;
+  /** A ring running out from the pool: 0..1 is its run, 0 none. */
+  wave: number;
+  /** Light falling in from the top edge to the pool: 0..1 is its run, 0 none. */
+  gather: number;
   imgBg: number;
   gain: number;
   bias: number;
@@ -198,6 +238,9 @@ const DEFAULTS: FieldValues = {
   pool: 0,
   poolAt: 0,
   poolR: [0.08, 0.02],
+  tip: 0,
+  wave: 0,
+  gather: 0,
   imgBg: 0,
   gain: 1,
   bias: 0,
@@ -231,7 +274,7 @@ const EASE: Record<Ease, (t: number) => number> = {
 type NumericKey = { [K in keyof FieldValues]: FieldValues[K] extends number | number[] ? K : never }[keyof FieldValues];
 type Tween = { from: FieldProps; to: FieldProps; t0: number; ms: number; ease: (t: number) => number; done: () => void };
 
-const SCENE_UNIFORMS = ["uRes", "uTime", "uScene", "uSun", "uGlow", "uBands", "uBeamAB", "uBeam", "uGrow", "uFlow", "uPool", "uPoolAt", "uPoolR", "uImg", "uRect", "uCover", "uImgBg", "uGain", "uBias", "uWin", "uWinSoft", "uWinOn", "uDrift"] as const;
+const SCENE_UNIFORMS = ["uRes", "uTime", "uScene", "uSun", "uGlow", "uBands", "uBeamAB", "uBeam", "uGrow", "uFlow", "uPool", "uPoolAt", "uPoolR", "uTip", "uWave", "uGather", "uImg", "uRect", "uCover", "uImgBg", "uGain", "uBias", "uWin", "uWinSoft", "uWinOn", "uDrift"] as const;
 const POST_UNIFORMS = ["uSceneTex", "uTime", "uInvert", "uSplitOn", "uSplitY", "uGlitch", "uSlice", "uShear", "uCols", "uRows", "uPaper", "uInk"] as const;
 
 function reducedQuery(): MediaQueryList | null {
@@ -544,8 +587,8 @@ export class RayField {
     }
     this.u.slice = slice;
 
-    // A still beam is drawn once; it needs new frames only while light flows along it.
-    const flowing = this.u.scene === 1 && !this.reduced && this.u.beam > 0.01 && this.u.flow > 0;
+    // A still beam is drawn once; it needs new frames only while light flows along it, either way.
+    const flowing = this.u.scene === 1 && !this.reduced && this.u.beam > 0.01 && this.u.flow !== 0;
     const busy = this.tweens.length > 0 || glitch > 0 || slice > 0 || flowing || this.imageLive || this.live;
     // A drifting window is slow: fewer frames do.
     const drifting = !this.reduced && this.u.drift > 0 && this.u.winOn > 0 && this.u.scene === 0;
@@ -585,6 +628,9 @@ export class RayField {
     gl.uniform1f(s.uPool, u.pool);
     gl.uniform1f(s.uPoolAt, u.poolAt);
     gl.uniform2f(s.uPoolR, u.poolR[0], u.poolR[1]);
+    gl.uniform1f(s.uTip, u.tip);
+    gl.uniform1f(s.uWave, u.wave);
+    gl.uniform1f(s.uGather, u.gather);
     gl.uniform4f(s.uRect, ...u.rect);
     gl.uniform2f(s.uCover, u.cover[0], u.cover[1]);
     gl.uniform1f(s.uImgBg, u.imgBg);

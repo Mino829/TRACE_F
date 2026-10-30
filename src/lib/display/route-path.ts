@@ -41,9 +41,27 @@ export function buildRoutePath(nodeIds: readonly string[]): RoutePath {
     at.push(s);
     // Outdoor checkpoints can still name a building (研究棟ゲート): those read 屋外.
     places.push(node.building && !node.floor.startsWith("屋外") ? `${node.building} ${node.floor}` : "屋外");
-    if (node.role === "checkpoint") stops.push({ s, name: node.name, at: p });
+    if (node.role === "checkpoint") stops.push({ s, name: shownName(node.id, node.name), at: p });
   });
   return { points, at, length: s, stops, places, kinds };
+}
+
+/**
+ * Checkpoint names as visitors read them on the projector. The graph's names
+ * carry the team's notes (アプリの原点, which end of a corridor, a landmark in
+ * brackets); these are said plainly instead. Any other name loses its brackets.
+ */
+const SHOWN_NAMES: Record<string, string> = {
+  shibalab: "ShibaLab 301",
+  "research-road": "研究棟 道路側の入口",
+  "research-south": "研究棟 運河側",
+  "classroom-6f-bridge": "教室棟6F 渡り廊下",
+  "hq-4f-bridge": "本部棟4F 渡り廊下",
+  "hq-6f-bridge": "本部棟6F 渡り廊下",
+};
+
+export function shownName(id: string, name: string): string {
+  return SHOWN_NAMES[id] ?? name.replace(/\s*（[^）]*）/g, "").trim();
 }
 
 /**
@@ -124,7 +142,8 @@ function smooth(x: number): number {
 
 /**
  * When the walk reaches each point, at WALK_SPEED times `speed`. With a
- * `duration`, the same pacing is stretched or squeezed to fit it instead.
+ * `duration`, a longer walk is squeezed to fit it, but a shorter one is never
+ * slowed below that pace: it ends sooner instead of crawling.
  */
 export interface Timeline {
   duration: number;
@@ -138,7 +157,7 @@ export function buildTimeline(path: RoutePath, speed = 1, duration?: number): Ti
     times.push(times[i] + (path.at[i + 1] - path.at[i]) / (WALK_SPEED[kind] * speed));
   });
   const natural = times[times.length - 1] || 1;
-  const scale = duration ? duration / natural : 1;
+  const scale = duration ? Math.min(1, duration / natural) : 1;
   return {
     duration: natural * scale,
     sAt(t) {

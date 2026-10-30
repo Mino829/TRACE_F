@@ -1,9 +1,12 @@
 /*
- * The campus map's HTML: names laid over the wireframe, the way back to the
- * whole campus (top left) and a building's floor buttons (right, highest at
- * the top). The lines and dots are drawn on the canvas. Colours come from the
- * screen the map sits in (RAY's --fg / --bg), with RAY's day colours as the
+ * The campus map's HTML: names laid over the drawing, the crumbs back to the
+ * whole campus (top left) and a building's floor rail (right, highest at the
+ * top). The lines, faces and dots are drawn on the canvas. Colours come from
+ * the screen the map sits in (RAY's --fg / --bg), with RAY's day colours as the
  * fallback.
+ *
+ * Two kinds of name, told apart at a glance: a building is a framed tag with a
+ * "›" (it opens), a place is plain text by its dot (it is picked).
  */
 
 .cm {
@@ -18,6 +21,8 @@
   -webkit-touch-callout: none;
   --cm-ink: var(--fg, #0c0c0d);
   --cm-paper: var(--bg, #d3d5d3);
+  --cm-jp: var(--jp, "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif);
+  --cm-mono: var(--mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
   /* Inside the map the light behind the page is toned down, so the buildings read against it. */
   background: color-mix(in srgb, var(--cm-paper) 60%, transparent);
 
@@ -37,6 +42,11 @@
   }
 }
 
+.cm__stage {
+  position: absolute;
+  inset: 0;
+}
+
 .cm__canvas {
   display: block;
   width: 100%;
@@ -44,156 +54,218 @@
   touch-action: none;
 }
 
+/*
+ * Names take no pointer: the map itself finds what a finger is on, names included, so a touch that starts on a
+ * name can still turn the map. They stay buttons for the keyboard.
+ */
 .cm__labels {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-/* A building's name above its roof, on the whole campus: small, and tappable like the building. */
-.cm .cm__label {
+.cm .cm__building,
+.cm .cm__spot,
+.cm .cm__cue {
   position: absolute;
   left: 0;
   top: 0;
   display: none;
-  min-height: 20px;
-  padding: 0 6px;
   align-items: center;
-  pointer-events: auto;
+  pointer-events: none;
   white-space: nowrap;
-  font: 700 10px/1 var(--jp, "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif);
+  will-change: transform;
+}
+
+.cm .cm__building[data-on="true"],
+.cm .cm__spot[data-on="true"],
+.cm .cm__cue[data-on="true"] {
+  display: inline-flex;
+}
+
+/* A building on the whole campus: a framed tag with a "›", larger than any place's name. */
+.cm .cm__building {
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 8px 0 10px;
+  font: 700 13px/1 var(--cm-jp);
   letter-spacing: 0.04em;
-  background: color-mix(in srgb, var(--cm-paper) 80%, transparent);
-  border: 1px solid color-mix(in srgb, var(--cm-ink) 30%, transparent);
-  will-change: transform;
+  background: color-mix(in srgb, var(--cm-paper) 94%, transparent);
+  border: 1.5px solid var(--cm-ink);
 }
 
-/* A checkpoint's name beside its dot. */
-.cm .cm__tag {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: none;
-  max-width: 60%;
-  min-height: 26px;
-  padding: 5px 8px;
-  align-items: center;
-  pointer-events: auto;
-  text-align: left;
-  font: 700 11px/1.25 var(--jp, "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif);
-  background: color-mix(in srgb, var(--cm-paper) 86%, transparent);
-  border: 1px solid var(--cm-ink);
-  will-change: transform;
+.cm .cm__chevron {
+  font-size: 16px;
+  font-weight: 500;
+  transform: translateY(-1px);
 }
 
-/* Before it is tapped, an outdoor checkpoint's name is short and small, so eight of them fit round the buildings. */
-.cm .cm__tag[data-small="true"] {
-  min-height: 20px;
-  max-width: 9.5em;
-  padding: 3px 6px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 10px;
-  border-color: color-mix(in srgb, var(--cm-ink) 60%, transparent);
-}
-
-.cm .cm__tag[aria-pressed="true"] {
+.cm .cm__building[data-pressed="true"] {
   color: var(--cm-paper);
   background: var(--cm-ink);
 }
 
-.cm .cm__label[data-on="true"],
-.cm .cm__tag[data-on="true"] {
-  display: inline-flex;
+/* A place: plain text by its dot, on a little paper so the lines behind do not cross it. */
+.cm .cm__spot {
+  max-width: 62%;
+  min-height: 20px;
+  padding: 3px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: 700 11px/1.3 var(--cm-jp);
+  background: color-mix(in srgb, var(--cm-paper) 82%, transparent);
 }
 
-/* Small to look at, 44px to tap: an invisible margin round each one. */
-.cm .cm__label::after,
-.cm .cm__tag::after {
-  content: "";
-  position: absolute;
-  inset: -12px -6px;
+/* On an open floor the places are the choice itself: a little larger, and outlined. */
+.cm .cm__spot[data-floor="true"] {
+  min-height: 28px;
+  padding: 5px 9px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--cm-paper) 90%, transparent);
+  border: 1px solid var(--cm-ink);
 }
 
-/* Back to the whole campus. */
-.cm .cm__back {
+.cm .cm__spot[data-pressed="true"] {
+  box-shadow: inset 0 0 0 1.5px var(--cm-ink);
+}
+
+.cm .cm__spot[aria-pressed="true"] {
+  color: var(--cm-paper);
+  background: var(--cm-ink);
+}
+
+/* The other buildings while one is open: signs only, not choices. */
+.cm .cm__cue {
+  padding: 3px 6px;
+  font: 500 11px/1.2 var(--cm-jp);
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--cm-ink) 72%, var(--cm-paper));
+  background: color-mix(in srgb, var(--cm-paper) 70%, transparent);
+}
+
+/* Crumbs: キャンパス › 教室棟 › 3F. Each stage above the current one is a button back to it. */
+.cm .cm__crumbs {
   position: absolute;
   top: 6px;
   left: 6px;
-  display: none;
+  right: 78px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.cm .cm__crumbs > * {
+  pointer-events: auto;
+}
+
+.cm .cm__crumb {
   min-height: 44px;
   padding: 0 12px;
+  display: inline-flex;
   align-items: center;
-  font: 700 13px/1 var(--jp, "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif);
+  font: 700 13px/1 var(--cm-jp);
+  white-space: nowrap;
   background: color-mix(in srgb, var(--cm-paper) 88%, transparent);
   border: 1px solid var(--cm-ink);
 }
 
-.cm .cm__crumb {
-  position: absolute;
-  top: 54px;
-  left: 8px;
-  display: none;
-  font: 500 10px/1 var(--mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
-  letter-spacing: 0.1em;
-  color: var(--cm-ink);
-  pointer-events: none;
+.cm .cm__sep {
+  font-size: 15px;
+  color: color-mix(in srgb, var(--cm-ink) 60%, var(--cm-paper));
 }
 
-.cm .cm__back[data-on="true"] {
-  display: inline-flex;
+.cm .cm__here {
+  padding: 0 4px;
+  font: 700 13px/1 var(--cm-jp);
+  white-space: nowrap;
 }
 
-.cm .cm__crumb[data-on="true"] {
-  display: block;
+.cm .cm__here.mono {
+  font-family: var(--cm-mono);
 }
 
-/* The floor buttons: a lift's panel at the right edge, highest floor at the top; it scrolls inside itself when the floors do not fit. */
-.cm .cm__floors {
+/*
+ * The floor rail: every floor of the open building at the right edge, without scrolling. The whole rail takes the
+ * finger; the floors share its height (up to 48px each).
+ */
+.cm .cm__rail {
   position: absolute;
   top: 6px;
   right: 6px;
   bottom: 6px;
-  display: none;
+  width: 60px;
+  display: flex;
   flex-direction: column;
-  justify-content: safe center;
-  gap: 3px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  touch-action: pan-y;
+  justify-content: center;
+  touch-action: none;
+  cursor: pointer;
 }
 
-.cm .cm__floors::-webkit-scrollbar {
-  display: none;
+.cm .cm__floors {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: min(100%, calc(var(--floors, 8) * 48px));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: color-mix(in srgb, var(--cm-paper) 90%, transparent);
+  border: 1px solid var(--cm-ink);
 }
 
-.cm .cm__floors[data-on="true"] {
+.cm .cm__floors > li {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
 }
 
+.cm .cm__floors > li + li {
+  border-top: 1px solid color-mix(in srgb, var(--cm-ink) 22%, transparent);
+}
+
 .cm .cm__floor {
-  flex: none;
-  min-width: 48px;
-  min-height: 44px;
-  font: 600 13px/1 var(--mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);
+  position: relative;
+  flex: 1;
+  font: 600 13px/1 var(--cm-mono);
   letter-spacing: 0.04em;
-  background: color-mix(in srgb, var(--cm-paper) 88%, transparent);
-  border: 1px solid color-mix(in srgb, var(--cm-ink) 45%, transparent);
+}
+
+.cm .cm__floor[data-held="true"] {
+  background: color-mix(in srgb, var(--cm-ink) 18%, transparent);
 }
 
 .cm .cm__floor[aria-pressed="true"] {
   color: var(--cm-paper);
   background: var(--cm-ink);
-  border-color: var(--cm-ink);
 }
 
-.cm .cm__floor[hidden] {
-  display: none;
+/* The floor of the chosen place. */
+.cm .cm__floor[data-marked="true"]::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
-.cm .cm__tag[data-small="true"][data-on="true"] {
-  display: inline-block;
-  line-height: 14px;
+/* The floor under the finger, large beside it, so the finger does not hide which floor it is on. */
+.cm .cm__floors > .cm__held {
+  position: absolute;
+  right: calc(100% + 10px);
+  min-width: 68px;
+  height: 52px;
+  padding: 0 10px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  font: 700 24px/1 var(--cm-mono);
+  color: var(--cm-paper);
+  background: var(--cm-ink);
+  border: 0;
+  pointer-events: none;
 }

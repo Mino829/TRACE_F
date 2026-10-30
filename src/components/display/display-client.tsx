@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { Player } from "@/lib/display/player";
+import { createRelay, type Point, type Relay } from "@/lib/display/relay";
 import type { RoutePath } from "@/lib/display/route-path";
 import { createSound, type Cue, type SoundEngine } from "@/lib/display/sound";
 
@@ -22,15 +23,28 @@ import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/rende
  *   (right) replay the visitor's walk.
  * - arrived: a short card, then back to the top.
  *
+ * The visitor's phone and this screen pass one light between them
+ * (src/lib/display/relay.ts): before each walk the light the phone sent comes
+ * up from the foot of the screen and lands where the line begins (the intro),
+ * and when the walk is over it pours out of the foot of the screen, back to the
+ * phone. Test walks show it too.
+ *
  * Arrivals: with TRACE_B configured (NEXT_PUBLIC_DISPLAY_API_URL and
  * NEXT_PUBLIC_GOOGLE_CLIENT_ID, use-renderer-link.ts) an operator signs in with
  * Google on the top screen, and the booth takes TRACE_B's arrivals one at a
  * time as the primary renderer: the visitor's route (pathNodeIds), then the
  * arrived card, then the next visitor or the QR. A visitor without a route
- * (no photos) gets the card alone. The top screen keeps test
- * buttons (Space also plays). A test keeps going, one walk after another,
- * until 終了する (or Esc). Query: ?speed=1.5 (pace; 1 walks at WALK_SPEED),
- * ?duration=30 (fit every walk into that many seconds instead), ?fps=1
+ * (no photos) gets the card alone. A long walk is fitted into about a minute
+ * (REPLAY_SECONDS); a short one keeps its own pace and ends sooner.
+ *
+ * Visitors see the projector, so the controls for the team stay off it: the
+ * link and operator status, the test buttons and 終了する show only with ?dev.
+ * Without it the top screen shows nothing but the Google button, and that only
+ * while the booth still needs an operator to sign in. With ?dev the top screen
+ * keeps test buttons (Space also plays). A test keeps going, one walk after
+ * another, until 終了する (or Esc). Query: ?duration=30 (fit every walk into
+ * that many seconds instead; ?duration=0 walks at the natural pace),
+ * ?speed=1.5 (that pace; 1 walks at WALK_SPEED), ?fps=1
  * (frames per second in the corner, to check the booth PC keeps up),
  * ?stops=hq-11f,hq-4f-bridge,shibalab (the sample test walks through these
  * graph nodes in order, choosing each leg by metres the way TRACE_B does).
@@ -41,10 +55,23 @@ import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/rende
  * count too). ?volume=0.6 sets the level, ?mute=1 silences it, ?sound=1 shows
  * which sounds are the real files and which are still placeholders.
  */
-type Screen = "loading" | "top" | "playback" | "arrived";
+type Screen = "loading" | "top" | "intro" | "playback" | "arrived";
 
 const ARRIVED_SECONDS = 4;
+/**
+ * The longest a walk plays: a longer one goes faster to fit, a shorter one
+ * keeps WALK_SPEED (route-path.ts buildTimeline). TRACE_B suggests 15 seconds
+ * (replayDurationSeconds); the booth gives a long walk about a minute instead.
+ */
+const REPLAY_SECONDS = 60;
 type TestRoute = "sample" | "random";
+
+/** Where the head of the line stands: the middle of the drone view, which follows it. */
+function middleOf(element: Element | null): Point {
+  if (!element) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  const rect = element.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
 
 export function DisplayClient() {
   const mapRef = useRef<HTMLCanvasElement>(null);
@@ -52,6 +79,10 @@ export function DisplayClient() {
   const walkRef = useRef<HTMLCanvasElement>(null);
   const [fps, setFps] = useState<number | null>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
+  const relayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const relayRef = useRef<Relay | null>(null);
+  /** The light coming in for the walk about to start; aborted when the booth goes back to its QR first. */
+  const introRef = useRef<AbortController | null>(null);
   const playerRef = useRef<Player | null>(null);
   const routesRef = useRef<Record<TestRoute, () => RoutePath> | null>(null);
   /** Builds an arrival's walk from its route's graph node ids; null when there is no route to walk. */
@@ -65,12 +96,22 @@ export function DisplayClient() {
   /** The test running, if any: after each walk the next one starts until 終了する. */
   const testRef = useRef<TestRoute | null>(null);
   const [screen, setScreen] = useState<Screen>("loading");
+  const screenRef = useRef<Screen>("loading");
+  /** What the room darkens over while the light comes in: the QR, or the card of the walk before. */
+  const [under, setUnder] = useState<Screen>("top");
   const [status, setStatus] = useState({ stop: "", place: "", progress: 0 });
   const [arrivedAt, setArrivedAt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const soundRef = useRef<SoundEngine | null>(null);
   const [sound, setSound] = useState<{ unlocked: boolean; sources: Record<Cue, string> } | null>(null);
   const [showSources, setShowSources] = useState(false);
+  /** ?dev: the team's controls (status, tests, 終了する) on screen. */
+  const [dev, setDev] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setDev(new URLSearchParams(window.location.search).has("dev")), 0);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Sound: made on mount, told which screen is up, unlocked by the first click or key.
   useEffect(() => {
@@ -92,9 +133,20 @@ export function DisplayClient() {
     };
   }, []);
 
+  // The light coming in is the moment the QR code was read: its cue, and the replay's music.
   useEffect(() => {
-    if (screen !== "loading") soundRef.current?.scene(screen);
+    screenRef.current = screen;
+    if (screen !== "loading") soundRef.current?.scene(screen === "intro" ? "playback" : screen);
   }, [screen]);
+
+  useEffect(() => {
+    const relay = createRelay(relayCanvasRef.current!);
+    relayRef.current = relay;
+    return () => {
+      relay.dispose();
+      relayRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     let disposed = false;
@@ -107,7 +159,7 @@ export function DisplayClient() {
       ]);
       const params = new URLSearchParams(window.location.search);
       const speed = Number(params.get("speed")) || 1;
-      const duration = Number(params.get("duration")) || undefined;
+      const duration = params.has("duration") ? Number(params.get("duration")) || undefined : REPLAY_SECONDS;
       const showFps = params.get("fps") === "1";
       const stops = params.has("stops") ? graph.parseStops(params.get("stops") ?? "") : null;
       // Test walks favour indoors and the escalators, like most visitors; ?stops walks like an arrival.
@@ -130,6 +182,8 @@ export function DisplayClient() {
             playingRef.current = false;
             setArrivedAt(clock(new Date()).slice(0, 5));
             setScreen("arrived");
+            // The light leaves the end of the line and pours out toward the visitor's phone.
+            relayRef.current?.release(() => middleOf(droneRef.current));
             // A visitor's walk is complete here; TRACE_B is told, and the card then holds the booth.
             liveRef.current?.resolve("completed");
             liveRef.current = null;
@@ -150,21 +204,49 @@ export function DisplayClient() {
     };
   }, []);
 
-  const play = useCallback((which: TestRoute) => {
-    const player = playerRef.current;
-    const routes = routesRef.current;
-    if (!player || !routes) return;
-    void soundRef.current?.unlock();
-    testRef.current = which;
-    setStatus({ stop: "", place: "", progress: 0 });
-    playingRef.current = true;
-    player.play(routes[which]());
-    setScreen("playback");
+  /** The light from the visitor's phone comes in and lands at `to`; then `start` runs the walk (or the card) from there. */
+  const comeIn = useCallback((to: () => Point, start: () => void) => {
+    introRef.current?.abort();
+    const relay = relayRef.current;
+    if (!relay) return start();
+    const intro = new AbortController();
+    introRef.current = intro;
+    if (screenRef.current !== "intro") setUnder(screenRef.current);
+    setScreen("intro");
+    void relay.arrive(to, intro.signal).then((landed) => {
+      if (!landed || intro.signal.aborted) return;
+      introRef.current = null;
+      start();
+    });
   }, []);
+
+  const play = useCallback(
+    (which: TestRoute) => {
+      const player = playerRef.current;
+      const routes = routesRef.current;
+      if (!player || !routes) return;
+      void soundRef.current?.unlock();
+      testRef.current = which;
+      setStatus({ stop: "", place: "", progress: 0 });
+      const path = routes[which]();
+      comeIn(
+        () => middleOf(droneRef.current),
+        () => {
+          playingRef.current = true;
+          player.play(path);
+          setScreen("playback");
+        },
+      );
+    },
+    [comeIn],
+  );
 
   const backToTop = useCallback(() => {
     playingRef.current = false;
     testRef.current = null;
+    introRef.current?.abort();
+    introRef.current = null;
+    relayRef.current?.clear();
     setLive(false);
     // A visitor's walk stopped by hand (終了する, Esc) is reported as failed rather than left hanging.
     liveRef.current?.resolve("failed");
@@ -173,7 +255,10 @@ export function DisplayClient() {
     setScreen("top");
   }, []);
 
-  /** One arrival from TRACE_B: its walk fitted into the replay time TRACE_B gives, over a test walk if one is running. */
+  /**
+   * One arrival from TRACE_B, over a test walk if one is running: the light
+   * comes in, then its walk, fitted into REPLAY_SECONDS like any other.
+   */
   const replayArrival = useCallback(
     (arrival: ArrivalToPlay, signal: AbortSignal) =>
       new Promise<ReplayResult>((resolve) => {
@@ -188,19 +273,10 @@ export function DisplayClient() {
           return resolve("failed");
         }
         testRef.current = null;
+        playingRef.current = false;
         setLive(true);
-        if (!path) {
-          // No route to walk (no photos, or none on this graph version): the arrived card alone.
-          playingRef.current = false;
-          setArrivedAt(clock(new Date()).slice(0, 5));
-          setScreen("arrived");
-          return resolve("completed");
-        }
-        liveRef.current = { resolve };
         setStatus({ stop: "", place: "", progress: 0 });
-        playingRef.current = true;
-        player.play(path, arrival.durationSeconds ?? undefined);
-        setScreen("playback");
+        liveRef.current = { resolve };
         // TRACE_B skipped it, or the lease went: back to the top without reporting.
         signal.addEventListener(
           "abort",
@@ -212,8 +288,31 @@ export function DisplayClient() {
           },
           { once: true },
         );
+        if (!path) {
+          // No route to walk (no photos, or none on this graph version): the light lands in the middle, then the arrived card alone.
+          const middle = () => middleOf(null);
+          comeIn(middle, () => {
+            if (liveRef.current?.resolve !== resolve) return;
+            liveRef.current = null;
+            setArrivedAt(clock(new Date()).slice(0, 5));
+            setScreen("arrived");
+            relayRef.current?.release(middle);
+            resolve("completed");
+          });
+          return;
+        }
+        const route = path;
+        comeIn(
+          () => middleOf(droneRef.current),
+          () => {
+            if (liveRef.current?.resolve !== resolve) return;
+            playingRef.current = true;
+            player.play(route);
+            setScreen("playback");
+          },
+        );
       }),
-    [backToTop],
+    [backToTop, comeIn],
   );
   // After a visitor's card, the link starts the next visitor or hands the booth back to the QR.
   const link = useRendererLink(screen !== "loading", replayArrival, backToTop);
@@ -241,9 +340,10 @@ export function DisplayClient() {
     return () => window.clearTimeout(id);
   }, [screen, live, play, backToTop]);
 
-  useEffect(() => {
+  // Bound as the screen commits, so a key pressed as soon as the top shows is not taken by the last screen's handler.
+  useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === "Space" && screen === "top") {
+      if (e.code === "Space" && screen === "top" && dev) {
         e.preventDefault();
         play("sample");
       } else if (e.code === "Escape" && screen !== "top") {
@@ -252,12 +352,12 @@ export function DisplayClient() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, play, backToTop]);
+  }, [screen, dev, play, backToTop]);
 
   return (
     <div className="dsp" data-screen={screen}>
       {/* Playback: always mounted so the campus is loaded before the first visitor. */}
-      <div className="dsp-stage" aria-hidden={screen === "top"}>
+      <div className="dsp-stage" aria-hidden={screen === "top" || screen === "intro"}>
         <section className="dsp-view">
           <canvas ref={droneRef} className="dsp-canvas" aria-label="光の先頭を追いかける視点" />
           <p className="dsp-view__label">DRONE</p>
@@ -276,12 +376,14 @@ export function DisplayClient() {
             <span className="wordmark">TRACE</span>
             <span className="dsp-mono keep-case">ShibaLab 301</span>
           </p>
-          <div className="dsp-tests">
-            <span className="dsp-mono">{live ? "ARRIVAL" : "TEST · 繰り返し再生中"}</span>
-            <button type="button" className="dsp-test" onClick={backToTop}>
-              ■ 終了する <span className="dsp-mono">ESC</span>
-            </button>
-          </div>
+          {dev && (
+            <div className="dsp-tests">
+              <span className="dsp-mono">{live ? "ARRIVAL" : "TEST · 繰り返し再生中"}</span>
+              <button type="button" className="dsp-test" onClick={backToTop}>
+                ■ 終了する <span className="dsp-mono">ESC</span>
+              </button>
+            </div>
+          )}
         </header>
         <div className="dsp-play">
           <p className="dsp-mono dsp-play__kicker">
@@ -294,7 +396,7 @@ export function DisplayClient() {
         </div>
       </div>
 
-      {screen === "arrived" && (
+      {(screen === "arrived" || (screen === "intro" && under === "arrived")) && (
         <div className="dsp-arrived">
           <p className="dsp-mono">ARRIVED {arrivedAt}</p>
           <p className="dsp-arrived__title">ShibaLab に到着しました</p>
@@ -302,7 +404,8 @@ export function DisplayClient() {
         </div>
       )}
 
-      {(screen === "top" || screen === "loading") && (
+      {/* The top stays under the light coming in until it lands. */}
+      {(screen === "top" || screen === "loading" || (screen === "intro" && (under === "top" || under === "loading"))) && (
         <div className="dsp-top">
           <p className="dsp-ghost" aria-hidden="true">RAY</p>
           <header className="dsp-mast">
@@ -312,8 +415,8 @@ export function DisplayClient() {
               <span className="keep-case">ShibaLab</span> 301 / RAY
             </p>
             <div className="dsp-tests">
-              {link && <LinkBadge link={link} />}
-              {operator.session && (
+              {dev && link && <LinkBadge link={link} />}
+              {dev && operator.session && (
                 <>
                   <span className="dsp-mono dsp-link" data-operator-state={operator.state} role="status">
                     運営 · {operator.state === "ready" ? "到着 QR 発行可" : operator.state === "authorizing" ? "認証中" : operator.state === "revoking" ? "失効中" : operator.state === "error" ? "認証・通信エラー" : "Google ログインが必要です"}
@@ -325,13 +428,17 @@ export function DisplayClient() {
                 </>
               )}
               {googleClientId && (link?.state === "login" || (operator.session && (operator.state === "login" || operator.state === "error"))) && <GoogleSignIn clientId={googleClientId} onToken={signIn} />}
-              <span className="dsp-mono">TEST</span>
-              <button type="button" className="dsp-test" disabled={screen !== "top"} onClick={() => play("sample")}>
-                ▶ テスト再生 <span className="dsp-mono">SPACE</span>
-              </button>
-              <button type="button" className="dsp-test" disabled={screen !== "top"} onClick={() => play("random")}>
-                ▶ ランダムな道
-              </button>
+              {dev && (
+                <>
+                  <span className="dsp-mono">TEST</span>
+                  <button type="button" className="dsp-test" disabled={screen !== "top"} onClick={() => play("sample")}>
+                    ▶ テスト再生 <span className="dsp-mono">SPACE</span>
+                  </button>
+                  <button type="button" className="dsp-test" disabled={screen !== "top"} onClick={() => play("random")}>
+                    ▶ ランダムな道
+                  </button>
+                </>
+              )}
             </div>
           </header>
           <div className="dsp-top__body">
@@ -362,10 +469,12 @@ export function DisplayClient() {
                 <p className="dsp-mono dsp-loading">LOADING CAMPUS…</p>
               ) : null}
             </div>
-            <ArrivalQr key={operator.state} session={operator.session} authorized={operator.state === "ready"} />
+            <ArrivalQr key={operator.state} session={operator.session} authorized={operator.state === "ready"} dev={dev} />
           </div>
         </div>
       )}
+
+      <canvas ref={relayCanvasRef} className="dsp-relay" aria-hidden="true" />
 
       {sound && !sound.unlocked && (
         <button type="button" className="dsp-test dsp-sound" onClick={() => void soundRef.current?.unlock()}>

@@ -5,7 +5,7 @@ import path from "node:path";
 /**
  * /log after arriving at ShibaLab (#14): the keepsake drawn from the photos
  * kept on the phone, each photo saved or deleted (#51) on its own, and
- * 振り返り3D (#50) from the keepsake; and what of each photo goes to TRACE_B
+ * 振り返り3D (#50) above it on the same screen; and what of each photo goes to TRACE_B
  * on the way there (#13). Like log-tabs.spec.ts, a stand-in answers for
  * TRACE_B at the standard same-origin /api/backend path. Chrome on a computer saves
  * by downloading, which is what is checked here; an iPhone's share sheet is not.
@@ -210,10 +210,10 @@ test("after the replay, home leads to the keepsake, which saves as one picture w
   await expect(page.getByRole("heading", { name: "作品を保存できます" })).toBeVisible({ timeout: 15000 });
   await shoot(page, "replay-done");
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await expect(page.getByRole("heading", { name: "あなたの作品" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toBeVisible();
   const art = page.getByRole("img", { name: /^作品。撮った2枚の写真/ });
   await expect(art).toBeVisible({ timeout: 15000 });
-  await expect(page.getByText(/を過ぎると削除されます。/)).toBeVisible();
+  await expect(page.getByText(/にブラウザ上から消去されます。/)).toBeVisible();
   await page.waitForTimeout(2000);
   await shoot(page, "keepsake");
 
@@ -247,9 +247,9 @@ test("the TRACE mark leads to the title, which leads home without joining again;
   backend.replay = "completed";
   await page.reload();
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await expect(page.getByRole("heading", { name: "あなたの作品" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toBeVisible();
   await page.getByRole("button", { name: "TRACE（タイトルへ）" }).click();
-  await expect(page.getByRole("heading", { name: "あなたの作品" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toHaveCount(0);
   await page.getByRole("button", { name: "ホームへもどる" }).click();
   await expect(page.getByRole("button", { name: "作品を見る" })).toBeVisible();
   expect(joins).toBe(1);
@@ -264,7 +264,7 @@ test("a browser without the photos says the keepsake cannot be made here", async
   backend.replay = "completed";
   await page.reload();
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await expect(page.getByRole("heading", { name: "あなたの作品" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toBeVisible();
   await expect(page.getByText(/この端末には写真が残っていないので/)).toBeVisible();
   await expect(page.getByRole("button", { name: "作品を保存する" })).toHaveCount(0);
   await shoot(page, "keepsake-empty");
@@ -415,7 +415,7 @@ for (const ending of ["stop", "expiry"] as const) {
 /** Where the photos' pins stand over the 3D view. */
 const pinsAt = (page: Page) => page.locator(".trace__pin:not([hidden])").evaluateAll((pins) => pins.map((pin) => (pin as HTMLElement).style.transform));
 
-test("振り返り3D draws the way from the photos' places to ShibaLab, turns by dragging, and lists the places in order", async ({ context, page }) => {
+test("振り返り3D, above the keepsake, draws the way from the photos' places to ShibaLab, turns by dragging, and lists the places in order", async ({ context, page }) => {
   const problems: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error") problems.push(message.text());
@@ -429,8 +429,9 @@ test("振り返り3D draws the way from the photos' places to ShibaLab, turns by
   backend.replay = "completed";
   await page.reload();
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await page.getByRole("button", { name: "軌跡を見る" }).click();
+  // On the keepsake screen itself, before the picture.
   await expect(page.getByRole("heading", { name: "あなたの軌跡" })).toBeVisible();
+  expect(await page.locator(".keep__trace").evaluate((trace) => !!(trace.compareDocumentPosition(document.querySelector(".keep__art")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
 
   // Each photo stands over the way, once the drawing code has loaded.
   await expect(page.locator(".trace__pin:not([hidden])")).toHaveCount(3, { timeout: 15000 });
@@ -446,6 +447,7 @@ test("振り返り3D draws the way from the photos' places to ShibaLab, turns by
   await shoot(page, "trace");
 
   // Dragging turns the view, and the pins move with it; 元の向きにもどす puts it back.
+  await page.locator(".trace__canvas").scrollIntoViewIfNeeded();
   const first = await pinsAt(page);
   const box = (await page.locator(".trace__canvas").boundingBox())!;
   await page.mouse.move(box.x + box.width * 0.3, box.y + box.height * 0.6);
@@ -461,9 +463,6 @@ test("振り返り3D draws the way from the photos' places to ShibaLab, turns by
   await expect(page.locator(".trace__pick")).toContainText("研究棟7F 運河側");
   await expect(rows.nth(1).getByRole("button")).toHaveAttribute("aria-pressed", "true");
   await page.screenshot({ path: SHOTS ? path.join(SHOTS, "trace-pick.png") : undefined });
-
-  await page.getByRole("button", { name: "作品にもどる" }).click();
-  await expect(page.getByRole("heading", { name: "あなたの作品" })).toBeVisible();
   expect(problems).toEqual([]);
 });
 
@@ -475,7 +474,6 @@ test("one photo still draws the final photo-to-arrival route and exposes both st
   backend.replay = "completed";
   await page.reload();
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await page.getByRole("button", { name: "軌跡を見る" }).click();
   await expect(page.getByRole("heading", { name: "あなたの軌跡" })).toBeVisible();
   await expect(page.locator(".trace__pin:not([hidden])")).toHaveCount(1, { timeout: 15000 });
   await expect(page.getByRole("button", { name: "元の向きにもどす" })).toBeEnabled();
@@ -498,7 +496,6 @@ test("without WebGL, 振り返り3D says so and still lists the places", async (
   backend.replay = "completed";
   await page.reload();
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await page.getByRole("button", { name: "軌跡を見る" }).click();
   await expect(page.getByRole("status").filter({ hasText: "表示できないので" })).toBeVisible({ timeout: 15000 });
   await expect(page.locator(".trace__canvas")).toHaveCount(0);
   await expect(page.locator(".trace__list li")).toHaveCount(2);

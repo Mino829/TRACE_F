@@ -185,7 +185,7 @@ test("changed backend consent must be displayed and explicitly agreed again, the
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("trace-consent")!))).toMatchObject(updated);
   await page.reload();
   await page.getByRole("button", { name: "メニュー" }).click();
-  await page.getByRole("button", { name: "同意した内容" }).click();
+  await page.getByRole("button", { name: "同意事項" }).click();
   await expect(page.getByText(updated.body, { exact: true })).toBeVisible();
 });
 

@@ -17,9 +17,12 @@ export function webglAvailable(): boolean {
   }
 }
 
-/** A context made for drawing a few lines: no antialiasing, no depth, transparent where nothing is drawn. */
-export function getContext(canvas: HTMLCanvasElement): WebGLRenderingContext | null {
-  const options: WebGLContextAttributes = { antialias: false, alpha: true, depth: false, stencil: false, premultipliedAlpha: true, powerPreference: "low-power", preserveDrawingBuffer: false };
+/**
+ * A context made for drawing a few lines: no antialiasing, transparent where nothing is drawn. `stencil` adds a
+ * stencil buffer, so a floor with a hole in it (a light well) is filled round the hole.
+ */
+export function getContext(canvas: HTMLCanvasElement, stencil = false): WebGLRenderingContext | null {
+  const options: WebGLContextAttributes = { antialias: false, alpha: true, depth: false, stencil, premultipliedAlpha: true, powerPreference: "low-power", preserveDrawingBuffer: false };
   return canvas.getContext("webgl", options) ?? (canvas.getContext("experimental-webgl", options) as WebGLRenderingContext | null);
 }
 
@@ -98,3 +101,4 @@ void main() {
   gl_FragColor = vec4(u_color.rgb * a, a);
 }
 `;
+

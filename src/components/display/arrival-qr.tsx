@@ -10,7 +10,7 @@ const SHOW_MIN_MS = 3_000;
 type LiveToken = ArrivalProof & { since: number };
 
 /** Only an independently authorized operator can mint a real arrival QR. */
-export function ArrivalQr({ session, authorized }: { session: OperatorSession | null; authorized: boolean }) {
+export function ArrivalQr({ session, authorized, dev }: { session: OperatorSession | null; authorized: boolean; dev: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [now, setNow] = useState<number | null>(null);
   const [token, setToken] = useState<LiveToken | null>(null);
@@ -70,7 +70,8 @@ export function ArrivalQr({ session, authorized }: { session: OperatorSession | 
         <p className="dsp-qr__sign"><span>ASYNC</span><span>TRACE</span></p>
       </div>
       <figcaption className="dsp-qr__meta">
-        <span>{showing ? "ARRIVAL QR" : session ? "ARRIVAL QR · 運営認証待ち" : "ARRIVAL QR · 未設定"}</span>
+        {/* Why there is no code yet is for the team (?dev); visitors read only that it is coming. */}
+        <span>{showing ? "ARRIVAL QR" : !dev ? "ARRIVAL QR · 準備中" : session ? "ARRIVAL QR · 運営認証待ち" : "ARRIVAL QR · 未設定"}</span>
         <span>NEXT {showing ? String(left).padStart(2, "0") : "--"}s</span>
       </figcaption>
       <div className="dsp-qr__bar"><span style={{ width: `${share * 100}%` }} /></div>

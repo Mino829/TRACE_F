@@ -16,8 +16,8 @@ import { reducedMotion } from "@/lib/ray/fx";
 import { useLayer } from "../layer";
 import { clock } from "../ui";
 import { Print, PrintPhoto, frameLabel, tearOne } from "./prints";
-import { reminderNote, useReminderSwitch, type ReminderTerms } from "./screens";
-import { ClearWord, DAY, Dock, Icon, NoteBar, Phrases, Screen, Seg, Sentences, SWAP, useField, useRay } from "./stage";
+import { useReminderSwitch, type ReminderTerms } from "./screens";
+import { ClearWord, DAY, Dock, Icon, Info, NoteBar, Phrases, Pop, Screen, Seg, Sentences, SWAP, useField, useInfo, useRay } from "./stage";
 
 /**
  * A photo from the camera to the day's memory: a look at it, the choice of
@@ -73,6 +73,7 @@ export function PhotoScreen(props: Props) {
   });
   const photoRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
+  const reminderInfo = useInfo();
   const reminder = useReminderSwitch(props.reminderOn, props.support, props.onReminder, props.onInstall);
   useField("day", DAY);
 
@@ -150,7 +151,7 @@ export function PhotoScreen(props: Props) {
           <span />
         </div>
         <h1 className="h1">
-          <Phrases text="この写真を残しますか？" />
+          <Phrases text="この写真でよろしいですか？" />
         </h1>
         <div ref={photoRef} className="preview__photo" style={{ ["--ratio" as string]: ratio }}>
           {photo ? (
@@ -170,7 +171,7 @@ export function PhotoScreen(props: Props) {
         <div className="actionbar">
           <NoteBar text={error} alert />
           <button type="button" className="btn btn--line" onClick={() => void go(close)}>
-            残さない
+            やめる
           </button>
           <button type="button" className="btn" disabled={!photo} onClick={() => setStep("place")}>
             <Icon name="arrow" />
@@ -210,14 +211,13 @@ export function PhotoScreen(props: Props) {
       {offer && (
         <section className="clear__offer bracket" aria-labelledby={labelId}>
           <div className="kv">
-            <p className="h3" id={labelId}>
-              リマインダー
+            <p className="h3">
+              <span id={labelId}>リマインダー</span>
+              <Info info={reminderInfo} label="リマインダーについて" />
             </p>
             <Seg on={props.reminderOn} labelledBy={labelId} disabled={props.busy} onToggle={reminder.toggle} />
           </div>
-          <p className="small" style={{ marginTop: 6 }}>
-            <Sentences text={reminderNote(props.reminderTerms)} />
-          </p>
+          <Pop info={reminderInfo} text={`${props.reminderTerms.intervalMinutes}分ごとに撮影を知らせる通知が届きます。`} />
           {reminder.problem && (
             <p className="problem" role="alert">
               <Sentences text={reminder.problem} />

@@ -16,9 +16,10 @@ import "./place-picker.css";
  * The map is most of the screen. It opens on the whole campus, every building
  * drawn as a wire model of its floors, so a building is recognised by its
  * shape rather than its name: tap one, the map comes close and offers its
- * floors; on a floor its checkpoints light up, and one tap picks one. The
- * checkpoints outside are on the ground of the whole view. Under the map a
- * thin bar says what was picked and saves it.
+ * floors on a rail; on a floor its checkpoints light up, and one tap picks
+ * one. The checkpoints outside are on the ground of the whole view. Nothing
+ * is chosen by itself. Under the map a thin bar says what was picked and
+ * saves it.
  *
  * Without the map (no WebGL, or the participant would rather) the same choice
  * is a list: building, floor, checkpoint. A place has to be chosen; the same
@@ -38,7 +39,7 @@ type Props = {
   data: PlacesData;
   /** The photo, for the thumbnail that says which one this is. */
   photo: Blob | null;
-  /** The place of the photo before this one: "さっきと同じ" picks it in one tap. */
+  /** The place of the photo before this one: "前回の場所" picks it in one tap. */
   last: PhotoPlace | null;
   /** Which photo of the day this is. */
   number: number;
@@ -70,45 +71,27 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mapOff, setMapOff] = useState(false);
   const [listMode, setListMode] = useState(false);
+  const [zoom, setZoom] = useState(false);
 
   const selected = selectedId ? findCheckpoint(data, selectedId) : undefined;
   const lastPoint = useMemo(() => (last && last.graphVersion === data.graphVersion ? findCheckpoint(data, last.checkpointId) : undefined), [data, last]);
   const showList = mapOff || listMode;
 
-  /** Opens a floor; when it has one checkpoint only, that is the choice. */
-  const openFloor = useCallback(
-    (nextBuilding: BuildingId, label: string) => {
-      setFloor(label);
-      const only = checkpointsOn(data, nextBuilding, label);
-      if (only.length === 1) setSelectedId(only[0].id);
-    },
-    [data],
-  );
+  /** A building opens on its floors, none of them open and nothing chosen: the participant says which floor. */
+  const chooseBuilding = useCallback((id: BuildingId | null) => {
+    tick();
+    setBuilding(id === "outdoor" ? null : id);
+    setFloor(null);
+  }, []);
 
-  const chooseBuilding = useCallback(
-    (id: BuildingId | null) => {
-      tick();
-      if (id === null || id === "outdoor") {
-        setBuilding(null);
-        setFloor(null);
-        return;
-      }
-      setBuilding(id);
-      // Open on the floor of what is already chosen in this building, else its lowest floor.
-      const here = selected && (selected.building === id || selected.joins === id) ? selected.floor : floorsOf(data, id)[0]?.label;
-      if (here) openFloor(id, here);
-      else setFloor(null);
-    },
-    [data, selected, openFloor],
-  );
-
+  /** Opens a floor; nothing on it is chosen until the participant taps a checkpoint. */
   const chooseFloor = useCallback(
     (label: string) => {
       if (building === null || label === floor) return;
       tick();
-      openFloor(building, label);
+      setFloor(label);
     },
-    [building, floor, openFloor],
+    [building, floor],
   );
 
   const choosePoint = useCallback(
@@ -132,11 +115,7 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
     if (selected && !saving) onConfirm(placeOf(data, selected));
   };
 
-  const hint = selected
-    ? placeLabel(data, selected)
-    : building === null
-      ? "建物をタップしてください。外で撮ったときは、地面の点を選んでください。"
-      : `${buildingName(data, building)}：階を選んで、場所の点をタップしてください。`;
+  const hint = selected ? placeLabel(data, selected) : "撮影した場所を選択してください。";
 
   return (
     <Screen key="place" className="screen--flex pp" inert={inert}>
@@ -157,8 +136,13 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
         <h1 className="h2">
           <Phrases text="どこで撮りましたか？" />
         </h1>
-        {photo && <BlobImage blob={photo} alt="選ぶ写真" className="pp-thumb" />}
+        {photo && (
+          <button type="button" className="pp-thumb" aria-label="写真を大きく表示" onClick={() => setZoom(true)}>
+            <BlobImage blob={photo} alt="" />
+          </button>
+        )}
       </header>
+      {zoom && photo && <PhotoZoom photo={photo} onClose={() => setZoom(false)} />}
 
       {showList ? (
         <ListPicker data={data} selectedId={selectedId} onPick={choosePoint} note={mapOff ? "地図を表示できないので、一覧から選びます。" : null} />
@@ -192,7 +176,7 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
         </div>
         {lastPoint && lastPoint.id !== selectedId && (
           <button type="button" className="pp-again" onClick={() => choosePoint(lastPoint.id)}>
-            <span className="mono">さっきと同じ</span>
+            <span className="mono">前回の場所</span>
             <span className="pp-again__name">{placeLabel(data, lastPoint)}</span>
           </button>
         )}
@@ -208,6 +192,32 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
         </button>
       </div>
     </Screen>
+  );
+}
+
+/** The photo at full size over the map, to see what is in it; a tap anywhere or Escape closes it. */
+function PhotoZoom({ photo, onClose }: { photo: Blob; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const before = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus({ preventScroll: true });
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (before?.isConnected) before.focus({ preventScroll: true });
+    };
+  }, [onClose]);
+  return (
+    <div className="pp-zoom" role="dialog" aria-modal="true" aria-label="撮った写真" onClick={onClose}>
+      <BlobImage blob={photo} alt="撮った写真" className="pp-zoom__img" />
+      <button ref={closeRef} type="button" className="link pp-zoom__close" onClick={onClose}>
+        <Icon name="close" />
+        閉じる
+      </button>
+    </div>
   );
 }
 
