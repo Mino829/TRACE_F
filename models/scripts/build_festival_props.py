@@ -328,13 +328,16 @@ for (xa, ya), (xb, yb) in (((gu0, gv0), (gu1, gv0)), ((gu1, gv0), (gu1, gv1)), (
         p.box(x - 0.05, x + 0.05, y - 0.05, y + 0.05, pz, zr, "p_frame")
     p.box(min(xa, xb) - 0.05, max(xa, xb) + 0.05, min(ya, yb) - 0.05, max(ya, yb) + 0.05, pz, pz + 0.1, "p_frame")
 ev = gv1 - 2.0                                                                                    # 引っ込んだ玄関の壁
-p.box(e0, e1, ev - 0.1, ev, pz, zr, "p_frame")
+# 扉は 2 組（4 枚）とも開けた状態：壁は扉の口（各組 2.6m）を抜いて作る（2026-10-29：前は黒い壁の表面に扉の板を貼っただけだった）
+DOOR_PAIRS = [(e0 + 0.8, e0 + 0.8 + 2.6), (e0 + 0.8 + 2.8, e0 + 0.8 + 5.4)]
+xs = [e0] + [v for d in DOOR_PAIRS for v in d] + [e1]
+for xa, xb in zip(xs[0::2], xs[1::2]):                                                            # 扉の口の間の壁
+    p.box(xa, xb, ev - 0.1, ev, pz, zr, "p_frame")
+for xa, xb in DOOR_PAIRS:                                                                         # 扉の口の上の壁と、上の枠
+    p.box(xa, xb, ev - 0.1, ev, pz + 2.7, zr, "p_frame")
+    p.box(xa, xb, ev - 0.1, ev + 0.05, pz + 2.6, pz + 2.7, "p_rail")
 p.box(e0 - 0.1, e0, ev, gv1, pz, zr, "p_frame")
 p.box(e1, e1 + 0.1, ev, gv1, pz, zr, "p_frame")
-for k in range(4):                                                                                # ガラスの扉 2 組
-    x0 = e0 + 0.8 + k * 1.4
-    p.box(x0, x0 + 1.2, ev + 0.01, ev + 0.03, pz, pz + 2.6, "p_glass")
-    p.box(x0, x0 + 1.2, ev + 0.01, ev + 0.05, pz + 2.6, pz + 2.7, "p_rail")
 # 中（暗い）：奥の壁と、台の上のテラス（玄関の前）
 p.box(gu0 + 0.2, gu1 - 0.2, gv0 + 0.2, gv0 + 0.4, pz, zr, "p_inner")
 # 石の階段（6 段、台の縁から広場へ）と手すり

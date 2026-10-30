@@ -160,6 +160,10 @@ def partition_panel(mb, xa, xb, z, glass=True):
     mb.box(xa, xb, y0 - 0.01, y1 + 0.01, z, z + 0.08, "base")
 
 
+# 扉は全部開けた状態にする（展示の一人称が扉の板を通り抜けないように。2026-10-29 ユーザーの指示）
+OPEN_DOORS = True
+
+
 def door(mb, xa, xb, z, label_glass=True):
     """白い枠の扉（写真 6661：大きなガラスの入った片引き戸）。枠の中は廊下から少し奥"""
     y0, y1 = PY - WT / 2, PY + WT / 2
@@ -169,8 +173,10 @@ def door(mb, xa, xb, z, label_glass=True):
     mb.box(xa, xa + fw, y0 - 0.02, y1 + 0.02, z, z + DH + fw, "door")          # 枠
     mb.box(xb - fw, xb, y0 - 0.02, y1 + 0.02, z, z + DH + fw, "door")
     mb.box(xa, xb, y0 - 0.02, y1 + 0.02, z + DH, z + DH + fw, "door")
-    # 扉（白い框＋ガラス）
+    # 扉（白い框＋ガラス）。OPEN_DOORS なら -X 側へ引いて開けておく
     a, b = xa + fw, xb - fw
+    if OPEN_DOORS:
+        a, b = a - (b - a), a
     dy0, dy1 = PY - 0.02, PY + 0.02
     m = 0.12
     if label_glass:
@@ -283,23 +289,23 @@ for k in range(IN_FROM, NF):
     # 教室棟側の端：エレベーター・トイレ・階段（写真 6651・6653・6654）
     cr = MB()
     # 402 の +X 側の壁（教室とホールの間）は上の部屋の壁で作ってある
-    # エレベーターとトイレのかたまり：廊下側の面は黒い壁、エレベーターの扉 2 つ
+    # エレベーターとトイレのかたまり：渡り廊下側（+X）の面は黒い壁、エレベーターの扉 2 つ（本部棟側の端）
     bx0, bx1, by0, by1 = CORE_X + 5.0, CORE_X + 10.5, -7.5, 6.0
-    cr.boxh(bx0, bx1, by0, by1, z, z + CEIL, "wall", [SHAFT], keys6=["wall", "wall", "wall", "wall", "wall", "evwall"])
+    cr.boxh(bx0, bx1, by0, by1, z, z + CEIL, "wall", [SHAFT], keys6=["wall", "wall", "wall", "evwall", "wall", "wall"])
     ya = -4.6                                                                   # 2 台目：閉じた扉（飾り）
-    cr.box(bx0 - 0.03, bx0, ya, ya + 1.1, z, z + 2.3, "evdoor")
-    cr.box(bx0 - 0.05, bx0, ya - 0.08, ya + 1.18, z + 2.3, z + 2.38, "trim")
-    cr.box(bx0 - 0.031, bx0, ya + 0.545, ya + 0.555, z, z + 2.3, "trim")         # 扉の合わせ目
+    cr.box(bx1, bx1 + 0.03, ya, ya + 1.1, z, z + 2.3, "evdoor")
+    cr.box(bx1, bx1 + 0.05, ya - 0.08, ya + 1.18, z + 2.3, z + 2.38, "trim")
+    cr.box(bx1, bx1 + 0.031, ya + 0.545, ya + 0.555, z, z + 2.3, "trim")         # 扉の合わせ目
     # 1 台目（かご）：扉は開いたまま。枠と、壁の中へ引き込んだ扉の 2 枚（開いている所だけ見える）
     da, db = SHAFT_DOOR
-    cr.box(bx0 - 0.05, bx0, da - 0.08, db + 0.08, z + 2.3, z + 2.38, "trim")
-    cr.box(bx0 - 0.05, bx0, da - 0.08, da, z, z + 2.3, "trim")
-    cr.box(bx0 - 0.05, bx0, db, db + 0.08, z, z + 2.3, "trim")
-    cr.box(bx0 - 0.03, bx0, da - 0.3, da - 0.08, z, z + 2.3, "evdoor")            # 開いた扉（左右の袖）
-    cr.box(bx0 - 0.03, bx0, db + 0.08, db + 0.3, z, z + 2.3, "evdoor")
-    cr.box(bx0 - 0.04, bx0, -3.0, -2.6, z + 1.0, z + 1.4, "trim")              # 呼びボタン
-    add_text(cr, fl[0], (bx0 - 0.002, -2.0, z + 2.0), (-1, 0), 0.9)          # 階数の大きな数字（写真 6653）
-    add_text(cr, fl, (bx0 - 0.002, (da + db) / 2, z + 2.62), (-1, 0), 0.22)  # 開いた扉の上の階数の札（かごの階が分かる）
+    cr.box(bx1, bx1 + 0.05, da - 0.08, db + 0.08, z + 2.3, z + 2.38, "trim")
+    cr.box(bx1, bx1 + 0.05, da - 0.08, da, z, z + 2.3, "trim")
+    cr.box(bx1, bx1 + 0.05, db, db + 0.08, z, z + 2.3, "trim")
+    cr.box(bx1, bx1 + 0.03, da - 0.3, da - 0.08, z, z + 2.3, "evdoor")            # 開いた扉（左右の袖）
+    cr.box(bx1, bx1 + 0.03, db + 0.08, db + 0.3, z, z + 2.3, "evdoor")
+    cr.box(bx1, bx1 + 0.04, -3.0, -2.6, z + 1.0, z + 1.4, "trim")              # 呼びボタン
+    add_text(cr, fl[0], (bx1 + 0.002, -2.0, z + 2.0), (1, 0), 0.9)           # 階数の大きな数字（写真 6653）
+    add_text(cr, fl, (bx1 + 0.002, (da + db) / 2, z + 2.62), (1, 0), 0.22)   # 開いた扉の上の階数の札（かごの階が分かる）
     for ya, yb in ((-0.5, 1.4), (3.2, 5.1)):                                # トイレの入口（男・女）
         cr.box(bx0 - 0.02, bx0, ya, yb, z, z + 2.4, "wc")
     # 階段室（本部棟側の角）
@@ -340,26 +346,29 @@ T = 0.1
 ztop = FLOORS[-1] + CEIL + 0.05
 sf = MB()
 da, db = SHAFT_DOOR
-sf.box(ex1 - T, ex1, ey0, ey1, 0.0, ztop, "evcab")                              # 奥の壁
+sf.box(ex0, ex0 + T, ey0, ey1, 0.0, ztop, "evcab")                              # 奥の壁（教室側）
 sf.box(ex0, ex1, ey0, ey0 + T, 0.0, ztop, "evcab")                              # 側の壁
 sf.box(ex0, ex1, ey1 - T, ey1, 0.0, ztop, "evcab")
-sf.box(ex0, ex0 + T, ey0, da, 0.0, ztop, "evcab")                               # 手前の壁（ホール側）：扉の両わき
-sf.box(ex0, ex0 + T, db, ey1, 0.0, ztop, "evcab")
+sf.box(ex1 - T, ex1, ey0, da, 0.0, ztop, "evcab")                               # 手前の壁（渡り廊下側のホール）：扉の両わき
+sf.box(ex1 - T, ex1, db, ey1, 0.0, ztop, "evcab")
 stops = [0.0] + list(FLOORS)
 for za, zb in zip(stops, stops[1:] + [ztop]):                                   # 扉の上の壁（各階の扉の上端 2.3m から次の階の床まで）
-    sf.box(ex0, ex0 + T, da, db, za + 2.3, zb, "evcab")
+    sf.box(ex1 - T, ex1, da, db, za + 2.3, zb, "evcab")
 sf.box(ex0, ex1, ey0, ey1, 0.0, 0.03, "evfloor")                                 # 1F のかごの床
 sf.box(ex0 + T, ex1 - T, ey0 + T, ey1 - T, ztop - 0.09, ztop - 0.06, "evlight")  # てっぺんの明かり（6F の天井スラブ 29.0〜29.05 の下）
-sf.box(ex1 - T - 0.02, ex1 - T, (ey0 + ey1) / 2 - 0.25, (ey0 + ey1) / 2 + 0.25, 0.3, ztop - 0.3, "evlight")   # 奥の壁の縦の明かり
+sf.box(ex0 + T, ex0 + T + 0.02, (ey0 + ey1) / 2 - 0.25, (ey0 + ey1) / 2 + 0.25, 0.3, ztop - 0.3, "evlight")   # 奥の壁の縦の明かり
 for z in FLOORS:                                                                # 各階の扉の位置：床の高さの目印（床の縁の板）
-    sf.box(ex0 + T, ex0 + T + 0.03, da, db, z, z + 0.02, "trim")
+    sf.box(ex1 - T - 0.03, ex1 - T, da, db, z, z + 0.02, "trim")
 build_in(sf, "交流棟_エレベーターのかご")
 
-vs = MB()                                                                       # 1F の前室（床・扉の前の空間だけ。体育館の中は作らない）
+vs = MB()                                                                       # 1F の前室と入口からの通路（床・天井の明かりだけ。体育館の中は作らない）
 vx0, vx1, vy0, vy1 = VEST
-vs.box(vx0, vx1, vy0, vy1, 0.0, 0.03, "carpet")
+for rx0, rx1, ry0, ry1 in (VEST, VEST_LINK):
+    vs.box(rx0, rx1, ry0, ry1, 0.0, 0.03, "carpet")
 vs.box(vx0 + 0.3, vx1 - 0.3, (vy0 + vy1) / 2 - 0.4, (vy0 + vy1) / 2 + 0.4, VEST_H - 0.02, VEST_H, "evlight")
-add_text(vs, "1F", (vx1 - 0.002, (SHAFT_DOOR[0] + SHAFT_DOOR[1]) / 2, 2.62), (-1, 0), 0.22)   # 扉の上（前室の奥の壁。前室の面を向く）
+lx = (VEST_LINK[0] + VEST_LINK[1]) / 2
+vs.box(lx - 0.4, lx + 0.4, VEST_LINK[2] + 0.5, VEST_LINK[3] - 0.5, VEST_H - 0.02, VEST_H, "evlight")
+add_text(vs, "1F", (vx0 + 0.002, (SHAFT_DOOR[0] + SHAFT_DOOR[1]) / 2, 2.62), (1, 0), 0.22)   # 扉の上（かごの面。前室を向く）
 build_in(vs, "交流棟_1F_エレベーター前室")
 
 for nm, loc, power in (("交流棟_EV下", ((ex0 + ex1) / 2, (ey0 + ey1) / 2, 4.0), 200), ("交流棟_EV中", ((ex0 + ex1) / 2, (ey0 + ey1) / 2, 15.0), 200),

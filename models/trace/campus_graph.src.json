@@ -179,7 +179,7 @@
    "blender": [
     -116.0,
     -35.0,
-    0.0
+    0.8
    ],
    "radius": 15,
    "note": "",
@@ -351,8 +351,8 @@
    "building": "本部棟",
    "floor": "6F",
    "blender": [
-    -172.5,
-    -51.5,
+    -172.75,
+    -51.78,
     26.0
    ],
    "radius": 15,
@@ -1567,8 +1567,8 @@
    "building": null,
    "floor": "屋外",
    "blender": [
-    -126.62,
-    -27.58,
+    -127.58,
+    -28.6,
     0.0
    ],
    "radius": 5,
@@ -1582,9 +1582,9 @@
    "building": null,
    "floor": "屋外",
    "blender": [
-    -121.15,
-    -32.71,
-    0.0
+    -121.6,
+    -34.21,
+    0.8
    ],
    "radius": 5,
    "gpsSnap": true,
@@ -2152,8 +2152,8 @@
    "building": null,
    "floor": "屋外",
    "blender": [
-    -86.93,
-    46.82,
+    -87.31,
+    46.67,
     6.0
    ],
    "radius": 5,
@@ -2479,21 +2479,6 @@
    "selectable": true
   },
   {
-   "id": "k1-006",
-   "name": "教室棟1F 階段 1",
-   "building": "教室棟",
-   "floor": "1F",
-   "blender": [
-    -190.32,
-    11.8,
-    0.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
    "id": "k1-007",
    "name": "エスカレーター 1F→3F 1",
    "building": "教室棟",
@@ -2673,96 +2658,6 @@
    "gpsSnap": false,
    "role": "waypoint",
    "note": "2F は事務室の階。1F→2F のエスカレーターの先"
-  },
-  {
-   "id": "k2-009",
-   "name": "教室棟2F 階段 1",
-   "building": "教室棟",
-   "floor": "2F",
-   "blender": [
-    -187.44,
-    9.1,
-    6.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k2-010",
-   "name": "教室棟2F 階段 2",
-   "building": "教室棟",
-   "floor": "2F",
-   "blender": [
-    -190.32,
-    11.8,
-    6.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k3-001",
-   "name": "教室棟3F 廊下 1",
-   "building": "教室棟",
-   "floor": "3F",
-   "blender": [
-    -185.66,
-    5.23,
-    11.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k3-002",
-   "name": "教室棟3F 廊下 2",
-   "building": "教室棟",
-   "floor": "3F",
-   "blender": [
-    -184.56,
-    6.4,
-    11.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k3-003",
-   "name": "教室棟3F 廊下 3",
-   "building": "教室棟",
-   "floor": "3F",
-   "blender": [
-    -181.58,
-    9.57,
-    11.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k3-004",
-   "name": "教室棟3F 廊下 4",
-   "building": "教室棟",
-   "floor": "3F",
-   "blender": [
-    -178.6,
-    12.74,
-    11.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
   },
   {
    "id": "k3-005",
@@ -3182,36 +3077,6 @@
    "radius": 3,
    "gpsSnap": false,
    "role": "room",
-   "note": ""
-  },
-  {
-   "id": "k3-033",
-   "name": "教室棟3F 階段 1",
-   "building": "教室棟",
-   "floor": "3F",
-   "blender": [
-    -187.44,
-    9.1,
-    11.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k3-034",
-   "name": "教室棟3F 階段 2",
-   "building": "教室棟",
-   "floor": "3F",
-   "blender": [
-    -190.32,
-    11.8,
-    11.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
    "note": ""
   },
   {
@@ -3722,81 +3587,6 @@
    "radius": 3,
    "gpsSnap": false,
    "role": "room",
-   "note": ""
-  },
-  {
-   "id": "k4-035",
-   "name": "教室棟4F 階段 1",
-   "building": "教室棟",
-   "floor": "4F",
-   "blender": [
-    -187.44,
-    9.1,
-    16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k4-036",
-   "name": "教室棟4F 階段 2",
-   "building": "教室棟",
-   "floor": "4F",
-   "blender": [
-    -190.32,
-    11.8,
-    16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k5-001",
-   "name": "教室棟5F 廊下 1",
-   "building": "教室棟",
-   "floor": "5F",
-   "blender": [
-    -185.66,
-    5.23,
-    21.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k5-002",
-   "name": "教室棟5F 廊下 2",
-   "building": "教室棟",
-   "floor": "5F",
-   "blender": [
-    -184.56,
-    6.4,
-    21.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k5-003",
-   "name": "教室棟5F 廊下 3",
-   "building": "教室棟",
-   "floor": "5F",
-   "blender": [
-    -181.6,
-    9.56,
-    21.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
    "note": ""
   },
   {
@@ -4370,36 +4160,6 @@
    "note": ""
   },
   {
-   "id": "k5-042",
-   "name": "教室棟5F 階段 1",
-   "building": "教室棟",
-   "floor": "5F",
-   "blender": [
-    -187.44,
-    9.1,
-    21.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k5-043",
-   "name": "教室棟5F 階段 2",
-   "building": "教室棟",
-   "floor": "5F",
-   "blender": [
-    -190.32,
-    11.8,
-    21.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
    "id": "k6-001",
    "name": "教室棟6F 廊下 1",
    "building": "教室棟",
@@ -4640,36 +4400,6 @@
    "note": ""
   },
   {
-   "id": "k6-017",
-   "name": "教室棟6F 階段 1",
-   "building": "教室棟",
-   "floor": "6F",
-   "blender": [
-    -187.44,
-    9.1,
-    26.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "k6-018",
-   "name": "教室棟6F 階段 2",
-   "building": "教室棟",
-   "floor": "6F",
-   "blender": [
-    -190.32,
-    11.8,
-    26.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
    "id": "k3-035",
    "name": "教室棟3F Global Learning Commons 1",
    "building": "教室棟",
@@ -4819,96 +4549,6 @@
    "role": "waypoint",
    "note": "",
    "selectable": true
-  },
-  {
-   "id": "x4-001",
-   "name": "交流棟4F 廊下 1",
-   "building": "交流棟",
-   "floor": "4F",
-   "blender": [
-    -225.62,
-    -62.74,
-    16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x4-002",
-   "name": "交流棟4F 廊下 2",
-   "building": "交流棟",
-   "floor": "4F",
-   "blender": [
-    -221.88,
-    -58.76,
-    16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x4-003",
-   "name": "交流棟4F 廊下 3",
-   "building": "交流棟",
-   "floor": "4F",
-   "blender": [
-    -218.14,
-    -54.77,
-    16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x4-004",
-   "name": "交流棟4F 廊下 4",
-   "building": "交流棟",
-   "floor": "4F",
-   "blender": [
-    -214.4,
-    -50.79,
-    16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x4-005",
-   "name": "交流棟4F 廊下 5",
-   "building": "交流棟",
-   "floor": "4F",
-   "blender": [
-    -210.66,
-    -46.81,
-    16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x4-006",
-   "name": "交流棟4F 廊下 6",
-   "building": "交流棟",
-   "floor": "4F",
-   "blender": [
-    -206.92,
-    -42.82,
-    16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
   },
   {
    "id": "x4-007",
@@ -5111,8 +4751,8 @@
    "building": "交流棟",
    "floor": "4F",
    "blender": [
-    -187.28,
-    -21.92,
+    -187.79,
+    -22.47,
     16.0
    ],
    "radius": 3,
@@ -5156,8 +4796,8 @@
    "building": "交流棟",
    "floor": "4F",
    "blender": [
-    -199.97,
-    -10.01,
+    -199.96,
+    -10.36,
     16.0
    ],
    "radius": 3,
@@ -5190,81 +4830,6 @@
     -192.53,
     -32.76,
     16.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x6-001",
-   "name": "交流棟6F 廊下 1",
-   "building": "交流棟",
-   "floor": "6F",
-   "blender": [
-    -225.62,
-    -62.74,
-    26.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x6-002",
-   "name": "交流棟6F 廊下 2",
-   "building": "交流棟",
-   "floor": "6F",
-   "blender": [
-    -221.88,
-    -58.76,
-    26.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x6-003",
-   "name": "交流棟6F 廊下 3",
-   "building": "交流棟",
-   "floor": "6F",
-   "blender": [
-    -218.14,
-    -54.77,
-    26.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x6-004",
-   "name": "交流棟6F 廊下 4",
-   "building": "交流棟",
-   "floor": "6F",
-   "blender": [
-    -214.4,
-    -50.79,
-    26.0
-   ],
-   "radius": 3,
-   "gpsSnap": false,
-   "role": "waypoint",
-   "note": ""
-  },
-  {
-   "id": "x6-005",
-   "name": "交流棟6F 廊下 5",
-   "building": "交流棟",
-   "floor": "6F",
-   "blender": [
-    -210.66,
-    -46.81,
-    26.0
    ],
    "radius": 3,
    "gpsSnap": false,
@@ -5442,8 +5007,8 @@
    "building": "交流棟",
    "floor": "6F",
    "blender": [
-    -187.28,
-    -21.92,
+    -187.79,
+    -22.47,
     26.0
    ],
    "radius": 3,
@@ -5487,8 +5052,8 @@
    "building": "交流棟",
    "floor": "6F",
    "blender": [
-    -199.97,
-    -10.01,
+    -199.96,
+    -10.36,
     26.0
    ],
    "radius": 3,
@@ -5549,8 +5114,8 @@
    "building": "交流棟",
    "floor": "2F",
    "blender": [
-    -187.28,
-    -21.92,
+    -187.79,
+    -22.47,
     6.0
    ],
    "radius": 3,
@@ -5594,8 +5159,8 @@
    "building": "交流棟",
    "floor": "2F",
    "blender": [
-    -199.97,
-    -10.01,
+    -199.96,
+    -10.36,
     6.0
    ],
    "radius": 3,
@@ -5641,13 +5206,13 @@
    "building": "交流棟",
    "floor": "1F",
    "blender": [
-    -190.02,
-    -24.83,
+    -197.09,
+    -9.19,
     0.0
    ],
    "radius": 15,
    "gpsSnap": false,
-   "note": "1F は体育館（写真なし。点だけ）。階段室の真下",
+   "note": "+X の妻の入口（ガラスの自動ドア）を入った所。ここからエレベーターの前室へ",
    "role": "waypoint",
    "selectable": true
   },
@@ -5689,15 +5254,16 @@
    "building": "本部棟",
    "floor": "2F",
    "blender": [
-    -128.01,
-    -61.58,
+    -152.03,
+    -75.48,
     6.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "1F ロビーの中。2F は 5・6F と同じ作り（ユーザーの説明）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-5f",
@@ -5705,15 +5271,16 @@
    "building": "本部棟",
    "floor": "5F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     21.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターホール",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-6f-hall",
@@ -5721,14 +5288,15 @@
    "building": "本部棟",
    "floor": "6F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     26.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "渡り廊下の口とつなぐための内部の点",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-7f",
@@ -5736,15 +5304,16 @@
    "building": "本部棟",
    "floor": "7F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     30.4
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターホール",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-8f",
@@ -5752,15 +5321,16 @@
    "building": "本部棟",
    "floor": "8F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     34.8
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターホール",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-9f",
@@ -5768,15 +5338,16 @@
    "building": "本部棟",
    "floor": "9F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     39.2
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターホール",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "research-1f",
@@ -6008,15 +5579,16 @@
    "building": "本部棟",
    "floor": "10F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     43.6
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "高層棟の中",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-11f",
@@ -6024,15 +5596,16 @@
    "building": "本部棟",
    "floor": "11F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     48.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "高層棟の中",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-12f",
@@ -6040,15 +5613,16 @@
    "building": "本部棟",
    "floor": "12F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     52.4
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "高層棟の中",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-13f",
@@ -6056,15 +5630,16 @@
    "building": "本部棟",
    "floor": "13F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     56.8
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "高層棟の中",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-14f",
@@ -6072,15 +5647,16 @@
    "building": "本部棟",
    "floor": "14F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     61.2
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "高層棟の中",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-3f",
@@ -6088,15 +5664,16 @@
    "building": "本部棟",
    "floor": "3F",
    "blender": [
-    -124.56,
-    -66.34,
+    -149.73,
+    -79.2,
     11.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "中央の大階段の下端（3F 側）。3F は教室（2301〜）",
    "role": "waypoint",
-   "selectable": true
+   "selectable": true,
+   "fix8": true
   },
   {
    "id": "hq-4f-hall",
@@ -6104,14 +5681,15 @@
    "building": "本部棟",
    "floor": "4F",
    "blender": [
-    -136.17,
-    -55.77,
+    -158.79,
+    -70.95,
     16.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "中央の大階段の上端（4F 側）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-1f-ev",
@@ -6119,14 +5697,15 @@
    "building": "本部棟",
    "floor": "1F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     0.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかご（同じ XY に積む）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-2f-ev",
@@ -6134,14 +5713,15 @@
    "building": "本部棟",
    "floor": "2F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     6.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかご（同じ XY に積む）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-3f-ev",
@@ -6149,14 +5729,15 @@
    "building": "本部棟",
    "floor": "3F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     11.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかご（同じ XY に積む）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-4f-ev",
@@ -6164,14 +5745,15 @@
    "building": "本部棟",
    "floor": "4F",
    "blender": [
-    -140.36,
-    -57.1,
+    -164.38,
+    -71.0,
     16.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかご（同じ XY に積む）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "k6-020",
@@ -6286,14 +5868,15 @@
    "building": "本部棟",
    "floor": "1F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     0.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-2f-car",
@@ -6301,14 +5884,15 @@
    "building": "本部棟",
    "floor": "2F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     6.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-3f-car",
@@ -6316,14 +5900,15 @@
    "building": "本部棟",
    "floor": "3F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     11.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-4f-car",
@@ -6331,14 +5916,15 @@
    "building": "本部棟",
    "floor": "4F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     16.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-5f-car",
@@ -6346,14 +5932,15 @@
    "building": "本部棟",
    "floor": "5F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     21.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-6f-car",
@@ -6361,14 +5948,15 @@
    "building": "本部棟",
    "floor": "6F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     26.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-7f-car",
@@ -6376,14 +5964,15 @@
    "building": "本部棟",
    "floor": "7F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     30.4
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-8f-car",
@@ -6391,14 +5980,15 @@
    "building": "本部棟",
    "floor": "8F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     34.8
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-9f-car",
@@ -6406,14 +5996,15 @@
    "building": "本部棟",
    "floor": "9F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     39.2
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-10f-car",
@@ -6421,14 +6012,15 @@
    "building": "本部棟",
    "floor": "10F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     43.6
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-11f-car",
@@ -6436,14 +6028,15 @@
    "building": "本部棟",
    "floor": "11F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     48.0
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-12f-car",
@@ -6451,14 +6044,15 @@
    "building": "本部棟",
    "floor": "12F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     52.4
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-13f-car",
@@ -6466,14 +6060,15 @@
    "building": "本部棟",
    "floor": "13F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     56.8
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "hq-14f-car",
@@ -6481,14 +6076,15 @@
    "building": "本部棟",
    "floor": "14F",
    "blender": [
-    -138.84,
-    -58.48,
+    -162.86,
+    -72.38,
     61.2
    ],
    "radius": 15,
    "gpsSnap": false,
    "note": "エレベーターのかごの中（EV B の中央の区画）",
-   "role": "waypoint"
+   "role": "waypoint",
+   "fix8": true
   },
   {
    "id": "exchange-1f-car",
@@ -6496,8 +6092,8 @@
    "building": "交流棟",
    "floor": "1F",
    "blender": [
-    -193.0,
-    -24.78,
+    -190.83,
+    -22.46,
     0.0
    ],
    "radius": 15,
@@ -6511,8 +6107,8 @@
    "building": "交流棟",
    "floor": "2F",
    "blender": [
-    -193.0,
-    -24.78,
+    -190.83,
+    -22.46,
     6.0
    ],
    "radius": 15,
@@ -6526,8 +6122,8 @@
    "building": "交流棟",
    "floor": "3F",
    "blender": [
-    -193.0,
-    -24.78,
+    -190.83,
+    -22.46,
     11.0
    ],
    "radius": 15,
@@ -6541,8 +6137,8 @@
    "building": "交流棟",
    "floor": "4F",
    "blender": [
-    -193.0,
-    -24.78,
+    -190.83,
+    -22.46,
     16.0
    ],
    "radius": 15,
@@ -6556,8 +6152,8 @@
    "building": "交流棟",
    "floor": "5F",
    "blender": [
-    -193.0,
-    -24.78,
+    -190.83,
+    -22.46,
     21.0
    ],
    "radius": 15,
@@ -6571,8 +6167,8 @@
    "building": "交流棟",
    "floor": "6F",
    "blender": [
-    -193.0,
-    -24.78,
+    -190.83,
+    -22.46,
     26.0
    ],
    "radius": 15,
@@ -6633,8 +6229,8 @@
    "building": "教室棟",
    "floor": "2F",
    "blender": [
-    -182.48,
-    20.16,
+    -176.72,
+    14.75,
     6.0
    ],
    "radius": 15,
@@ -6697,8 +6293,8 @@
    "building": "教室棟",
    "floor": "4F",
    "blender": [
-    -125.61,
-    64.07,
+    -126.21,
+    63.43,
     16.0
    ],
    "radius": 15,
@@ -6713,8 +6309,8 @@
    "building": "教室棟",
    "floor": "5F",
    "blender": [
-    -182.48,
-    20.16,
+    -181.97,
+    20.71,
     21.0
    ],
    "radius": 15,
@@ -6825,8 +6421,8 @@
    "building": "研究棟",
    "floor": "1F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     0.0
    ],
    "radius": 15,
@@ -6841,8 +6437,8 @@
    "building": "研究棟",
    "floor": "2F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     6.0
    ],
    "radius": 15,
@@ -6857,8 +6453,8 @@
    "building": "研究棟",
    "floor": "3F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     11.0
    ],
    "radius": 15,
@@ -6873,8 +6469,8 @@
    "building": "研究棟",
    "floor": "4F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     16.0
    ],
    "radius": 15,
@@ -6889,8 +6485,8 @@
    "building": "研究棟",
    "floor": "5F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     21.0
    ],
    "radius": 15,
@@ -6905,8 +6501,8 @@
    "building": "研究棟",
    "floor": "6F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     26.0
    ],
    "radius": 15,
@@ -6921,8 +6517,8 @@
    "building": "研究棟",
    "floor": "7F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     31.0
    ],
    "radius": 15,
@@ -6937,8 +6533,8 @@
    "building": "研究棟",
    "floor": "8F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     36.0
    ],
    "radius": 15,
@@ -6953,8 +6549,8 @@
    "building": "研究棟",
    "floor": "9F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     40.5
    ],
    "radius": 15,
@@ -6969,8 +6565,8 @@
    "building": "研究棟",
    "floor": "10F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     44.4
    ],
    "radius": 15,
@@ -6985,8 +6581,8 @@
    "building": "研究棟",
    "floor": "11F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     48.3
    ],
    "radius": 15,
@@ -7001,8 +6597,8 @@
    "building": "研究棟",
    "floor": "12F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     52.2
    ],
    "radius": 15,
@@ -7017,8 +6613,8 @@
    "building": "研究棟",
    "floor": "13F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     56.1
    ],
    "radius": 15,
@@ -7033,8 +6629,8 @@
    "building": "研究棟",
    "floor": "14F",
    "blender": [
-    -85.48,
-    13.91,
+    -84.33,
+    15.02,
     60.0
    ],
    "radius": 15,
@@ -7042,6 +6638,2661 @@
    "note": "EV B の位置（研究棟座標 (16, 0)）。ゲートの運河側",
    "role": "waypoint",
    "selectable": true
+  },
+  {
+   "id": "exchange-1f-car-door",
+   "name": "交流棟1F エレベーターの前",
+   "building": "交流棟",
+   "floor": "1F",
+   "blender": [
+    -189.46,
+    -21.0,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "exchange-2f-car-door",
+   "name": "交流棟2F エレベーターの前",
+   "building": "交流棟",
+   "floor": "2F",
+   "blender": [
+    -189.19,
+    -20.71,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "exchange-3f-car-door",
+   "name": "交流棟3F エレベーターの前",
+   "building": "交流棟",
+   "floor": "3F",
+   "blender": [
+    -189.19,
+    -20.71,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "exchange-4f-car-door",
+   "name": "交流棟4F エレベーターの前",
+   "building": "交流棟",
+   "floor": "4F",
+   "blender": [
+    -189.19,
+    -20.71,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "exchange-5f-car-door",
+   "name": "交流棟5F エレベーターの前",
+   "building": "交流棟",
+   "floor": "5F",
+   "blender": [
+    -189.19,
+    -20.71,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "exchange-6f-car-door",
+   "name": "交流棟6F エレベーターの前",
+   "building": "交流棟",
+   "floor": "6F",
+   "blender": [
+    -189.19,
+    -20.71,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-10f-car-door",
+   "name": "本部棟10F エレベーターの前",
+   "building": "本部棟",
+   "floor": "10F",
+   "blender": [
+    -164.34,
+    -71.03,
+    43.6
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-11f-car-door",
+   "name": "本部棟11F エレベーターの前",
+   "building": "本部棟",
+   "floor": "11F",
+   "blender": [
+    -164.34,
+    -71.03,
+    48.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-12f-car-door",
+   "name": "本部棟12F エレベーターの前",
+   "building": "本部棟",
+   "floor": "12F",
+   "blender": [
+    -164.34,
+    -71.03,
+    52.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-13f-car-door",
+   "name": "本部棟13F エレベーターの前",
+   "building": "本部棟",
+   "floor": "13F",
+   "blender": [
+    -164.34,
+    -71.03,
+    56.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-14f-car-door",
+   "name": "本部棟14F エレベーターの前",
+   "building": "本部棟",
+   "floor": "14F",
+   "blender": [
+    -164.34,
+    -71.03,
+    61.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-1f-car-door",
+   "name": "本部棟1F エレベーターの前",
+   "building": "本部棟",
+   "floor": "1F",
+   "blender": [
+    -164.34,
+    -71.03,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-2f-car-door",
+   "name": "本部棟2F エレベーターの前",
+   "building": "本部棟",
+   "floor": "2F",
+   "blender": [
+    -164.71,
+    -70.7,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-3f-car-door",
+   "name": "本部棟3F エレベーターの前",
+   "building": "本部棟",
+   "floor": "3F",
+   "blender": [
+    -164.34,
+    -71.03,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-4f-car-door",
+   "name": "本部棟4F エレベーターの前",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -164.34,
+    -71.03,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-5f-car-door",
+   "name": "本部棟5F エレベーターの前",
+   "building": "本部棟",
+   "floor": "5F",
+   "blender": [
+    -164.34,
+    -71.03,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-6f-car-door",
+   "name": "本部棟6F エレベーターの前",
+   "building": "本部棟",
+   "floor": "6F",
+   "blender": [
+    -164.34,
+    -71.03,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-7f-car-door",
+   "name": "本部棟7F エレベーターの前",
+   "building": "本部棟",
+   "floor": "7F",
+   "blender": [
+    -164.34,
+    -71.03,
+    30.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-8f-car-door",
+   "name": "本部棟8F エレベーターの前",
+   "building": "本部棟",
+   "floor": "8F",
+   "blender": [
+    -164.34,
+    -71.03,
+    34.8
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "hq-9f-car-door",
+   "name": "本部棟9F エレベーターの前",
+   "building": "本部棟",
+   "floor": "9F",
+   "blender": [
+    -164.34,
+    -71.03,
+    39.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-10f-door",
+   "name": "研究棟10F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -116.96,
+    43.06,
+    44.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-10f-east-door",
+   "name": "研究棟10F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -82.86,
+    13.66,
+    44.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-11f-door",
+   "name": "研究棟11F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -116.96,
+    43.06,
+    48.3
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-11f-east-door",
+   "name": "研究棟11F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -82.86,
+    13.66,
+    48.3
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-12f-door",
+   "name": "研究棟12F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -116.96,
+    43.06,
+    52.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-12f-east-door",
+   "name": "研究棟12F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -82.86,
+    13.66,
+    52.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-13f-door",
+   "name": "研究棟13F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -116.96,
+    43.06,
+    56.1
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-13f-east-door",
+   "name": "研究棟13F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -82.86,
+    13.66,
+    56.1
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-14f-door",
+   "name": "研究棟14F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -116.96,
+    43.06,
+    60.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-14f-east-door",
+   "name": "研究棟14F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -82.86,
+    13.66,
+    60.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-2f-door",
+   "name": "研究棟2F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -116.96,
+    43.06,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-2f-east-door",
+   "name": "研究棟2F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -82.86,
+    13.66,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-3f-door",
+   "name": "研究棟3F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -116.96,
+    43.06,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-4f-door",
+   "name": "研究棟4F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -116.96,
+    43.06,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-5f-door",
+   "name": "研究棟5F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -116.96,
+    43.06,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-6f-door",
+   "name": "研究棟6F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -116.96,
+    43.06,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-6f-east-door",
+   "name": "研究棟6F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -82.86,
+    13.66,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-7f-door",
+   "name": "研究棟7F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "7F",
+   "blender": [
+    -116.96,
+    43.06,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-8f-door",
+   "name": "研究棟8F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -116.96,
+    43.06,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-8f-east-door",
+   "name": "研究棟8F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -82.86,
+    13.66,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-9f-door",
+   "name": "研究棟9F 教室棟側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -116.96,
+    43.06,
+    40.5
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "research-9f-east-door",
+   "name": "研究棟9F 運河側 エレベーターの前",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -82.86,
+    13.66,
+    40.5
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：扉からまっすぐ出たホールの中"
+  },
+  {
+   "id": "o-099--research-road~1",
+   "name": "研究棟の道路側（東） 6 → 研究棟 道路側の口 1",
+   "building": null,
+   "floor": "屋外",
+   "blender": [
+    -87.98,
+    59.76,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "o-099--research-road~2",
+   "name": "研究棟の道路側（東） 6 → 研究棟 道路側の口 2",
+   "building": null,
+   "floor": "屋外",
+   "blender": [
+    -81.15,
+    53.34,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-road--o-100~1",
+   "name": "研究棟 道路側の口 → 研究棟の道路側（東） 7 1",
+   "building": "研究棟",
+   "floor": "屋外",
+   "blender": [
+    -81.22,
+    53.24,
+    0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-road--o-100~2",
+   "name": "研究棟 道路側の口 → 研究棟の道路側（東） 7 2",
+   "building": "研究棟",
+   "floor": "屋外",
+   "blender": [
+    -74.34,
+    46.87,
+    0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "o-121--o-122~1",
+   "name": "ピロティから正面の道へ 1 → ピロティから正面の道へ 2 1",
+   "building": null,
+   "floor": "屋外",
+   "blender": [
+    -162.73,
+    -93.8,
+    0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "k4-011--k4-026~1",
+   "name": "教室棟4F 廊下 11 → 教室棟4F 405 1 1",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -162.94,
+    29.42,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "k4-011--k4-026~2",
+   "name": "教室棟4F 廊下 11 → 教室棟4F 405 1 2",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -165.22,
+    31.56,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "x4-020--x4-021~1",
+   "name": "交流棟4F から教室棟へ 1 → 交流棟4F から教室棟へ 2 1",
+   "building": "交流棟",
+   "floor": "4F",
+   "blender": [
+    -191.98,
+    -18.53,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "x4-011--x4-025~1",
+   "name": "交流棟4F 廊下 11 → 交流棟4F から本部棟へ 1 1",
+   "building": "交流棟",
+   "floor": "4F",
+   "blender": [
+    -194.64,
+    -29.75,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "x4-011--x4-025~2",
+   "name": "交流棟4F 廊下 11 → 交流棟4F から本部棟へ 1 2",
+   "building": "交流棟",
+   "floor": "4F",
+   "blender": [
+    -191.99,
+    -32.23,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "x6-017--x6-018~1",
+   "name": "交流棟6F から教室棟へ 1 → 交流棟6F から教室棟へ 2 1",
+   "building": "交流棟",
+   "floor": "6F",
+   "blender": [
+    -191.98,
+    -18.53,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "x6-012--x6-022~1",
+   "name": "交流棟6F 廊下 12 → 交流棟6F から本部棟へ 1 1",
+   "building": "交流棟",
+   "floor": "6F",
+   "blender": [
+    -194.64,
+    -29.75,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "x6-012--x6-022~2",
+   "name": "交流棟6F 廊下 12 → 交流棟6F から本部棟へ 1 2",
+   "building": "交流棟",
+   "floor": "6F",
+   "blender": [
+    -191.99,
+    -32.23,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "x2-002--x2-003~1",
+   "name": "交流棟2F から教室棟へ 2 → 交流棟2F から教室棟へ 3 1",
+   "building": "交流棟",
+   "floor": "2F",
+   "blender": [
+    -191.98,
+    -18.53,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~1",
+   "name": "本部棟4F エレベーターホール → 本部棟4F 渡り廊下の口 1",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -158.51,
+    -71.2,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~2",
+   "name": "本部棟4F エレベーターホール → 本部棟4F 渡り廊下の口 2",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -164.57,
+    -77.86,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~3",
+   "name": "本部棟4F エレベーターホール → 本部棟4F 渡り廊下の口 3",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -174.09,
+    -69.19,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~4",
+   "name": "本部棟4F エレベーターホール → 本部棟4F 渡り廊下の口 4",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -166.35,
+    -60.69,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~5",
+   "name": "本部棟4F エレベーターホール → 本部棟4F 渡り廊下の口 5",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -168.01,
+    -59.17,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~6",
+   "name": "本部棟4F エレベーターホール → 本部棟4F 渡り廊下の口 6",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -164.06,
+    -54.83,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~7",
+   "name": "本部棟4F エレベーターホール → 本部棟4F 渡り廊下の口 7",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -170.34,
+    -49.1,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~1",
+   "name": "本部棟6F エレベーター → 本部棟6F 渡り廊下の口 1",
+   "building": "本部棟",
+   "floor": "6F",
+   "blender": [
+    -166.69,
+    -68.9,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~2",
+   "name": "本部棟6F エレベーター → 本部棟6F 渡り廊下の口 2",
+   "building": "本部棟",
+   "floor": "6F",
+   "blender": [
+    -170.14,
+    -72.69,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~3",
+   "name": "本部棟6F エレベーター → 本部棟6F 渡り廊下の口 3",
+   "building": "本部棟",
+   "floor": "6F",
+   "blender": [
+    -178.83,
+    -64.77,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~4",
+   "name": "本部棟6F エレベーター → 本部棟6F 渡り廊下の口 4",
+   "building": "本部棟",
+   "floor": "6F",
+   "blender": [
+    -169.66,
+    -54.7,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~5",
+   "name": "本部棟6F エレベーター → 本部棟6F 渡り廊下の口 5",
+   "building": "本部棟",
+   "floor": "6F",
+   "blender": [
+    -172.8,
+    -51.84,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-1f-ev--hq-entrance~1",
+   "name": "本部棟1F エレベーター → 本部棟 玄関 1",
+   "building": "本部棟",
+   "floor": "1F",
+   "blender": [
+    -166.32,
+    -73.13,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-1f-ev--hq-entrance~2",
+   "name": "本部棟1F エレベーター → 本部棟 玄関 2",
+   "building": "本部棟",
+   "floor": "1F",
+   "blender": [
+    -154.02,
+    -84.32,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-2f-ev--hq-2f~1",
+   "name": "本部棟2F エレベーター → 本部棟2F 1",
+   "building": "本部棟",
+   "floor": "2F",
+   "blender": [
+    -164.75,
+    -70.66,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-2f-ev--hq-2f~2",
+   "name": "本部棟2F エレベーター → 本部棟2F 2",
+   "building": "本部棟",
+   "floor": "2F",
+   "blender": [
+    -161.38,
+    -66.97,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f~1",
+   "name": "本部棟3F エレベーター → 本部棟3F 1",
+   "building": "本部棟",
+   "floor": "3F",
+   "blender": [
+    -164.75,
+    -70.66,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f~2",
+   "name": "本部棟3F エレベーター → 本部棟3F 2",
+   "building": "本部棟",
+   "floor": "3F",
+   "blender": [
+    -168.28,
+    -74.55,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f~3",
+   "name": "本部棟3F エレベーター → 本部棟3F 3",
+   "building": "本部棟",
+   "floor": "3F",
+   "blender": [
+    -156.45,
+    -85.32,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f~4",
+   "name": "本部棟3F エレベーター → 本部棟3F 4",
+   "building": "本部棟",
+   "floor": "3F",
+   "blender": [
+    -150.39,
+    -78.66,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-hall~1",
+   "name": "本部棟4F エレベーター → 本部棟4F エレベーターホール 1",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -164.75,
+    -70.66,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-hall~2",
+   "name": "本部棟4F エレベーター → 本部棟4F エレベーターホール 2",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -168.28,
+    -74.55,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-hall~3",
+   "name": "本部棟4F エレベーター → 本部棟4F エレベーターホール 3",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -164.59,
+    -77.91,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-hall~4",
+   "name": "本部棟4F エレベーター → 本部棟4F エレベーターホール 4",
+   "building": "本部棟",
+   "floor": "4F",
+   "blender": [
+    -158.53,
+    -71.26,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~1",
+   "name": "教室棟7F エスカレーター → 教室棟7F 乗り口（7F→8F） 1",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -130.69,
+    59.24,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~2",
+   "name": "教室棟7F エスカレーター → 教室棟7F 乗り口（7F→8F） 2",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -131.05,
+    59.58,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~3",
+   "name": "教室棟7F エスカレーター → 教室棟7F 乗り口（7F→8F） 3",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -130.88,
+    59.76,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~4",
+   "name": "教室棟7F エスカレーター → 教室棟7F 乗り口（7F→8F） 4",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -131.16,
+    60.02,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~5",
+   "name": "教室棟7F エスカレーター → 教室棟7F 乗り口（7F→8F） 5",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -130.13,
+    61.11,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-1f--research-1f-door~1",
+   "name": "研究棟1F 教室棟側 → 研究棟1F 入口の扉（エントランスホール） 1",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -126.4,
+    51.81,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-1f-door--classroom-research-corner~1",
+   "name": "研究棟1F 入口の扉（エントランスホール） → 教室棟と研究棟の角 1",
+   "building": "研究棟",
+   "floor": "1F",
+   "blender": [
+    -142.27,
+    34.61,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-1f-koryu--k1-005~1",
+   "name": "教室棟1F 交流棟側 → 教室棟1F エスカレーター 1",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -186.5,
+    15.88,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-1f-koryu--k1-005~2",
+   "name": "教室棟1F 交流棟側 → 教室棟1F エスカレーター 2",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -178.48,
+    8.35,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005~1",
+   "name": "教室棟1F 研究棟側 → 教室棟1F エスカレーター 1",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -129.03,
+    60.43,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005~2",
+   "name": "教室棟1F 研究棟側 → 教室棟1F エスカレーター 2",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -134.14,
+    65.22,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005~3",
+   "name": "教室棟1F 研究棟側 → 教室棟1F エスカレーター 3",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -179.4,
+    17.01,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005~4",
+   "name": "教室棟1F 研究棟側 → 教室棟1F エスカレーター 4",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -174.57,
+    12.48,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-1f-kenkyu--research-1f~1",
+   "name": "教室棟1F 研究棟側 → 研究棟1F 教室棟側 1",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -118.87,
+    57.74,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-1f-kenkyu--research-1f~2",
+   "name": "教室棟1F 研究棟側 → 研究棟1F 教室棟側 2",
+   "building": "教室棟",
+   "floor": "1F",
+   "blender": [
+    -125.28,
+    50.9,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009~1",
+   "name": "教室棟2F 研究棟側 → エスカレーター 1F→3F 3 1",
+   "building": "教室棟",
+   "floor": "2F",
+   "blender": [
+    -129.46,
+    59.97,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009~2",
+   "name": "教室棟2F 研究棟側 → エスカレーター 1F→3F 3 2",
+   "building": "教室棟",
+   "floor": "2F",
+   "blender": [
+    -131.56,
+    61.94,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009~3",
+   "name": "教室棟2F 研究棟側 → エスカレーター 1F→3F 3 3",
+   "building": "教室棟",
+   "floor": "2F",
+   "blender": [
+    -165.95,
+    25.31,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009~4",
+   "name": "教室棟2F 研究棟側 → エスカレーター 1F→3F 3 4",
+   "building": "教室棟",
+   "floor": "2F",
+   "blender": [
+    -164.13,
+    23.6,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-3f-kenkyu--k3-019~1",
+   "name": "教室棟3F 研究棟側 → 教室棟3F 廊下 19 1",
+   "building": "教室棟",
+   "floor": "3F",
+   "blender": [
+    -124.15,
+    62.7,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-3f-kenkyu--k3-019~2",
+   "name": "教室棟3F 研究棟側 → 教室棟3F 廊下 19 2",
+   "building": "教室棟",
+   "floor": "3F",
+   "blender": [
+    -130.83,
+    55.59,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-3f-kenkyu--k3-019~3",
+   "name": "教室棟3F 研究棟側 → 教室棟3F 廊下 19 3",
+   "building": "教室棟",
+   "floor": "3F",
+   "blender": [
+    -134.84,
+    59.36,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019~1",
+   "name": "教室棟4F 研究棟側 → 教室棟4F 廊下 19 1",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -126.72,
+    62.88,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019~2",
+   "name": "教室棟4F 研究棟側 → 教室棟4F 廊下 19 2",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -125.27,
+    61.51,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019~3",
+   "name": "教室棟4F 研究棟側 → 教室棟4F 廊下 19 3",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -130.83,
+    55.59,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019~4",
+   "name": "教室棟4F 研究棟側 → 教室棟4F 廊下 19 4",
+   "building": "教室棟",
+   "floor": "4F",
+   "blender": [
+    -134.84,
+    59.36,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-5f-kenkyu--k5-021~1",
+   "name": "教室棟5F 研究棟側 → 教室棟5F 廊下 21 1",
+   "building": "教室棟",
+   "floor": "5F",
+   "blender": [
+    -124.15,
+    62.7,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-5f-kenkyu--k5-021~2",
+   "name": "教室棟5F 研究棟側 → 教室棟5F 廊下 21 2",
+   "building": "教室棟",
+   "floor": "5F",
+   "blender": [
+    -130.83,
+    55.59,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-5f-kenkyu--k5-021~3",
+   "name": "教室棟5F 研究棟側 → 教室棟5F 廊下 21 3",
+   "building": "教室棟",
+   "floor": "5F",
+   "blender": [
+    -134.84,
+    59.36,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-6f-koryu--k6-004~1",
+   "name": "教室棟6F 交流棟側 → 教室棟6F 廊下 4 1",
+   "building": "教室棟",
+   "floor": "6F",
+   "blender": [
+    -180.43,
+    22.35,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-6f-koryu--k6-004~2",
+   "name": "教室棟6F 交流棟側 → 教室棟6F 廊下 4 2",
+   "building": "教室棟",
+   "floor": "6F",
+   "blender": [
+    -174.69,
+    16.96,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~1",
+   "name": "教室棟7F 交流棟側 → 教室棟7F エスカレーター 1",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -162.71,
+    41.21,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~2",
+   "name": "教室棟7F 交流棟側 → 教室棟7F エスカレーター 2",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -159.43,
+    38.13,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~3",
+   "name": "教室棟7F 交流棟側 → 教室棟7F エスカレーター 3",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -157.81,
+    39.86,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~4",
+   "name": "教室棟7F 交流棟側 → 教室棟7F エスカレーター 4",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -155.17,
+    37.38,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~5",
+   "name": "教室棟7F 交流棟側 → 教室棟7F エスカレーター 5",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -136.6,
+    57.15,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~6",
+   "name": "教室棟7F 交流棟側 → 教室棟7F エスカレーター 6",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -134.5,
+    55.18,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f-kenkyu--classroom-7f-e8~1",
+   "name": "教室棟7F 研究棟側 → 教室棟7F 乗り口（7F→8F） 1",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -126.7,
+    65.1,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-7f-kenkyu--classroom-7f-e8~2",
+   "name": "教室棟7F 研究棟側 → 教室棟7F 乗り口（7F→8F） 2",
+   "building": "教室棟",
+   "floor": "7F",
+   "blender": [
+    -130.3,
+    61.27,
+    31.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-8f-kenkyu--classroom-8f~1",
+   "name": "教室棟8F 研究棟側 → 教室棟8F エスカレーター 1",
+   "building": "教室棟",
+   "floor": "8F",
+   "blender": [
+    -117.04,
+    56.03,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "classroom-8f-kenkyu--classroom-8f~2",
+   "name": "教室棟8F 研究棟側 → 教室棟8F エスカレーター 2",
+   "building": "教室棟",
+   "floor": "8F",
+   "blender": [
+    -120.64,
+    52.2,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-1f-car-door--exchange-1f~1",
+   "name": "交流棟1F エレベーターの前 → 交流棟1F 体育館 1",
+   "building": "交流棟",
+   "floor": "1F",
+   "blender": [
+    -187.15,
+    -18.54,
+    0.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-2f-car-door--x2-001~1",
+   "name": "交流棟2F エレベーターの前 → 交流棟2F 購買 1",
+   "building": "交流棟",
+   "floor": "2F",
+   "blender": [
+    -189.45,
+    -20.98,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-2f-car-door--x2-001~2",
+   "name": "交流棟2F エレベーターの前 → 交流棟2F 購買 2",
+   "building": "交流棟",
+   "floor": "2F",
+   "blender": [
+    -187.81,
+    -22.52,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-3f-car-door--exchange-3f~1",
+   "name": "交流棟3F エレベーターの前 → 交流棟3F 食堂 1",
+   "building": "交流棟",
+   "floor": "3F",
+   "blender": [
+    -189.45,
+    -20.98,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-3f-car-door--exchange-3f~2",
+   "name": "交流棟3F エレベーターの前 → 交流棟3F 食堂 2",
+   "building": "交流棟",
+   "floor": "3F",
+   "blender": [
+    -187.81,
+    -22.52,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-4f-car-door--x4-013~1",
+   "name": "交流棟4F エレベーターの前 → 交流棟4F 廊下 13 1",
+   "building": "交流棟",
+   "floor": "4F",
+   "blender": [
+    -189.45,
+    -20.98,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-4f-car-door--x4-013~2",
+   "name": "交流棟4F エレベーターの前 → 交流棟4F 廊下 13 2",
+   "building": "交流棟",
+   "floor": "4F",
+   "blender": [
+    -187.81,
+    -22.52,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-5f-car-door--exchange-5f~1",
+   "name": "交流棟5F エレベーターの前 → 交流棟5F 1",
+   "building": "交流棟",
+   "floor": "5F",
+   "blender": [
+    -189.45,
+    -20.98,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-5f-car-door--exchange-5f~2",
+   "name": "交流棟5F エレベーターの前 → 交流棟5F 2",
+   "building": "交流棟",
+   "floor": "5F",
+   "blender": [
+    -187.81,
+    -22.52,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-6f-car-door--x6-014~1",
+   "name": "交流棟6F エレベーターの前 → 交流棟6F 廊下 14 1",
+   "building": "交流棟",
+   "floor": "6F",
+   "blender": [
+    -189.45,
+    -20.98,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "exchange-6f-car-door--x6-014~2",
+   "name": "交流棟6F エレベーターの前 → 交流棟6F 廊下 14 2",
+   "building": "交流棟",
+   "floor": "6F",
+   "blender": [
+    -187.81,
+    -22.52,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-10f-east-door--research-10f-door~1",
+   "name": "研究棟10F 運河側 エレベーターの前 → 研究棟10F 教室棟側 エレベーターの前 1",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -82.49,
+    13.32,
+    44.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-10f-east-door--research-10f-door~2",
+   "name": "研究棟10F 運河側 エレベーターの前 → 研究棟10F 教室棟側 エレベーターの前 2",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -75.61,
+    20.75,
+    44.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-10f-east-door--research-10f-door~3",
+   "name": "研究棟10F 運河側 エレベーターの前 → 研究棟10F 教室棟側 エレベーターの前 3",
+   "building": "研究棟",
+   "floor": "10F",
+   "blender": [
+    -109.0,
+    51.66,
+    44.4
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-11f-east-door--research-11f-door~1",
+   "name": "研究棟11F 運河側 エレベーターの前 → 研究棟11F 教室棟側 エレベーターの前 1",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -82.49,
+    13.32,
+    48.3
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-11f-east-door--research-11f-door~2",
+   "name": "研究棟11F 運河側 エレベーターの前 → 研究棟11F 教室棟側 エレベーターの前 2",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -75.61,
+    20.75,
+    48.3
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-11f-east-door--research-11f-door~3",
+   "name": "研究棟11F 運河側 エレベーターの前 → 研究棟11F 教室棟側 エレベーターの前 3",
+   "building": "研究棟",
+   "floor": "11F",
+   "blender": [
+    -109.0,
+    51.66,
+    48.3
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-12f-east-door--research-12f-door~1",
+   "name": "研究棟12F 運河側 エレベーターの前 → 研究棟12F 教室棟側 エレベーターの前 1",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -82.49,
+    13.32,
+    52.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-12f-east-door--research-12f-door~2",
+   "name": "研究棟12F 運河側 エレベーターの前 → 研究棟12F 教室棟側 エレベーターの前 2",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -75.61,
+    20.75,
+    52.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-12f-east-door--research-12f-door~3",
+   "name": "研究棟12F 運河側 エレベーターの前 → 研究棟12F 教室棟側 エレベーターの前 3",
+   "building": "研究棟",
+   "floor": "12F",
+   "blender": [
+    -109.0,
+    51.66,
+    52.2
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-13f-east-door--research-13f-door~1",
+   "name": "研究棟13F 運河側 エレベーターの前 → 研究棟13F 教室棟側 エレベーターの前 1",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -82.49,
+    13.32,
+    56.1
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-13f-east-door--research-13f-door~2",
+   "name": "研究棟13F 運河側 エレベーターの前 → 研究棟13F 教室棟側 エレベーターの前 2",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -75.61,
+    20.75,
+    56.1
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-13f-east-door--research-13f-door~3",
+   "name": "研究棟13F 運河側 エレベーターの前 → 研究棟13F 教室棟側 エレベーターの前 3",
+   "building": "研究棟",
+   "floor": "13F",
+   "blender": [
+    -109.0,
+    51.66,
+    56.1
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-14f-east-door--research-14f-door~1",
+   "name": "研究棟14F 運河側 エレベーターの前 → 研究棟14F 教室棟側 エレベーターの前 1",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -82.49,
+    13.32,
+    60.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-14f-east-door--research-14f-door~2",
+   "name": "研究棟14F 運河側 エレベーターの前 → 研究棟14F 教室棟側 エレベーターの前 2",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -75.61,
+    20.75,
+    60.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-14f-east-door--research-14f-door~3",
+   "name": "研究棟14F 運河側 エレベーターの前 → 研究棟14F 教室棟側 エレベーターの前 3",
+   "building": "研究棟",
+   "floor": "14F",
+   "blender": [
+    -109.0,
+    51.66,
+    60.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-door--research-gate~1",
+   "name": "研究棟2F 教室棟側 エレベーターの前 → 研究棟ゲート 1",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -118.83,
+    41.04,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-door--research-gate~2",
+   "name": "研究棟2F 教室棟側 エレベーターの前 → 研究棟ゲート 2",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -104.7,
+    27.96,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-door--k2-008~1",
+   "name": "研究棟2F 教室棟側 エレベーターの前 → 教室棟2F エスカレーターの上り口 1",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -126.04,
+    51.47,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-door--k2-008~2",
+   "name": "研究棟2F 教室棟側 エレベーターの前 → 教室棟2F エスカレーターの上り口 2",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -129.35,
+    47.89,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-door--k2-008~3",
+   "name": "研究棟2F 教室棟側 エレベーターの前 → 教室棟2F エスカレーターの上り口 3",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -138.25,
+    56.13,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-east-door--research-gate~1",
+   "name": "研究棟2F 運河側 エレベーターの前 → 研究棟ゲート 1",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -82.49,
+    13.32,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-east-door--research-gate~2",
+   "name": "研究棟2F 運河側 エレベーターの前 → 研究棟ゲート 2",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -92.35,
+    2.68,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-2f-east-door--research-gate~3",
+   "name": "研究棟2F 運河側 エレベーターの前 → 研究棟ゲート 3",
+   "building": "研究棟",
+   "floor": "2F",
+   "blender": [
+    -111.61,
+    20.52,
+    6.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-3f-door--classroom-3f-kenkyu~1",
+   "name": "研究棟3F 教室棟側 エレベーターの前 → 教室棟3F 研究棟側 1",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -122.37,
+    48.07,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-3f-door--classroom-3f-kenkyu~2",
+   "name": "研究棟3F 教室棟側 エレベーターの前 → 教室棟3F 研究棟側 2",
+   "building": "研究棟",
+   "floor": "3F",
+   "blender": [
+    -115.92,
+    55.04,
+    11.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-4f-door--classroom-4f-kenkyu~1",
+   "name": "研究棟4F 教室棟側 エレベーターの前 → 教室棟4F 研究棟側 1",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -111.44,
+    49.02,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-4f-door--classroom-4f-kenkyu~2",
+   "name": "研究棟4F 教室棟側 エレベーターの前 → 教室棟4F 研究棟側 2",
+   "building": "研究棟",
+   "floor": "4F",
+   "blender": [
+    -126.57,
+    63.04,
+    16.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-5f-door--classroom-5f-kenkyu~1",
+   "name": "研究棟5F 教室棟側 エレベーターの前 → 教室棟5F 研究棟側 1",
+   "building": "研究棟",
+   "floor": "5F",
+   "blender": [
+    -110.51,
+    50.03,
+    21.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-door--classroom-research-6f-mouth~1",
+   "name": "研究棟6F 教室棟側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 教室棟側の口 1",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -118.79,
+    44.76,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-door--classroom-research-6f-mouth~2",
+   "name": "研究棟6F 教室棟側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 教室棟側の口 2",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -126.1,
+    36.87,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-bridge-end~1",
+   "name": "研究棟6F 運河側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 研究棟側の端 1",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -82.49,
+    13.32,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-bridge-end~2",
+   "name": "研究棟6F 運河側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 研究棟側の端 2",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -92.35,
+    2.68,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-bridge-end~3",
+   "name": "研究棟6F 運河側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 研究棟側の端 3",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -98.67,
+    8.54,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-bridge-end~4",
+   "name": "研究棟6F 運河側 エレベーターの前 → 渡り廊下 教室棟〜研究棟 6F 研究棟側の端 4",
+   "building": "研究棟",
+   "floor": "6F",
+   "blender": [
+    -97.31,
+    10.01,
+    26.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-door--classroom-8f-kenkyu~1",
+   "name": "研究棟8F 教室棟側 エレベーターの前 → 教室棟8F 研究棟側 1",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -110.51,
+    50.03,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~1",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 1",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -82.49,
+    13.32,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~2",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 2",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -75.7,
+    20.66,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~3",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 3",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -77.72,
+    22.53,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~4",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 4",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -81.62,
+    18.31,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~5",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 5",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -91.8,
+    27.73,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~6",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 6",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -97.58,
+    21.5,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~7",
+   "name": "研究棟8F 運河側 エレベーターの前 → 研究棟8F 教室棟側 エレベーターの前 7",
+   "building": "研究棟",
+   "floor": "8F",
+   "blender": [
+    -118.77,
+    41.12,
+    36.0
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-9f-east-door--research-9f-door~1",
+   "name": "研究棟9F 運河側 エレベーターの前 → 研究棟9F 教室棟側 エレベーターの前 1",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -82.49,
+    13.32,
+    40.5
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-9f-east-door--research-9f-door~2",
+   "name": "研究棟9F 運河側 エレベーターの前 → 研究棟9F 教室棟側 エレベーターの前 2",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -75.61,
+    20.75,
+    40.5
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
+  },
+  {
+   "id": "research-9f-east-door--research-9f-door~3",
+   "name": "研究棟9F 運河側 エレベーターの前 → 研究棟9F 教室棟側 エレベーターの前 3",
+   "building": "研究棟",
+   "floor": "9F",
+   "blender": [
+    -109.0,
+    51.66,
+    40.5
+   ],
+   "radius": 3,
+   "gpsSnap": false,
+   "role": "waypoint",
+   "note": "reroute_walls.py：壁をよけて廊下の真ん中を通る"
   }
  ],
  "edges": [
@@ -7595,7 +9846,7 @@
    "id": "o-081--o-082",
    "from": "o-081",
    "to": "o-082",
-   "kind": "ground"
+   "kind": "stairs"
   },
   {
    "id": "o-082--koryu-plaza",
@@ -7715,18 +9966,6 @@
    "id": "o-098--o-099",
    "from": "o-098",
    "to": "o-099",
-   "kind": "ground"
-  },
-  {
-   "id": "o-099--research-road",
-   "from": "o-099",
-   "to": "research-road",
-   "kind": "ground"
-  },
-  {
-   "id": "research-road--o-100",
-   "from": "research-road",
-   "to": "o-100",
    "kind": "ground"
   },
   {
@@ -7874,12 +10113,6 @@
    "kind": "stairs"
   },
   {
-   "id": "o-121--o-122",
-   "from": "o-121",
-   "to": "o-122",
-   "kind": "ground"
-  },
-  {
    "id": "o-122--o-123",
    "from": "o-122",
    "to": "o-123",
@@ -8018,34 +10251,10 @@
    "kind": "indoor"
   },
   {
-   "id": "k1-004--k1-005",
-   "from": "k1-004",
-   "to": "k1-005",
-   "kind": "indoor"
-  },
-  {
-   "id": "k1-001--k1-006",
-   "from": "k1-001",
-   "to": "k1-006",
-   "kind": "indoor"
-  },
-  {
    "id": "k1-005--k1-007",
    "from": "k1-005",
    "to": "k1-007",
    "kind": "escalator"
-  },
-  {
-   "id": "k1-007--k1-008",
-   "from": "k1-007",
-   "to": "k1-008",
-   "kind": "indoor"
-  },
-  {
-   "id": "k1-008--k1-009",
-   "from": "k1-008",
-   "to": "k1-009",
-   "kind": "indoor"
   },
   {
    "id": "k1-009--k1-010",
@@ -8099,42 +10308,6 @@
    "id": "k2-008--k1-008",
    "from": "k2-008",
    "to": "k1-008",
-   "kind": "indoor"
-  },
-  {
-   "id": "k2-003--k2-009",
-   "from": "k2-003",
-   "to": "k2-009",
-   "kind": "indoor"
-  },
-  {
-   "id": "k2-009--k2-010",
-   "from": "k2-009",
-   "to": "k2-010",
-   "kind": "indoor"
-  },
-  {
-   "id": "k3-001--k3-002",
-   "from": "k3-001",
-   "to": "k3-002",
-   "kind": "indoor"
-  },
-  {
-   "id": "k3-002--k3-003",
-   "from": "k3-002",
-   "to": "k3-003",
-   "kind": "indoor"
-  },
-  {
-   "id": "k3-003--k3-004",
-   "from": "k3-003",
-   "to": "k3-004",
-   "kind": "indoor"
-  },
-  {
-   "id": "k3-004--k3-005",
-   "from": "k3-004",
-   "to": "k3-005",
    "kind": "indoor"
   },
   {
@@ -8312,18 +10485,6 @@
    "kind": "indoor"
   },
   {
-   "id": "k3-002--k3-033",
-   "from": "k3-002",
-   "to": "k3-033",
-   "kind": "indoor"
-  },
-  {
-   "id": "k3-033--k3-034",
-   "from": "k3-033",
-   "to": "k3-034",
-   "kind": "indoor"
-  },
-  {
    "id": "k4-001--k4-002",
    "from": "k4-001",
    "to": "k4-002",
@@ -8468,12 +10629,6 @@
    "kind": "indoor"
   },
   {
-   "id": "k4-011--k4-026",
-   "from": "k4-011",
-   "to": "k4-026",
-   "kind": "indoor"
-  },
-  {
    "id": "k4-026--k4-027",
    "from": "k4-026",
    "to": "k4-027",
@@ -8525,36 +10680,6 @@
    "id": "k4-015--classroom-4f-lobby",
    "from": "k4-015",
    "to": "classroom-4f-lobby",
-   "kind": "indoor"
-  },
-  {
-   "id": "k4-003--k4-035",
-   "from": "k4-003",
-   "to": "k4-035",
-   "kind": "indoor"
-  },
-  {
-   "id": "k4-035--k4-036",
-   "from": "k4-035",
-   "to": "k4-036",
-   "kind": "indoor"
-  },
-  {
-   "id": "k5-001--k5-002",
-   "from": "k5-001",
-   "to": "k5-002",
-   "kind": "indoor"
-  },
-  {
-   "id": "k5-002--k5-003",
-   "from": "k5-002",
-   "to": "k5-003",
-   "kind": "indoor"
-  },
-  {
-   "id": "k5-003--k5-004",
-   "from": "k5-003",
-   "to": "k5-004",
    "kind": "indoor"
   },
   {
@@ -8786,18 +10911,6 @@
    "kind": "indoor"
   },
   {
-   "id": "k5-002--k5-042",
-   "from": "k5-002",
-   "to": "k5-042",
-   "kind": "indoor"
-  },
-  {
-   "id": "k5-042--k5-043",
-   "from": "k5-042",
-   "to": "k5-043",
-   "kind": "indoor"
-  },
-  {
    "id": "k6-001--classroom-6f-bridge",
    "from": "k6-001",
    "to": "classroom-6f-bridge",
@@ -8894,18 +11007,6 @@
    "kind": "indoor"
   },
   {
-   "id": "k6-002--k6-017",
-   "from": "k6-002",
-   "to": "k6-017",
-   "kind": "indoor"
-  },
-  {
-   "id": "k6-017--k6-018",
-   "from": "k6-017",
-   "to": "k6-018",
-   "kind": "indoor"
-  },
-  {
    "id": "k3-005--k3-035",
    "from": "k3-005",
    "to": "k3-035",
@@ -8924,51 +11025,9 @@
    "kind": "indoor"
   },
   {
-   "id": "k1-010--classroom-3f-lobby",
-   "from": "k1-010",
-   "to": "classroom-3f-lobby",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-3f-lobby--k3-038",
-   "from": "classroom-3f-lobby",
-   "to": "k3-038",
-   "kind": "indoor"
-  },
-  {
-   "id": "k4-037--classroom-4f-lobby",
-   "from": "k4-037",
-   "to": "classroom-4f-lobby",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-4f-lobby--k4-038",
-   "from": "classroom-4f-lobby",
-   "to": "k4-038",
-   "kind": "indoor"
-  },
-  {
-   "id": "k5-044--classroom-5f-lobby",
-   "from": "k5-044",
-   "to": "classroom-5f-lobby",
-   "kind": "indoor"
-  },
-  {
    "id": "k5-016--k5-045",
    "from": "k5-016",
    "to": "k5-045",
-   "kind": "indoor"
-  },
-  {
-   "id": "k5-045--k5-046",
-   "from": "k5-045",
-   "to": "k5-046",
-   "kind": "indoor"
-  },
-  {
-   "id": "k6-019--k6-016",
-   "from": "k6-019",
-   "to": "k6-016",
    "kind": "indoor"
   },
   {
@@ -8988,42 +11047,6 @@
    "from": "k5-046",
    "to": "k6-019",
    "kind": "escalator"
-  },
-  {
-   "id": "x4-001--x4-002",
-   "from": "x4-001",
-   "to": "x4-002",
-   "kind": "indoor"
-  },
-  {
-   "id": "x4-002--x4-003",
-   "from": "x4-002",
-   "to": "x4-003",
-   "kind": "indoor"
-  },
-  {
-   "id": "x4-003--x4-004",
-   "from": "x4-003",
-   "to": "x4-004",
-   "kind": "indoor"
-  },
-  {
-   "id": "x4-004--x4-005",
-   "from": "x4-004",
-   "to": "x4-005",
-   "kind": "indoor"
-  },
-  {
-   "id": "x4-005--x4-006",
-   "from": "x4-005",
-   "to": "x4-006",
-   "kind": "indoor"
-  },
-  {
-   "id": "x4-006--x4-007",
-   "from": "x4-006",
-   "to": "x4-007",
-   "kind": "indoor"
   },
   {
    "id": "x4-007--exchange-4f",
@@ -9110,12 +11133,6 @@
    "kind": "indoor"
   },
   {
-   "id": "x4-020--x4-021",
-   "from": "x4-020",
-   "to": "x4-021",
-   "kind": "indoor"
-  },
-  {
    "id": "x4-021--x4-022",
    "from": "x4-021",
    "to": "x4-022",
@@ -9140,46 +11157,10 @@
    "kind": "bridge"
   },
   {
-   "id": "x4-011--x4-025",
-   "from": "x4-011",
-   "to": "x4-025",
-   "kind": "indoor"
-  },
-  {
    "id": "x4-025--hq-4f-bridge",
    "from": "x4-025",
    "to": "hq-4f-bridge",
    "kind": "bridge"
-  },
-  {
-   "id": "x6-001--x6-002",
-   "from": "x6-001",
-   "to": "x6-002",
-   "kind": "indoor"
-  },
-  {
-   "id": "x6-002--x6-003",
-   "from": "x6-002",
-   "to": "x6-003",
-   "kind": "indoor"
-  },
-  {
-   "id": "x6-003--x6-004",
-   "from": "x6-003",
-   "to": "x6-004",
-   "kind": "indoor"
-  },
-  {
-   "id": "x6-004--x6-005",
-   "from": "x6-004",
-   "to": "x6-005",
-   "kind": "indoor"
-  },
-  {
-   "id": "x6-005--x6-006",
-   "from": "x6-005",
-   "to": "x6-006",
-   "kind": "indoor"
   },
   {
    "id": "x6-006--x6-007",
@@ -9254,12 +11235,6 @@
    "kind": "indoor"
   },
   {
-   "id": "x6-017--x6-018",
-   "from": "x6-017",
-   "to": "x6-018",
-   "kind": "indoor"
-  },
-  {
    "id": "x6-018--x6-019",
    "from": "x6-018",
    "to": "x6-019",
@@ -9284,12 +11259,6 @@
    "kind": "bridge"
   },
   {
-   "id": "x6-012--x6-022",
-   "from": "x6-012",
-   "to": "x6-022",
-   "kind": "indoor"
-  },
-  {
    "id": "x6-022--hq-6f-bridge",
    "from": "x6-022",
    "to": "hq-6f-bridge",
@@ -9299,12 +11268,6 @@
    "id": "x2-001--x2-002",
    "from": "x2-001",
    "to": "x2-002",
-   "kind": "indoor"
-  },
-  {
-   "id": "x2-002--x2-003",
-   "from": "x2-002",
-   "to": "x2-003",
    "kind": "indoor"
   },
   {
@@ -9342,18 +11305,6 @@
    "from": "hq-3f",
    "to": "hq-4f-hall",
    "kind": "stairs"
-  },
-  {
-   "id": "hq-4f-hall--hq-4f-bridge",
-   "from": "hq-4f-hall",
-   "to": "hq-4f-bridge",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-6f-hall--hq-6f-bridge",
-   "from": "hq-6f-hall",
-   "to": "hq-6f-bridge",
-   "kind": "indoor"
   },
   {
    "id": "research-1f--research-2f",
@@ -9434,57 +11385,9 @@
    "kind": "elevator"
   },
   {
-   "id": "research-3f--k3-019",
-   "from": "research-3f",
-   "to": "k3-019",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-4f--k4-019",
-   "from": "research-4f",
-   "to": "k4-019",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-5f--k5-021",
-   "from": "research-5f",
-   "to": "k5-021",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-1f-ev--hq-entrance",
-   "from": "hq-1f-ev",
-   "to": "hq-entrance",
-   "kind": "ground"
-  },
-  {
-   "id": "hq-2f-ev--hq-2f",
-   "from": "hq-2f-ev",
-   "to": "hq-2f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-3f-ev--hq-3f",
-   "from": "hq-3f-ev",
-   "to": "hq-3f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-4f-ev--hq-4f-hall",
-   "from": "hq-4f-ev",
-   "to": "hq-4f-hall",
-   "kind": "indoor"
-  },
-  {
    "id": "k6-012--k6-020",
    "from": "k6-012",
    "to": "k6-020",
-   "kind": "indoor"
-  },
-  {
-   "id": "k6-020--k6-021",
-   "from": "k6-020",
-   "to": "k6-021",
    "kind": "indoor"
   },
   {
@@ -9492,30 +11395,6 @@
    "from": "k6-021",
    "to": "classroom-7f",
    "kind": "escalator"
-  },
-  {
-   "id": "research-2f--research-gate",
-   "from": "research-2f",
-   "to": "research-gate",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-2f--k2-008",
-   "from": "research-2f",
-   "to": "k2-008",
-   "kind": "indoor"
-  },
-  {
-   "id": "k6-015--research-6f",
-   "from": "k6-015",
-   "to": "research-6f",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-6f--classroom-research-6f-mouth",
-   "from": "research-6f",
-   "to": "classroom-research-6f-mouth",
-   "kind": "indoor"
   },
   {
    "id": "classroom-research-6f-mouth--classroom-research-6f-bridge",
@@ -9530,118 +11409,10 @@
    "kind": "bridge"
   },
   {
-   "id": "classroom-7f--classroom-7f-e8",
-   "from": "classroom-7f",
-   "to": "classroom-7f-e8",
-   "kind": "indoor"
-  },
-  {
    "id": "classroom-7f-e8--classroom-8f",
    "from": "classroom-7f-e8",
    "to": "classroom-8f",
    "kind": "escalator"
-  },
-  {
-   "id": "classroom-8f--research-8f",
-   "from": "classroom-8f",
-   "to": "research-8f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-1f-car--hq-1f-ev",
-   "from": "hq-1f-car",
-   "to": "hq-1f-ev",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-2f-car--hq-2f-ev",
-   "from": "hq-2f-car",
-   "to": "hq-2f-ev",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-3f-car--hq-3f-ev",
-   "from": "hq-3f-car",
-   "to": "hq-3f-ev",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-4f-car--hq-4f-ev",
-   "from": "hq-4f-car",
-   "to": "hq-4f-ev",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-5f-car--hq-5f",
-   "from": "hq-5f-car",
-   "to": "hq-5f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-6f-car--hq-6f-hall",
-   "from": "hq-6f-car",
-   "to": "hq-6f-hall",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-7f-car--hq-7f",
-   "from": "hq-7f-car",
-   "to": "hq-7f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-8f-car--hq-8f",
-   "from": "hq-8f-car",
-   "to": "hq-8f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-9f-car--hq-9f",
-   "from": "hq-9f-car",
-   "to": "hq-9f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-10f-car--hq-10f",
-   "from": "hq-10f-car",
-   "to": "hq-10f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-11f-car--hq-11f",
-   "from": "hq-11f-car",
-   "to": "hq-11f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-12f-car--hq-12f",
-   "from": "hq-12f-car",
-   "to": "hq-12f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-13f-car--hq-13f",
-   "from": "hq-13f-car",
-   "to": "hq-13f",
-   "kind": "indoor"
-  },
-  {
-   "id": "hq-14f-car--hq-14f",
-   "from": "hq-14f-car",
-   "to": "hq-14f",
-   "kind": "indoor"
-  },
-  {
-   "id": "exchange-1f-car--exchange-1f",
-   "from": "exchange-1f-car",
-   "to": "exchange-1f",
-   "kind": "indoor"
-  },
-  {
-   "id": "exchange-2f-car--x2-001",
-   "from": "exchange-2f-car",
-   "to": "x2-001",
-   "kind": "indoor"
   },
   {
    "id": "exchange-1f-car--exchange-2f-car",
@@ -9650,22 +11421,10 @@
    "kind": "elevator"
   },
   {
-   "id": "exchange-3f-car--exchange-3f",
-   "from": "exchange-3f-car",
-   "to": "exchange-3f",
-   "kind": "indoor"
-  },
-  {
    "id": "exchange-2f-car--exchange-3f-car",
    "from": "exchange-2f-car",
    "to": "exchange-3f-car",
    "kind": "elevator"
-  },
-  {
-   "id": "exchange-4f-car--x4-013",
-   "from": "exchange-4f-car",
-   "to": "x4-013",
-   "kind": "indoor"
   },
   {
    "id": "exchange-3f-car--exchange-4f-car",
@@ -9674,22 +11433,10 @@
    "kind": "elevator"
   },
   {
-   "id": "exchange-5f-car--exchange-5f",
-   "from": "exchange-5f-car",
-   "to": "exchange-5f",
-   "kind": "indoor"
-  },
-  {
    "id": "exchange-4f-car--exchange-5f-car",
    "from": "exchange-4f-car",
    "to": "exchange-5f-car",
    "kind": "elevator"
-  },
-  {
-   "id": "exchange-6f-car--x6-014",
-   "from": "exchange-6f-car",
-   "to": "x6-014",
-   "kind": "indoor"
   },
   {
    "id": "exchange-5f-car--exchange-6f-car",
@@ -9698,63 +11445,9 @@
    "kind": "elevator"
   },
   {
-   "id": "research-1f--research-1f-door",
-   "from": "research-1f",
-   "to": "research-1f-door",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-1f-door--classroom-research-corner",
-   "from": "research-1f-door",
-   "to": "classroom-research-corner",
-   "kind": "ground"
-  },
-  {
-   "id": "classroom-1f-koryu--k1-005",
-   "from": "classroom-1f-koryu",
-   "to": "k1-005",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-1f-kenkyu--k1-005",
-   "from": "classroom-1f-kenkyu",
-   "to": "k1-005",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-1f-kenkyu--research-1f",
-   "from": "classroom-1f-kenkyu",
-   "to": "research-1f",
-   "kind": "indoor"
-  },
-  {
    "id": "classroom-2f-koryu--k2-005",
    "from": "classroom-2f-koryu",
    "to": "k2-005",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-2f-kenkyu--k1-009",
-   "from": "classroom-2f-kenkyu",
-   "to": "k1-009",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-2f-kenkyu--research-2f",
-   "from": "classroom-2f-kenkyu",
-   "to": "research-2f",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-3f-kenkyu--k3-019",
-   "from": "classroom-3f-kenkyu",
-   "to": "k3-019",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-3f-kenkyu--research-3f",
-   "from": "classroom-3f-kenkyu",
-   "to": "research-3f",
    "kind": "indoor"
   },
   {
@@ -9764,87 +11457,15 @@
    "kind": "indoor"
   },
   {
-   "id": "classroom-4f-kenkyu--k4-019",
-   "from": "classroom-4f-kenkyu",
-   "to": "k4-019",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-4f-kenkyu--research-4f",
-   "from": "classroom-4f-kenkyu",
-   "to": "research-4f",
-   "kind": "indoor"
-  },
-  {
    "id": "classroom-5f-koryu--k5-025",
    "from": "classroom-5f-koryu",
    "to": "k5-025",
    "kind": "indoor"
   },
   {
-   "id": "classroom-5f-kenkyu--k5-021",
-   "from": "classroom-5f-kenkyu",
-   "to": "k5-021",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-5f-kenkyu--research-5f",
-   "from": "classroom-5f-kenkyu",
-   "to": "research-5f",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-6f-koryu--k6-004",
-   "from": "classroom-6f-koryu",
-   "to": "k6-004",
-   "kind": "indoor"
-  },
-  {
    "id": "classroom-6f-kenkyu--k6-015",
    "from": "classroom-6f-kenkyu",
    "to": "k6-015",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-6f-kenkyu--research-6f",
-   "from": "classroom-6f-kenkyu",
-   "to": "research-6f",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-7f-koryu--classroom-7f",
-   "from": "classroom-7f-koryu",
-   "to": "classroom-7f",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-7f-kenkyu--classroom-7f-e8",
-   "from": "classroom-7f-kenkyu",
-   "to": "classroom-7f-e8",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-7f-kenkyu--research-7f",
-   "from": "classroom-7f-kenkyu",
-   "to": "research-7f",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-8f-kenkyu--classroom-8f",
-   "from": "classroom-8f-kenkyu",
-   "to": "classroom-8f",
-   "kind": "indoor"
-  },
-  {
-   "id": "classroom-8f-kenkyu--research-8f",
-   "from": "classroom-8f-kenkyu",
-   "to": "research-8f",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-1f--research-1f-east",
-   "from": "research-1f",
-   "to": "research-1f-east",
    "kind": "indoor"
   },
   {
@@ -9890,22 +11511,10 @@
    "kind": "elevator"
   },
   {
-   "id": "research-8f--research-8f-east",
-   "from": "research-8f",
-   "to": "research-8f-east",
-   "kind": "indoor"
-  },
-  {
    "id": "research-8f-east--research-9f-east",
    "from": "research-8f-east",
    "to": "research-9f-east",
    "kind": "elevator"
-  },
-  {
-   "id": "research-9f--research-9f-east",
-   "from": "research-9f",
-   "to": "research-9f-east",
-   "kind": "indoor"
   },
   {
    "id": "research-9f-east--research-10f-east",
@@ -9914,22 +11523,10 @@
    "kind": "elevator"
   },
   {
-   "id": "research-10f--research-10f-east",
-   "from": "research-10f",
-   "to": "research-10f-east",
-   "kind": "indoor"
-  },
-  {
    "id": "research-10f-east--research-11f-east",
    "from": "research-10f-east",
    "to": "research-11f-east",
    "kind": "elevator"
-  },
-  {
-   "id": "research-11f--research-11f-east",
-   "from": "research-11f",
-   "to": "research-11f-east",
-   "kind": "indoor"
   },
   {
    "id": "research-11f-east--research-12f-east",
@@ -9938,46 +11535,16 @@
    "kind": "elevator"
   },
   {
-   "id": "research-12f--research-12f-east",
-   "from": "research-12f",
-   "to": "research-12f-east",
-   "kind": "indoor"
-  },
-  {
    "id": "research-12f-east--research-13f-east",
    "from": "research-12f-east",
    "to": "research-13f-east",
    "kind": "elevator"
   },
   {
-   "id": "research-13f--research-13f-east",
-   "from": "research-13f",
-   "to": "research-13f-east",
-   "kind": "indoor"
-  },
-  {
    "id": "research-13f-east--research-14f-east",
    "from": "research-13f-east",
    "to": "research-14f-east",
    "kind": "elevator"
-  },
-  {
-   "id": "research-14f--research-14f-east",
-   "from": "research-14f",
-   "to": "research-14f-east",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-6f-bridge-end--research-6f-east",
-   "from": "research-6f-bridge-end",
-   "to": "research-6f-east",
-   "kind": "indoor"
-  },
-  {
-   "id": "research-gate--research-2f-east",
-   "from": "research-gate",
-   "to": "research-2f-east",
-   "kind": "indoor"
   },
   {
    "id": "hq-1f-car--hq-2f-car",
@@ -10056,6 +11623,1572 @@
    "from": "hq-13f-car",
    "to": "hq-14f-car",
    "kind": "elevator"
+  },
+  {
+   "id": "exchange-1f-car--exchange-1f-car-door",
+   "from": "exchange-1f-car",
+   "to": "exchange-1f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-2f-car--exchange-2f-car-door",
+   "from": "exchange-2f-car",
+   "to": "exchange-2f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-3f-car--exchange-3f-car-door",
+   "from": "exchange-3f-car",
+   "to": "exchange-3f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-4f-car--exchange-4f-car-door",
+   "from": "exchange-4f-car",
+   "to": "exchange-4f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-5f-car--exchange-5f-car-door",
+   "from": "exchange-5f-car",
+   "to": "exchange-5f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-6f-car--exchange-6f-car-door",
+   "from": "exchange-6f-car",
+   "to": "exchange-6f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-10f-car-door--hq-10f",
+   "from": "hq-10f-car-door",
+   "to": "hq-10f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-10f-car--hq-10f-car-door",
+   "from": "hq-10f-car",
+   "to": "hq-10f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-11f-car-door--hq-11f",
+   "from": "hq-11f-car-door",
+   "to": "hq-11f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-11f-car--hq-11f-car-door",
+   "from": "hq-11f-car",
+   "to": "hq-11f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-12f-car-door--hq-12f",
+   "from": "hq-12f-car-door",
+   "to": "hq-12f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-12f-car--hq-12f-car-door",
+   "from": "hq-12f-car",
+   "to": "hq-12f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-13f-car-door--hq-13f",
+   "from": "hq-13f-car-door",
+   "to": "hq-13f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-13f-car--hq-13f-car-door",
+   "from": "hq-13f-car",
+   "to": "hq-13f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-14f-car-door--hq-14f",
+   "from": "hq-14f-car-door",
+   "to": "hq-14f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-14f-car--hq-14f-car-door",
+   "from": "hq-14f-car",
+   "to": "hq-14f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-1f-car-door--hq-1f-ev",
+   "from": "hq-1f-car-door",
+   "to": "hq-1f-ev",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-1f-car--hq-1f-car-door",
+   "from": "hq-1f-car",
+   "to": "hq-1f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-2f-car-door--hq-2f-ev",
+   "from": "hq-2f-car-door",
+   "to": "hq-2f-ev",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-2f-car--hq-2f-car-door",
+   "from": "hq-2f-car",
+   "to": "hq-2f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-3f-car-door--hq-3f-ev",
+   "from": "hq-3f-car-door",
+   "to": "hq-3f-ev",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-3f-car--hq-3f-car-door",
+   "from": "hq-3f-car",
+   "to": "hq-3f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-car-door--hq-4f-ev",
+   "from": "hq-4f-car-door",
+   "to": "hq-4f-ev",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-car--hq-4f-car-door",
+   "from": "hq-4f-car",
+   "to": "hq-4f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-5f-car-door--hq-5f",
+   "from": "hq-5f-car-door",
+   "to": "hq-5f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-5f-car--hq-5f-car-door",
+   "from": "hq-5f-car",
+   "to": "hq-5f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-6f-car-door--hq-6f-hall",
+   "from": "hq-6f-car-door",
+   "to": "hq-6f-hall",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-6f-car--hq-6f-car-door",
+   "from": "hq-6f-car",
+   "to": "hq-6f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-7f-car-door--hq-7f",
+   "from": "hq-7f-car-door",
+   "to": "hq-7f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-7f-car--hq-7f-car-door",
+   "from": "hq-7f-car",
+   "to": "hq-7f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-8f-car-door--hq-8f",
+   "from": "hq-8f-car-door",
+   "to": "hq-8f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-8f-car--hq-8f-car-door",
+   "from": "hq-8f-car",
+   "to": "hq-8f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-9f-car-door--hq-9f",
+   "from": "hq-9f-car-door",
+   "to": "hq-9f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-9f-car--hq-9f-car-door",
+   "from": "hq-9f-car",
+   "to": "hq-9f-car-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f--research-10f-door",
+   "from": "research-10f",
+   "to": "research-10f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east--research-10f-east-door",
+   "from": "research-10f-east",
+   "to": "research-10f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f--research-11f-door",
+   "from": "research-11f",
+   "to": "research-11f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east--research-11f-east-door",
+   "from": "research-11f-east",
+   "to": "research-11f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f--research-12f-door",
+   "from": "research-12f",
+   "to": "research-12f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east--research-12f-east-door",
+   "from": "research-12f-east",
+   "to": "research-12f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f--research-13f-door",
+   "from": "research-13f",
+   "to": "research-13f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east--research-13f-east-door",
+   "from": "research-13f-east",
+   "to": "research-13f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f--research-14f-door",
+   "from": "research-14f",
+   "to": "research-14f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east--research-14f-east-door",
+   "from": "research-14f-east",
+   "to": "research-14f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-door--classroom-2f-kenkyu",
+   "from": "research-2f-door",
+   "to": "classroom-2f-kenkyu",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f--research-2f-door",
+   "from": "research-2f",
+   "to": "research-2f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-east--research-2f-east-door",
+   "from": "research-2f-east",
+   "to": "research-2f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-door--k3-019",
+   "from": "research-3f-door",
+   "to": "k3-019",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f--research-3f-door",
+   "from": "research-3f",
+   "to": "research-3f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-door--k4-019",
+   "from": "research-4f-door",
+   "to": "k4-019",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f--research-4f-door",
+   "from": "research-4f",
+   "to": "research-4f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f-door--k5-021",
+   "from": "research-5f-door",
+   "to": "k5-021",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f--research-5f-door",
+   "from": "research-5f",
+   "to": "research-5f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-door--k6-015",
+   "from": "research-6f-door",
+   "to": "k6-015",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-door--classroom-6f-kenkyu",
+   "from": "research-6f-door",
+   "to": "classroom-6f-kenkyu",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f--research-6f-door",
+   "from": "research-6f",
+   "to": "research-6f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-east--research-6f-east-door",
+   "from": "research-6f-east",
+   "to": "research-6f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-7f-door--classroom-7f-kenkyu",
+   "from": "research-7f-door",
+   "to": "classroom-7f-kenkyu",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-7f--research-7f-door",
+   "from": "research-7f",
+   "to": "research-7f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-door--classroom-8f",
+   "from": "research-8f-door",
+   "to": "classroom-8f",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f--research-8f-door",
+   "from": "research-8f",
+   "to": "research-8f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east--research-8f-east-door",
+   "from": "research-8f-east",
+   "to": "research-8f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f--research-9f-door",
+   "from": "research-9f",
+   "to": "research-9f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east--research-9f-east-door",
+   "from": "research-9f-east",
+   "to": "research-9f-east-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "o-099--o-099--research-road~1",
+   "from": "o-099",
+   "to": "o-099--research-road~1",
+   "kind": "ground"
+  },
+  {
+   "id": "o-099--research-road~1--o-099--research-road~2",
+   "from": "o-099--research-road~1",
+   "to": "o-099--research-road~2",
+   "kind": "ground"
+  },
+  {
+   "id": "o-099--research-road~2--research-road",
+   "from": "o-099--research-road~2",
+   "to": "research-road",
+   "kind": "ground"
+  },
+  {
+   "id": "research-road--research-road--o-100~1",
+   "from": "research-road",
+   "to": "research-road--o-100~1",
+   "kind": "ground"
+  },
+  {
+   "id": "research-road--o-100~1--research-road--o-100~2",
+   "from": "research-road--o-100~1",
+   "to": "research-road--o-100~2",
+   "kind": "ground"
+  },
+  {
+   "id": "research-road--o-100~2--o-100",
+   "from": "research-road--o-100~2",
+   "to": "o-100",
+   "kind": "ground"
+  },
+  {
+   "id": "o-121--o-121--o-122~1",
+   "from": "o-121",
+   "to": "o-121--o-122~1",
+   "kind": "ground"
+  },
+  {
+   "id": "o-121--o-122~1--o-122",
+   "from": "o-121--o-122~1",
+   "to": "o-122",
+   "kind": "ground"
+  },
+  {
+   "id": "k1-004--k1-005",
+   "from": "k1-004",
+   "to": "k1-005",
+   "kind": "indoor"
+  },
+  {
+   "id": "k1-007--k1-008",
+   "from": "k1-007",
+   "to": "k1-008",
+   "kind": "indoor"
+  },
+  {
+   "id": "k1-008--k1-009",
+   "from": "k1-008",
+   "to": "k1-009",
+   "kind": "indoor"
+  },
+  {
+   "id": "k4-011--k4-011--k4-026~1",
+   "from": "k4-011",
+   "to": "k4-011--k4-026~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "k4-011--k4-026~1--k4-011--k4-026~2",
+   "from": "k4-011--k4-026~1",
+   "to": "k4-011--k4-026~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "k4-011--k4-026~2--k4-026",
+   "from": "k4-011--k4-026~2",
+   "to": "k4-026",
+   "kind": "indoor"
+  },
+  {
+   "id": "k1-010--classroom-3f-lobby",
+   "from": "k1-010",
+   "to": "classroom-3f-lobby",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-3f-lobby--k3-038",
+   "from": "classroom-3f-lobby",
+   "to": "k3-038",
+   "kind": "indoor"
+  },
+  {
+   "id": "k4-037--classroom-4f-lobby",
+   "from": "k4-037",
+   "to": "classroom-4f-lobby",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-lobby--k4-038",
+   "from": "classroom-4f-lobby",
+   "to": "k4-038",
+   "kind": "indoor"
+  },
+  {
+   "id": "k5-044--classroom-5f-lobby",
+   "from": "k5-044",
+   "to": "classroom-5f-lobby",
+   "kind": "indoor"
+  },
+  {
+   "id": "k5-045--k5-046",
+   "from": "k5-045",
+   "to": "k5-046",
+   "kind": "indoor"
+  },
+  {
+   "id": "k6-019--k6-016",
+   "from": "k6-019",
+   "to": "k6-016",
+   "kind": "indoor"
+  },
+  {
+   "id": "x4-020--x4-020--x4-021~1",
+   "from": "x4-020",
+   "to": "x4-020--x4-021~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "x4-020--x4-021~1--x4-021",
+   "from": "x4-020--x4-021~1",
+   "to": "x4-021",
+   "kind": "indoor"
+  },
+  {
+   "id": "x4-011--x4-011--x4-025~1",
+   "from": "x4-011",
+   "to": "x4-011--x4-025~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "x4-011--x4-025~1--x4-011--x4-025~2",
+   "from": "x4-011--x4-025~1",
+   "to": "x4-011--x4-025~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "x4-011--x4-025~2--x4-025",
+   "from": "x4-011--x4-025~2",
+   "to": "x4-025",
+   "kind": "indoor"
+  },
+  {
+   "id": "x6-017--x6-017--x6-018~1",
+   "from": "x6-017",
+   "to": "x6-017--x6-018~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "x6-017--x6-018~1--x6-018",
+   "from": "x6-017--x6-018~1",
+   "to": "x6-018",
+   "kind": "indoor"
+  },
+  {
+   "id": "x6-012--x6-012--x6-022~1",
+   "from": "x6-012",
+   "to": "x6-012--x6-022~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "x6-012--x6-022~1--x6-012--x6-022~2",
+   "from": "x6-012--x6-022~1",
+   "to": "x6-012--x6-022~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "x6-012--x6-022~2--x6-022",
+   "from": "x6-012--x6-022~2",
+   "to": "x6-022",
+   "kind": "indoor"
+  },
+  {
+   "id": "x2-002--x2-002--x2-003~1",
+   "from": "x2-002",
+   "to": "x2-002--x2-003~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "x2-002--x2-003~1--x2-003",
+   "from": "x2-002--x2-003~1",
+   "to": "x2-003",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-hall--hq-4f-bridge~1",
+   "from": "hq-4f-hall",
+   "to": "hq-4f-hall--hq-4f-bridge~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~1--hq-4f-hall--hq-4f-bridge~2",
+   "from": "hq-4f-hall--hq-4f-bridge~1",
+   "to": "hq-4f-hall--hq-4f-bridge~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~2--hq-4f-hall--hq-4f-bridge~3",
+   "from": "hq-4f-hall--hq-4f-bridge~2",
+   "to": "hq-4f-hall--hq-4f-bridge~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~3--hq-4f-hall--hq-4f-bridge~4",
+   "from": "hq-4f-hall--hq-4f-bridge~3",
+   "to": "hq-4f-hall--hq-4f-bridge~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~4--hq-4f-hall--hq-4f-bridge~5",
+   "from": "hq-4f-hall--hq-4f-bridge~4",
+   "to": "hq-4f-hall--hq-4f-bridge~5",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~5--hq-4f-hall--hq-4f-bridge~6",
+   "from": "hq-4f-hall--hq-4f-bridge~5",
+   "to": "hq-4f-hall--hq-4f-bridge~6",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~6--hq-4f-hall--hq-4f-bridge~7",
+   "from": "hq-4f-hall--hq-4f-bridge~6",
+   "to": "hq-4f-hall--hq-4f-bridge~7",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-hall--hq-4f-bridge~7--hq-4f-bridge",
+   "from": "hq-4f-hall--hq-4f-bridge~7",
+   "to": "hq-4f-bridge",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-hall--hq-6f-bridge~1",
+   "from": "hq-6f-hall",
+   "to": "hq-6f-hall--hq-6f-bridge~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~1--hq-6f-hall--hq-6f-bridge~2",
+   "from": "hq-6f-hall--hq-6f-bridge~1",
+   "to": "hq-6f-hall--hq-6f-bridge~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~2--hq-6f-hall--hq-6f-bridge~3",
+   "from": "hq-6f-hall--hq-6f-bridge~2",
+   "to": "hq-6f-hall--hq-6f-bridge~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~3--hq-6f-hall--hq-6f-bridge~4",
+   "from": "hq-6f-hall--hq-6f-bridge~3",
+   "to": "hq-6f-hall--hq-6f-bridge~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~4--hq-6f-hall--hq-6f-bridge~5",
+   "from": "hq-6f-hall--hq-6f-bridge~4",
+   "to": "hq-6f-hall--hq-6f-bridge~5",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-6f-hall--hq-6f-bridge~5--hq-6f-bridge",
+   "from": "hq-6f-hall--hq-6f-bridge~5",
+   "to": "hq-6f-bridge",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-1f-ev--hq-1f-ev--hq-entrance~1",
+   "from": "hq-1f-ev",
+   "to": "hq-1f-ev--hq-entrance~1",
+   "kind": "ground"
+  },
+  {
+   "id": "hq-1f-ev--hq-entrance~1--hq-1f-ev--hq-entrance~2",
+   "from": "hq-1f-ev--hq-entrance~1",
+   "to": "hq-1f-ev--hq-entrance~2",
+   "kind": "ground"
+  },
+  {
+   "id": "hq-1f-ev--hq-entrance~2--hq-entrance",
+   "from": "hq-1f-ev--hq-entrance~2",
+   "to": "hq-entrance",
+   "kind": "ground"
+  },
+  {
+   "id": "hq-2f-ev--hq-2f-ev--hq-2f~1",
+   "from": "hq-2f-ev",
+   "to": "hq-2f-ev--hq-2f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-2f-ev--hq-2f~1--hq-2f-ev--hq-2f~2",
+   "from": "hq-2f-ev--hq-2f~1",
+   "to": "hq-2f-ev--hq-2f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-2f-ev--hq-2f~2--hq-2f",
+   "from": "hq-2f-ev--hq-2f~2",
+   "to": "hq-2f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f-ev--hq-3f~1",
+   "from": "hq-3f-ev",
+   "to": "hq-3f-ev--hq-3f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f~1--hq-3f-ev--hq-3f~2",
+   "from": "hq-3f-ev--hq-3f~1",
+   "to": "hq-3f-ev--hq-3f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f~2--hq-3f-ev--hq-3f~3",
+   "from": "hq-3f-ev--hq-3f~2",
+   "to": "hq-3f-ev--hq-3f~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f~3--hq-3f-ev--hq-3f~4",
+   "from": "hq-3f-ev--hq-3f~3",
+   "to": "hq-3f-ev--hq-3f~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-3f-ev--hq-3f~4--hq-3f",
+   "from": "hq-3f-ev--hq-3f~4",
+   "to": "hq-3f",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-ev--hq-4f-hall~1",
+   "from": "hq-4f-ev",
+   "to": "hq-4f-ev--hq-4f-hall~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-hall~1--hq-4f-ev--hq-4f-hall~2",
+   "from": "hq-4f-ev--hq-4f-hall~1",
+   "to": "hq-4f-ev--hq-4f-hall~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-hall~2--hq-4f-ev--hq-4f-hall~3",
+   "from": "hq-4f-ev--hq-4f-hall~2",
+   "to": "hq-4f-ev--hq-4f-hall~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-hall~3--hq-4f-ev--hq-4f-hall~4",
+   "from": "hq-4f-ev--hq-4f-hall~3",
+   "to": "hq-4f-ev--hq-4f-hall~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "hq-4f-ev--hq-4f-hall~4--hq-4f-hall",
+   "from": "hq-4f-ev--hq-4f-hall~4",
+   "to": "hq-4f-hall",
+   "kind": "indoor"
+  },
+  {
+   "id": "k6-020--k6-021",
+   "from": "k6-020",
+   "to": "k6-021",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f--classroom-7f--classroom-7f-e8~1",
+   "from": "classroom-7f",
+   "to": "classroom-7f--classroom-7f-e8~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~1--classroom-7f--classroom-7f-e8~2",
+   "from": "classroom-7f--classroom-7f-e8~1",
+   "to": "classroom-7f--classroom-7f-e8~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~2--classroom-7f--classroom-7f-e8~3",
+   "from": "classroom-7f--classroom-7f-e8~2",
+   "to": "classroom-7f--classroom-7f-e8~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~3--classroom-7f--classroom-7f-e8~4",
+   "from": "classroom-7f--classroom-7f-e8~3",
+   "to": "classroom-7f--classroom-7f-e8~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~4--classroom-7f--classroom-7f-e8~5",
+   "from": "classroom-7f--classroom-7f-e8~4",
+   "to": "classroom-7f--classroom-7f-e8~5",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f--classroom-7f-e8~5--classroom-7f-e8",
+   "from": "classroom-7f--classroom-7f-e8~5",
+   "to": "classroom-7f-e8",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f--research-1f--research-1f-door~1",
+   "from": "research-1f",
+   "to": "research-1f--research-1f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f--research-1f-door~1--research-1f-door",
+   "from": "research-1f--research-1f-door~1",
+   "to": "research-1f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-1f-door--research-1f-door--classroom-research-corner~1",
+   "from": "research-1f-door",
+   "to": "research-1f-door--classroom-research-corner~1",
+   "kind": "ground"
+  },
+  {
+   "id": "research-1f-door--classroom-research-corner~1--classroom-research-corner",
+   "from": "research-1f-door--classroom-research-corner~1",
+   "to": "classroom-research-corner",
+   "kind": "ground"
+  },
+  {
+   "id": "classroom-1f-koryu--classroom-1f-koryu--k1-005~1",
+   "from": "classroom-1f-koryu",
+   "to": "classroom-1f-koryu--k1-005~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-koryu--k1-005~1--classroom-1f-koryu--k1-005~2",
+   "from": "classroom-1f-koryu--k1-005~1",
+   "to": "classroom-1f-koryu--k1-005~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-koryu--k1-005~2--k1-005",
+   "from": "classroom-1f-koryu--k1-005~2",
+   "to": "k1-005",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--classroom-1f-kenkyu--k1-005~1",
+   "from": "classroom-1f-kenkyu",
+   "to": "classroom-1f-kenkyu--k1-005~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005~1--classroom-1f-kenkyu--k1-005~2",
+   "from": "classroom-1f-kenkyu--k1-005~1",
+   "to": "classroom-1f-kenkyu--k1-005~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005~2--classroom-1f-kenkyu--k1-005~3",
+   "from": "classroom-1f-kenkyu--k1-005~2",
+   "to": "classroom-1f-kenkyu--k1-005~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005~3--classroom-1f-kenkyu--k1-005~4",
+   "from": "classroom-1f-kenkyu--k1-005~3",
+   "to": "classroom-1f-kenkyu--k1-005~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--k1-005~4--k1-005",
+   "from": "classroom-1f-kenkyu--k1-005~4",
+   "to": "k1-005",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--classroom-1f-kenkyu--research-1f~1",
+   "from": "classroom-1f-kenkyu",
+   "to": "classroom-1f-kenkyu--research-1f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--research-1f~1--classroom-1f-kenkyu--research-1f~2",
+   "from": "classroom-1f-kenkyu--research-1f~1",
+   "to": "classroom-1f-kenkyu--research-1f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-1f-kenkyu--research-1f~2--research-1f",
+   "from": "classroom-1f-kenkyu--research-1f~2",
+   "to": "research-1f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-2f-kenkyu--classroom-2f-kenkyu--k1-009~1",
+   "from": "classroom-2f-kenkyu",
+   "to": "classroom-2f-kenkyu--k1-009~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009~1--classroom-2f-kenkyu--k1-009~2",
+   "from": "classroom-2f-kenkyu--k1-009~1",
+   "to": "classroom-2f-kenkyu--k1-009~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009~2--classroom-2f-kenkyu--k1-009~3",
+   "from": "classroom-2f-kenkyu--k1-009~2",
+   "to": "classroom-2f-kenkyu--k1-009~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009~3--classroom-2f-kenkyu--k1-009~4",
+   "from": "classroom-2f-kenkyu--k1-009~3",
+   "to": "classroom-2f-kenkyu--k1-009~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-2f-kenkyu--k1-009~4--k1-009",
+   "from": "classroom-2f-kenkyu--k1-009~4",
+   "to": "k1-009",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-3f-kenkyu--classroom-3f-kenkyu--k3-019~1",
+   "from": "classroom-3f-kenkyu",
+   "to": "classroom-3f-kenkyu--k3-019~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-3f-kenkyu--k3-019~1--classroom-3f-kenkyu--k3-019~2",
+   "from": "classroom-3f-kenkyu--k3-019~1",
+   "to": "classroom-3f-kenkyu--k3-019~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-3f-kenkyu--k3-019~2--classroom-3f-kenkyu--k3-019~3",
+   "from": "classroom-3f-kenkyu--k3-019~2",
+   "to": "classroom-3f-kenkyu--k3-019~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-3f-kenkyu--k3-019~3--k3-019",
+   "from": "classroom-3f-kenkyu--k3-019~3",
+   "to": "k3-019",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-kenkyu--classroom-4f-kenkyu--k4-019~1",
+   "from": "classroom-4f-kenkyu",
+   "to": "classroom-4f-kenkyu--k4-019~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019~1--classroom-4f-kenkyu--k4-019~2",
+   "from": "classroom-4f-kenkyu--k4-019~1",
+   "to": "classroom-4f-kenkyu--k4-019~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019~2--classroom-4f-kenkyu--k4-019~3",
+   "from": "classroom-4f-kenkyu--k4-019~2",
+   "to": "classroom-4f-kenkyu--k4-019~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019~3--classroom-4f-kenkyu--k4-019~4",
+   "from": "classroom-4f-kenkyu--k4-019~3",
+   "to": "classroom-4f-kenkyu--k4-019~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-4f-kenkyu--k4-019~4--k4-019",
+   "from": "classroom-4f-kenkyu--k4-019~4",
+   "to": "k4-019",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-5f-kenkyu--classroom-5f-kenkyu--k5-021~1",
+   "from": "classroom-5f-kenkyu",
+   "to": "classroom-5f-kenkyu--k5-021~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-5f-kenkyu--k5-021~1--classroom-5f-kenkyu--k5-021~2",
+   "from": "classroom-5f-kenkyu--k5-021~1",
+   "to": "classroom-5f-kenkyu--k5-021~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-5f-kenkyu--k5-021~2--classroom-5f-kenkyu--k5-021~3",
+   "from": "classroom-5f-kenkyu--k5-021~2",
+   "to": "classroom-5f-kenkyu--k5-021~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-5f-kenkyu--k5-021~3--k5-021",
+   "from": "classroom-5f-kenkyu--k5-021~3",
+   "to": "k5-021",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-6f-koryu--classroom-6f-koryu--k6-004~1",
+   "from": "classroom-6f-koryu",
+   "to": "classroom-6f-koryu--k6-004~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-6f-koryu--k6-004~1--classroom-6f-koryu--k6-004~2",
+   "from": "classroom-6f-koryu--k6-004~1",
+   "to": "classroom-6f-koryu--k6-004~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-6f-koryu--k6-004~2--k6-004",
+   "from": "classroom-6f-koryu--k6-004~2",
+   "to": "k6-004",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f-koryu--classroom-7f~1",
+   "from": "classroom-7f-koryu",
+   "to": "classroom-7f-koryu--classroom-7f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~1--classroom-7f-koryu--classroom-7f~2",
+   "from": "classroom-7f-koryu--classroom-7f~1",
+   "to": "classroom-7f-koryu--classroom-7f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~2--classroom-7f-koryu--classroom-7f~3",
+   "from": "classroom-7f-koryu--classroom-7f~2",
+   "to": "classroom-7f-koryu--classroom-7f~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~3--classroom-7f-koryu--classroom-7f~4",
+   "from": "classroom-7f-koryu--classroom-7f~3",
+   "to": "classroom-7f-koryu--classroom-7f~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~4--classroom-7f-koryu--classroom-7f~5",
+   "from": "classroom-7f-koryu--classroom-7f~4",
+   "to": "classroom-7f-koryu--classroom-7f~5",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~5--classroom-7f-koryu--classroom-7f~6",
+   "from": "classroom-7f-koryu--classroom-7f~5",
+   "to": "classroom-7f-koryu--classroom-7f~6",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-koryu--classroom-7f~6--classroom-7f",
+   "from": "classroom-7f-koryu--classroom-7f~6",
+   "to": "classroom-7f",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-kenkyu--classroom-7f-kenkyu--classroom-7f-e8~1",
+   "from": "classroom-7f-kenkyu",
+   "to": "classroom-7f-kenkyu--classroom-7f-e8~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-kenkyu--classroom-7f-e8~1--classroom-7f-kenkyu--classroom-7f-e8~2",
+   "from": "classroom-7f-kenkyu--classroom-7f-e8~1",
+   "to": "classroom-7f-kenkyu--classroom-7f-e8~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-7f-kenkyu--classroom-7f-e8~2--classroom-7f-e8",
+   "from": "classroom-7f-kenkyu--classroom-7f-e8~2",
+   "to": "classroom-7f-e8",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-8f-kenkyu--classroom-8f-kenkyu--classroom-8f~1",
+   "from": "classroom-8f-kenkyu",
+   "to": "classroom-8f-kenkyu--classroom-8f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-8f-kenkyu--classroom-8f~1--classroom-8f-kenkyu--classroom-8f~2",
+   "from": "classroom-8f-kenkyu--classroom-8f~1",
+   "to": "classroom-8f-kenkyu--classroom-8f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "classroom-8f-kenkyu--classroom-8f~2--classroom-8f",
+   "from": "classroom-8f-kenkyu--classroom-8f~2",
+   "to": "classroom-8f",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-1f-car-door--exchange-1f-car-door--exchange-1f~1",
+   "from": "exchange-1f-car-door",
+   "to": "exchange-1f-car-door--exchange-1f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-1f-car-door--exchange-1f~1--exchange-1f",
+   "from": "exchange-1f-car-door--exchange-1f~1",
+   "to": "exchange-1f",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-2f-car-door--exchange-2f-car-door--x2-001~1",
+   "from": "exchange-2f-car-door",
+   "to": "exchange-2f-car-door--x2-001~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-2f-car-door--x2-001~1--exchange-2f-car-door--x2-001~2",
+   "from": "exchange-2f-car-door--x2-001~1",
+   "to": "exchange-2f-car-door--x2-001~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-2f-car-door--x2-001~2--x2-001",
+   "from": "exchange-2f-car-door--x2-001~2",
+   "to": "x2-001",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-3f-car-door--exchange-3f-car-door--exchange-3f~1",
+   "from": "exchange-3f-car-door",
+   "to": "exchange-3f-car-door--exchange-3f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-3f-car-door--exchange-3f~1--exchange-3f-car-door--exchange-3f~2",
+   "from": "exchange-3f-car-door--exchange-3f~1",
+   "to": "exchange-3f-car-door--exchange-3f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-3f-car-door--exchange-3f~2--exchange-3f",
+   "from": "exchange-3f-car-door--exchange-3f~2",
+   "to": "exchange-3f",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-4f-car-door--exchange-4f-car-door--x4-013~1",
+   "from": "exchange-4f-car-door",
+   "to": "exchange-4f-car-door--x4-013~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-4f-car-door--x4-013~1--exchange-4f-car-door--x4-013~2",
+   "from": "exchange-4f-car-door--x4-013~1",
+   "to": "exchange-4f-car-door--x4-013~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-4f-car-door--x4-013~2--x4-013",
+   "from": "exchange-4f-car-door--x4-013~2",
+   "to": "x4-013",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-5f-car-door--exchange-5f-car-door--exchange-5f~1",
+   "from": "exchange-5f-car-door",
+   "to": "exchange-5f-car-door--exchange-5f~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-5f-car-door--exchange-5f~1--exchange-5f-car-door--exchange-5f~2",
+   "from": "exchange-5f-car-door--exchange-5f~1",
+   "to": "exchange-5f-car-door--exchange-5f~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-5f-car-door--exchange-5f~2--exchange-5f",
+   "from": "exchange-5f-car-door--exchange-5f~2",
+   "to": "exchange-5f",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-6f-car-door--exchange-6f-car-door--x6-014~1",
+   "from": "exchange-6f-car-door",
+   "to": "exchange-6f-car-door--x6-014~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-6f-car-door--x6-014~1--exchange-6f-car-door--x6-014~2",
+   "from": "exchange-6f-car-door--x6-014~1",
+   "to": "exchange-6f-car-door--x6-014~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "exchange-6f-car-door--x6-014~2--x6-014",
+   "from": "exchange-6f-car-door--x6-014~2",
+   "to": "x6-014",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-door--research-10f-east-door--research-10f-door~1",
+   "from": "research-10f-east-door",
+   "to": "research-10f-east-door--research-10f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-door--research-10f-door~1--research-10f-east-door--research-10f-door~2",
+   "from": "research-10f-east-door--research-10f-door~1",
+   "to": "research-10f-east-door--research-10f-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-door--research-10f-door~2--research-10f-east-door--research-10f-door~3",
+   "from": "research-10f-east-door--research-10f-door~2",
+   "to": "research-10f-east-door--research-10f-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-10f-east-door--research-10f-door~3--research-10f-door",
+   "from": "research-10f-east-door--research-10f-door~3",
+   "to": "research-10f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-door--research-11f-east-door--research-11f-door~1",
+   "from": "research-11f-east-door",
+   "to": "research-11f-east-door--research-11f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-door--research-11f-door~1--research-11f-east-door--research-11f-door~2",
+   "from": "research-11f-east-door--research-11f-door~1",
+   "to": "research-11f-east-door--research-11f-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-door--research-11f-door~2--research-11f-east-door--research-11f-door~3",
+   "from": "research-11f-east-door--research-11f-door~2",
+   "to": "research-11f-east-door--research-11f-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-11f-east-door--research-11f-door~3--research-11f-door",
+   "from": "research-11f-east-door--research-11f-door~3",
+   "to": "research-11f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-door--research-12f-east-door--research-12f-door~1",
+   "from": "research-12f-east-door",
+   "to": "research-12f-east-door--research-12f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-door--research-12f-door~1--research-12f-east-door--research-12f-door~2",
+   "from": "research-12f-east-door--research-12f-door~1",
+   "to": "research-12f-east-door--research-12f-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-door--research-12f-door~2--research-12f-east-door--research-12f-door~3",
+   "from": "research-12f-east-door--research-12f-door~2",
+   "to": "research-12f-east-door--research-12f-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-12f-east-door--research-12f-door~3--research-12f-door",
+   "from": "research-12f-east-door--research-12f-door~3",
+   "to": "research-12f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-door--research-13f-east-door--research-13f-door~1",
+   "from": "research-13f-east-door",
+   "to": "research-13f-east-door--research-13f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-door--research-13f-door~1--research-13f-east-door--research-13f-door~2",
+   "from": "research-13f-east-door--research-13f-door~1",
+   "to": "research-13f-east-door--research-13f-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-door--research-13f-door~2--research-13f-east-door--research-13f-door~3",
+   "from": "research-13f-east-door--research-13f-door~2",
+   "to": "research-13f-east-door--research-13f-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-13f-east-door--research-13f-door~3--research-13f-door",
+   "from": "research-13f-east-door--research-13f-door~3",
+   "to": "research-13f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-door--research-14f-east-door--research-14f-door~1",
+   "from": "research-14f-east-door",
+   "to": "research-14f-east-door--research-14f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-door--research-14f-door~1--research-14f-east-door--research-14f-door~2",
+   "from": "research-14f-east-door--research-14f-door~1",
+   "to": "research-14f-east-door--research-14f-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-door--research-14f-door~2--research-14f-east-door--research-14f-door~3",
+   "from": "research-14f-east-door--research-14f-door~2",
+   "to": "research-14f-east-door--research-14f-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-14f-east-door--research-14f-door~3--research-14f-door",
+   "from": "research-14f-east-door--research-14f-door~3",
+   "to": "research-14f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-door--research-2f-door--research-gate~1",
+   "from": "research-2f-door",
+   "to": "research-2f-door--research-gate~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-door--research-gate~1--research-2f-door--research-gate~2",
+   "from": "research-2f-door--research-gate~1",
+   "to": "research-2f-door--research-gate~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-door--research-gate~2--research-gate",
+   "from": "research-2f-door--research-gate~2",
+   "to": "research-gate",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-door--research-2f-door--k2-008~1",
+   "from": "research-2f-door",
+   "to": "research-2f-door--k2-008~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-door--k2-008~1--research-2f-door--k2-008~2",
+   "from": "research-2f-door--k2-008~1",
+   "to": "research-2f-door--k2-008~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-door--k2-008~2--research-2f-door--k2-008~3",
+   "from": "research-2f-door--k2-008~2",
+   "to": "research-2f-door--k2-008~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-door--k2-008~3--k2-008",
+   "from": "research-2f-door--k2-008~3",
+   "to": "k2-008",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-east-door--research-2f-east-door--research-gate~1",
+   "from": "research-2f-east-door",
+   "to": "research-2f-east-door--research-gate~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-east-door--research-gate~1--research-2f-east-door--research-gate~2",
+   "from": "research-2f-east-door--research-gate~1",
+   "to": "research-2f-east-door--research-gate~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-east-door--research-gate~2--research-2f-east-door--research-gate~3",
+   "from": "research-2f-east-door--research-gate~2",
+   "to": "research-2f-east-door--research-gate~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-2f-east-door--research-gate~3--research-gate",
+   "from": "research-2f-east-door--research-gate~3",
+   "to": "research-gate",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-door--research-3f-door--classroom-3f-kenkyu~1",
+   "from": "research-3f-door",
+   "to": "research-3f-door--classroom-3f-kenkyu~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-door--classroom-3f-kenkyu~1--research-3f-door--classroom-3f-kenkyu~2",
+   "from": "research-3f-door--classroom-3f-kenkyu~1",
+   "to": "research-3f-door--classroom-3f-kenkyu~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-3f-door--classroom-3f-kenkyu~2--classroom-3f-kenkyu",
+   "from": "research-3f-door--classroom-3f-kenkyu~2",
+   "to": "classroom-3f-kenkyu",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-door--research-4f-door--classroom-4f-kenkyu~1",
+   "from": "research-4f-door",
+   "to": "research-4f-door--classroom-4f-kenkyu~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-door--classroom-4f-kenkyu~1--research-4f-door--classroom-4f-kenkyu~2",
+   "from": "research-4f-door--classroom-4f-kenkyu~1",
+   "to": "research-4f-door--classroom-4f-kenkyu~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-4f-door--classroom-4f-kenkyu~2--classroom-4f-kenkyu",
+   "from": "research-4f-door--classroom-4f-kenkyu~2",
+   "to": "classroom-4f-kenkyu",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f-door--research-5f-door--classroom-5f-kenkyu~1",
+   "from": "research-5f-door",
+   "to": "research-5f-door--classroom-5f-kenkyu~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-5f-door--classroom-5f-kenkyu~1--classroom-5f-kenkyu",
+   "from": "research-5f-door--classroom-5f-kenkyu~1",
+   "to": "classroom-5f-kenkyu",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-door--research-6f-door--classroom-research-6f-mouth~1",
+   "from": "research-6f-door",
+   "to": "research-6f-door--classroom-research-6f-mouth~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-door--classroom-research-6f-mouth~1--research-6f-door--classroom-research-6f-mouth~2",
+   "from": "research-6f-door--classroom-research-6f-mouth~1",
+   "to": "research-6f-door--classroom-research-6f-mouth~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-door--classroom-research-6f-mouth~2--classroom-research-6f-mouth",
+   "from": "research-6f-door--classroom-research-6f-mouth~2",
+   "to": "classroom-research-6f-mouth",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-east-door--research-6f-bridge-end~1",
+   "from": "research-6f-east-door",
+   "to": "research-6f-east-door--research-6f-bridge-end~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-bridge-end~1--research-6f-east-door--research-6f-bridge-end~2",
+   "from": "research-6f-east-door--research-6f-bridge-end~1",
+   "to": "research-6f-east-door--research-6f-bridge-end~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-bridge-end~2--research-6f-east-door--research-6f-bridge-end~3",
+   "from": "research-6f-east-door--research-6f-bridge-end~2",
+   "to": "research-6f-east-door--research-6f-bridge-end~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-bridge-end~3--research-6f-east-door--research-6f-bridge-end~4",
+   "from": "research-6f-east-door--research-6f-bridge-end~3",
+   "to": "research-6f-east-door--research-6f-bridge-end~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-6f-east-door--research-6f-bridge-end~4--research-6f-bridge-end",
+   "from": "research-6f-east-door--research-6f-bridge-end~4",
+   "to": "research-6f-bridge-end",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-door--research-8f-door--classroom-8f-kenkyu~1",
+   "from": "research-8f-door",
+   "to": "research-8f-door--classroom-8f-kenkyu~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-door--classroom-8f-kenkyu~1--classroom-8f-kenkyu",
+   "from": "research-8f-door--classroom-8f-kenkyu~1",
+   "to": "classroom-8f-kenkyu",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-east-door--research-8f-door~1",
+   "from": "research-8f-east-door",
+   "to": "research-8f-east-door--research-8f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~1--research-8f-east-door--research-8f-door~2",
+   "from": "research-8f-east-door--research-8f-door~1",
+   "to": "research-8f-east-door--research-8f-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~2--research-8f-east-door--research-8f-door~3",
+   "from": "research-8f-east-door--research-8f-door~2",
+   "to": "research-8f-east-door--research-8f-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~3--research-8f-east-door--research-8f-door~4",
+   "from": "research-8f-east-door--research-8f-door~3",
+   "to": "research-8f-east-door--research-8f-door~4",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~4--research-8f-east-door--research-8f-door~5",
+   "from": "research-8f-east-door--research-8f-door~4",
+   "to": "research-8f-east-door--research-8f-door~5",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~5--research-8f-east-door--research-8f-door~6",
+   "from": "research-8f-east-door--research-8f-door~5",
+   "to": "research-8f-east-door--research-8f-door~6",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~6--research-8f-east-door--research-8f-door~7",
+   "from": "research-8f-east-door--research-8f-door~6",
+   "to": "research-8f-east-door--research-8f-door~7",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-8f-east-door--research-8f-door~7--research-8f-door",
+   "from": "research-8f-east-door--research-8f-door~7",
+   "to": "research-8f-door",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-door--research-9f-east-door--research-9f-door~1",
+   "from": "research-9f-east-door",
+   "to": "research-9f-east-door--research-9f-door~1",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-door--research-9f-door~1--research-9f-east-door--research-9f-door~2",
+   "from": "research-9f-east-door--research-9f-door~1",
+   "to": "research-9f-east-door--research-9f-door~2",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-door--research-9f-door~2--research-9f-east-door--research-9f-door~3",
+   "from": "research-9f-east-door--research-9f-door~2",
+   "to": "research-9f-east-door--research-9f-door~3",
+   "kind": "indoor"
+  },
+  {
+   "id": "research-9f-east-door--research-9f-door~3--research-9f-door",
+   "from": "research-9f-east-door--research-9f-door~3",
+   "to": "research-9f-door",
+   "kind": "indoor"
   }
  ]
 }

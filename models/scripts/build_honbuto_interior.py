@@ -130,47 +130,79 @@ def wall(mb, x0, x1, y0, y1, z, key="part"):
         mb.box(x0, x1, y0, y1, zl, zh, k, skip=(0, 1))
 
 
+# 部屋の扉は開けた状態にする：壁に開口（幅 1.0m・高さ 2.3m）をあけ、枠だけ置く（2026-10-29 ユーザーの指示。
+#   前は壁の表面に扉の板を貼っただけで、展示の一人称が部屋に出入りできず、渡り廊下の口の部屋から廊下へ出られなかった）
+OPEN_DOORS = True
+DOOR_W, DOOR_H = 1.6, 2.3          # 幅は両開きの扉（展示の一人称が扉を抜けて曲がるとき枠に寄らないように）
+
+
 def room(mb, r, z, area, label=None, door=None):
     """r=(x0,x1,y0,y1) の部屋。外壁に面した辺には壁を作らない。door=(辺, 位置0〜1)"""
     x0, x1, y0, y1 = r
     ax0, ax1, ay0, ay1 = area
     t = WALL_T / 2
-    sides = {
-        "-y": (abs(y0 - ay0) > 0.3, lambda: wall(mb, x0, x1, y0 - t, y0 + t, z)),
-        "+y": (abs(y1 - ay1) > 0.3, lambda: wall(mb, x0, x1, y1 - t, y1 + t, z)),
-        "-x": (abs(x0 - ax0) > 0.3, lambda: wall(mb, x0 - t, x0 + t, y0, y1, z)),
-        "+x": (abs(x1 - ax1) > 0.3, lambda: wall(mb, x1 - t, x1 + t, y0, y1, z)),
-    }
-    for k, (inner, fn) in sides.items():
-        if inner:
-            fn()
-    if label is None:
-        return
+    inner = {"-y": abs(y0 - ay0) > 0.3, "+y": abs(y1 - ay1) > 0.3, "-x": abs(x0 - ax0) > 0.3, "+x": abs(x1 - ax1) > 0.3}
+    dirs = {"-y": (0, -1), "+y": (0, 1), "-x": (-1, 0), "+x": (1, 0)}
     # ドアのある辺（指定がなければ、部屋の内側の辺のうち建物の真ん中に近い方）
-    if door is None:
+    if label is not None and door is None:
         cx, cy = (ax0 + ax1) / 2, (ay0 + ay1) / 2
         rx, ry = (x0 + x1) / 2, (y0 + y1) / 2
-        cand = [k for k, (inner, _) in sides.items() if inner]
-        if not cand:
-            return
-        dirs = {"-y": (0, -1), "+y": (0, 1), "-x": (-1, 0), "+x": (1, 0)}
-        door = (max(cand, key=lambda k: dirs[k][0] * (cx - rx) + dirs[k][1] * (cy - ry)), 0.8)
+        cand = [k for k, v in inner.items() if v]
+        if cand:
+            door = (max(cand, key=lambda k: dirs[k][0] * (cx - rx) + dirs[k][1] * (cy - ry)), 0.8)
+    if label is None:
+        door = None
+    dc = None
+    if door is not None:
+        side, p = door
+        dc = (x0 + (x1 - x0) * p) if side in ("-y", "+y") else (y0 + (y1 - y0) * p)
+    for k, v in inner.items():
+        if not v:
+            continue
+        if k in ("-y", "+y"):
+            yy = y0 if k == "-y" else y1
+            if OPEN_DOORS and door is not None and door[0] == k:
+                wall(mb, x0, dc - DOOR_W / 2, yy - t, yy + t, z)
+                wall(mb, dc + DOOR_W / 2, x1, yy - t, yy + t, z)
+                mb.box(dc - DOOR_W / 2, dc + DOOR_W / 2, yy - t, yy + t, z + DOOR_H, z + CEIL, "part", skip=(0,))
+            else:
+                wall(mb, x0, x1, yy - t, yy + t, z)
+        else:
+            xx = x0 if k == "-x" else x1
+            if OPEN_DOORS and door is not None and door[0] == k:
+                wall(mb, xx - t, xx + t, y0, dc - DOOR_W / 2, z)
+                wall(mb, xx - t, xx + t, dc + DOOR_W / 2, y1, z)
+                mb.box(xx - t, xx + t, dc - DOOR_W / 2, dc + DOOR_W / 2, z + DOOR_H, z + CEIL, "part", skip=(0,))
+            else:
+                wall(mb, xx - t, xx + t, y0, y1, z)
+    if door is None:
+        return
     side, p = door
-    n = {"-y": (0, -1), "+y": (0, 1), "-x": (-1, 0), "+x": (1, 0)}[side]
+    n = dirs[side]
     if side in ("-y", "+y"):
         wy = (y0 if side == "-y" else y1) + n[1] * (t + 0.01)
-        dx = x0 + (x1 - x0) * p
-        mb.box(dx - 0.5, dx + 0.5, wy - 0.01, wy + 0.01, z, z + 2.3, "door")
-        mb.box(dx - 0.38, dx + 0.38, wy - 0.015, wy + 0.015, z + 0.9, z + 2.1, "doorglass")
-        sx = dx - 0.75
+        dx = dc
+        if OPEN_DOORS:          # 枠（両脇の柱と上の枠）
+            for xa, xb in ((dx - DOOR_W / 2 - 0.05, dx - DOOR_W / 2), (dx + DOOR_W / 2, dx + DOOR_W / 2 + 0.05)):
+                mb.box(xa, xb, wy - t - 0.03, wy + 0.02, z, z + DOOR_H, "door")
+            mb.box(dx - DOOR_W / 2 - 0.05, dx + DOOR_W / 2 + 0.05, wy - t - 0.03, wy + 0.02, z + DOOR_H, z + DOOR_H + 0.05, "door")
+        else:
+            mb.box(dx - 0.5, dx + 0.5, wy - 0.01, wy + 0.01, z, z + 2.3, "door")
+            mb.box(dx - 0.38, dx + 0.38, wy - 0.015, wy + 0.015, z + 0.9, z + 2.1, "doorglass")
+        sx = dx - (DOOR_W / 2 + 0.3 if OPEN_DOORS else 0.75)
         mb.box(sx - 0.14, sx + 0.14, wy - 0.012, wy + 0.012, z, z + 2.6, "sign")
         add_text(mb, label, (sx, wy + n[1] * 0.015, z + 2.1), n, 0.08 if len(label) > 4 else 0.105)
     else:
         wx = (x0 if side == "-x" else x1) + n[0] * (t + 0.01)
-        dy = y0 + (y1 - y0) * p
-        mb.box(wx - 0.01, wx + 0.01, dy - 0.5, dy + 0.5, z, z + 2.3, "door")
-        mb.box(wx - 0.015, wx + 0.015, dy - 0.38, dy + 0.38, z + 0.9, z + 2.1, "doorglass")
-        sy = dy - 0.75
+        dy = dc
+        if OPEN_DOORS:
+            for ya, yb in ((dy - DOOR_W / 2 - 0.05, dy - DOOR_W / 2), (dy + DOOR_W / 2, dy + DOOR_W / 2 + 0.05)):
+                mb.box(wx - t - 0.03, wx + 0.02, ya, yb, z, z + DOOR_H, "door")
+            mb.box(wx - t - 0.03, wx + 0.02, dy - DOOR_W / 2 - 0.05, dy + DOOR_W / 2 + 0.05, z + DOOR_H, z + DOOR_H + 0.05, "door")
+        else:
+            mb.box(wx - 0.01, wx + 0.01, dy - 0.5, dy + 0.5, z, z + 2.3, "door")
+            mb.box(wx - 0.015, wx + 0.015, dy - 0.38, dy + 0.38, z + 0.9, z + 2.1, "doorglass")
+        sy = dy - (DOOR_W / 2 + 0.3 if OPEN_DOORS else 0.75)
         mb.box(wx - 0.012, wx + 0.012, sy - 0.14, sy + 0.14, z, z + 2.6, "sign")
         add_text(mb, label, (wx + n[0] * 0.015, sy, z + 2.1), n, 0.08 if len(label) > 4 else 0.105)
 
@@ -395,7 +427,7 @@ def plan_2f():
 
 # 大階段：中央の吹き抜け（4 回の見取り図の真ん中の階段）。3F 側が -Y、4F 側が +Y（EV B の前まで）。
 #   見取り図と写真（3回から4回の間にある階段）から。柱（41.3, 48.0）と 2301〜2303（Y ≤ -22.5）、EV B（Y ≥ -9.0）を避けた
-STAIR = (43.0, 46.6, -21.4, -9.6)
+STAIR = (43.0, 46.6, -21.4, -10.4)        # 上の端は EV B の裏（Y -9.0）の 1.4m 手前（踊り場。前は -9.6 で 0.6m しかなく、立つ所がなかった。2026-10-29）
 N_STEP = 26
 
 
@@ -437,7 +469,7 @@ slab_quad(mb, x0 + 0.06, x1 - 0.06, y0 + 0.06, y1 - 0.06, Z2 + 0.02, "floor", Tr
 slab_quad(mb, x0 + 0.06, x1 - 0.06, y0 + 0.06, y1 - 0.06, Z2 - 0.02, "ceil", False, SH)
 slab_quad(mb, x0 + 0.06, x1 - 0.06, y0 + 0.06, y1 - 0.06, Z2 + CEIL, "ceil", False, SH)
 # EV 前のホールの床（ロビーの 2F の床から EV B の扉の前まで。グラフの hq-2f-ev (41.0, -5.6) がここ）
-HALL2 = (37.0, 45.0, LB[3], -1.2)
+HALL2 = (37.0, 47.6, LB[3], -1.2)          # +X は、ロビーの 2F へ入る扉（build_honbuto_exterior.py の LOBBY_DOORS）の前まで
 quad(mb, *HALL2, Z2 + 0.02, "floor")
 quad(mb, *HALL2, Z2 - 0.02, "ceil", up=False)
 for area, r, label in plan_2f():

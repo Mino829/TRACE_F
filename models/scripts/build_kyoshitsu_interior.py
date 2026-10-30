@@ -449,8 +449,12 @@ def partition_panel(mb, xa, xb, yp, z, glass=True):
     mb.box(xa, xb, y0 - 0.01, y1 + 0.01, z, z + 0.08, "base")
 
 
+# 扉は全部開けた状態にする（展示の一人称が扉の板を通り抜けないように。2026-10-29 ユーザーの指示）
+OPEN_DOORS = True
+
+
 def door(mb, xa, xb, yp, z, glass=True):
-    """白い枠の扉（写真 6670：大きなガラスの入った引き戸）"""
+    """白い枠の扉（写真 6670：大きなガラスの入った引き戸）。OPEN_DOORS なら扉を -X 側へ引いて開けておく"""
     y0, y1 = yp - 0.06, yp + 0.06
     DH, fw, m = 2.6, 0.06, 0.12
     mb.box(xa, xb, y0, y1, z + DH, z + CEIL, "panel")
@@ -458,6 +462,8 @@ def door(mb, xa, xb, yp, z, glass=True):
     mb.box(xb - fw, xb, y0 - 0.02, y1 + 0.02, z, z + DH + fw, "door")
     mb.box(xa, xb, y0 - 0.02, y1 + 0.02, z + DH, z + DH + fw, "door")
     a, b = xa + fw, xb - fw
+    if OPEN_DOORS:                      # 引き戸：扉の幅だけ横へずらして、開口をあける
+        a, b = a - (b - a), a
     dy0, dy1 = yp - 0.02, yp + 0.02
     if glass:
         mb.box(a, b, dy0, dy1, z, z + 0.35, "door")
@@ -879,9 +885,14 @@ def glass_wall(mb, p0, p1, z0, h):
 
 
 # 廊下と庭園の間・廊下と屋根の間のガラス
-for p0, p1 in (((G7X0, GY0), (C7X, GY0)), ((C7X, CY), (C7X, GY1)), ((C7X, GY1), (G7X1, GY1)),
+#   扉の口（2026-10-29：前はガラスだけで、エスカレーターの着き場から 8F へのホールや庭園へ出られなかった）
+#   - 研究棟寄りの端（X = G7X1）：8F へのエスカレーターの乗り口の線（Y = E8Y）の前後 1m
+#   - 廊下と庭園の間（Y = GY1）：X 3.8〜6.8
+DOOR7_E = (E8Y - 1.0, E8Y + 1.0)
+DOOR7_G = (3.8, 6.8)
+for p0, p1 in (((G7X0, GY0), (C7X, GY0)), ((C7X, CY), (C7X, GY1)), ((C7X, GY1), (DOOR7_G[0], GY1)), ((DOOR7_G[1], GY1), (G7X1, GY1)),
                ((G7X0, GY0), (G7X0, -2.2)), ((C7X, CY), (EX7, CY)), ((EX7, GY0), (EX7, CY)),
-               ((EX7, GY0), (G7X1, GY0)), ((G7X1, YS), (G7X1, YN)), ((WX0, YS), (G7X1, YS))):
+               ((EX7, GY0), (G7X1, GY0)), ((G7X1, YS), (G7X1, DOOR7_E[0])), ((G7X1, DOOR7_E[1]), (G7X1, YN)), ((WX0, YS), (G7X1, YS))):
     glass_wall(hl, p0, p1, z7, H7)
 # 交流棟寄りの庭園と吹き抜けの屋根の境の手すり
 railing(hl, (C7X, GY0), (C7X, CY), z7)
@@ -1079,7 +1090,17 @@ wing_wall((HX1, WY1 - 0.3), (HX1, HY0 + 0.3), 0, FZ8, +1)
 wing_wall((L2, HY0), (HX1 + 0.3, HY0), 0, FZ8, +1)
 ow.box(L2 - 0.3, HX1 + 0.3, WY1 - 0.32, WY1 - 0.3, 0, FZ8, "ext_wall")
 # 帯の南東（EV A の外）・帯の交流棟側（3F 以上は外）
-wing_wall((WX0 - 0.3, WY1), (L2 - 0.3, WY1), 0, FZ8, -1)
+#   2F は EV A の列の西に、研究棟のゲートの芝生（デッキ）へ出る口をあける（2026-10-29：前は口がなく、
+#   研究棟の EV A から芝生へ出る道が壁を抜けていた）。扉は開けた状態で、枠だけ
+SE_DOOR2 = (30.9, 32.9)
+wing_wall((WX0 - 0.3, WY1), (L2 - 0.3, WY1), 0, FZ[2], -1)
+wing_wall((WX0 - 0.3, WY1), (SE_DOOR2[0], WY1), FZ[2], FZ[3], -1)
+wing_wall((SE_DOOR2[1], WY1), (L2 - 0.3, WY1), FZ[2], FZ[3], -1)
+ow.box(SE_DOOR2[0], SE_DOOR2[1], WY1 - 0.3, WY1, FZ[2] + 2.6, FZ[3], "ext_wall")
+for xa, xb in ((SE_DOOR2[0], SE_DOOR2[0] + 0.08), (SE_DOOR2[1] - 0.08, SE_DOOR2[1])):
+    ow.box(xa, xb, WY1 - 0.32, WY1 + 0.02, FZ[2], FZ[2] + 2.6, "ext_frame")
+ow.box(SE_DOOR2[0], SE_DOOR2[1], WY1 - 0.32, WY1 + 0.02, FZ[2] + 2.52, FZ[2] + 2.6, "ext_frame")
+wing_wall((WX0 - 0.3, WY1), (L2 - 0.3, WY1), FZ[3], FZ8, -1)
 wing_wall((WX0, LY0), (WX0, YS - 0.3), FZ[3], FZ8, -1)
 # 脚の南東・脚の道路側（3F 以上）・脚の交流棟側（波形の壁、写真 6715）
 for f in range(1, 8):
@@ -1105,14 +1126,23 @@ glass_wall(ow, (LX0, DOOR_Y[0]), (LX0, LY0 + 0.3), 0, FZ[2] - SLAB)
 DH_E, DC = 2.6, sum(DOOR_Y) / 2
 ow.box(LX0 - 0.01, LX0 + 0.01, DOOR_Y[0], DOOR_Y[1], DH_E, FZ[2] - SLAB, "ext_glass")           # 扉の上のガラス
 ow.box(LX0 - 0.07, LX0 + 0.07, DOOR_Y[0], DOOR_Y[1], DH_E - 0.1, DH_E, "dark")                  # 扉の上の枠
-for ya, yb in ((DOOR_Y[0], DOOR_Y[0] + 0.1), (DOOR_Y[1] - 0.1, DOOR_Y[1]), (DC - 0.03, DC + 0.03)):
-    ow.box(LX0 - 0.07, LX0 + 0.07, ya, yb, 0, DH_E, "dark")                                       # 両側の柱と真ん中の召し合わせ
-for la, lb in ((DOOR_Y[0] + 0.1, DC - 0.03), (DC + 0.03, DOOR_Y[1] - 0.1)):                      # 扉 2 枚：下と上の枠、ガラス
-    ow.box(LX0 - 0.05, LX0 + 0.05, la, lb, 0, 0.2, "dark")
-    ow.box(LX0 - 0.05, LX0 + 0.05, la, lb, DH_E - 0.3, DH_E - 0.1, "dark")
-    ow.box(LX0 - 0.005, LX0 + 0.005, la, lb, 0.2, DH_E - 0.3, "dglass")
-for yh in (DC - 0.12, DC + 0.12):                                                                 # 取っ手
-    ow.box(LX0 - 0.1, LX0 - 0.06, yh - 0.015, yh + 0.015, 0.85, 1.35, "steel")
+for ya, yb in ((DOOR_Y[0], DOOR_Y[0] + 0.1), (DOOR_Y[1] - 0.1, DOOR_Y[1])):
+    ow.box(LX0 - 0.07, LX0 + 0.07, ya, yb, 0, DH_E, "dark")                                       # 両側の柱
+if OPEN_DOORS:                                                                                    # 扉 2 枚を外（-X）へ 90° 開いて、柱に沿わせる
+    for hy, s_y in ((DOOR_Y[0] + 0.1, +1), (DOOR_Y[1] - 0.1, -1)):
+        ya, yb = sorted((hy, hy + s_y * 0.05))
+        L = DC - 0.03 - (DOOR_Y[0] + 0.1)
+        ow.box(LX0 - 0.07 - L, LX0 - 0.07, ya, yb, 0, 0.2, "dark")
+        ow.box(LX0 - 0.07 - L, LX0 - 0.07, ya, yb, DH_E - 0.3, DH_E - 0.1, "dark")
+        ow.box(LX0 - 0.07 - L, LX0 - 0.07, ya, yb, 0.2, DH_E - 0.3, "dglass")
+else:
+    ow.box(LX0 - 0.07, LX0 + 0.07, DC - 0.03, DC + 0.03, 0, DH_E, "dark")                         # 真ん中の召し合わせ
+    for la, lb in ((DOOR_Y[0] + 0.1, DC - 0.03), (DC + 0.03, DOOR_Y[1] - 0.1)):                  # 扉 2 枚：下と上の枠、ガラス
+        ow.box(LX0 - 0.05, LX0 + 0.05, la, lb, 0, 0.2, "dark")
+        ow.box(LX0 - 0.05, LX0 + 0.05, la, lb, DH_E - 0.3, DH_E - 0.1, "dark")
+        ow.box(LX0 - 0.005, LX0 + 0.005, la, lb, 0.2, DH_E - 0.3, "dglass")
+    for yh in (DC - 0.12, DC + 0.12):                                                             # 取っ手
+        ow.box(LX0 - 0.1, LX0 - 0.06, yh - 0.015, yh + 0.015, 0.85, 1.35, "steel")
 ow.box(LX0 - 3.8, LX0, -18.8, -10.2, 4.3, 4.7, "dark")
 wing_wall((LX0, LY0 + 0.3), (LX0, YS - 0.3), FZ[2], FZ[3], -1)
 # 3F の脚の手前の屋根（外。歩けない）
@@ -1162,7 +1192,7 @@ br.box(bx0 - 0.1, bx1 + 0.1, by0, by1, z6 + 2.9, z6 + 3.3, "ext_wall",
 downlights(br, [(bx0, bx1, by0, by1)], z6 + 2.9)
 # 南棟側の端：ガラスの両開き扉（その先は研究棟.blend のゲートの東の壁）
 door(br, bx0 + 0.2, bx1 - 0.2, by0 + 0.2, z6)
-br.box(bx0, bx1, by0, by0 + 0.1, z6, z6 + 2.9, "ext_wall")
+# （前は扉の真後ろ（端）を壁でふさいでいた。研究棟のゲートの東の壁の口へそのまま出る。2026-10-29）
 # 教室棟側の口（曲がり角の帯の南東の壁）：ガラスの両開き扉（2026-10-24。口に扉が無かった）
 door(br, bx0 + 0.2, bx1 - 0.2, WY1 - 0.15, z6)
 br.build("研究棟側_6Fの渡り廊下")
@@ -1212,12 +1242,14 @@ DY = (-1.3, 1.7)
 ex.box(-L2, -L2 + 0.3, YG1, DY[0], 0, FZ[2], "ext_wall")
 ex.box(-L2, -L2 + 0.3, DY[1], W2, 0, FZ[2], "ext_wall")
 ex.box(-L2, -L2 + 0.3, DY[0], DY[1], 3.0, FZ[2], "ext_wall")
-ex.box(-L2 + 0.14, -L2 + 0.16, DY[0], DY[1], 0, 2.9, "dglass")
-for yy in (DY[0] + 0.05, sum(DY) / 2 - 0.03, sum(DY) / 2 + 0.03, DY[1] - 0.05):
+if not OPEN_DOORS:                                          # 開けた状態では、ガラスの扉と召し合わせ・押し板を作らない
+    ex.box(-L2 + 0.14, -L2 + 0.16, DY[0], DY[1], 0, 2.9, "dglass")
+    for yy in (sum(DY) / 2 - 0.03, sum(DY) / 2 + 0.03):
+        ex.box(-L2 + 0.1, -L2 + 0.2, yy - 0.04, yy + 0.04, 0, 2.9, "ext_frame")
+    ex.box(-L2 + 0.1, -L2 + 0.2, DY[0], DY[1], 1.0, 1.05, "ext_frame")      # 押し板の横桟
+for yy in (DY[0] + 0.05, DY[1] - 0.05):
     ex.box(-L2 + 0.1, -L2 + 0.2, yy - 0.04, yy + 0.04, 0, 2.9, "ext_frame")
 ex.box(-L2 + 0.1, -L2 + 0.2, DY[0], DY[1], 2.9, 3.0, "ext_frame")
-for z in (1.0,):                                            # 押し板の横桟
-    ex.box(-L2 + 0.1, -L2 + 0.2, DY[0], DY[1], z, z + 0.05, "ext_frame")
 ex.box(-L2 - 1.6, -L2, DY[0] - 0.8, DY[1] + 0.8, 3.1, 3.3, "dark")      # 庇
 ex.box(-L2 - 0.05, -L2 + 0.1, DY[0] - 0.8, DY[0] - 0.7, 0, 3.1, "dark")
 ex.box(-L2 - 0.05, -L2 + 0.1, DY[1] + 0.7, DY[1] + 0.8, 0, 3.1, "dark")
@@ -1238,8 +1270,9 @@ for za, zb in zip(zs[:-1], zs[1:]):
 ex.box(L2 - 0.3, L2, YCW, W2, 0, z7t, "ext_wall")
 for f in KF:
     z = FZ[f]
-    ex.box(-L2 + 0.14, -L2 + 0.16, KD[0], KD[1], z, z + 2.5, "dglass")
-    for yy in (KD[0] + 0.04, sum(KD) / 2, KD[1] - 0.04):
+    if not OPEN_DOORS:
+        ex.box(-L2 + 0.14, -L2 + 0.16, KD[0], KD[1], z, z + 2.5, "dglass")
+    for yy in ((KD[0] + 0.04, KD[1] - 0.04) if OPEN_DOORS else (KD[0] + 0.04, sum(KD) / 2, KD[1] - 0.04)):
         ex.box(-L2 + 0.1, -L2 + 0.2, yy - 0.04, yy + 0.04, z, z + 2.5, "ext_frame")
     ex.box(-L2 + 0.1, -L2 + 0.2, KD[0], KD[1], z + 2.5, z + 2.6, "ext_frame")
 # 7F：交流棟寄りの廊下の南東のガラス。吹き抜けの屋根の縁は低い立ち上がり（曲がり角の帯まで）

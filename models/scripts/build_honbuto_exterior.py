@@ -345,6 +345,30 @@ def face_line(m, side, z):
 
 
 # ---------- 1. 建物の本体 ----------
+# 交流棟への渡り廊下の付け根（中央の棟 M の +Y 面、X 48.3〜52.3）の 4F・6F は、壁に扉の口をあける（2026-10-29：
+#   前は扉が壁の表面に貼ってあるだけで、壁は穴がなく、展示の一人称が壁を抜けていた）。扉は開けた状態（OPEN_DOORS）
+OPEN_DOORS = True
+BR_DOOR = (48.35, 52.25, 2.75)        # 口の X の範囲と高さ（床から）
+
+
+# 1F ロビー（高層棟_1Fロビー）の +Y のガラス面の口：1F・2F の EV B のかごの扉の前（かごの扉がガラス面の外を向いているため）と、
+#   2F の EV ホール（build_honbuto_interior.py の HALL2）からロビーの 2F へ入る扉（2026-10-29）
+LOBBY_DOORS = [(40.45, 41.55, G, G + 2.35), (40.45, 41.55, G + 6.0, G + 6.0 + 2.35), (45.6, 47.4, G + 6.0, G + 6.0 + 2.4)]
+
+
+def yface(mb, x0, x1, y, zl, zh, key, hole=None, holes=()):
+    """+Y を向く壁の面。hole / holes = (x0, x1, z0, z1) の所をあける"""
+    holes = list(holes) + ([hole] if hole else [])
+    xs = sorted({x0, x1} | {v for h in holes for v in h[:2] if x0 < v < x1})
+    for xa, xb in zip(xs[:-1], xs[1:]):
+        zs = [(zl, zh)]
+        for hx0, hx1, hz0, hz1 in holes:
+            if hx0 <= xa + 1e-6 and xb <= hx1 + 1e-6:
+                zs = [q for a, b in zs for q in ((a, min(b, hz0)), (max(a, hz1), b)) if q[1] - q[0] > 1e-6]
+        for c, d in zs:
+            mb.face([(xb, y, c), (xa, y, c), (xa, y, d), (xb, y, d)], key)
+
+
 body = MB()
 for m in MASSES:
     if m["kind"] in ("none",):
@@ -361,12 +385,26 @@ for m in MASSES:
         if m["kind"] == "louver":
             # 床・屋根の面と、側面を「腰壁・窓・梁の帯」の 3 段に分ける
             body.box(x0, x1, y0, y1, za, z1, None, [bottom, top, "wall", "wall", "wall", "wall"], skip=(2, 3, 4, 5))
+            # 側面は、ほかの棟に隠れていない所（外に面した所）だけ張る（2026-10-29：前は 4 面とも全部張っていて、
+            #   棟どうしが重なった建物の内側にも窓ガラスの壁ができ、各階のホールと渡り廊下の口の側が分かれていた）
+            door_floor = m["key"] == "M" and any(abs(za - FL[f]) < 1e-6 for f in (4, 6))
             for zl, zh, key in ((za, za + WIN0, "wall"), (za + WIN0, za + WIN1, "glass"), (za + WIN1, z1, "wall")):
                 zh = min(zh, z1)
                 if zh - zl > 0.05:
-                    body.box(x0, x1, y0, y1, zl, zh, key, skip=(0, 1))
+                    for side in SIDES:
+                        for a, b, _, _ in exposed(m, side, (zl + zh) / 2, off=0.05):
+                            if side == "+y":
+                                hole = (BR_DOOR[0], BR_DOOR[1], za, za + BR_DOOR[2]) if door_floor else None
+                                yface(body, a, b, y1, zl, zh, key, hole)
+                            elif side == "-y":
+                                body.face([(a, y0, zl), (b, y0, zl), (b, y0, zh), (a, y0, zh)], key)
+                            elif side == "+x":
+                                body.face([(x1, a, zl), (x1, b, zl), (x1, b, zh), (x1, a, zh)], key)
+                            else:
+                                body.face([(x0, b, zl), (x0, a, zl), (x0, a, zh), (x0, b, zh)], key)
         elif m["kind"] == "lobby":
-            body.box(x0, x1, y0, y1, za, z1, None, ["roof", "soffit", "curtain", "curtain", "curtain", "curtain"])
+            body.box(x0, x1, y0, y1, za, z1, None, ["roof", "soffit", "curtain", "curtain", "curtain", "curtain"], skip=(4,))
+            yface(body, x0, x1, y1, za, z1, "curtain", holes=LOBBY_DOORS)
         elif m["kind"] == "white":
             last = (i == len(segs) - 1)
             if last:
@@ -659,12 +697,14 @@ for x in (BX0 - 0.15, BX1 + 0.15):
 # 渡り廊下の付け根（本部棟の壁 Y = BY0）の扉。4F のデッキと 6F の廊下（2026-10-21：前は扉がなく、TRACE の線が窓ガラスを抜けていた）
 for zf in (ZL, ZU):
     y = BY0 + 0.03
-    br.box(BX0 + 0.2, BX1 - 0.2, y, y + 0.03, zf, zf + 2.6, "entglass")               # ガラスの両開き扉
+    if not OPEN_DOORS:
+        br.box(BX0 + 0.2, BX1 - 0.2, y, y + 0.03, zf, zf + 2.6, "entglass")           # ガラスの両開き扉（開けた状態では作らない）
     br.box(BX0 + 0.05, BX0 + 0.2, y, y + 0.12, zf, zf + 2.75, "steel")                # 黒い枠
     br.box(BX1 - 0.2, BX1 - 0.05, y, y + 0.12, zf, zf + 2.75, "steel")
     br.box(BX0 + 0.05, BX1 - 0.05, y, y + 0.12, zf + 2.6, zf + 2.75, "steel")
     xm = (BX0 + BX1) / 2
-    br.box(xm - 0.03, xm + 0.03, y, y + 0.08, zf, zf + 2.6, "steel")                  # 扉の合わせ目
+    if not OPEN_DOORS:
+        br.box(xm - 0.03, xm + 0.03, y, y + 0.08, zf, zf + 2.6, "steel")              # 扉の合わせ目
 br.build("本部棟_渡り廊下")
 
 # ---------- 9. 高層棟の入口（1F ロビーの西側の面、自動ドア） ----------

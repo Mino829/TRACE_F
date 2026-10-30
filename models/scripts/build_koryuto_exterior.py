@@ -128,11 +128,15 @@ for o in list(bpy.data.objects):
             bpy.data.meshes.remove(me)
 
 
-# エレベーターのかご（交流棟の座標）。教室棟側の端の EV・トイレのかたまり（CORE_X + 5.0〜）の 1 台目の扉の奥（2026-10-24）
-#   かごは 1F〜6F を貫く縦穴。床・天井のスラブと、1F の塊に穴をあける。1F は小さな前室（床と扉の前の空間だけ）
-SHAFT = (20.875, 23.2, -6.9, -5.2)       # x0, x1, y0, y1（扉は -X 側のホールに面する。扉の幅 1.1m は y -6.6〜-5.5）
+# エレベーターのかご（交流棟の座標）。教室棟側の端の EV・トイレのかたまり（CORE_X + 5.0〜10.5）の本部棟側の端（2026-10-24）
+#   扉は渡り廊下側（+X）の面（4F の案内図とユーザーの確認、2026-10-29。前は -X の教室側の面だった）
+#   かごは 1F〜6F を貫く縦穴。床・天井のスラブと、1F の塊に穴をあける。1F は前室と、+X の妻の入口からの通路
+SHAFT = (24.05, 26.375, -6.9, -5.2)      # x0, x1, y0, y1（扉は +X 側のホールに面する。扉の幅 1.1m は y -6.6〜-5.5）
 SHAFT_DOOR = (-6.6, -5.5)
-VEST = (17.9, 20.875, -7.55, -4.55)      # 1F の前室
+VEST = (26.375, 29.1, -7.55, -4.55)      # 1F の前室（扉の前）
+VEST_LINK = (29.1, 32.1, -7.55, 8.8)     # 1F の入口（扉 y 6.4〜9.5）から前室までの通路
+# 扉は全部開けた状態にする（入口の自動ドア・渡り廊下の口のガラス扉。展示の一人称が通り抜けないように。2026-10-29 ユーザーの指示）
+OPEN_DOORS = True
 VEST_H = 3.0
 
 
@@ -267,7 +271,7 @@ for z0 in FLOORS[IN_FROM + 1:]:
     body.boxh(-EX, EX, CW + 0.02, WP - 0.3, z0 - 0.45, z0, "inner", [SHAFT])
 body.box(-EX, EX, CW + 0.02, WP - 0.3, RZ - 0.6, RZ, "inner", keys6=["inner", "roof", "inner", "inner", "inner", "inner"])
 # 1F の中の塊（ガラスの奥）
-body.boxh(-EX, 32.1, -GF + 0.1, GF - 0.1, 0, VEST_H, "inner", [SHAFT, VEST])             # 下の層：かごと前室
+body.boxh(-EX, 32.1, -GF + 0.1, GF - 0.1, 0, VEST_H, "inner", [SHAFT, VEST, VEST_LINK])  # 下の層：かごと前室と入口からの通路
 body.boxh(-EX, 32.1, -GF + 0.1, GF - 0.1, VEST_H, SLAB0, "inner", [SHAFT])
 # 2F の床（上の階が 1F より張り出した部分の天井）
 body.boxh(-EX, EX, CW - 0.1, W2, SLAB0, F1, "soffit", [SHAFT], keys6=["soffit", "soffit", "cw_band", "soffit", "stone", "soffit"])
@@ -476,13 +480,15 @@ for k, z0 in enumerate(FLOORS):
     if k in XBRIDGE_FLOORS:
         # 渡り廊下の口：黒い鉄の枠＋ガラスの扉（扉の下端は床）
         spans = [(RY0, DY[0]), (DY[1], RY1)]
-        rc.box(EX + 0.05, EX + 0.07, DY[0], DY[1], z0, z0 + 3.0, "door_glass")
+        if not OPEN_DOORS:
+            rc.box(EX + 0.05, EX + 0.07, DY[0], DY[1], z0, z0 + 3.0, "door_glass")
         rc.box(EX, EX + 0.3, DY[0], DY[1], z0 + 3.0, z0 + HEAD, "stone")
         rc.box(EX, EX + 0.4, DY[0] - 0.15, DY[0], z0, z0 + 3.15, "black")
         rc.box(EX, EX + 0.4, DY[1], DY[1] + 0.15, z0, z0 + 3.15, "black")
         rc.box(EX, EX + 0.4, DY[0] - 0.15, DY[1] + 0.15, z0 + 3.0, z0 + 3.15, "black")
         m = sum(DY) / 2
-        rc.box(EX + 0.07, EX + 0.12, m - 0.03, m + 0.03, z0, z0 + 3.0, "sash")
+        if not OPEN_DOORS:
+            rc.box(EX + 0.07, EX + 0.12, m - 0.03, m + 0.03, z0, z0 + 3.0, "sash")
     else:
         spans = [(RY0, RY1)]
     for ya, yb in spans:
@@ -518,14 +524,22 @@ en.box(DX, DX + 0.05, EY0 + 0.3, PY, 0, DZ, "black")
 en.box(DX + 0.05, DX + 0.08, EY0 + 0.5, PY - 0.2, 1.9, 2.15, "sign")               # 看板（白い帯）
 en.box(DX + 0.05, DX + 0.07, EY0 + 0.6, EY0 + 0.75, 1.1, 1.45, "sash")            # インターホン
 # ガラスの自動ドア（両開き）と袖のガラス
-en.box(DX - 0.01, DX + 0.01, PY, EY1 - 0.3, 0, DZ, "door_glass")
 gy = [PY, PY + 0.9, PY + 1.95, PY + 3.0, EY1 - 0.3]
-for y in gy:
-    en.box(DX, DX + 0.08, y - 0.04, y + 0.04, 0, DZ, "sash")
-for z in (0.0, DZ - 0.08):
-    en.box(DX, DX + 0.08, PY, EY1 - 0.3, z, z + 0.08, "sash")
-for y in (PY + 1.95 - 0.05, PY + 1.95 + 0.05):                                    # 取っ手
-    en.box(DX + 0.08, DX + 0.12, y - 0.015, y + 0.015, 0.9, 1.9, "sash")
+if OPEN_DOORS:
+    # 自動ドアが開いた状態：袖のガラス（PY〜PY+0.9、PY+3.0〜）だけ残し、真ん中の 2 枚の扉は袖の裏へ引き込む
+    for ya, yb in ((PY, PY + 0.9), (PY + 3.0, EY1 - 0.3)):
+        en.box(DX - 0.01, DX + 0.01, ya, yb, 0, DZ, "door_glass")
+    for y in (PY, PY + 0.9, PY + 3.0, EY1 - 0.3):
+        en.box(DX, DX + 0.08, y - 0.04, y + 0.04, 0, DZ, "sash")
+    en.box(DX, DX + 0.08, PY, EY1 - 0.3, DZ - 0.08, DZ, "sash")
+else:
+    en.box(DX - 0.01, DX + 0.01, PY, EY1 - 0.3, 0, DZ, "door_glass")
+    for y in gy:
+        en.box(DX, DX + 0.08, y - 0.04, y + 0.04, 0, DZ, "sash")
+    for z in (0.0, DZ - 0.08):
+        en.box(DX, DX + 0.08, PY, EY1 - 0.3, z, z + 0.08, "sash")
+    for y in (PY + 1.95 - 0.05, PY + 1.95 + 0.05):                                # 取っ手
+        en.box(DX + 0.08, DX + 0.12, y - 0.015, y + 0.015, 0.9, 1.9, "sash")
 # 足元の床（タイル）と、両わきの御影石
 en.box(DX, OX, EY0 + 0.3, EY1 - 0.3, 0, 0.02, "floor")
 en.box(EX + 0.3, EX + 0.32, RY0, EY0, 0, GB, "granite")
@@ -538,13 +552,15 @@ for k in BRIDGE_FLOORS:
     z0 = FLOORS[k]
     xa, xb = BRIDGE_X
     y = -W2
-    bo.box(xa, xb, y - 0.02, y + 0.02, z0, z0 + 3.0, "door_glass")
+    if not OPEN_DOORS:
+        bo.box(xa, xb, y - 0.02, y + 0.02, z0, z0 + 3.0, "door_glass")
     bo.box(xa - 0.15, xa, y - 0.4, y, z0 - 0.3, z0 + 3.2, "black")
     bo.box(xb, xb + 0.15, y - 0.4, y, z0 - 0.3, z0 + 3.2, "black")
     bo.box(xa - 0.15, xb + 0.15, y - 0.4, y, z0 + 3.0, z0 + 3.2, "black")
     bo.box(xa - 0.15, xb + 0.15, y - 0.4, y, z0 - 0.3, z0, "black")
     m = (xa + xb) / 2
-    bo.box(m - 0.03, m + 0.03, y - 0.1, y, z0, z0 + 3.0, "sash")
+    if not OPEN_DOORS:
+        bo.box(m - 0.03, m + 0.03, y - 0.1, y, z0, z0 + 3.0, "sash")
 bo.build("交流棟_渡り廊下の口")
 
 # ---------- 10b. 教室棟への渡り廊下（2F・4F・6F。ユーザーの説明と写真 6758） ----------

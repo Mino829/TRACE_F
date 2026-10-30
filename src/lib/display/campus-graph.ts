@@ -122,6 +122,15 @@ export function routeThrough(stops: readonly string[], cost: EdgeCost = METRES):
   return route;
 }
 
+/** The display's ?stops= test walk: comma-separated node ids, at least two, all on this graph. */
+export function parseStops(list: string): string[] {
+  const stops = list.split(",").map((id) => id.trim()).filter((id) => id.length > 0);
+  const unknown = stops.filter((id) => !NODES.has(id));
+  if (unknown.length > 0) throw new Error(`?stops: not on campus graph ${CAMPUS_GRAPH_VERSION}: ${unknown.join(", ")}`);
+  if (stops.length < 2) throw new Error(`?stops needs at least two node ids, got ${stops.length}`);
+  return stops;
+}
+
 /**
  * A test walk that spends its time indoors: in from one of the ways onto
  * campus, through two or three rooms or halls on the upper floors (so the
