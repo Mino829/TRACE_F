@@ -95,7 +95,7 @@ const SEND_LOCK = "trace-log-send";
 const SEND_WAIT_MS = 10_000;
 /** How long reading the arrival QR waits for photos' places still on their way to TRACE_B; the code lives 25 seconds. */
 const PLACES_BEFORE_ARRIVAL_MS = 3_000;
-const START_AGAIN = "もう一度参加するときは、\n「はじめる」を押してください。";
+const START_AGAIN = "もう一度参加するときは、「はじめる」を押してください。";
 
 type View = "participant" | "developer";
 
@@ -144,10 +144,10 @@ function initialPending(): string | null {
  */
 function initialLostNote(): string {
   if (initialView() !== "participant") return "";
-  if (experienceLapsed()) return `前の参加は、\n記録を残す期限が過ぎたので削除されました。${START_AGAIN}`;
+  if (experienceLapsed()) return `前の参加は、記録を残す期限が過ぎたので削除されました。${START_AGAIN}`;
   const fromReminder = new URLSearchParams(window.location.search).has("prompt");
   return (loadConsent() || fromReminder) && !loadTabExperience()
-    ? "この画面には、前の参加の記録がありません。参加を始めたブラウザか、\nホーム画面のアプリで開いてください。開けないときは、\nもう一度「はじめる」から参加できます。"
+    ? "この画面には、前の参加の記録がありません。参加を始めたブラウザか、ホーム画面のアプリで開いてください。開けないときは、もう一度「はじめる」から参加できます。"
     : "";
 }
 
@@ -619,7 +619,7 @@ export function PingLogScreen() {
     if (notificationState() === "unsupported") throw new Error("このブラウザでは通知を受け取れません。");
     const result = await Notification.requestPermission();
     setPermission(result);
-    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、\nこのサイトの通知を許可してください。");
+    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、このサイトの通知を許可してください。");
   };
 
   /** The participant's optional photo reminder is the only new push plan. */

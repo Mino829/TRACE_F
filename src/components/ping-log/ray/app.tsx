@@ -97,7 +97,7 @@ export function RayApp(props: RayAppProps) {
 
   const menuItems: MenuItem[] = [
     { label: "遊び方", onSelect: () => setOverlay("howto") },
-    ...(props.consent ? [{ label: "同意した内容", onSelect: () => setOverlay("consent") }] : []),
+    ...(props.consent ? [{ label: "同意事項", onSelect: () => setOverlay("consent") }] : []),
     ...(props.onStop ? [{ label: "記録を残して参加を終了", onSelect: () => setOverlay("stop"), disabled: props.busy }] : []),
     ...(props.consent || props.joined ? [{ label: "参加をやめる", onSelect: () => setOverlay("withdraw"), disabled: props.busy }] : []),
   ];
@@ -128,6 +128,7 @@ export function RayApp(props: RayAppProps) {
     ) : overlay === "install" ? (
       <InstallLayer
         support={entrance ? entry : props.support}
+        reminderMinutes={props.reminderTerms.intervalMinutes}
         beforeJoining={!props.joined}
         onContinue={entrance && entry === "ios-browser" ? () => setOverlay("start") : undefined}
         onClose={close}
@@ -215,10 +216,6 @@ function Current(
         closeLabel="開発者の画面にもどる"
         inert={inert}
         onClose={props.onCloseDemo}
-        onTitle={() => {
-          props.onHome();
-          props.onTitle(true);
-        }}
       />
     );
   }

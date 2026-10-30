@@ -12,7 +12,7 @@ const rayMono = Geist_Mono({ subsets: ["latin"], variable: "--font-ray-mono", di
 
 /** Prototype: the participant's photo memory, and behind it the developer screen's accuracy test. */
 export const metadata: Metadata = {
-  title: "写真で残す、学祭の一日 / TRACE",
+  title: "ShibaLab 体験型メディアアート作品 / TRACE",
   robots: { index: false, follow: false },
   // iOS only lets a page notify once it is added to the home screen as an app.
   manifest: "/log.webmanifest",

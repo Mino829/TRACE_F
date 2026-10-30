@@ -2,7 +2,8 @@
  * 振り返り3D (#50): the participant's way through the campus after the
  * experience, as one still line of light among the buildings' floor
  * outlines, from the place of the first photo to ShibaLab. Nothing moves on
- * its own; a drag turns the view and a pinch or the wheel brings it closer.
+ * its own; a drag turns the view and a pinch or Ctrl and the wheel bring it
+ * closer.
  *
  * The buildings are the place picker's (選択3D) outlines, the way is the
  * exhibit's (展示3D) graph and shortest paths, and both share one frame:
@@ -196,32 +197,23 @@ function loopLines(loops: PlacePoint[][], z: number, out: number[]) {
   }
 }
 
-export type TraceScene = {
-  /** Where a scene point is on the host, in CSS px; null behind the camera. */
-  project: (p: Vec3) => { x: number; y: number } | null;
-  /** Back to the first view. */
-  reset: () => void;
-  dispose: () => void;
-};
-
 /**
- * Draws the way on a canvas inside `host`, which takes the gestures. Throws
- * when there is no WebGL; `onLost` is called if the context goes later.
- * `onFrame` runs after each frame, to move anything laid over the canvas.
+ * How strongly each part is drawn, sizes in device px: on the screen, and in
+ * the keepsake, whose picture is larger and goes through a JPEG.
  */
-export function createTraceScene(
-  host: HTMLElement,
-  canvas: HTMLCanvasElement,
-  data: PlacesData,
-  way: TraceWay,
-  { onFrame, onLost }: { onFrame: () => void; onLost: () => void },
-): TraceScene {
-  const gl = getContext(canvas);
-  if (!gl) throw new Error("WebGL を使えません。");
-  const style = getComputedStyle(host);
-  const fg = colorOf(style.getPropertyValue("--fg"), [0.83, 0.84, 0.83]);
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+type Look = { quiet: number; roofs: number; walked: number; glow: number; line: number; joint: number; stop: number; ring: number; core: number };
+const SCREEN: Look = { quiet: 0.13, roofs: 0.2, walked: 0.42, glow: 11, line: 3, joint: 3, stop: 9, ring: 22, core: 7 };
+const STILL: Look = { quiet: 0.2, roofs: 0.3, walked: 0.55, glow: 30, line: 8, joint: 7, stop: 22, ring: 54, core: 16 };
 
+/** Where a scene point lands on a picture `width` × `height`; null behind the camera. */
+function screenOf(matrix: Float32Array, p: Vec3, width: number, height: number): { x: number; y: number } | null {
+  const [x, y, , w] = transform(matrix, p);
+  if (w <= NEAR) return null;
+  return { x: ((x / w + 1) / 2) * width, y: ((1 - y / w) / 2) * height };
+}
+
+/** The buildings, the way and its marks, ready to be drawn through any view; `scale` multiplies the look's sizes. */
+function painter(gl: WebGLRenderingContext, data: PlacesData, way: TraceWay, fg: Rgb, look: Look) {
   const lineProgram = compileProgram(gl, LINE_VERTEX, LINE_FRAGMENT);
   const markProgram = compileProgram(gl, MARK_VERTEX, MARK_FRAGMENT);
   const wayProgram = compileProgram(gl, WAY_VERTEX, LINE_FRAGMENT);
@@ -259,9 +251,9 @@ export function createTraceScene(
     for (const loop of building.footprint) for (const [x, y] of loop) roofs.push(x, 0, -y, x, building.roofZ, -y);
   }
   const lineLayers = [
-    { buffer: buffer(quiet), count: quiet.length / 3, opacity: 0.13 },
-    { buffer: buffer(roofs), count: roofs.length / 3, opacity: 0.2 },
-    { buffer: buffer(walked), count: walked.length / 3, opacity: 0.42 },
+    { buffer: buffer(quiet), count: quiet.length / 3, opacity: look.quiet },
+    { buffer: buffer(roofs), count: roofs.length / 3, opacity: look.roofs },
+    { buffer: buffer(walked), count: walked.length / 3, opacity: look.walked },
   ];
 
   // The way: two triangles a segment, each corner knowing the other end and its side.
@@ -284,7 +276,99 @@ export function createTraceScene(
   const stopBuffer = buffer(stops.flat());
   const endBuffer = buffer(way.end);
 
-  const everything = [...way.points, way.end, ...stops];
+  return {
+    /** Draws into the viewport as it is set, `scale` device px to the look's px. */
+    draw(matrix: Float32Array, scale: number) {
+      const canvas = gl.canvas as HTMLCanvasElement;
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+      gl.useProgram(lineProgram);
+      gl.uniformMatrix4fv(lineU.u_mvp, false, matrix);
+      gl.uniform3f(lineU.u_off, 0, 0, 0);
+      gl.enableVertexAttribArray(0);
+      for (const layer of lineLayers) {
+        if (!layer.count) continue;
+        gl.bindBuffer(gl.ARRAY_BUFFER, layer.buffer);
+        gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+        gl.uniform4f(lineU.u_color, fg[0], fg[1], fg[2], layer.opacity);
+        gl.drawArrays(gl.LINES, 0, layer.count);
+      }
+
+      // The way: a wide soft band of light under a sharp line.
+      if (wayCount) {
+        gl.useProgram(wayProgram);
+        gl.uniformMatrix4fv(wayU.u_mvp, false, matrix);
+        gl.uniform2f(wayU.u_px, 2 / canvas.width, 2 / canvas.height);
+        gl.bindBuffer(gl.ARRAY_BUFFER, wayBuffer);
+        gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 28, 0);
+        gl.enableVertexAttribArray(otherAt);
+        gl.vertexAttribPointer(otherAt, 3, gl.FLOAT, false, 28, 12);
+        gl.enableVertexAttribArray(sideAt);
+        gl.vertexAttribPointer(sideAt, 1, gl.FLOAT, false, 28, 24);
+        for (const [px, opacity] of [[look.glow, 0.1], [look.line, 1]] as const) {
+          gl.uniform1f(wayU.u_width, px * scale);
+          gl.uniform4f(wayU.u_color, fg[0], fg[1], fg[2], opacity);
+          gl.drawArrays(gl.TRIANGLES, 0, wayCount);
+        }
+        gl.disableVertexAttribArray(otherAt);
+        gl.disableVertexAttribArray(sideAt);
+      }
+
+      // Round joints where the way turns, a dot at each photo's place, and a ring at ShibaLab.
+      gl.useProgram(markProgram);
+      gl.uniformMatrix4fv(markU.u_mvp, false, matrix);
+      const marks = (target: WebGLBuffer, count: number, size: number, kind: number, opacity: number) => {
+        if (!count) return;
+        gl.bindBuffer(gl.ARRAY_BUFFER, target);
+        gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+        gl.uniform1f(markU.u_size, size * scale);
+        gl.uniform1f(markU.u_kind, kind);
+        gl.uniform4f(markU.u_color, fg[0], fg[1], fg[2], opacity);
+        gl.drawArrays(gl.POINTS, 0, count);
+      };
+      marks(joints, way.points.length, look.joint, 0, 1);
+      marks(stopBuffer, stops.length, look.stop, 0, 1);
+      marks(endBuffer, 1, look.ring, 1, 1);
+      marks(endBuffer, 1, look.core, 0, 1);
+    },
+    dispose() {
+      buffers.forEach((made) => gl.deleteBuffer(made));
+      [lineProgram, markProgram, wayProgram].forEach((program) => gl.deleteProgram(program));
+    },
+  };
+}
+
+export type TraceScene = {
+  /** Where a scene point is on the host, in CSS px; null behind the camera. */
+  project: (p: Vec3) => { x: number; y: number } | null;
+  /** Back to the first view. */
+  reset: () => void;
+  dispose: () => void;
+};
+
+/**
+ * Draws the way on a canvas inside `host`, which takes the gestures. Throws
+ * when there is no WebGL; `onLost` is called if the context goes later.
+ * `onFrame` runs after each frame, to move anything laid over the canvas.
+ */
+export function createTraceScene(
+  host: HTMLElement,
+  canvas: HTMLCanvasElement,
+  data: PlacesData,
+  way: TraceWay,
+  { onFrame, onLost }: { onFrame: () => void; onLost: () => void },
+): TraceScene {
+  const gl = getContext(canvas);
+  if (!gl) throw new Error("WebGL を使えません。");
+  const style = getComputedStyle(host);
+  const fg = colorOf(style.getPropertyValue("--fg"), [0.83, 0.84, 0.83]);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const paint = painter(gl, data, way, fg, SCREEN);
+
+  const everything = [...way.points, way.end, ...way.stops.filter((p): p is Vec3 => p !== null)];
   let width = 1;
   let height = 1;
   let first = fitView(everything, 1);
@@ -298,59 +382,7 @@ export function createTraceScene(
     if (disposed || gl.isContextLost()) return;
     matrix = viewMatrix(view, width / height);
     gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-
-    gl.useProgram(lineProgram);
-    gl.uniformMatrix4fv(lineU.u_mvp, false, matrix);
-    gl.uniform3f(lineU.u_off, 0, 0, 0);
-    gl.enableVertexAttribArray(0);
-    for (const layer of lineLayers) {
-      if (!layer.count) continue;
-      gl.bindBuffer(gl.ARRAY_BUFFER, layer.buffer);
-      gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
-      gl.uniform4f(lineU.u_color, fg[0], fg[1], fg[2], layer.opacity);
-      gl.drawArrays(gl.LINES, 0, layer.count);
-    }
-
-    // The way: a wide soft band of light under a sharp line.
-    if (wayCount) {
-      gl.useProgram(wayProgram);
-      gl.uniformMatrix4fv(wayU.u_mvp, false, matrix);
-      gl.uniform2f(wayU.u_px, 2 / canvas.width, 2 / canvas.height);
-      gl.bindBuffer(gl.ARRAY_BUFFER, wayBuffer);
-      gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 28, 0);
-      gl.enableVertexAttribArray(otherAt);
-      gl.vertexAttribPointer(otherAt, 3, gl.FLOAT, false, 28, 12);
-      gl.enableVertexAttribArray(sideAt);
-      gl.vertexAttribPointer(sideAt, 1, gl.FLOAT, false, 28, 24);
-      for (const [px, opacity] of [[11, 0.1], [3, 1]] as const) {
-        gl.uniform1f(wayU.u_width, px * dpr);
-        gl.uniform4f(wayU.u_color, fg[0], fg[1], fg[2], opacity);
-        gl.drawArrays(gl.TRIANGLES, 0, wayCount);
-      }
-      gl.disableVertexAttribArray(otherAt);
-      gl.disableVertexAttribArray(sideAt);
-    }
-
-    // Round joints where the way turns, a dot at each photo's place, and a ring at ShibaLab.
-    gl.useProgram(markProgram);
-    gl.uniformMatrix4fv(markU.u_mvp, false, matrix);
-    const marks = (target: WebGLBuffer, count: number, size: number, kind: number, opacity: number) => {
-      if (!count) return;
-      gl.bindBuffer(gl.ARRAY_BUFFER, target);
-      gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
-      gl.uniform1f(markU.u_size, size * dpr);
-      gl.uniform1f(markU.u_kind, kind);
-      gl.uniform4f(markU.u_color, fg[0], fg[1], fg[2], opacity);
-      gl.drawArrays(gl.POINTS, 0, count);
-    };
-    marks(joints, way.points.length, 3, 0, 1);
-    marks(stopBuffer, stops.length, 9, 0, 1);
-    marks(endBuffer, 1, 22, 1, 1);
-    marks(endBuffer, 1, 7, 0, 1);
+    paint.draw(matrix, dpr);
     onFrame();
   };
   const request = () => {
@@ -373,7 +405,7 @@ export function createTraceScene(
   observer.observe(host);
   resize();
 
-  // A drag turns the view round the way; two fingers or the wheel bring it closer.
+  // A drag turns the view round the way; two fingers or Ctrl and the wheel bring it closer.
   const pointers = new Map<number, { x: number; y: number }>();
   let pinch = 0;
   const spread = () => {
@@ -409,7 +441,9 @@ export function createTraceScene(
     pointers.delete(event.pointerId);
     pinch = spread();
   };
+  // The view sits in a page that scrolls: the wheel zooms only with Ctrl, which a trackpad's pinch also sends.
   const wheel = (event: WheelEvent) => {
+    if (!event.ctrlKey) return;
     event.preventDefault();
     zoom(Math.exp(event.deltaY * 0.0012));
   };
@@ -426,9 +460,7 @@ export function createTraceScene(
 
   return {
     project(p) {
-      const [x, y, , w] = transform(matrix, p);
-      if (w <= NEAR) return null;
-      return { x: ((x / w + 1) / 2) * width, y: ((1 - y / w) / 2) * height };
+      return screenOf(matrix, p, width, height);
     },
     reset() {
       view = { ...first };
@@ -444,9 +476,74 @@ export function createTraceScene(
       host.removeEventListener("pointercancel", up);
       host.removeEventListener("wheel", wheel);
       canvas.removeEventListener("webglcontextlost", lost);
-      buffers.forEach((made) => gl.deleteBuffer(made));
-      [lineProgram, markProgram, wayProgram].forEach((program) => gl.deleteProgram(program));
+      paint.dispose();
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     },
   };
+}
+
+/**
+ * The screen's first view, brought round and in until the points fill the
+ * picture but for `pad` (a fraction of its width and height) at each side:
+ * a band much wider than tall would otherwise leave the way small in its
+ * middle. Never closer than half the first distance, so a short way keeps
+ * the buildings round it.
+ */
+function stillView(points: Vec3[], aspect: number, pad: { x: number; y: number }): View {
+  const first = fitView(points, aspect);
+  const view: View = { ...first, target: [...first.target] };
+  // Each pass centres the points and scales the distance by how much they over- or under-fill; a few settle it.
+  for (let pass = 0; pass < 4; pass++) {
+    const matrix = viewMatrix(view, aspect);
+    let [x0, x1, y0, y1] = [Infinity, -Infinity, Infinity, -Infinity];
+    for (const p of points) {
+      const [x, y, , w] = transform(matrix, p);
+      if (w <= NEAR) continue;
+      [x0, x1, y0, y1] = [Math.min(x0, x / w), Math.max(x1, x / w), Math.min(y0, y / w), Math.max(y1, y / w)];
+    }
+    if (x0 > x1) break;
+    const fwd = unit(sub(view.target, eye(view)));
+    const right = unit(cross(fwd, [0, 1, 0]));
+    const up = cross(right, fwd);
+    const halfY = view.dist * Math.tan(FOV / 2);
+    const [cx, cy] = [((x0 + x1) / 2) * halfY * aspect, ((y0 + y1) / 2) * halfY];
+    view.target = [0, 1, 2].map((i) => view.target[i] + right[i] * cx + up[i] * cy) as Vec3;
+    const fill = Math.max((x1 - x0) / 2 / (1 - 2 * pad.x), (y1 - y0) / 2 / (1 - 2 * pad.y), 0.01);
+    view.dist = Math.max(first.dist * 0.5, view.dist * fill);
+  }
+  return view;
+}
+
+/**
+ * 振り返り3D as a still picture of `width` × `height` px, from the direction
+ * the screen opens on, for the keepsake: the lines in `color` on nothing,
+ * the way filling the picture but for `pad` px across and down at each side.
+ * `project` says where a scene point is on it. Throws when there is no WebGL.
+ */
+export function traceStill(
+  data: PlacesData,
+  way: TraceWay,
+  width: number,
+  height: number,
+  color: Rgb,
+  pad: { x: number; y: number },
+): { image: HTMLCanvasElement; project: (p: Vec3) => { x: number; y: number } | null } {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const gl = getContext(canvas);
+  if (!gl) throw new Error("WebGL を使えません。");
+  const paint = painter(gl, data, way, color, STILL);
+  const view = stillView([...way.points, way.end, ...way.stops.filter((p): p is Vec3 => p !== null)], width / height, { x: pad.x / width, y: pad.y / height });
+  const matrix = viewMatrix(view, width / height);
+  gl.viewport(0, 0, width, height);
+  paint.draw(matrix, 1);
+  // Copied out at once: WebGL keeps its picture only until this task is over.
+  const image = document.createElement("canvas");
+  image.width = width;
+  image.height = height;
+  image.getContext("2d")?.drawImage(canvas, 0, 0);
+  paint.dispose();
+  gl.getExtension("WEBGL_lose_context")?.loseContext();
+  return { image, project: (p) => screenOf(matrix, p, width, height) };
 }

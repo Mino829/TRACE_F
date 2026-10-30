@@ -10,7 +10,6 @@ import {
   arrivalAttempt,
   getExperience,
   sendArrival,
-  skipArrival,
   type ArrivalAttempt,
   type MemoryCredential,
   type ReplayStatus,
@@ -19,18 +18,17 @@ import type { LogEntry } from "@/lib/ping-log/store";
 import { loadTabExperience, sendMemoryAction } from "@/lib/trace-api/session";
 
 import { useLayer } from "../layer";
-import { clock } from "../ui";
-import { ScanWindow, placeTrackers, useBeam } from "./demo";
+import { ScanWindow, placeTrackers } from "./demo";
 import { KeepsakeScreen } from "./keepsake";
-import { TraceScreen } from "./trace";
-import { Icon, Phrases, Screen, Sentences, SWAP, TitleMark, useField, useRay } from "./stage";
+import { Relay, type RelayState } from "./relay";
+import { Icon, Phrases, Screen, Sentences, SWAP, useField, useRay } from "./stage";
 
 /**
  * Arriving at ShibaLab: the phone's rear camera reads the QR code in the
  * booth's projected picture, the arrival goes to TRACE_B, and the phone
  * follows the replay on the room's screen until it has played or been skipped.
  * Then the photos taken before arriving become the keepsake (keepsake.tsx),
- * and the way between their places 振り返り3D (trace.tsx).
+ * shown under the way between their places, 振り返り3D (trace.tsx).
  *
  * As in the demo, the phone shows no queue, no wait and no symbol. The camera
  * picture never leaves the phone: only the code read from it is sent.
@@ -45,6 +43,9 @@ const READ_EVERY_MS = 150;
 const RETRY_AFTER_MS = 2000;
 /** The trackers leave a code that has not been seen for this long. */
 const LOST_AFTER_MS = 600;
+
+/** On `next dev` only, where the booth's QR code is seldom at hand: a button sends a made-up code as if it had been read. */
+const PRETEND = process.env.NODE_ENV === "development";
 
 const STATUSES: readonly string[] = ["queued", "playing", "completed", "skipped"];
 
@@ -93,10 +94,8 @@ export function ArrivalFlow({
   onDelete: (entry: LogEntry, number: number) => void;
 }) {
   const { go } = useRay();
-  const [step, setStep] = useState<"scan" | "replay" | "keepsake" | "trace">(ended ? "keepsake" : "scan");
+  const [step, setStep] = useState<"scan" | "replay" | "keepsake">(ended ? "keepsake" : "scan");
   const [status, setStatus] = useState<ReplayStatus | null>(null);
-  // Unknown when the arrival was earlier than this screen.
-  const [arrivedAt, setArrivedAt] = useState<string | null>(null);
   const close = useLayer("#arrival", onClose);
   const leave = useCallback(() => void go(close), [go, close]);
   const title = useCallback(
@@ -171,7 +170,6 @@ export function ArrivalFlow({
         arrived.current = true;
         onArrivedRef.current(memory.memorySessionId);
         setStatus(replayStatus(result.status) ?? "queued");
-        setArrivedAt(clock(Date.now()));
         return { ok: true };
       } catch (error) {
         const failure = error instanceof TraceApiError ? error : new TraceApiError(0, "UNKNOWN", null);
@@ -193,24 +191,20 @@ export function ArrivalFlow({
         contact={contact}
         inert={inert}
         onDelete={onDelete}
-        onTrace={() => void go(() => setStep("trace"))}
         onLeave={leave}
         onTitle={title}
       />
     );
   }
-  if (visibleStep === "trace") return <TraceScreen photos={photos} inert={inert} onBack={() => void go(() => setStep("keepsake"))} />;
   return (
     <Replay
       target={target}
       status={status}
-      arrivedAt={arrivedAt}
       photos={photos.length}
       inert={inert}
       onStatus={setStatus}
       onKeepsake={() => void go(() => setStep("keepsake"))}
       onLeave={leave}
-      onTitle={title}
     />
   );
 }
@@ -223,9 +217,9 @@ const FINAL_ERRORS = new Set(["UNAUTHORIZED", "NOT_FOUND", "STATE_CONFLICT", "NO
 type Camera = "starting" | "on" | "denied" | "missing" | "busy" | "failed" | "unsupported";
 
 const CAMERA_TROUBLE: Record<Exclude<Camera, "starting" | "on">, string> = {
-  denied: "カメラの使用が許可されていません。設定で、このサイトに\nカメラの使用を許可してから\n「もう一度試す」を押してください。",
+  denied: "カメラの使用が許可されていません。設定で、このサイトにカメラの使用を許可してから「もう一度試す」を押してください。",
   missing: "カメラが見つかりませんでした。",
-  busy: "カメラを起動できませんでした。ほかのアプリがカメラを使っていれば、\n閉じてから「もう一度試す」を\n押してください。",
+  busy: "カメラを起動できませんでした。ほかのアプリがカメラを使っていれば、閉じてから「もう一度試す」を押してください。",
   failed: "カメラを起動できませんでした。「もう一度試す」を押してください。",
   unsupported: "このブラウザではカメラを使えません。Safari か Chrome で開いてください。",
 };
@@ -272,6 +266,7 @@ function CameraScan({
   const [notice, setNotice] = useState("");
   // A final error: nothing more to read.
   const [ended, setEnded] = useState(false);
+  const pretend = useRef<(() => void) | null>(null);
   useField("day", { scene: 2, splitOn: 0, invert: 0, imgBg: 1, gain: 1.15, bias: -0.04 }, "scan");
 
   const onReadRef = useRef(onRead);
@@ -387,6 +382,9 @@ function CameraScan({
       // The page was hidden while the code was on its way.
       if (!stream && !document.hidden) void start();
     };
+    pretend.current = () => {
+      if (!busy) void send("dev-arrival");
+    };
 
     const look = (codes: DetectedCode[]) => {
       const code = codes.find((item) => item.rawValue);
@@ -398,7 +396,7 @@ function CameraScan({
       showCorners(code);
       const text = code.rawValue.trim();
       if (!isArrivalCode(text)) {
-        if (text !== noted) setNotice("これは到着用の QR コードではありません。ASYNC のブースに映っている\nQR コードを読み取ってください。");
+        if (text !== noted) setNotice("これは到着用の QR コードではありません。展示場の QR コードを読み取ってください。");
         noted = text;
         return;
       }
@@ -417,7 +415,7 @@ function CameraScan({
         } catch {
           // The reader could not load (on an iPhone it is fetched on first use), or a frame could not be read.
           if (!reader) {
-            setNotice("QR コードを読み取る\n準備ができませんでした。電波の良い場所で、少し待ってください。");
+            setNotice("QR コードを読み取る準備ができませんでした。電波の良い場所で、少し待ってください。");
             resumeAt = Date.now() + 3000;
           }
         }
@@ -464,6 +462,7 @@ function CameraScan({
 
     return () => {
       alive = false;
+      pretend.current = null;
       stop();
       window.removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", onVisibility);
@@ -487,7 +486,7 @@ function CameraScan({
         <span className="mono mono--dim">Live</span>
       </div>
       <h1 className="h2 scan__head">
-        <Phrases text={"ASYNC のブースの QR コードを、\n枠に入れてください"} />
+        <Phrases text="展示場の QR コードを読み取ってください" />
       </h1>
       <ScanWindow windowRef={windowRef} trackers={trackers} locked={found || sending}>
         <video ref={videoRef} className={`scan__video${field && !field.ok ? " is-shown" : ""}`} muted playsInline autoPlay aria-hidden="true" />
@@ -508,75 +507,78 @@ function CameraScan({
           もう一度試す
         </button>
       )}
+      {PRETEND && !ended && (
+        <button type="button" className="btn btn--line" style={{ marginTop: 12 }} disabled={sending} onClick={() => pretend.current?.()}>
+          開発用：読み取ったことにする
+        </button>
+      )}
       {ended && (
         <button type="button" className="btn" onClick={onCancel}>
           ホームへもどる
         </button>
       )}
-      <p className="small">
-        <Sentences text={"カメラの映像は、\nQR コードを読み取るためだけに使います。映像は保存も送信もしません。"} />
-      </p>
     </Screen>
   );
 }
 
 /* ----------------------------------------------------------------- replay */
 
-function replayText(status: ReplayStatus | null, skippedHere: boolean): { label: string; title: string; body: string } {
-  if (status === "playing") return { label: "Playback", title: "スクリーンを見てください", body: "あなたの軌跡を、\nスクリーンで再生しています。" };
-  if (status === "completed") return { label: "Played", title: "再生が終わりました", body: "あなたの軌跡を、\nスクリーンで再生しました。" };
-  if (status === "skipped" && skippedHere) {
-    return { label: "Skipped", title: "再生をやめました", body: "あなたの軌跡は、スクリーンには映りません。" };
+/** What the screen says: while the replay is ahead or playing, and once the light is back or the screen did not play it. */
+function replayText(status: ReplayStatus | null, over: boolean): { title: string; body: string | null } {
+  if (over && status === "completed") return { title: "再生が終わりました", body: null };
+  if (over && status === "skipped") {
+    return { title: "スクリーンでは再生できませんでした", body: "展示の都合で、今回はスクリーンで再生できませんでした。" };
   }
-  if (status === "skipped") {
-    return {
-      label: "Skipped",
-      title: "スクリーンでは\n再生できませんでした",
-      body: "展示の都合で、\n今回はスクリーンで再生できませんでした。",
-    };
-  }
-  return { label: "Standby", title: "スクリーンの前でお待ちください", body: "あなたの軌跡を、\nこのあとスクリーンで再生します。" };
+  if (status === "queued" || status === null) return { title: "スクリーンの前でお待ちください", body: null };
+  return { title: "スクリーンを見てください", body: null };
 }
 
 /** Network failures in a row before the screen says it cannot tell how the replay stands. */
 const QUIET_FAILURES = 3;
+/**
+ * While it plays the phone asks a little more often (20 a minute, still well
+ * under TRACE_B's 30), so the light the room's screen pours out at the end
+ * reaches the phone while it is still pouring.
+ */
+const PLAYING_POLL_MS = 3000;
 
 /**
  * Where the replay stands, asked of TRACE_B every few seconds while it is
- * queued or playing and the page is visible. While it is queued the
- * participant may give it up. Once it is over, played or not, the photos
- * lead on to the keepsake.
+ * queued or playing and the page is visible. The phone shows next to nothing:
+ * the ring, the beam toward the room's screen and one line (relay.tsx), so the
+ * visitor looks at the screen. When the replay has played, its light comes
+ * back into the ring, and then the photos lead on to the keepsake.
  */
 function Replay({
   target,
   status,
-  arrivedAt,
   photos,
   inert,
   onStatus,
   onKeepsake,
   onLeave,
-  onTitle,
 }: {
   target: ArrivalTarget;
   status: ReplayStatus | null;
-  arrivedAt: string | null;
   /** How many photos this phone keeps for the participation. */
   photos: number;
   inert: boolean;
   onStatus: (status: ReplayStatus) => void;
   onKeepsake: () => void;
   onLeave: () => void;
-  onTitle: () => void;
 }) {
-  const stageRef = useRef<HTMLDivElement>(null);
   const final = isFinal(status);
-  useBeam(stageRef, final);
+  // Over before this screen came up (opened again from home): no light comes back.
+  const [overAtStart] = useState(final);
+  const [settled, setSettled] = useState(false);
+  const relay: RelayState = !final ? "send" : status === "skipped" ? "off" : overAtStart ? "done" : "gather";
+  const over = final && (relay !== "gather" || settled);
   const [notice, setNotice] = useState("");
-  const [confirming, setConfirming] = useState(false);
-  const [skipping, setSkipping] = useState(false);
-  const [skippedHere, setSkippedHere] = useState(false);
   const { experienceId, memory } = target;
+  const playing = useRef(status === "playing");
+  useEffect(() => {
+    playing.current = status === "playing";
+  }, [status]);
 
   const ask = useCallback(async () => {
     const state = await getExperience(experienceId, memory);
@@ -600,6 +602,7 @@ function Replay({
         await ask();
         failures = 0;
         if (alive) setNotice("");
+        if (playing.current) wait = PLAYING_POLL_MS;
       } catch (error) {
         const failure = error instanceof TraceApiError ? error : null;
         if (failure && (failure.code === "UNAUTHORIZED" || failure.code === "NOT_FOUND")) {
@@ -614,7 +617,7 @@ function Replay({
       }
       if (alive) timer = window.setTimeout(() => void poll(), wait);
     };
-    timer = window.setTimeout(() => void poll(), POLL_MS);
+    timer = window.setTimeout(() => void poll(), playing.current ? PLAYING_POLL_MS : POLL_MS);
     const onVisibility = () => {
       if (!document.hidden) void poll();
     };
@@ -626,100 +629,57 @@ function Replay({
     };
   }, [final, ask]);
 
-  const skip = async () => {
-    setSkipping(true);
-    try {
-      await skipArrival(memory);
-      setSkippedHere(true);
-      onStatus("skipped");
-    } catch (error) {
-      // Already playing, or over: show where it stands instead.
-      if (error instanceof TraceApiError && error.code === "STATE_CONFLICT") await ask().catch(() => undefined);
-      else setNotice(error instanceof Error ? error.message : "");
-    } finally {
-      setSkipping(false);
-      setConfirming(false);
-    }
-  };
-
-  const text = replayText(status, skippedHere);
+  const text = replayText(status, over);
 
   return (
-    <Screen inert={inert}>
-      <header className="mast">
-        <div className="mast__mark">
-          <TitleMark onTitle={onTitle} />
-          <span className="mono">
-            <span className="keep-case">ShibaLab</span> 301
-          </span>
-        </div>
+    <Screen className={`screen--relay${over ? " is-over" : ""}`} inert={inert}>
+      <header className="mast relay__mast">
         <button type="button" className="icon-btn" aria-label="ホームへもどる" onClick={onLeave}>
           <Icon name="close" />
         </button>
       </header>
-      <div ref={stageRef} className="arrived__stage" aria-hidden="true" />
-      <p className="mono">Arrived {arrivedAt && <span className="latin">{arrivedAt}</span>}</p>
-      <section className="play" aria-labelledby="ray-play" aria-live="polite">
-        <p className="mono">
-          {status === "playing" ? <><span className="blink">▶</span> </> : final ? "■ " : ""}
-          {text.label}
-        </p>
-        <h2 className="h2" id="ray-play">
+      <Relay state={relay} onSettled={() => setSettled(true)} />
+      <section className="relay__say" aria-live="polite">
+        <h2 className="h2">
           <Phrases text={text.title} />
         </h2>
-        <p className="body">
-          <Sentences text={text.body} />
-        </p>
       </section>
       {notice && (
         <p className="note-bar" role="alert" style={{ marginTop: 18 }}>
           <Sentences text={notice} />
         </p>
       )}
-      {status === "queued" && !confirming && (
-        <button type="button" className="btn btn--line" style={{ marginTop: 18 }} onClick={() => setConfirming(true)}>
-          再生をやめる
-        </button>
-      )}
-      {status === "queued" && confirming && (
-        <section className="bracket" style={{ marginTop: 18 }}>
-          <p className="body">
-            <Sentences text={"再生をやめると、\nあなたの軌跡はスクリーンに映りません。あとから再生しなおすことはできません。"} />
-          </p>
-          <div className="btns btns--2" style={{ marginTop: 12 }}>
-            <button type="button" className="btn btn--line" onClick={() => setConfirming(false)}>
-              待つ
-            </button>
-            <button type="button" className="btn btn--danger" disabled={skipping} onClick={() => void skip()}>
-              再生をやめる
-            </button>
-          </div>
-        </section>
-      )}
-      {final && photos > 0 && (
-        <section className="play__next" aria-labelledby="ray-keep">
-          <p className="mono">Keepsake</p>
-          <h2 className="h3" id="ray-keep">
-            作品を保存できます
-          </h2>
-          <p className="body">
-            <Sentences text={"撮った写真を、\n一枚の作品にまとめました。持ち帰れるのは、\nこの作品と写真です。"} />
-          </p>
-          <button type="button" className="btn" onClick={onKeepsake}>
-            <Icon name="arrow" />
-            作品を見る
+      {over && (
+        <div className="relay__after">
+          {text.body && (
+            <p className="body">
+              <Sentences text={text.body} />
+            </p>
+          )}
+          {photos > 0 && (
+            <section className="play__next" aria-labelledby="ray-keep">
+              <p className="mono">Keepsake</p>
+              <h2 className="h3" id="ray-keep">
+                作品を保存できます
+              </h2>
+              <p className="body">
+                <Sentences text={"撮った写真を、一枚の作品にまとめました。持ち帰れるのは、この作品と写真です。"} />
+              </p>
+              <button type="button" className="btn" onClick={onKeepsake}>
+                <Icon name="arrow" />
+                作品を見る
+              </button>
+            </section>
+          )}
+          {photos === 0 && (
+            <p className="body" style={{ marginTop: 18 }}>
+              <Sentences text={"この端末には写真が残っていないので、作品を作れません。写真を撮ったブラウザで開くと、作品を保存できます。"} />
+            </p>
+          )}
+          <button type="button" className={`btn${photos > 0 ? " btn--line" : ""}`} style={{ marginTop: photos > 0 ? 10 : 18 }} onClick={onLeave}>
+            ホームへもどる
           </button>
-        </section>
-      )}
-      {final && photos === 0 && (
-        <p className="body" style={{ marginTop: 18 }}>
-          <Sentences text={"この端末には写真が残っていないので、\n作品を作れません。写真を撮ったブラウザで開くと、\n作品を保存できます。"} />
-        </p>
-      )}
-      {final && (
-        <button type="button" className={`btn${photos > 0 ? " btn--line" : ""}`} style={{ marginTop: photos > 0 ? 10 : 18 }} onClick={onLeave}>
-          ホームへもどる
-        </button>
+        </div>
       )}
     </Screen>
   );

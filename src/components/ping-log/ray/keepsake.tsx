@@ -11,20 +11,22 @@ import { drawKeepsake, imageName } from "@/lib/ray/keepsake";
 import { clock } from "../ui";
 import { Print } from "./prints";
 import { Icon, NoteBar, Phrases, ROOM, Screen, Sentences, TitleMark, useField, useRay } from "./stage";
+import { TraceSection } from "./trace";
 
 /**
- * The keepsake (作品, #14), after the replay: the photos taken before
- * arriving, drawn as one picture (lib/ray/keepsake.ts) that the participant
- * saves to the phone. It is the one thing they take home. Each photo can be
- * saved on its own too, or deleted (#51), which draws the keepsake again.
+ * The keepsake (作品, #14), after the replay: first the way the photos were
+ * taken (振り返り3D, #50, trace.tsx), then the photos taken before arriving,
+ * drawn as one picture (lib/ray/keepsake.ts) that the participant saves to
+ * the phone. It is the one thing they take home. Each photo can be saved on
+ * its own too, or deleted (#51), which draws the keepsake and the way again.
  * Nothing leaves the phone but through the share sheet or a download the
  * participant starts.
  */
 
-/** 11月1日 18:00 */
-function dayTime(iso: string): string {
+/** 11月1日 */
+function day(iso: string): string {
   const date = new Date(iso);
-  return `${date.getMonth() + 1}月${date.getDate()}日 ${clock(iso)}`;
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 function photoFile(entry: LogEntry): File | null {
@@ -90,7 +92,6 @@ export function KeepsakeScreen({
   contact,
   inert,
   onDelete,
-  onTrace,
   onLeave,
   onTitle,
 }: {
@@ -101,15 +102,13 @@ export function KeepsakeScreen({
   contact: string;
   inert: boolean;
   onDelete: (entry: LogEntry, number: number) => void;
-  /** Opens 振り返り3D (#50). */
-  onTrace: () => void;
   onLeave: () => void;
   onTitle: () => void;
 }) {
   useField("room", ROOM);
   const artRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
-  const traceId = useId();
+  const workId = useId();
   const kept = useMemo(() => photos.filter((entry) => entry.photo), [photos]);
   const [art, setArt] = useState<{ file: File; url: string } | null>(null);
   const [problem, setProblem] = useState("");
@@ -122,7 +121,7 @@ export function KeepsakeScreen({
     let alive = true;
     let url = "";
     drawKeepsake(
-      kept.map((entry, index) => ({ blob: entry.photo as Blob, takenAt: entry.record.takenAt, number: index + 1 })),
+      kept.map((entry, index) => ({ blob: entry.photo as Blob, takenAt: entry.record.takenAt, number: index + 1, place: entry.record.place ?? null })),
       root,
     ).then(
       (blob) => {
@@ -159,59 +158,49 @@ export function KeepsakeScreen({
           <Icon name="close" />
         </button>
       </header>
-      <p className="mono">Keepsake</p>
       <h1 className="h1">
-        <Phrases text="あなたの作品" />
+        <Phrases text="ご来場ありがとうございました" />
       </h1>
-      {kept.length ? (
+      {!kept.length && (
         <p className="body">
-          <Sentences text={"撮った写真を、\n撮った順に一枚にまとめました。写真の一番明るいところを、\n光の線でつないでいます。"} />
-        </p>
-      ) : (
-        <p className="body">
-          <Sentences text={"この端末には写真が残っていないので、\n作品を作れません。写真を撮ったブラウザで開くと、\n作品を保存できます。"} />
+          <Sentences text={"この端末には写真が残っていないので、作品を作れません。写真を撮ったブラウザで開くと、作品を保存できます。"} />
         </p>
       )}
       {kept.length > 0 && (
         <>
-          <div ref={artRef} className="keep__art">
-            {art ? (
-              <img className="keep__img" src={art.url} alt={`作品。撮った${kept.length}枚の写真を撮った順に並べ、光の線でつないだ画像`} />
-            ) : (
-              !problem && (
-                <p className="keep__wait mono mono--dim" role="status">
-                  Developing
-                </p>
-              )
-            )}
-          </div>
-          <NoteBar text={problem} alert />
-          <button type="button" className="btn keep__save" disabled={!art} onClick={() => void save()}>
-            <Icon name="download" />
-            作品を保存する
-          </button>
-          {byHand && <NoteBar text={LONG_PRESS} />}
-          <p className="small keep__note">
-            <Sentences text={`TRACE の中の写真は、\n${dayTime(deleteAfter)}を過ぎると削除されます。作品や写真を保存しても、\nこの日時は延びません。`} />
-          </p>
-          {contact && (
-            <p className="small keep__note">
-              問い合わせ先: <Contact value={contact} />
-            </p>
-          )}
+          {/* Mounted anew when a photo is deleted: a new canvas, and no chosen photo standing for another. */}
+          <TraceSection key={kept.map((entry) => entry.id).join()} photos={kept} />
 
-          <section className="keep__trace" aria-labelledby={traceId}>
-            <p className="mono">Trace</p>
-            <h2 className="h3" id={traceId}>
-              あなたの軌跡
-            </h2>
-            <p className="body">
-              <Sentences text={"写真を撮った場所を、\n撮った順に 3D の地図でたどれます。"} />
+          <section className="keep__work" aria-labelledby={workId}>
+            <p className="mono">Keepsake</p>
+            <p className="body" id={workId}>
+              あなたの写真を一枚にまとめました。
             </p>
-            <button type="button" className="btn btn--line" onClick={onTrace}>
-              <Icon name="arrow" />
-              軌跡を見る
+            <div ref={artRef} className="keep__art">
+              {art ? (
+                <img className="keep__img" src={art.url} alt={`作品。撮った${kept.length}枚の写真を、撮った順に一枚にまとめた画像`} />
+              ) : (
+                !problem && (
+                  <p className="keep__wait mono mono--dim" role="status">
+                    Developing
+                  </p>
+                )
+              )}
+            </div>
+            <NoteBar text={problem} alert />
+            <button type="button" className="btn keep__save" disabled={!art} onClick={() => void save()}>
+              <Icon name="download" />
+              作品を保存する
             </button>
+            {byHand && <NoteBar text={LONG_PRESS} />}
+            <p className="small keep__note">
+              <Sentences text={`この作品で収集された写真は、${day(deleteAfter)}にブラウザ上から消去されます。`} />
+            </p>
+            {contact && (
+              <p className="small keep__note">
+                問い合わせ先: <Contact value={contact} />
+              </p>
+            )}
           </section>
 
           <section className="keep__photos" aria-labelledby={labelId}>

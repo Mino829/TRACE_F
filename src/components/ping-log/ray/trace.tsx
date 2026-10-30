@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import type { LogEntry } from "@/lib/ping-log/store";
 import { PLACES } from "@/lib/places/places";
@@ -9,29 +9,35 @@ import type { TraceScene } from "@/lib/ray/trace-scene";
 import { BlobImage } from "../blob-image";
 import { clock } from "../ui";
 import { Print } from "./prints";
-import { Icon, NoteBar, Phrases, ROOM, Screen, Sentences, useField } from "./stage";
+import { NoteBar } from "./stage";
 
 /**
- * 振り返り3D (#50), after the experience: the way from the first photo's
- * place to ShibaLab, still, among the buildings, with each photo standing at
- * the place it was taken (lib/ray/trace-scene.ts). Below it, the same places
- * as a list, which is all there is where WebGL is not. The photos are read
- * from the phone; nothing is fetched but the code that draws.
+ * 振り返り3D (#50), on the keepsake screen above the 作品: the way from the
+ * first photo's place to ShibaLab, still, among the buildings, with each
+ * photo standing at the place it was taken (lib/ray/trace-scene.ts). Below
+ * it, the same places as a list, which is all there is where WebGL is not.
+ * The photos are read from the phone; nothing is fetched but the code that
+ * draws.
  */
 
 type Pin = { entry: LogEntry; number: number; checkpointId: string | null };
 
-export function TraceScreen({ photos, inert, onBack }: { photos: LogEntry[]; inert: boolean; onBack: () => void }) {
-  useField("room", ROOM);
+/**
+ * `photos`: those whose picture this phone keeps, oldest first. They are read
+ * once: the keepsake keys this section by them, so other photos mount a new
+ * one with a new canvas (a disposed scene leaves its canvas's context lost).
+ */
+export function TraceSection({ photos }: { photos: LogEntry[] }) {
+  const headId = useId();
+  const listId = useId();
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pinsRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<TraceScene | null>(null);
   const [state, setState] = useState<"loading" | "on" | "off">("loading");
   const [chosen, setChosen] = useState<number | null>(null);
-  const pins = useMemo<Pin[]>(
-    () => photos.filter((entry) => entry.photo).map((entry, index) => ({ entry, number: index + 1, checkpointId: entry.record.place?.checkpointId ?? null })),
-    [photos],
+  const [pins] = useState<Pin[]>(() =>
+    photos.map((entry, index) => ({ entry, number: index + 1, checkpointId: entry.record.place?.checkpointId ?? null })),
   );
 
   useEffect(() => {
@@ -89,23 +95,11 @@ export function TraceScreen({ photos, inert, onBack }: { photos: LogEntry[]; ine
   const pickMeta = pick?.entry.record.photo;
 
   return (
-    <Screen className="trace" inert={inert}>
-      <div className="topbar">
-        <span>
-          <button type="button" className="link" onClick={onBack}>
-            <Icon name="close" />
-            閉じる
-          </button>
-        </span>
-        <span className="mono">Trace</span>
-        <span />
-      </div>
-      <h1 className="h1">
-        <Phrases text="あなたの軌跡" />
-      </h1>
-      <p className="body">
-        <Sentences text={"写真を撮った場所を、\n撮った順に通れる道でつなぎました。最後は ShibaLab です。"} />
-      </p>
+    <section className="keep__trace" aria-labelledby={headId}>
+      <p className="mono">Trace</p>
+      <h2 className="h3" id={headId}>
+        あなたの軌跡
+      </h2>
 
       {state !== "off" && (
         <div className="trace__view">
@@ -135,10 +129,10 @@ export function TraceScreen({ photos, inert, onBack }: { photos: LogEntry[]; ine
           </div>
         </div>
       )}
-      {state === "off" && <NoteBar text={"この端末では 3D で表示できないので、\n撮った場所を順に並べています。"} />}
+      {state === "off" && <NoteBar text={"この端末では 3D で表示できないので、撮った場所を順に並べています。"} />}
 
       {pick && (
-        <section className="trace__pick" aria-live="polite">
+        <div className="trace__pick" aria-live="polite">
           <Print
             source={{ blob: pick.entry.photo as Blob }}
             number={pick.number}
@@ -147,14 +141,14 @@ export function TraceScreen({ photos, inert, onBack }: { photos: LogEntry[]; ine
             small
           />
           <p className="h3">{pick.entry.record.place?.name ?? "場所の記録なし"}</p>
-        </section>
+        </div>
       )}
 
-      <section className="trace__list" aria-labelledby="ray-trace-list">
-        <h2 className="h3" id="ray-trace-list">
+      <div className="trace__list">
+        <h3 className="h3" id={listId}>
           撮った場所
-        </h2>
-        <ol>
+        </h3>
+        <ol aria-labelledby={listId}>
           {pins.map((pin, index) => (
             <li key={pin.entry.id}>
               <button type="button" className={`trace__row${chosen === index ? " is-on" : ""}`} aria-pressed={chosen === index} onClick={() => setChosen(chosen === index ? null : index)}>
@@ -174,11 +168,7 @@ export function TraceScreen({ photos, inert, onBack }: { photos: LogEntry[]; ine
             </div>
           </li>
         </ol>
-      </section>
-
-      <button type="button" className="btn btn--line trace__back" onClick={onBack}>
-        作品にもどる
-      </button>
-    </Screen>
+      </div>
+    </section>
   );
 }

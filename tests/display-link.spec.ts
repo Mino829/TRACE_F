@@ -1,5 +1,7 @@
 import { test, expect, type Page, type WebSocketRoute } from "@playwright/test";
 
+import { RELAY_LANDS_MS } from "../src/lib/display/relay";
+
 /**
  * The booth taking arrivals from TRACE_B (issue #36), the way
  * trace-campus-installation#32 / TRACE_B#37 connect it: Google sign-in, a short
@@ -12,6 +14,8 @@ import { test, expect, type Page, type WebSocketRoute } from "@playwright/test";
  */
 
 const API = "https://api.test";
+/** Each walk starts after the light from the visitor's phone has come in (RELAY_LANDS_MS). */
+const WALK_STARTS = { timeout: RELAY_LANDS_MS + 6000 };
 const WS = "wss://api.test/v1/display/ws";
 const ROUTE = ["o-126", "grand-stairs-bottom", "shibalab"];
 
@@ -89,7 +93,8 @@ async function signIn(page: Page) {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1600, height: 900 });
-  await page.goto("/display");
+  // ?dev shows the link status; ?duration squeezes each arrival's walk (a minute at the booth) into a few seconds.
+  await page.goto("/display?dev&duration=3");
   await expect(page.getByRole("button", { name: /テスト再生/ })).toBeEnabled({ timeout: 60000 });
   await expect(page.getByRole("status").filter({ hasText: /^LINK · 展示用の Google ログインが必要/ })).toBeVisible();
   await page.getByRole("button", { name: "テスト用 Google ログイン" }).click();
@@ -113,7 +118,8 @@ test("signs in with Google, authenticates by the first message, and plays an arr
   for (const key of ["coordinateVersion", "campusGraphVersion", "threeDMapVersion"]) expect(typeof auth[key]).toBe("string");
 
   arrive(b, "arrival-0001", ROUTE, "1");
-  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback");
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "intro");
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback", WALK_STARTS);
   expect(b.of("arrival.replay.started")[0]).toMatchObject({ arrivalId: "arrival-0001", leaseId: "lease-1234" });
   await expect(page.locator(".dsp-tests").getByText("ARRIVAL", { exact: true })).toBeVisible();
 
@@ -135,9 +141,9 @@ test("the next visitor waits for the previous card, and a visitor without a rout
   // While the first card is up, the second has not been asked to start.
   await expect.poll(() => b.of("arrival.replay.completed").length).toBe(1);
   expect(b.of("arrival.replay.started")).toHaveLength(1);
-  // Then the second starts: no route, so the card alone, reported completed.
+  // Then the second starts: no route, so the light comes in and the card alone follows, reported completed.
   await expect.poll(() => b.of("arrival.replay.started").length, { timeout: 10000 }).toBe(2);
-  await expect.poll(() => b.of("arrival.replay.completed").length).toBe(2);
+  await expect.poll(() => b.of("arrival.replay.completed").length, WALK_STARTS).toBe(2);
   await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "top", { timeout: 10000 });
   expect(errors).toEqual([]);
 });
@@ -150,7 +156,7 @@ test("a start TRACE_B rejects is asked for again, not dropped, and plays once TR
   arrive(b, "arrival-0001", ROUTE, "1");
   arrive(b, "arrival-0002", ROUTE, "2");
   await expect.poll(() => b.of("arrival.replay.started").map((m) => m.arrivalId), { timeout: 10000 }).toEqual(["arrival-0001", "arrival-0001"]);
-  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback");
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback", WALK_STARTS);
   await expect.poll(() => b.of("arrival.replay.completed").map((m) => m.arrivalId), { timeout: 15000 }).toEqual(["arrival-0001"]);
   // The second comes after the first one's card, in order.
   await expect.poll(() => b.of("arrival.replay.completed").map((m) => m.arrivalId), { timeout: 20000 }).toEqual(["arrival-0001", "arrival-0002"]);
@@ -173,7 +179,7 @@ test("an expired Google sign-in is not used: the booth asks to sign in again ins
   const expired = `x.${Buffer.from(JSON.stringify({ exp: 1 })).toString("base64url")}.y`;
   const b = await backend(page, { credential: expired });
   await page.setViewportSize({ width: 1600, height: 900 });
-  await page.goto("/display");
+  await page.goto("/display?dev");
   await expect(page.getByRole("button", { name: /テスト再生/ })).toBeEnabled({ timeout: 60000 });
   await page.getByRole("button", { name: "テスト用 Google ログイン" }).click();
   await expect(page.locator('[role="status"][data-state]')).toHaveAttribute("data-state", "login");
@@ -185,10 +191,24 @@ test("a skip while playing goes back to the top and is not reported", async ({ p
   const errors = await signIn(page);
   b.send("participant.arrived", { arrivalId: "arrival-0003", replayStatus: "queued", pathNodeIds: ROUTE, photoCheckpoints: [], replayDurationSeconds: 30 }, "1");
   b.send("arrival.replay.requested", { arrivalId: "arrival-0003" }, "2");
-  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback");
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback", WALK_STARTS);
   b.send("arrival.replay.skipped", { arrivalId: "arrival-0003", reason: "operator" }, "3");
   await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "top");
   await page.waitForTimeout(500);
+  expect(b.of("arrival.replay.completed")).toHaveLength(0);
+  expect(b.of("arrival.replay.failed")).toHaveLength(0);
+  expect(errors).toEqual([]);
+});
+
+test("a skip while the light is coming in goes back to the top, and the walk never starts", async ({ page }) => {
+  const b = await backend(page);
+  const errors = await signIn(page);
+  arrive(b, "arrival-0005", ROUTE, "1");
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "intro");
+  b.send("arrival.replay.skipped", { arrivalId: "arrival-0005", reason: "operator" }, "3");
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "top");
+  await page.waitForTimeout(RELAY_LANDS_MS + 1000);
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "top");
   expect(b.of("arrival.replay.completed")).toHaveLength(0);
   expect(b.of("arrival.replay.failed")).toHaveLength(0);
   expect(errors).toEqual([]);
@@ -209,7 +229,7 @@ test("without the lease the booth waits on standby and plays nothing", async ({ 
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1600, height: 900 });
-  await page.goto("/display");
+  await page.goto("/display?dev");
   await expect(page.getByRole("button", { name: /テスト再生/ })).toBeEnabled({ timeout: 60000 });
   await page.getByRole("button", { name: "テスト用 Google ログイン" }).click();
   await expect(page.getByRole("status").filter({ hasText: "LINK · 待機" })).toBeVisible();

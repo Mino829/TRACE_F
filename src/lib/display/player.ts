@@ -200,6 +200,15 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
   const observer = new ResizeObserver(() => views.forEach((v) => v.resize()));
   for (const c of [opts.overview, opts.follow, opts.walk]) observer.observe(c);
   views.forEach((v) => v.resize());
+  // Each view's first frame compiles its shaders and uploads the campus, a stall of about a
+  // second: it is drawn now, under the loading screen, with the whole campus in view, rather
+  // than as the light from the visitor's phone lands on the first walk.
+  const middle = new THREE.Box3().setFromObject(campus.root).getCenter(new THREE.Vector3());
+  for (const camera of [followCamera, walkCamera]) {
+    camera.position.copy(middle).add(new THREE.Vector3(0, 300, 300));
+    camera.lookAt(middle);
+  }
+  views.forEach((v) => v.warm());
 
   function clearTrail() {
     if (!trail) return;
@@ -420,6 +429,12 @@ export async function createPlayer(opts: PlayerOptions): Promise<Player> {
       render() {
         prepare();
         composer.render();
+      },
+      /** Renders once and waits for the GPU, so the work is over before the player is ready. */
+      warm() {
+        prepare();
+        composer.render();
+        renderer.getContext().finish();
       },
       dispose() {
         composer.dispose();

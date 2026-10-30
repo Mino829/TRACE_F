@@ -10,6 +10,7 @@ import type { LogEntry } from "@/lib/ping-log/store";
 import { clock } from "../ui";
 import { PhotoActions } from "./keepsake";
 import { Print, Strip, frameLabel } from "./prints";
+import { CampusWire } from "./wire";
 import {
   ClearWord,
   DAY,
@@ -68,11 +69,11 @@ function useSplit(top: RefObject<HTMLElement | null>): number {
 const ENTRY_STOP: Partial<Record<EntryCheck, { head: string; text: string }>> = {
   old: {
     head: "この端末では参加できません",
-    text: "iOS 16.4 以降の iPhone と、\nChrome 111 以降の Android で参加できます。展示は ShibaLab（教室棟301）で見られます。",
+    text: "iOS 16.4 以降の iPhone と、Chrome 111 以降の Android で参加できます。展示は ShibaLab（教室棟301）で見られます。",
   },
   "no-camera": {
     head: "このブラウザでは参加できません",
-    text: "TRACE ではカメラで写真を撮ります。このブラウザではカメラを使えないので、\nSafari か Chrome で開いてください。",
+    text: "TRACE ではカメラで写真を撮ります。このブラウザではカメラを使えないので、Safari か Chrome で開いてください。",
   },
 };
 
@@ -100,7 +101,7 @@ function EntryCta({ entry, onStart, onInstall }: { entry: EntryCheck; onStart: (
     <div className="title__cta">
       {inApp && (
         <p className="title__why">
-          <Sentences text={"LINE などのアプリの中で開いたページでは\n参加できません。Safari か Chrome で開いてください。"} />
+          <Sentences text={"LINE などのアプリの中で開いたページでは参加できません。Safari か Chrome で開いてください。"} />
         </p>
       )}
       <button type="button" className="btn" disabled={inApp} onClick={entry === "ios-browser" ? onInstall : onStart}>
@@ -140,7 +141,6 @@ export function TitleScreen({
   onDeveloper: () => void;
   onMenu: () => void;
 }) {
-  const info = useInfo();
   const top = useRef<HTMLDivElement>(null);
   const split = useSplit(top);
   // One beam comes down from the upper right, clear of the text, and lands just past the line where the paper turns black.
@@ -170,7 +170,9 @@ export function TitleScreen({
         {notes.map((note) => (
           <NoteBar key={note} text={note} />
         ))}
-        <p className="title__tag">写真で残す、学祭の一日</p>
+        <p className="title__tag">
+          ShibaLab <span>体験型メディアアート作品</span>
+        </p>
         <p className="title__lead">
           <Sentences text="学祭で残したい瞬間を、写真に撮ってください。" />
         </p>
@@ -186,11 +188,7 @@ export function TitleScreen({
             <Phrases text="ShibaLab に行く" />
           </li>
         </ol>
-        <p className="title__note">
-          <Phrases text={"写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。"} />
-          <Info info={info} label="写真の扱いについて" />
-        </p>
-        <Pop info={info} text="撮った写真は、展示に出しません。参加は任意です。" />
+        <CampusWire />
         {"onHome" in foot ? (
           <div className="title__cta">
             <button type="button" className="btn" onClick={foot.onHome}>
@@ -263,9 +261,6 @@ export function ConsentBody({ terms, answer, onClose }: { terms: Pick<Consent, "
                 同意しない
               </button>
             </div>
-            <p className="small">
-              <Sentences text={"カメラなどの許可は、\nはじめて撮影するときに求めます。"} />
-            </p>
           </>
         ) : (
           <button type="button" className="btn btn--line" onClick={onClose}>
@@ -319,10 +314,10 @@ export type ReminderTerms = { intervalMinutes: number; choices: number[]; stops:
 export const WORKER_REMINDER: ReminderTerms = { intervalMinutes: REMINDER_PLAN.intervalMinutes, choices: [], stops: "midnight" };
 
 export function reminderNote({ intervalMinutes, stops }: ReminderTerms): string {
-  const often = `オンにすると、\n${intervalMinutes}分ごとに撮影のリマインダーが届きます。`;
+  const often = `オンにすると、${intervalMinutes}分ごとに撮影のリマインダーが届きます。`;
   return stops === "midnight"
-    ? `${often}リマインダーは、\nオンにした日の24時に止まります。`
-    : `${often}届くのが遅れることもあります。リマインダーは、ShibaLab で\nQR コードを読み取ったときか、\n参加の期限が来たときに止まります。`;
+    ? `${often}リマインダーは、オンにした日の24時に止まります。`
+    : `${often}リマインダーは、ShibaLab で QR コードを読み取ったときか、参加の期限が来たときに止まります。`;
 }
 
 /** The interval, among what TRACE_B allows: the chosen one inverts, as on the switch. */
@@ -411,7 +406,7 @@ export function HomeScreen(props: HomeProps) {
             撮影のリマインダー
           </p>
           <p className="body">
-            <Sentences text={`${clock(pendingAt)} のリマインダーです。残したい景色があれば、\n写真を撮ってみませんか。`} />
+            <Sentences text={`${clock(pendingAt)} のリマインダーです。残したい景色があれば、写真を撮ってみませんか。`} />
           </p>
           <div className="btns btns--2" style={{ marginTop: 12 }}>
             <button type="button" className="btn btn--line" onClick={props.onSkip}>
@@ -436,11 +431,6 @@ export function HomeScreen(props: HomeProps) {
           撮った写真
           <Info info={memoryInfo} label="撮った写真について" />
         </h1>
-        {count === 0 && (
-          <p className="body home__lead">
-            <Sentences text="あなたの思い出を切り取りましょう。" />
-          </p>
-        )}
       </header>
       <Pop info={memoryInfo} text={`撮影は${maxPhotos}枚までです。`} />
       {!props.ended && left > 0 && left <= 3 && <p className="h3 remain">あと{left}枚撮れます</p>}
@@ -482,7 +472,7 @@ export function HomeScreen(props: HomeProps) {
       {props.ended && <p className="note-bar" role="status">参加は終了しました。保存期限までは写真の確認と記録の削除ができます。</p>}
       {full && (
         <p className="small limit">
-          <Sentences text={`${maxPhotos}枚撮り終えました。新しく撮るときは、\n写真を1枚削除してください。`} />
+          <Sentences text={`${maxPhotos}枚撮り終えました。新しく撮るときは、写真を1枚削除してください。`} />
         </p>
       )}
 
@@ -541,7 +531,7 @@ export function HomeScreen(props: HomeProps) {
         ) : props.arrived ? (
           <>
             <p className="body">
-              <Sentences text={props.ended ? "参加は終了しました。残した写真を確認できます。" : "再生が終わったら、\n撮った写真を一枚の作品にして保存できます。"} />
+              <Sentences text={props.ended ? "参加は終了しました。残した写真を確認できます。" : "再生が終わったら、撮った写真を一枚の作品にして保存できます。"} />
             </p>
             <button type="button" className="btn" onClick={props.onArrive}>
               <Icon name="arrow" />
@@ -551,7 +541,7 @@ export function HomeScreen(props: HomeProps) {
         ) : (
           <>
             <p className="body">
-              <Sentences text={"写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。着いたら、ASYNC のブースにある\nQR コードを読み取ってください。"} />
+              <Sentences text={"お帰りの前に、ぜひ ShibaLab（教室棟301）にご来場ください。展示場にある QR コードを読み取ると、あなたの今日の一日を振り返れます。"} />
             </p>
             <button type="button" className="btn" onClick={props.onArrive}>
               <Icon name="qr" />
@@ -585,7 +575,7 @@ export function PingScreen({ pendingAt, full, inert, onTakePhoto, onSkip, onClos
       </div>
       <p className="pingscreen__clock">{clock(pendingAt)}</p>
       <h1 className="h2">
-        <Sentences text={`${clock(pendingAt)} のリマインダーです。残したい景色があれば、\n写真を撮ってみませんか。`} />
+        <Sentences text={`${clock(pendingAt)} のリマインダーです。残したい景色があれば、写真を撮ってみませんか。`} />
       </h1>
       <LightWindow className="pingscreen__fill" soft={18} sweep />
       <div className="btns">
@@ -625,7 +615,7 @@ export function SkipScreen({ at, nextReminderAt, inert, onClose }: { at: string;
         <Phrases text="今回はスキップしました" />
       </h1>
       <p className="body clear__sub">
-        <Sentences text={"撮りたいものがあるときだけ\n撮れば十分です。"} />
+        <Sentences text={"撮りたいものがあるときだけ撮れば十分です。"} />
       </p>
       {nextReminderAt !== null && (
         <p className="small clear__sub">

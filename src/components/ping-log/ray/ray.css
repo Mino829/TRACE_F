@@ -18,6 +18,25 @@
   }
 }
 
+@keyframes relay-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes relay-breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes relay-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 /* 日だまり: the light shifts a little and back; a cloud passes now and then. */
 @keyframes ray-sun-drift {
   from {
@@ -777,6 +796,10 @@ html:has(.ray) body {
     color: var(--paper);
     letter-spacing: 0.01em;
   }
+  /* "ShibaLab" and the rest wrap as two pieces: 作品 never goes down a line alone. */
+  & .title__tag span {
+    display: inline-block;
+  }
   & .title__lead {
     font-size: 14.5px;
     line-height: 1.8;
@@ -828,6 +851,23 @@ html:has(.ray) body {
     margin: 14px 0 0;
     background: var(--paper);
     color: var(--ink);
+  }
+  /* The campus as wire (CampusWire), across the whole width of the room the steps leave above the button; a sideways drag turns it. */
+  & .wire {
+    flex: 1 1 0;
+    min-height: 0;
+    margin: 8px -20px 0;
+    position: relative;
+    color: var(--paper);
+    touch-action: pan-y;
+    cursor: grab;
+  }
+  & .wire canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
   }
   & .title__cta {
     margin-top: auto;
@@ -1543,51 +1583,84 @@ html:has(.ray) body {
 
   /* -------------------------------------------------------- room screens */
 
-  & .arrived__stage {
-    height: 220px;
-    margin: 0 -20px;
-    position: relative;
-  }
-  & .play {
-    margin-top: 22px;
-    padding-top: 18px;
-    border-top: 1px solid var(--rule);
-  }
-  & .play__line {
-    position: relative;
-    height: 22px;
-    margin: 18px 0 4px;
-  }
-  & .play__line::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 10px;
-    height: 1px;
-    background: var(--rule);
-  }
-  & .play__run {
-    position: absolute;
-    left: 0;
-    top: 9px;
-    height: 3px;
-    width: 0;
-    background: var(--fg);
-  }
-  & .play__run::after {
-    content: "";
-    position: absolute;
-    right: -4px;
-    top: -4px;
-    width: 11px;
-    height: 11px;
-    background: var(--fg);
-  }
-  & .play__ends {
+  /*
+   * Waiting for the replay (relay.tsx): the close button, a large ring in the
+   * middle of the phone with the beam rising from it, and one line under it.
+   * Once the replay is over the ring settles smaller at the top and the way on
+   * comes in under it.
+   */
+  & .screen--relay {
+    --ring: min(60cqw, 236px);
+    /* The ring stands at the foot of its box, the line under it, and the two together sit in the middle of the phone. */
+    --relay-h: max(calc(var(--ring) + 56px), calc(50cqh + var(--ring) / 2 - 57px));
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
   }
+  & .screen--relay.is-over {
+    --ring: 124px;
+    --relay-h: 172px;
+  }
+  & .relay__mast {
+    justify-content: flex-end;
+  }
+  & .relay {
+    flex: none;
+    height: var(--relay-h);
+    padding-bottom: 28px;
+    display: grid;
+    place-items: end center;
+    transition: height 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  & .relay__ring {
+    width: var(--ring);
+    aspect-ratio: 1;
+    transition: width 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  /* Paused rather than taken off, so the ring stops where it is as it closes. */
+  & .relay__ring svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    animation: relay-turn 1.15s linear infinite paused;
+  }
+  & .relay__ring.is-turning svg {
+    animation-play-state: running;
+  }
+  & .relay__track,
+  & .relay__arc {
+    fill: none;
+  }
+  & .relay__track {
+    stroke: var(--rule);
+    stroke-width: 1;
+  }
+  /* A quarter of the ring turns while waiting; it runs all the way round as the light comes back. */
+  & .relay__arc {
+    stroke: var(--fg);
+    stroke-width: 2.4;
+    stroke-dasharray: 0 352;
+    transition: stroke-dasharray 0.8s cubic-bezier(0.3, 0.6, 0.2, 1);
+  }
+  & .relay__ring.is-turning .relay__arc {
+    stroke-dasharray: 88 352;
+  }
+  & .relay__ring.is-closed .relay__arc {
+    stroke-dasharray: 352 0;
+  }
+  & .relay__say {
+    text-align: center;
+  }
+  & .relay__say .h2 {
+    margin: 0;
+  }
+  & .relay__after {
+    margin-top: 10px;
+    animation: relay-in 0.7s ease-out both;
+  }
+  & .relay__after > .body {
+    text-align: center;
+  }
+
   /* After the replay, the way on to the keepsake. */
   & .play__next {
     margin-top: 26px;
@@ -1635,8 +1708,9 @@ html:has(.ray) body {
   }
 
   /*
-   * The keepsake: the picture as it is saved, coming up out of the dark;
-   * its button and the date the photos go; then each photo on its own.
+   * The keepsake: the way first (振り返り3D, below); then the picture as it
+   * is saved, coming up out of the dark, its button and the date the photos
+   * go; then each photo on its own.
    */
   & .keep__art {
     position: relative;
@@ -1679,13 +1753,11 @@ html:has(.ray) body {
   & .keep__home {
     margin-top: 28px;
   }
-  & .keep__trace {
+  & .keep__trace,
+  & .keep__work {
     margin-top: 34px;
     padding-top: 16px;
     border-top: 1.5px solid var(--fg);
-  }
-  & .keep__trace .btn {
-    margin-top: 14px;
   }
 
   /*
@@ -1819,14 +1891,6 @@ html:has(.ray) body {
     font-size: 14.5px;
     font-weight: 700;
     line-height: 1.5;
-  }
-  & .trace__back {
-    margin-top: 28px;
-  }
-  & .float-note {
-    margin-top: 22px;
-    padding: 2px 14px;
-    border-left: 3px solid var(--fg);
   }
 
   & .story__item {
@@ -1966,9 +2030,17 @@ html:has(.ray) body {
     border-top: 1px solid var(--rule);
     list-style: none;
   }
-  & .install__step svg {
+  & .install__step svg,
+  & .install__app {
     width: 32px;
     height: 32px;
+  }
+  /* The home-screen icon as it looks there, its corners rounded; it is paper-coloured, so a rule shows its edge. */
+  & .install__app {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    box-shadow: 0 0 0 1px var(--rule);
   }
   /* A step with a screenshot: the icon stays by the text, not halfway down the picture. */
   & .install__step--shot {
@@ -2130,6 +2202,16 @@ html:has(.ray) body {
   @media (prefers-reduced-motion: reduce) {
     & .blink,
     & .clearword__s.is-in {
+      animation: none;
+    }
+    /* The ring stands still and its arc breathes instead; it settles without moving. */
+    & .relay__ring svg {
+      animation: relay-breathe 2.4s ease-in-out infinite paused;
+    }
+    & :is(.relay, .relay__ring, .relay__arc) {
+      transition: none;
+    }
+    & .relay__after {
       animation: none;
     }
     & .toast {

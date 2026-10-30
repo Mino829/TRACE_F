@@ -103,9 +103,9 @@ export function MenuLayer({ items, onClose }: { items: MenuItem[]; onClose: () =
 
 function steps(reminderMinutes: number) {
   return [
-    { title: "芝浦祭を楽しむ", text: "第54回芝浦祭を、\n思いっきり楽しんでください。" },
-    { title: "写真を撮る", text: `リマインダーをオンにすると、${reminderMinutes}分ごとに\n撮影の通知が届きます。学祭の思い出を切り取りましょう。` },
-    { title: "ShibaLab に行く", text: "写真を撮り終えたら、\nShibaLab（教室棟301）に来てください。" },
+    { title: "芝浦祭を楽しむ", text: "第54回芝浦祭を、思いっきり楽しんでください。" },
+    { title: "写真を撮る", text: `通知をオンにすると、${reminderMinutes}分ごとに撮影を知らせる通知が届きます。指示に従い、撮影と場所の選択をしてください。` },
+    { title: "ShibaLab に行く", text: "お帰りの前に、ぜひ ShibaLab（教室棟301）にご来場ください。演出が楽しめます。" },
   ];
 }
 
@@ -158,11 +158,13 @@ export function HowToLayer({ reminderMinutes, onNext, onClose }: { reminderMinut
  */
 export function InstallLayer({
   support,
+  reminderMinutes,
   beforeJoining,
   onContinue,
   onClose,
 }: {
   support: PushSupport;
+  reminderMinutes: number;
   beforeJoining: boolean;
   onContinue?: () => void;
   onClose: () => void;
@@ -178,29 +180,33 @@ export function InstallLayer({
     }
   };
 
-  const ios = support === "ios-browser";
+  // Brave on the iPhone has no 「ホーム画面に追加」, so from there the way is to Safari.
+  const brave = support === "ios-browser" && "brave" in navigator;
+  const ios = support === "ios-browser" && !brave;
   // iOS 26 and later keep 「共有」 in the 「…」 menu and open the share sheet folded; earlier ones, and the other tab
   // layouts, show the share button itself and a sheet to scroll.
-  const steps: { icon: IconName; text: string; note?: string; shot?: { src: string; alt: string; width: number; height: number } }[] = [
-    { icon: "share", text: "画面の下の「…」を押し、\n「共有」を押します。", note: "画面に共有ボタンがあるときは、\nそのボタンを押します。" },
+  const steps: { icon: IconName | "app"; text: string; note?: string; copy?: boolean; shot?: { src: string; alt: string; width: number; height: number } }[] = [
+    { icon: "share", text: "画面の下の「…」を押し、「共有」を押します。" },
     {
       icon: "more",
-      text: "共有メニューの\n「表示を増やす」を押します。",
-      note: "「表示を増やす」がないときは、\nメニューを下へスクロールします。",
+      text: "共有メニューの「表示を増やす」を押します。",
+      note: "「表示を増やす」がないときは、メニューを下へスクロールします。",
       // Cut from a participant's iPhone (iOS 26), the button framed.
       shot: { src: "/log/install/ios-show-more.png", alt: "共有メニューの「表示を増やす」", width: 720, height: 236 },
     },
     {
       icon: "plus",
-      text: "「ホーム画面に追加」を押し、\n「追加」を押します。",
+      text: "「ホーム画面に追加」を押し、「追加」を押します。",
+      note: "「ホーム画面に追加」がないときは、リンクをコピーして Safari で開いてください。",
+      copy: true,
       // Cut from a participant's iPhone (iOS 26), the row framed.
       shot: { src: "/log/install/ios-add-to-home.png", alt: "共有メニューの「ホーム画面に追加」", width: 720, height: 302 },
     },
     {
-      icon: "bell",
+      icon: "app",
       text: beforeJoining
-        ? "ホーム画面にできた TRACE の\nアイコンから開いてください。"
-        : "ホーム画面にできた TRACE の\nアイコンから開き直すと、\nリマインダーをオンにできます。",
+        ? "ホーム画面にできた TRACE のアイコンから開いてください。"
+        : "ホーム画面にできた TRACE のアイコンから開き直すと、リマインダーをオンにできます。",
     },
   ];
   const heading = ios ? "iPhone で通知を受け取るには" : support === "in-app" ? "アプリの中で開いています" : "このブラウザでは通知を受け取れません";
@@ -215,21 +221,22 @@ export function InstallLayer({
               <Phrases text={heading} />
             </h1>
             <p className="body" style={{ marginTop: 10 }}>
-              <Sentences text={"通知を受け取るため、\nこのページをホーム画面に追加してください。"} />
+              <Sentences text={`この作品では、お使いの端末に通知を${reminderMinutes}分ごとに送り、定期的に写真を撮っていただきます。通知を受け取るため、このページをホーム画面に追加してください。`} />
             </p>
             <p className="small" style={{ marginTop: 8 }}>
               <Sentences
                 text={
                   beforeJoining
-                    ? "追加後、このタブは閉じてください。"
-                    : "アイコンから開くと、\n参加の同意からやり直しになります。ここで撮った写真は、\nアイコンから開いた画面には表示されません。"
+                    ? "追加後は、そのアイコンからお開きください。"
+                    : "アイコンから開くと、参加の同意からやり直しになります。ここで撮った写真は、アイコンから開いた画面には表示されません。"
                 }
               />
             </p>
             <ol style={{ marginTop: 14 }}>
               {steps.map((step) => (
                 <li key={step.icon} className={`install__step${step.shot ? " install__step--shot" : ""}`}>
-                  <Icon name={step.icon} />
+                  {/* eslint-disable-next-line @next/next/no-img-element -- the home-screen icon itself, a fixed file */}
+                  {step.icon === "app" ? <img className="install__app" src="/log/icon-192.png" alt="" width={32} height={32} /> : <Icon name={step.icon} />}
                   <div>
                     <p className="body">
                       <Sentences text={step.text} />
@@ -237,6 +244,14 @@ export function InstallLayer({
                     {step.note && (
                       <p className="small" style={{ marginTop: 4 }}>
                         <Sentences text={step.note} />
+                        {step.copy && (
+                          <>
+                            {" "}
+                            <button type="button" className="link" onClick={() => void copy()}>
+                              {copied ? "コピーしました" : "リンクをコピー"}
+                            </button>
+                          </>
+                        )}
                       </p>
                     )}
                     {/* eslint-disable-next-line @next/next/no-img-element -- a fixed screenshot; the static export has no image optimizer */}
@@ -254,11 +269,13 @@ export function InstallLayer({
             <p className="body" style={{ marginTop: 10 }}>
               <Sentences
                 text={
-                  support !== "in-app"
-                    ? "リマインダーを使う場合は、\nリンクをコピーして\nSafari か Chrome で開いてください。"
+                  brave
+                    ? "Brave ではホーム画面に追加できません。リンクをコピーして、Safari で開いてください。"
+                    : support !== "in-app"
+                    ? "リマインダーを使う場合は、リンクをコピーして Safari か Chrome で開いてください。"
                     : beforeJoining
-                      ? "アプリの中で開いたページの記録は、\nSafari や Chrome に引き継げません。アプリのメニューの「ブラウザで開く」を\n選ぶか、リンクをコピーして\nSafari か Chrome で開いてから、\n参加してください。"
-                      : "LINE などのアプリの中で開いたページでは、\n通知を受け取れません。リマインダーを使う場合は、\nアプリのメニューの「ブラウザで開く」を\n選ぶか、リンクをコピーして\nSafari か Chrome で開いてください。"
+                      ? "アプリの中で開いたページの記録は、Safari や Chrome に引き継げません。アプリのメニューの「ブラウザで開く」を選ぶか、リンクをコピーして Safari か Chrome で開いてから、参加してください。"
+                      : "LINE などのアプリの中で開いたページでは、通知を受け取れません。リマインダーを使う場合は、アプリのメニューの「ブラウザで開く」を選ぶか、リンクをコピーして Safari か Chrome で開いてください。"
                 }
               />
             </p>
@@ -271,10 +288,10 @@ export function InstallLayer({
         {onContinue ? (
           <>
             <button type="button" className="btn btn--line" style={{ marginTop: 18 }} onClick={() => void go(onContinue)}>
-              通知なしでこのまま参加する
+              通知なしでこのまま参加する（非推奨）
             </button>
             <p className="small" style={{ marginTop: 8 }}>
-              <Sentences text={"プライベートブラウズでは\n記録が正常に保存されません。通常のタブで開いてください。"} />
+              <Sentences text={"プライベートブラウズでは記録が正常に保存されません。通常のタブで開いてください。"} />
             </p>
           </>
         ) : (
@@ -289,7 +306,7 @@ export function InstallLayer({
 
 export function ConsentLayer({ terms, onClose }: { terms: Parameters<typeof ConsentBody>[0]["terms"]; onClose: () => void }) {
   return (
-    <Layer kind="full" label="同意した内容" onClose={onClose}>
+    <Layer kind="full" label="同意事項" onClose={onClose}>
       <div className="full">
         <ConsentBody terms={terms} onClose={onClose} />
       </div>
@@ -347,7 +364,7 @@ export function DeletePhotoLayer({
           </div>
         )}
         <p className="body">
-          <Sentences text={`この写真と、\n選んだ場所の記録を削除します。${arrived ? "作品からも外れます。" : ""}削除した写真は元に戻せません。`} />
+          <Sentences text={`この写真と、選んだ場所の記録を削除します。${arrived ? "作品からも外れます。" : ""}削除した写真は元に戻せません。`} />
         </p>
         {problem && (
           <p className="problem" role="alert">
@@ -413,7 +430,7 @@ export function WithdrawLayer({ onConfirm, onClose }: { onConfirm: () => Promise
           参加をやめますか？
         </h2>
         <p className="body">
-          <Sentences text={"リマインダーを止め、この端末の写真と、\n参加の記録をすべて削除します。削除したものは元に戻せません。"} />
+          <Sentences text={"リマインダーを止め、この端末の写真と、参加の記録をすべて削除します。削除したものは元に戻せません。"} />
         </p>
         <div className="btns" style={{ marginTop: 16 }}>
           <button type="button" className="btn btn--danger" disabled={working} onClick={() => void confirm()}>

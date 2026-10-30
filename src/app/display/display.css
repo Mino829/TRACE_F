@@ -412,7 +412,8 @@ html:has(.dsp) body {
   align-content: center;
   padding: 0 calc(var(--pad) * 2);
   background: rgba(12, 12, 13, 0.78);
-  animation: dsp-fade 0.6s ease-out both;
+  /* After the light has left the end of the line (relay.ts). */
+  animation: dsp-fade 0.6s ease-out 0.9s both;
 
   & p {
     margin: 0;
@@ -436,6 +437,18 @@ html:has(.dsp) body {
   from {
     opacity: 0;
   }
+}
+
+/* ---------------------------------------------------------------- relay */
+
+/* The light between the visitor's phone and this screen: over the screens, under the HUD. */
+.dsp-relay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 /* -------------------------------------------------------------- HUD */
