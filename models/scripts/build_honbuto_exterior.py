@@ -353,7 +353,10 @@ BR_DOOR = (48.35, 52.25, 2.75)        # 口の X の範囲と高さ（床から�
 
 # 1F ロビー（高層棟_1Fロビー）の +Y のガラス面の口：1F・2F の EV B のかごの扉の前（かごの扉がガラス面の外を向いているため）と、
 #   2F の EV ホール（build_honbuto_interior.py の HALL2）からロビーの 2F へ入る扉（2026-10-29）
-LOBBY_DOORS = [(40.45, 41.55, G, G + 2.35), (40.45, 41.55, G + 6.0, G + 6.0 + 2.35), (45.6, 47.4, G + 6.0, G + 6.0 + 2.4)]
+#   1F のかごは、ロビー側（奥）に扉をつけて外側の扉は閉じたので、1F の口はあけない
+LOBBY_DOORS = [(40.45, 41.55, G + 6.0, G + 6.0 + 2.35), (45.6, 47.4, G + 6.0, G + 6.0 + 2.4)]
+# 1F ロビーの西の面（-X）の玄関（下の「9.」の自動ドア）の口：Y = 入口の中心 -22.26 ± 1.0（扉は開けた状態）
+LOBBY_WEST_DOOR = (-22.26 - 1.0, -22.26 + 1.0, G, G + 2.6)
 
 
 def yface(mb, x0, x1, y, zl, zh, key, hole=None, holes=()):
@@ -392,7 +395,9 @@ for m in MASSES:
                 zh = min(zh, z1)
                 if zh - zl > 0.05:
                     for side in SIDES:
-                        for a, b, _, _ in exposed(m, side, (zl + zh) / 2, off=0.05):
+                        # 帯の上の端で判定する：隣の棟の屋上より少しでも上に出ている帯は張る（真ん中で判定すると、
+                        #   隣の屋上のすぐ上の帯が抜けて、高層棟 10F の外壁の下に高さ 1m のすき間ができていた）
+                        for a, b, _, _ in exposed(m, side, zh - 0.01, off=0.05):
                             if side == "+y":
                                 hole = (BR_DOOR[0], BR_DOOR[1], za, za + BR_DOOR[2]) if door_floor else None
                                 yface(body, a, b, y1, zl, zh, key, hole)
@@ -403,8 +408,13 @@ for m in MASSES:
                             else:
                                 body.face([(x0, b, zl), (x0, a, zl), (x0, a, zh), (x0, b, zh)], key)
         elif m["kind"] == "lobby":
-            body.box(x0, x1, y0, y1, za, z1, None, ["roof", "soffit", "curtain", "curtain", "curtain", "curtain"], skip=(4,))
+            body.box(x0, x1, y0, y1, za, z1, None, ["roof", "soffit", "curtain", "curtain", "curtain", "curtain"], skip=(4, 5))
             yface(body, x0, x1, y1, za, z1, "curtain", holes=LOBBY_DOORS)
+            # -X の面（玄関）：口をあける
+            hy0, hy1, hz0, hz1 = LOBBY_WEST_DOOR
+            for a, b, c, d in ((y0, hy0, za, z1), (hy1, y1, za, z1), (hy0, hy1, max(za, hz1), z1), (hy0, hy1, za, min(z1, hz0))):
+                if b - a > 1e-6 and d - c > 1e-6:
+                    body.face([(x0, b, c), (x0, a, c), (x0, a, d), (x0, b, d)], "curtain")
         elif m["kind"] == "white":
             last = (i == len(segs) - 1)
             if last:
@@ -716,16 +726,22 @@ EY0, EY1 = EC - 3.0, EC + 3.0    # ガラス面の範囲
 DW = 1.0                         # 自動ドア 1 枚の幅（両開きで 2 枚）
 ZD, ZG, ZS, ZC = G + 2.6, G + 3.0, G + 4.3, G + 4.55   # ドアの上端・ガラスの上端・看板の上端・ひさしの上端
 DY0, DY1 = EC - DW - 0.1, EC + DW + 0.1                # ドアの枠の外側
-# ガラス面（中は暗いロビー）
-ent.box(EX - 0.12, EX - 0.08, EY0, EY1, G, ZG, "entglass")
+# ガラス面（中は暗いロビー）。扉を開けた状態では、自動ドアの所（DY0〜DY1、ドアの上端まで）はあける
+if OPEN_DOORS:
+    for ya, yb in ((EY0, DY0), (DY1, EY1)):
+        ent.box(EX - 0.12, EX - 0.08, ya, yb, G, ZG, "entglass")
+    ent.box(EX - 0.12, EX - 0.08, DY0, DY1, ZD, ZG, "entglass")
+else:
+    ent.box(EX - 0.12, EX - 0.08, EY0, EY1, G, ZG, "entglass")
 # 縦の枠（銀）：はめ殺し | 太い枠 | 自動ドア 2 枚 | 太い枠 | はめ殺し
 for y, w in ((EY0, 0.05), (EY1, 0.05), (DY0, 0.1), (DY1, 0.1)):
     ent.box(EX - 0.22, EX - 0.05, y - w, y + w, G, ZG, "frame")
 ent.box(EX - 0.22, EX - 0.05, EY0, EY1, ZG - 0.08, ZG, "frame")          # 上の枠
-ent.box(EX - 0.22, EX - 0.05, EY0, EY1, G, G + 0.05, "frame")            # 下の枠
+for ya, yb in (((EY0, DY0), (DY1, EY1)) if OPEN_DOORS else ((EY0, EY1),)):
+    ent.box(EX - 0.22, EX - 0.05, ya, yb, G, G + 0.05, "frame")         # 下の枠（扉の口の所はなし）
 ent.box(EX - 0.22, EX - 0.05, DY0, DY1, ZD, ZD + 0.12, "frame")          # ドアの上の枠
-# 自動ドア（両開き 1 組）：銀の縦框と、下の幅の広い蹴板
-for la, lb in ((EC - DW, EC - 0.01), (EC + 0.01, EC + DW)):
+# 自動ドア（両開き 1 組）：銀の縦框と、下の幅の広い蹴板。開けた状態では、2 枚とも左右のはめ殺しの前へ引いておく
+for la, lb in (((EC - 2 * DW - 0.1, EC - DW - 0.11), (EC + DW + 0.11, EC + 2 * DW + 0.1)) if OPEN_DOORS else ((EC - DW, EC - 0.01), (EC + 0.01, EC + DW))):
     ent.box(EX - 0.32, EX - 0.24, la, la + 0.07, G + 0.03, ZD, "frame")
     ent.box(EX - 0.32, EX - 0.24, lb - 0.07, lb, G + 0.03, ZD, "frame")
     ent.box(EX - 0.32, EX - 0.24, la, lb, ZD - 0.07, ZD, "frame")

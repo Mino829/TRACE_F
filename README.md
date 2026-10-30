@@ -63,6 +63,8 @@ cd push-worker && npm test && npm run typecheck
 
 運営 API の Edge secret は展示 PC の loopback ブローカーにのみ設定します。起動、Go の独立 allowlist、ブラウザ環境変数、実 UI と broker のスモーク手順は [arrival-issuer/README.md](arrival-issuer/README.md) を参照してください。公開 key ID と purpose に対応した T2 到着 QR は、Go の署名済み文字列を正確に復元できる場合だけ短縮します。
 
+同梱 bundle は `coordinateVersion=toyosu-2026-08-28.1`、`campusGraphVersion=toyosu-graph-2026-10-29.1.draft`、`threeDMapVersion=toyosu-3dmap-2026-10-30` です（Frontend #81・Backend #50）。Go も同一の Graph 本体と3つの版に揃え、旧 bundle の Session は書き換えません。14ルートの描画確認は [docs/display/README.md](docs/display/README.md) を参照してください。
+
 ## Memory 参加状態
 
 参加者 API は `memorySession.status` の `main` / `arrived` / `ended` と、到着前の `replayStatus: null` を使用します。到着の再送は同じ arrival ID と**現在の**再生状態を反映します。廃止された展示用色・記号は要求しません。Memory の参加停止は `POST /v1/memory-sessions/{id}/stop` で終端化し、単なる通知解除や全データ削除と区別します。停止後も保存期限まで本人の状態確認・削除権利を保持し、旧 Live の資格は対応する本人用の状態確認・停止・削除にのみ使用します。写真が1枚でも「ShibaLab へ」の到着経路を利用できます。

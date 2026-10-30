@@ -176,8 +176,7 @@ test("an expired Google sign-in is not used: the booth asks to sign in again ins
   await page.goto("/display");
   await expect(page.getByRole("button", { name: /テスト再生/ })).toBeEnabled({ timeout: 60000 });
   await page.getByRole("button", { name: "テスト用 Google ログイン" }).click();
-  await page.waitForTimeout(500);
-  await expect(page.getByRole("status").filter({ hasText: "Google ログインが必要" })).toBeVisible();
+  await expect(page.locator('[role="status"][data-state]')).toHaveAttribute("data-state", "login");
   expect(b.tokenRequests).toHaveLength(0);
 });
 

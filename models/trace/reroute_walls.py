@@ -6,6 +6,7 @@
 # 扉の枠も壁として扱い、扉の真ん中を通す。
 #   1. エレベーター：かごの点から 4 方向に光線を当てて扉の向き（一番遠くまで抜ける向き）を探し、
 #      扉からまっすぐ 1.5m 出た所（ホールの中）に「エレベーターの前」の点を置く。かごと階をつなぐ線はすべてこの点を通す
+#   1a. 選べる点のうち add_nodes_8.py が印（relocate）をつけたものを、エレベーターの前から廊下を 20m ほど歩いた所（その階の奥）へ移す
 #   1b. 壁から 0.5m より近い点（乗り降りの点を除く）を、まわり 1.5m の中で壁から離れた所へ少し動かす
 #   2. 研究棟・本部棟・交流棟の中の平らな線と、渡り廊下の線（と、ほかの建物でも壁に近すぎる線）を引き直す：
 #      建物の碁盤の目に沿った 0.125m のマス目で、目の高さ（1.0m・1.6m）で壁から 0.3m 以上離れ、足元に床がある所だけを通り、
@@ -229,6 +230,53 @@ if not CHECK:
         add_edge(car, fid, "indoor")
         log["fronts"].append(car)
 
+    # ---------- 1a. 選べる点（印 relocate）を、エレベーターの前から廊下を 20m ほど歩いた所（その階の奥）へ移す ----------
+    #   add_nodes_8.py が印をつける。歩き始めはつながっている「エレベーターの前」の点（無ければその点）。
+    #   0.25m のマス目で歩ける所（壁から 0.5m 以上・床がある）を広げ、歩いた距離が 20m に近く、廊下らしい
+    #   （壁から 0.8〜1.6m）所を選ぶ。20m 歩ける所がない狭い階は、廊下らしい所のうち一番奥
+    #   （ユーザーの指示 2026-10-29：エレベーターの前では、その階に来た意味がない）
+    log["relocated"] = {}
+    WALK_TO, R = 20.0, 0.25
+    for n in [n for n in src["nodes"] if n.get("relocate")]:
+        i = n["id"]
+        nb = [e["to"] if e["from"] == i else e["from"] for e in src["edges"] if i in (e["from"], e["to"])]
+        start_id = next((x for x in nb if x.endswith("-door")), i)
+        p0 = V(start_id)
+        th = theta_for(i)
+        ux, uy = Vector((math.cos(th), math.sin(th), 0)), Vector((-math.sin(th), math.cos(th), 0))
+        geo, q, best, far = {(0, 0): 0.0}, [(0.0, (0, 0))], None, None
+        while q:
+            g0, c = heapq.heappop(q)
+            if g0 > geo[c] or g0 > WALK_TO + 4:
+                continue
+            w = p0 + ux * (c[0] * R) + uy * (c[1] * R)
+            w.z = p0.z
+            dist, _ = wall_dist(w, 1.6)
+            if dist >= 0.8 and (far is None or g0 > far[2]):
+                far = (0.0, w.copy(), g0, dist)
+            if g0 >= WALK_TO - 2:
+                score = -abs(g0 - WALK_TO) - 3.0 * (max(0.0, 0.8 - dist) + max(0.0, dist - 1.6))
+                if best is None or score > best[0]:
+                    best = (score, w.copy(), g0, dist)
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                c2 = (c[0] + dx, c[1] + dy)
+                if c2 in geo and geo[c2] <= g0 + R:
+                    continue
+                w2 = p0 + ux * (c2[0] * R) + uy * (c2[1] * R)
+                w2.z = p0.z
+                if (abs(c2[0]) + abs(c2[1])) * R > 1.0 and (wall_dist(w2, 0.6)[0] < 0.5 or not has_floor(w2)
+                                                             or bvh.ray_cast(w2 + Vector((0, 0, 0.5)), Vector((0, 0, 1)), 6.0)[0] is None):
+                    continue                    # 天井のない所（屋上・外）へは出ない
+                geo[c2] = g0 + R
+                heapq.heappush(q, (g0 + R, c2))
+        best = best or far
+        if best is None:
+            log["failed"][i] = "移す先が見つからない"
+            continue
+        n["blender"] = [round(best[1].x + OX, 2), round(best[1].y + OY, 2), n["blender"][2]]
+        n["note"] = (n.get("note", "") + " / reroute_walls.py：エレベーターの前から廊下を約 %.0fm 歩いた所（壁まで %.1fm）" % (best[2], best[3])).strip(" /")
+        log["relocated"][i] = round(best[2], 1)
+
     # ---------- 1b. 壁のそばの点を、まわり 1.5m の中で壁から離れた所へ少し動かす ----------
     #   道を探すとき両端は動かさないので、端が壁のそばだと線が壁に寄ったまま残る。エレベーター・エスカレーター・階段の
     #   乗り降りの点（動かすと縦の線が斜めになる）と、エレベーターの前の点は動かさない
@@ -239,7 +287,7 @@ if not CHECK:
     log["nudged"] = []
     for n in list(src["nodes"]):
         i = n["id"]
-        if i in fixed or i.endswith("-door"):
+        if i in fixed or i.endswith("-door") or i in log["relocated"]:
             continue
         p0 = V(i)
         d0, _ = wall_dist(p0)
@@ -295,7 +343,7 @@ for e in src["edges"]:
         c, w = line_clearance(V(e["from"]), V(e["to"]))
         if c < CLEAR:
             remaining[e["id"]] = (round(c, 2), w)
-print("REROUTE fronts", len(log["fronts"]), "nudged", len(log.get("nudged", [])), "kept", log["kept"], "routed", len(log["routed"]),
+print("REROUTE fronts", len(log["fronts"]), "relocated", len(log.get("relocated", {})), "nudged", len(log.get("nudged", [])), "kept", log["kept"], "routed", len(log["routed"]),
       "failed", len(log["failed"]), "remaining", len(remaining))
 for k, v in log["failed"].items():
     print("FAILED", k, v)

@@ -314,28 +314,35 @@ SH = (BAY[0] + 0.12, BAY[1] - 0.12, EV_B["y"][0] + 0.12, EV_B["y"][1] - 0.2)    
 OPEN_W = 1.1                                 # 扉の開口の幅
 
 
-def shaft_level(mb, f, z, z_top):
-    """階 f の高さ z〜z_top のかご：内側は発光する壁。扉は開いた状態（扉は開口の両脇に寄せて置く）"""
+def shaft_level(mb, f, z, z_top, rear=False):
+    """階 f の高さ z〜z_top のかご：内側は発光する壁。扉は開いた状態（扉は開口の両脇に寄せて置く）。
+    rear なら扉は奥（-y、1F ロビーの側）で、手前（+y、ピロティの側）は閉じる（2026-10-29：1F のかごの扉がロビーの外を
+    向いていて、玄関から入った人が外へ回り込んでから乗っていた。1F は前後に扉のあるかごにして、ロビーから乗る）"""
     cx = (BAY[0] + BAY[1]) / 2
     ya, yb = EV_B["y"]
     t = 0.12
-    # 奥の壁（内側 = +y）と両脇の壁（内側 = +x / -x）。面の順: 下, 上, -y, +x, +y, -x
-    mb.box(BAY[0], BAY[1], ya, ya + t, z, z_top, "core", keys6=["core", "core", "core", "core", "evlight", "core"], skip=(0, 1))
+    # 両脇の壁（内側 = +x / -x）。面の順: 下, 上, -y, +x, +y, -x
     mb.box(BAY[0], BAY[0] + t, ya + t, yb - 0.2, z, z_top, "core", keys6=["core", "core", "core", "evlight", "core", "core"], skip=(0, 1))
     mb.box(BAY[1] - t, BAY[1], ya + t, yb - 0.2, z, z_top, "core", keys6=["core", "core", "core", "core", "core", "evlight"], skip=(0, 1))
-    # 手前の壁（扉の面）：開口の左右と、開口の上
-    kf = ["core", "core", "evlight", "core", "core", "core"]
-    mb.box(BAY[0], cx - OPEN_W / 2, yb - 0.2, yb, z, z_top, "core", keys6=kf, skip=(0, 1))
-    mb.box(cx + OPEN_W / 2, BAY[1], yb - 0.2, yb, z, z_top, "core", keys6=kf, skip=(0, 1))
-    mb.box(cx - OPEN_W / 2, cx + OPEN_W / 2, yb - 0.2, yb, z + 2.3, z_top, "core", keys6=kf, skip=(0, 1))
-    # 開いた扉（左右に 0.5m ずつ寄せて、ホール側に少し出す）
-    for xa, xb in ((cx - OPEN_W / 2 - 0.5, cx - OPEN_W / 2), (cx + OPEN_W / 2, cx + OPEN_W / 2 + 0.5)):
-        mb.box(xa, xb, yb, yb + 0.04, z, z + 2.3, "evdoor")
-    # 階の札（扉の上の黒い板に白い文字）と、扉の脇の B
-    mb.box(cx - 0.45, cx + 0.45, yb + 0.04, yb + 0.06, z + 2.35, z + 2.85, "sign")
-    add_text(mb, "%dF" % f, (cx, yb + 0.06, z + 2.6), (0, 1), 0.3)
-    mb.box(BAY[1] + 0.05, BAY[1] + 0.25, yb, yb + 0.05, z, z + 2.6, "sign")
-    add_text(mb, "B", (BAY[1] + 0.15, yb + 0.05, z + 2.35), (0, 1), 0.14)
+    kb = ["core", "core", "core", "core", "evlight", "core"]        # 奥の壁（内側 = +y）
+    kf = ["core", "core", "evlight", "core", "core", "core"]        # 手前の壁（内側 = -y）
+    walls = [((ya, ya + t), kb, rear, -1, ya), ((yb - 0.2, yb), kf, not rear, +1, yb)]
+    for (w0, w1), keys, opening, out, face in walls:
+        if opening:             # 開口の左右と、開口の上
+            mb.box(BAY[0], cx - OPEN_W / 2, w0, w1, z, z_top, "core", keys6=keys, skip=(0, 1))
+            mb.box(cx + OPEN_W / 2, BAY[1], w0, w1, z, z_top, "core", keys6=keys, skip=(0, 1))
+            mb.box(cx - OPEN_W / 2, cx + OPEN_W / 2, w0, w1, z + 2.3, z_top, "core", keys6=keys, skip=(0, 1))
+            # 開いた扉（左右に 0.5m ずつ寄せて、ホール側に少し出す）
+            for xa, xb in ((cx - OPEN_W / 2 - 0.5, cx - OPEN_W / 2), (cx + OPEN_W / 2, cx + OPEN_W / 2 + 0.5)):
+                mb.box(xa, xb, min(face, face + out * 0.04), max(face, face + out * 0.04), z, z + 2.3, "evdoor")
+            # 階の札（扉の上の黒い板に白い文字）と、扉の脇の B
+            fy = face + out * 0.04
+            mb.box(cx - 0.45, cx + 0.45, min(fy, fy + out * 0.02), max(fy, fy + out * 0.02), z + 2.35, z + 2.85, "sign")
+            add_text(mb, "%dF" % f, (cx, fy + out * 0.02, z + 2.6), (0, out), 0.3)
+            mb.box(BAY[1] + 0.05, BAY[1] + 0.25, min(face, face + out * 0.05), max(face, face + out * 0.05), z, z + 2.6, "sign")
+            add_text(mb, "B", (BAY[1] + 0.15, face + out * 0.05, z + 2.35), (0, out), 0.14)
+        else:
+            mb.box(BAY[0], BAY[1], w0, w1, z, z_top, "core", keys6=keys, skip=(0, 1))
 
 
 def core(mb, f, z):
@@ -478,7 +485,7 @@ build_in(mb, "本部棟内装_02F_研究室")
 
 # 1F・2F のかご（床 G〜3F の床まで）。扉は開いた状態。1F の床はロビーの床（G）、2F の床は上の 2F の床
 mb = MB()
-shaft_level(mb, 1, G, Z2)
+shaft_level(mb, 1, G, Z2, rear=True)
 shaft_level(mb, 2, Z2, floor_z(3))
 build_in(mb, "本部棟内装_EVかご_1F-2F")
 

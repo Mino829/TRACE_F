@@ -102,6 +102,22 @@ export function elevatorExit(path: RoutePath, s: number): Vec3 | null {
   return null;
 }
 
+/**
+ * How far along the walk s is from the nearest elevator ride (0 while riding,
+ * Infinity on a walk without one). Near a car the walk stops rounding corners
+ * off, so it steps straight through the doors instead of brushing the door edge.
+ */
+export function elevatorDistance(path: RoutePath, s: number): number {
+  let best = Infinity;
+  path.kinds.forEach((kind, i) => {
+    if (kind !== "elevator") return;
+    const a = path.at[i];
+    const b = path.at[i + 1];
+    best = Math.min(best, s < a ? a - s : s > b ? s - b : 0);
+  });
+  return best;
+}
+
 function smooth(x: number): number {
   return x * x * (3 - 2 * x);
 }
@@ -156,11 +172,18 @@ export function pointAt(path: RoutePath, s: number): Vec3 {
 /**
  * Where to look from s: the first point ahead that has moved sideways by at
  * least `ahead` metres. Searching by horizontal distance keeps a straight
- * stair from tipping the view to the ceiling.
+ * stair from tipping the view to the ceiling. The search stops where an
+ * elevator ride starts (its car on this floor): an elevator moves straight up
+ * or down, so looking past it pointed the view at a floor several storeys
+ * away and the walk dipped to the white floor just before stepping in.
  */
 export function lookAheadAt(path: RoutePath, s: number, ahead: number): Vec3 {
   const here = pointAt(path, s);
   for (let d = 1; s + d <= path.length; d += 1) {
+    if (!elevatorRiding(path, s) && elevatorRiding(path, s + d)) {
+      const i = path.kinds.findIndex((kind, k) => kind === "elevator" && s + d > path.at[k] && s + d < path.at[k + 1]);
+      return pointAt(path, path.at[i]);
+    }
     const p = pointAt(path, s + d);
     if (Math.hypot(p[0] - here[0], p[2] - here[2]) >= ahead) return p;
   }
