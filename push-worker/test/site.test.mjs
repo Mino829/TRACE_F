@@ -56,6 +56,32 @@ test("two-token delete forwards the live token only for the dedicated experience
   assert.equal(requests[0].headers.get("Idempotency-Key"), "same-key");
 });
 
+test("DELETE accepts empty streams but rejects any actual body bytes", async () => {
+  const cases = [
+    { name: "closed empty stream", chunks: [], expected: 204 },
+    { name: "zero-length chunks", chunks: [new Uint8Array(0), new Uint8Array(0)], expected: 204 },
+    { name: "one byte", chunks: [new Uint8Array([1])], expected: 400 },
+    { name: "one byte after empty chunk", chunks: [new Uint8Array(0), new Uint8Array([1])], expected: 400 },
+  ];
+  for (const { name, chunks, expected } of cases) {
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(chunk);
+        controller.close();
+      },
+    });
+    const request = new Request(`${site}/api/backend/v1/memory-sessions/mem_abc`, {
+      method: "DELETE",
+      headers: { Origin: site, Authorization: "Bearer owner", "Idempotency-Key": "delete-key" },
+      body: stream,
+      duplex: "half",
+    });
+    const response = await handleSiteRequest(request, env, async () => new Response(null, { status: 204 }));
+    assert.equal(response.status, expected, name);
+    if (expected === 400) assert.equal((await response.json()).error.code, "BODY_NOT_ALLOWED");
+  }
+});
+
 test("relays the arrival, reminder, photo place and photo-delete routes with their bodies", async () => {
   const memory = "v1/memory-sessions/mem_abc";
   const moments = "v2/memory-sessions/mem_abc/photos";

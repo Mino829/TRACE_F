@@ -103,6 +103,7 @@ npm run deploy:site
 旧 Live の本人照会・停止・削除と旧クラウド写真の本人閲覧・削除も通し、停止後・失効後も `deleteAfter` まで本人閲覧・削除を維持します。旧写真 upload/complete と新規 GPS 書き込みは通しません。
 運営用（`/v1/operator/*`）と展示画面用（`/v1/display/*`）の API には 404 を返します。Edge secret は Worker だけが保持し、ブラウザには渡しません。
 POST、PUT、PATCH は、本文が空でも `Content-Type: application/json` を付けないと 415 になります。
+DELETEは本文のストリームが存在しても、実際のデータが0バイトなら許可します。Cloudflareが本文なしの要求を空のReadableStreamとして渡す場合も同じです。1バイト以上の本文があるDELETEは、上流へ送らず400 `BODY_NOT_ALLOWED`で拒否します。
 
 ```bash
 npm run wrangler -- secret put TRACE_BACKEND_URL --config site.wrangler.jsonc
