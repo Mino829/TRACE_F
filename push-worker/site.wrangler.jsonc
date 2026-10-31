@@ -2,10 +2,10 @@
 // Static assets plus same-origin Go API bridge. No cron here, unlike wrangler.jsonc.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "trace-log",
+  "name": "trace-production",
   "main": "src/site.ts",
   "compatibility_date": "2026-09-01",
-  // Explicitly none: an earlier mistaken deploy left this name with a cron.
+  // Explicitly none: an earlier mistaken deploy left trace-log, this worker's old name, with a cron.
   "triggers": { "crons": [] },
   "assets": {
     "directory": "../out",

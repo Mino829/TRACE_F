@@ -16,7 +16,7 @@ Actions の画面から「Deploy to Cloudflare」を手で実行することも�
 | 名前 | 中身 | 設定ファイル |
 |---|---|---|
 | `trace-push` | 通知サーバー（このフォルダの `src/`） | `wrangler.jsonc` |
-| `trace-log` | `/` と `/log` の静的ページ、参加者APIのGo中継 | `site.wrangler.jsonc` / `src/site.ts` |
+| `trace-production` | `/` と `/log` の静的ページ、参加者APIのGo中継 | `site.wrangler.jsonc` / `src/site.ts` |
 
 保存先は次のとおりです。
 
@@ -69,14 +69,14 @@ npm install
 ページは `.env` の `PUSH_API_URL` に向けて書き出します（書いていなければ `https://trace-push.async5855.workers.dev`）。
 `/log`は既定でこのサイトの`/api/backend`を通してTRACE_Bに参加を作ります。`TRACE_API_URL`は別の参加者gatewayを使う場合だけ指定する上書き設定です。
 API設定の省略・空文字を理由に、端末と通知サーバーだけの参加へ退避しません。Backend未接続・未設定503・受付停止では参加を開始しません。
-配信前に、下の2つのsecretを`trace-log`へ設定し、TRACE_Bへの接続と公開設定を確認してください。受付・同意の承認は別です。
+配信前に、下の2つのsecretを`trace-production`へ設定し、TRACE_Bへの接続と公開設定を確認してください。受付・同意の承認は別です。
 `.env` に `ARRIVAL_VENUE`、`ARRIVAL_CHECKPOINT_ID`、`ARRIVAL_PROOF_KEY_ID`（省略時 `arrival-proof-v1`）も書きます。Go の同名 `TRACE_*` 設定と一致させます。key ID は公開識別子で、署名鍵ではありません。
 `/log` はこの3値と固定 purpose `arrival` を使い、短い T2 到着 QR から署名済みトークンを復元します。値が異なる場合は QR を短縮しません（arrival-issuer/README.md）。
 
 `.env` に `DISPLAY_API_URL` と `GOOGLE_CLIENT_ID` を両方書くと、/display は運営に Google でログインしてもらい、TRACE_B へ直接 WebSocket でつないで到着を再生します。
 `DISPLAY_API_URL` は TRACE_B のオリジン（このサイトの `/api/backend` ではありません）、`GOOGLE_CLIENT_ID` は TRACE_B の `TRACE_DISPLAY_GOOGLE_CLIENT_ID` と同じ値です。
 どちらかが無ければ、/display は今までどおりテスト再生だけで動きます。
-TRACE_B の `TRACE_DISPLAY_ALLOWED_ORIGINS` と、Google 側の「承認済みの JavaScript 生成元」には、`trace-log` のオリジンを入れておきます。
+TRACE_B の `TRACE_DISPLAY_ALLOWED_ORIGINS` と、Google 側の「承認済みの JavaScript 生成元」には、`trace-production` のオリジン（`https://trace-production.async5855.workers.dev`）を入れておきます。
 個人運営資格の取得/失効とQR発行は別の認証付きloopback brokerを使い、Edge keyをブラウザへ渡しません（[運営入口](../arrival-issuer/README.md)）。実Workerポリシー→ローカルGo HTTPの成功は、Cloudflare配備やGoogle/機材の確認とは別です。
 `.env` の任意の公開設定 `ARRIVAL_ISSUER_URL` は、ビルド時に `NEXT_PUBLIC_ARRIVAL_ISSUER_URL` としてこの broker の URL を渡します。未設定は空のままで、個人運営機能は無効です。Edge key や署名鍵などの secret はこの値に含めません。
 
@@ -96,7 +96,7 @@ NEXT_STATIC_EXPORT=1 NEXT_PUBLIC_PUSH_API_URL=https://trace-push.<サブドメ�
 npm run deploy:site
 ```
 
-参加者画面のAPI中継を使う場合、`trace-log`側へ`TRACE_BACKEND_URL`（Go APIのHTTPSオリジン）と`TRACE_EDGE_SHARED_SECRET`（Go側と同じ32バイト以上の値）をsecretとして設定します。設定されるまで`/api/backend/*`は503を返し、静的ページだけが表示されます。`trace-push`のVAPID secretとは別です。
+参加者画面のAPI中継を使う場合、`trace-production`側へ`TRACE_BACKEND_URL`（Go APIのHTTPSオリジン）と`TRACE_EDGE_SHARED_SECRET`（Go側と同じ32バイト以上の値）をsecretとして設定します。設定されるまで`/api/backend/*`は503を返し、静的ページだけが表示されます。`trace-push`のVAPID secretとは別です。
 
 中継するのは、参加者画面が使う TRACE_B の API だけです（一覧は `src/site.ts` の `allowed`）。
 参加の作成・取得・削除、/v2 の写真 metadata 作成・一覧・story・削除、到着（`arrival`、`arrival/skip`）、Memory 参加停止（`stop`）、撮影リマインダー（`push-subscription` の PUT、PATCH、DELETE）を通します。写真の本体は端末に残します。

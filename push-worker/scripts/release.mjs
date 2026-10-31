@@ -6,7 +6,7 @@
 //   npm --prefix push-worker run release   (from the repository root)
 //
 // The page is built against PUSH_API_URL from .env when it is set. /log joins
-// TRACE_B through the site's /api/backend by default; set trace-log's two
+// TRACE_B through the site's /api/backend by default; set trace-production's two
 // backend secrets before deployment. TRACE_API_URL can override this base path.
 // When .env sets both DISPLAY_API_URL and GOOGLE_CLIENT_ID, /display signs the
 // operator in with Google and connects to TRACE_B directly (no relay).
@@ -54,7 +54,7 @@ const steps = [
   ["マイグレーションを本番の D1 に適用", [wrangler, "d1", "migrations", "apply", "DB", "--remote"], root, {}],
   ["通知サーバー（trace-push）をデプロイ", [wrangler, "deploy"], root, {}],
   ["ページを静的に書き出し", [join(repo, "node_modules", "next", "dist", "bin", "next"), "build"], repo, pageEnv],
-  ["ページ（trace-log）をデプロイ", [wrangler, "deploy", "--config", "site.wrangler.jsonc"], root, {}],
+  ["ページ（trace-production）をデプロイ", [wrangler, "deploy", "--config", "site.wrangler.jsonc"], root, {}],
 ];
 
 for (const [index, [label, args, cwd, extra]] of steps.entries()) {

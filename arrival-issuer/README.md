@@ -11,7 +11,7 @@ Edge secret はこのプロセスだけに設定します。ブラウザ、QR、
 ```dotenv
 TRACE_API_ORIGIN=https://YOUR-TRACE-B-OPERATOR-ORIGIN
 TRACE_EDGE_SHARED_SECRET=SERVER-SIDE-ONLY
-DISPLAY_ORIGINS=https://trace-log.async5855.workers.dev,http://localhost:3000
+DISPLAY_ORIGINS=https://trace-production.async5855.workers.dev,http://localhost:3000
 ISSUER_PORT=8790
 ```
 

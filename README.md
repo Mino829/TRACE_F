@@ -19,7 +19,7 @@ npm run dev:local
 
 ## Cloudflareでの参加者画面
 
-静的書き出しの参加者画面と`/log`は、`push-worker/site.wrangler.jsonc`の`trace-log` Workerから配信します。同じWorkerの`/api/backend/*`は`push-worker/src/site.ts`がGo APIへ中継します。ブラウザの参加トークンは同一オリジンのAPIパスへヘッダーで送り、公開URLやビルド時の環境変数には入れません。
+静的書き出しの参加者画面と`/log`は、`push-worker/site.wrangler.jsonc`の`trace-production` Workerから配信します。同じWorkerの`/api/backend/*`は`push-worker/src/site.ts`がGo APIへ中継します。ブラウザの参加トークンは同一オリジンのAPIパスへヘッダーで送り、公開URLやビルド時の環境変数には入れません。
 
 サイトWorkerには次の2つのsecretを設定します。Go側にも**同じ**`TRACE_EDGE_SHARED_SECRET`をSecret Managerから設定します。32バイト以上のランダム値を使用し、リポジトリ、`.env`、コマンドログへ値を残さないでください。
 
