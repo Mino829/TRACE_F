@@ -14,6 +14,7 @@
  * is a credential.
  */
 
+import { t } from "@/lib/i18n";
 import { base64UrlToBytes, madeWith } from "@/lib/ping-log/push";
 
 import {
@@ -56,14 +57,14 @@ export class ReminderError extends Error {
   }
 }
 
-export const ENDED_MESSAGE = "ShibaLab に着いたあとは、リマインダーを使えません。";
+export const endedMessage = () => t("ShibaLab に着いたあとは、リマインダーを使えません。", "The reminder cannot be used after you arrive at ShibaLab.");
 
 function explain(error: unknown): Error {
-  if (error instanceof TraceApiError && error.code === "STATE_CONFLICT") return new ReminderError(ENDED_MESSAGE, "ended");
+  if (error instanceof TraceApiError && error.code === "STATE_CONFLICT") return new ReminderError(endedMessage(), "ended");
   if (error instanceof TraceApiError && error.code === "NOT_FOUND") {
-    return new ReminderError("リマインダーは止まっていました。続けるときは、もう一度オンにしてください。", "gone");
+    return new ReminderError(t("リマインダーは止まっていました。続けるときは、もう一度オンにしてください。", "The reminder had stopped. To keep it going, turn it on again."), "gone");
   }
-  return error instanceof Error ? error : new ReminderError("うまくいきませんでした。");
+  return error instanceof Error ? error : new ReminderError(t("うまくいきませんでした。", "Something went wrong."));
 }
 
 export function loadTraceReminder(): TraceReminder | null {
@@ -131,7 +132,7 @@ export async function switchOnTraceReminder(
   retire: (subscription: PushSubscription) => Promise<void>,
 ): Promise<{ subscription: PushSubscription; active: ActiveReminder }> {
   const publicKey = notification?.enabled ? notification.vapidPublicKey : "";
-  if (!publicKey) throw new ReminderError("いまはリマインダーを使えません。");
+  if (!publicKey) throw new ReminderError(t("いまはリマインダーを使えません。", "The reminder is not available right now."));
   const existing = await registration.pushManager.getSubscription();
   if (existing && madeWith(existing, publicKey) === false) await retire(existing);
   else if (existing) await existing.unsubscribe();
@@ -139,11 +140,11 @@ export async function switchOnTraceReminder(
   try {
     subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(publicKey) });
   } catch {
-    throw new ReminderError("通知の登録に失敗しました。時間をおいて、もう一度試してください。");
+    throw new ReminderError(t("通知の登録に失敗しました。時間をおいて、もう一度試してください。", "Could not register for notifications. Please try again later."));
   }
   const { endpoint, keys } = subscription.toJSON();
   try {
-    if (!endpoint || !keys?.p256dh || !keys.auth) throw new ReminderError("このブラウザでは、リマインダーを受け取れません。");
+    if (!endpoint || !keys?.p256dh || !keys.auth) throw new ReminderError(t("このブラウザでは、リマインダーを受け取れません。", "This browser cannot receive the reminder."));
     const state = await putPushSubscription(credential, { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } }, intervalMinutes);
     return { subscription, active: activeFrom(endpoint, state) };
   } catch (error) {

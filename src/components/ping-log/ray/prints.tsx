@@ -4,6 +4,7 @@
 
 import { Children, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { t } from "@/lib/i18n";
 import { RayPrint, reducedMotion } from "@/lib/ray/fx";
 
 import { useRay } from "./stage";
@@ -87,7 +88,7 @@ export function PrintPhoto({ source, alt }: { source: PhotoSource; alt: string }
 
 /** Which photo of the day it is. */
 export function frameLabel(number: number): string {
-  return `${number}枚目`;
+  return t(`${number}枚目`, `Photo ${number}`);
 }
 
 /** A print in a hairline frame, with which photo it is and its time below. */
@@ -110,7 +111,7 @@ export function Print({
   return (
     <figure className={`print${small ? " print--small" : ""}${ratio > 1 ? " print--wide" : ""}`}>
       <span className="print__frame" style={{ ["--ratio" as string]: ratio }}>
-        <PrintPhoto source={source} alt={`${time} の写真`} />
+        <PrintPhoto source={source} alt={t(`${time} の写真`, `Photo taken at ${time}`)} />
       </span>
       <figcaption className="print__cap">
         {caption ?? (

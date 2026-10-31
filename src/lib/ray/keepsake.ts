@@ -8,6 +8,8 @@
  * carries no metadata: no place, no time stamp, no phone.
  */
 
+import { t } from "@/lib/i18n";
+
 export type KeepsakePhoto = { blob: Blob; takenAt: string; number: number; place: { checkpointId: string; graphVersion: string } | null };
 
 /** Laid out in units of a 1080 × 1920 page, drawn at 4/3 of that: 1440 × 2560 px. */
@@ -212,21 +214,22 @@ async function fontsFor(root: Element, sample: string): Promise<Fonts> {
  * picture uses. Resolves to a JPEG of 1440 × 2560 px.
  */
 export async function drawKeepsake(photos: KeepsakePhoto[], root: Element): Promise<Blob> {
-  if (!photos.length) throw new Error("作品にする写真がありません。");
+  if (!photos.length) throw new Error(t("作品にする写真がありません。", "There are no photos for your artwork."));
   const bitmaps = await Promise.all(photos.map((photo) => createImageBitmap(photo.blob)));
   try {
     const first = new Date(photos[0].takenAt);
     const last = new Date(photos[photos.length - 1].takenAt);
     const date = `${first.getMonth() + 1}.${pad(first.getDate())}`;
     const span = photos.length > 1 ? `${clockOf(first)} → ${clockOf(last)}` : clockOf(first);
-    const captions = photos.map((photo) => [`${photo.number}枚目`, clockOf(new Date(photo.takenAt))] as const);
-    const fonts = await fontsFor(root, `ShibaLab 301 → ・ ${span} ${photos.length}枚 ${captions.flat().join(" ")} 54TH SHIBAURA FESTIVAL END OF LOG`);
+    const count = t(`${photos.length}枚`, photos.length === 1 ? "1 photo" : `${photos.length} photos`);
+    const captions = photos.map((photo) => [t(`${photo.number}枚目`, `Photo ${photo.number}`), clockOf(new Date(photo.takenAt))] as const);
+    const fonts = await fontsFor(root, `ShibaLab 301 → ・ ${span} ${count} ${captions.flat().join(" ")} 54TH SHIBAURA FESTIVAL END OF LOG`);
 
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(W * SCALE);
     canvas.height = Math.round(H * SCALE);
     const context = canvas.getContext("2d");
-    if (!context) throw new Error("作品を描けませんでした。");
+    if (!context) throw new Error(t("作品を描けませんでした。", "Could not draw your artwork."));
     context.scale(SCALE, SCALE);
     context.textBaseline = "alphabetic";
 
@@ -254,7 +257,7 @@ export async function drawKeepsake(photos: KeepsakePhoto[], root: Element): Prom
     context.font = `500 24px ${fonts.mono}`;
     spaced(context, `${first.getFullYear()} ${WEEKDAYS[first.getDay()]}`, W - MARGIN, 302, 0.14, "right");
     spaced(context, span, W - MARGIN, 338, 0.14, "right");
-    spaced(context, `${photos.length}枚`, W - MARGIN, 374, 0.14, "right");
+    spaced(context, count, W - MARGIN, 374, 0.14, "right");
 
     // The way first, in a band across the top of the photos' area, its caption under it as a photo's is.
     const band = bandFor(photos.length);
@@ -313,7 +316,7 @@ export async function drawKeepsake(photos: KeepsakePhoto[], root: Element): Prom
     spaced(context, "END OF LOG", W - MARGIN, 1818, 0.14, "right");
 
     return await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("作品を書き出せませんでした。"))), "image/jpeg", 0.92),
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error(t("作品を書き出せませんでした。", "Could not export your artwork.")))), "image/jpeg", 0.92),
     );
   } finally {
     bitmaps.forEach((bitmap) => bitmap.close());

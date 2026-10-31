@@ -5,7 +5,7 @@ import { useCallback, useState, type RefObject } from "react";
 import { dropExpired, madeWith, unsubscribe } from "@/lib/ping-log/push";
 import { fetchPublicConfig, type PublicConfig } from "@/lib/trace-api/client";
 import {
-  ENDED_MESSAGE,
+  endedMessage,
   ReminderError,
   changeTraceReminderInterval,
   loadTraceReminder,
@@ -93,7 +93,7 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
       return;
     }
     try {
-      if (current.ended || ended) throw new ReminderError(ENDED_MESSAGE, "ended");
+      if (current.ended || ended) throw new ReminderError(endedMessage(), "ended");
       await askPermission();
       const latest = config ?? (await fetchPublicConfig());
       setConfig(latest);
@@ -115,7 +115,7 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
   /** A PATCH, while it is on. */
   const changeInterval = async (minutes: number) => {
     if (!experience || !record || !active) return;
-    if (ended) throw new ReminderError(ENDED_MESSAGE, "ended");
+    if (ended) throw new ReminderError(endedMessage(), "ended");
     try {
       keep({ ...record, intervalMinutes: minutes, active: await changeTraceReminderInterval(experience.memory, active, minutes) });
     } catch (error) {

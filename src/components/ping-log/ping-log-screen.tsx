@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { t, useLang } from "@/lib/i18n";
 import type { Shot } from "@/lib/ping-log/photo-entry";
 import { clearConsent, loadConsent, saveConsent, type Consent } from "@/lib/ping-log/consent";
 import { networkInfo } from "@/lib/ping-log/context";
@@ -96,7 +97,7 @@ const SEND_LOCK = "trace-log-send";
 const SEND_WAIT_MS = 10_000;
 /** How long reading the arrival QR waits for photos' places still on their way to TRACE_B; the code lives 25 seconds. */
 const PLACES_BEFORE_ARRIVAL_MS = 3_000;
-const START_AGAIN = "もう一度参加するときは、「はじめる」を押してください。";
+const startAgain = () => t("もう一度参加するときは、「はじめる」を押してください。", " To join again, tap “Start”.");
 
 type View = "participant" | "developer";
 
@@ -145,10 +146,10 @@ function initialPending(): string | null {
  */
 function initialLostNote(): string {
   if (initialView() !== "participant") return "";
-  if (experienceLapsed()) return `前の参加は、記録を残す期限が過ぎたので削除されました。${START_AGAIN}`;
+  if (experienceLapsed()) return `${t("前の参加は、記録を残す期限が過ぎたので削除されました。", "Your previous participation was deleted because its storage period ended.")}${startAgain()}`;
   const fromReminder = new URLSearchParams(window.location.search).has("prompt");
   return (loadConsent() || fromReminder) && !loadTabExperience()
-    ? "この画面には、前の参加の記録がありません。参加を始めたブラウザか、ホーム画面のアプリで開いてください。開けないときは、もう一度「はじめる」から参加できます。"
+    ? t("この画面には、前の参加の記録がありません。参加を始めたブラウザか、ホーム画面のアプリで開いてください。開けないときは、もう一度「はじめる」から参加できます。", "This screen has no record of your earlier participation. Open the page in the browser where you joined, or from the app on your home screen. If you cannot, you can join again from “Start”.")
     : "";
 }
 
@@ -217,6 +218,11 @@ function nextMark(now: number, intervalMinutes: number): number {
 }
 
 export function PingLogScreen() {
+  // Japanese or English: a switch re-renders everything below from here.
+  const language = useLang();
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
   // The developer screen stays until it is switched back, through reloads and notification launches.
   const [view, setView] = useState<View>(initialView);
   const [consent, setConsent] = useState<Consent | null>(loadConsent);
@@ -293,17 +299,17 @@ export function PingLogScreen() {
       setView("participant");
       if (result.kind !== "arrival") {
         setArrivalLinkNote(result.kind === "foreign"
-          ? "この QR コードは別の参加先のものです。この画面から到着は送信していません。参加を始めた画面で、ブースの QR コードを読み直してください。"
-          : "到着用の URL を読み取れませんでした。ASYNC のブースに映っている QR コードを、もう一度読み取ってください。");
+          ? t("この QR コードは別の参加先のものです。この画面から到着は送信していません。参加を始めた画面で、ブースの QR コードを読み直してください。", "This QR code belongs to a different TRACE site. No arrival was sent from this screen. Scan the booth's QR code again from the screen where you joined.")
+          : t("到着用の URL を読み取れませんでした。ASYNC のブースに映っている QR コードを、もう一度読み取ってください。", "Could not read the arrival link. Scan the QR code shown at the ASYNC booth again."));
         return;
       }
       const retained = loadTabExperience();
       if (!retained) {
-        setArrivalLinkNote("到着用の QR コードを開きました。このブラウザではまだ参加していません。「はじめる」から内容を確認して参加し、写真を撮ってから、ブースの QR コードをもう一度読み取ってください。到着はまだ送信していません。");
+        setArrivalLinkNote(t("到着用の QR コードを開きました。このブラウザではまだ参加していません。「はじめる」から内容を確認して参加し、写真を撮ってから、ブースの QR コードをもう一度読み取ってください。到着はまだ送信していません。", "You opened the arrival QR code, but you have not joined in this browser yet. Tap “Start”, read the information and join, take photos, then scan the booth's QR code again. No arrival has been sent yet."));
         return;
       }
       if (retained.status === "ended" || Date.parse(retained.memory.expiresAt) <= Date.now()) {
-        setArrivalLinkNote("この参加は終了しているため、到着は送信していません。残っている記録の閲覧・削除は、この画面から行えます。");
+        setArrivalLinkNote(t("この参加は終了しているため、到着は送信していません。残っている記録の閲覧・削除は、この画面から行えます。", "This participation has ended, so no arrival was sent. You can still view and delete your remaining records on this screen."));
         return;
       }
       setArrivalLinkNote("");
@@ -458,7 +464,7 @@ export function PingLogScreen() {
         setEntries(items);
         return sendUnsent();
       })
-      .catch(() => setMessage("記録を読み込めませんでした。"));
+      .catch(() => setMessage(t("記録を読み込めませんでした。", "Could not load your records.")));
     if (!("serviceWorker" in navigator)) return;
     navigator.serviceWorker
       .register("/ping-sw.js", { scope: "/" })
@@ -486,7 +492,7 @@ export function PingLogScreen() {
           setSubscription(current);
         }
       })
-      .catch(() => setMessage("通知の準備に失敗しました。"));
+      .catch(() => setMessage(t("通知の準備に失敗しました。", "Could not get notifications ready.")));
     const onMessage = (event: MessageEvent) => {
       if (event.data?.type !== PROMPT_MESSAGE) return;
       if (subscriptionPlan().purpose !== "photo") return;
@@ -532,11 +538,11 @@ export function PingLogScreen() {
         // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
         if (error instanceof TraceApiError && (error.code === "UNAUTHORIZED" || error.code === "NOT_FOUND")) {
           forget();
-          setLostNote(`${error.message}${START_AGAIN}`);
+          setLostNote(`${error.message}${startAgain()}`);
           return;
         }
         // Any other failure does not prove deletion; keep the credential and its delete key.
-        setMessage(error instanceof Error ? error.message : "参加状態を取得できませんでした。");
+        setMessage(error instanceof Error ? error.message : t("参加状態を取得できませんでした。", "Could not get the state of your participation."));
       });
   }, [arrive, noteArrival]);
 
@@ -608,7 +614,7 @@ export function PingLogScreen() {
       await task();
       return null;
     } catch (error) {
-      const text = error instanceof Error ? error.message : "うまくいきませんでした。";
+      const text = error instanceof Error ? error.message : t("うまくいきませんでした。", "Something went wrong.");
       if (!silent) setMessage(text);
       return text;
     } finally {
@@ -652,7 +658,7 @@ export function PingLogScreen() {
         setTraceConfig(null);
         fetchPublicConfig().then(setTraceConfig, () => undefined);
       }
-      setJoinError(error instanceof Error ? error.message : "うまくいきませんでした。");
+      setJoinError(error instanceof Error ? error.message : t("うまくいきませんでした。", "Something went wrong."));
       return;
     } finally {
       setJoining(false);
@@ -664,10 +670,10 @@ export function PingLogScreen() {
 
   /** Asked only from a tap on a switch, once what it is for has been said. */
   const askPermission = async () => {
-    if (notificationState() === "unsupported") throw new Error("このブラウザでは通知を受け取れません。");
+    if (notificationState() === "unsupported") throw new Error(t("このブラウザでは通知を受け取れません。", "This browser cannot receive notifications."));
     const result = await Notification.requestPermission();
     setPermission(result);
-    if (result !== "granted") throw new Error("通知が許可されていません。スマホやブラウザの設定で、このサイトの通知を許可してください。");
+    if (result !== "granted") throw new Error(t("通知が許可されていません。スマホやブラウザの設定で、このサイトの通知を許可してください。", "Notifications are not allowed. Allow notifications for this site in your phone or browser settings."));
   };
 
   /** The participant's optional photo reminder is the only new push plan. */
@@ -691,7 +697,7 @@ export function PingLogScreen() {
         setExpiresAt(null);
       }, { silent: true });
     }
-    return joined && consent ? subscribeTo(consent.version, "", true) : Promise.resolve("参加の同意がまだです。");
+    return joined && consent ? subscribeTo(consent.version, "", true) : Promise.resolve(t("参加の同意がまだです。", "You have not agreed to take part yet."));
   };
 
 
@@ -778,18 +784,18 @@ export function PingLogScreen() {
     setSkipped(null);
     setPingOpen(false);
     prompt(null);
-    setMessage("参加を終了しました。保存期限までは写真の確認とデータの削除ができます。");
+    setMessage(t("参加を終了しました。保存期限までは写真の確認とデータの削除ができます。", "Your participation has ended. Until the storage period ends, you can view your photos and delete your data."));
   });
 
   const withdraw = () => run(async () => {
     // The backend's memory session goes first: if it cannot be deleted, nothing else is, and the person can try again.
-    let removed = "この端末の写真を削除しました。";
+    let removed = t("この端末の写真を削除しました。", "The photos on this phone were deleted.");
     if (experience) {
       try {
         await deleteMemorySession(experience.memory, memoryDeleteKey(experience.memory.memorySessionId));
-        removed = "この端末の写真と、参加の記録を削除しました。";
+        removed = t("この端末の写真と、参加の記録を削除しました。", "The photos on this phone and the records of your participation were deleted.");
       } catch (error) {
-        throw new Error(`参加をやめられませんでした。${error instanceof Error ? error.message : ""}`);
+        throw new Error(`${t("参加をやめられませんでした。", "Could not withdraw. ")}${error instanceof Error ? error.message : ""}`);
       }
       clearTabExperience();
       experienceRef.current = null;
@@ -808,7 +814,7 @@ export function PingLogScreen() {
     setExpiresAt(null);
     setEntries([]);
     setConsent(null);
-    setMessage(`参加をやめました。${removed}`);
+    setMessage(`${t("参加をやめました。", "You have withdrawn. ")}${removed}`);
   });
 
   /**
@@ -855,8 +861,8 @@ export function PingLogScreen() {
       setEntries(await listEntries());
       return null;
     } catch (error) {
-      if (error instanceof LockTimeout) return "写真の記録を送っている途中です。少し待ってから、もう一度削除してください。";
-      return error instanceof Error ? error.message : "写真を削除できませんでした。";
+      if (error instanceof LockTimeout) return t("写真の記録を送っている途中です。少し待ってから、もう一度削除してください。", "The photo's record is still being sent. Wait a moment and try deleting it again.");
+      return error instanceof Error ? error.message : t("写真を削除できませんでした。", "Could not delete the photo.");
     }
   };
 

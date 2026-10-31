@@ -8,6 +8,7 @@
 
 import { CONSENT_VERSION } from "./consent";
 import type { LogEntry } from "./store";
+import { t } from "@/lib/i18n";
 
 export const PUSH_API_URL = (process.env.NEXT_PUBLIC_PUSH_API_URL ?? "").replace(/\/$/, "");
 
@@ -111,20 +112,20 @@ async function reach(path: string, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(`${PUSH_API_URL}${path}`, init);
   } catch {
-    throw new Error("通知サーバーにつながりませんでした。電波の良い場所で、もう一度試してください。");
+    throw new Error(t("通知サーバーにつながりませんでした。電波の良い場所で、もう一度試してください。", "Could not reach the notification server. Move to a place with a better signal and try again."));
   }
 }
 
 async function post(path: string, body: unknown): Promise<Response> {
   const response = await reach(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!response.ok) throw new Error(`通知サーバーへの送信に失敗しました（${response.status}）。`);
+  if (!response.ok) throw new Error(t(`通知サーバーへの送信に失敗しました（${response.status}）。`, `Could not send to the notification server (${response.status}).`));
   return response;
 }
 
 /** Only participant photo reminders can create or update a subscription. */
 export async function subscribe(registration: ServiceWorkerRegistration, consentVersion: string): Promise<PushSubscription> {
   const response = await reach("/vapid-public-key");
-  if (!response.ok) throw new Error("通知サーバーに接続できませんでした。");
+  if (!response.ok) throw new Error(t("通知サーバーに接続できませんでした。", "Could not connect to the notification server."));
   const { publicKey } = (await response.json()) as { publicKey: string };
   // The browser holds one subscription and refuses a second key; one made for TRACE_B's reminder is let go here (TRACE_B drops it at its next send).
   const existing = await registration.pushManager.getSubscription();
@@ -140,14 +141,14 @@ export async function subscribe(registration: ServiceWorkerRegistration, consent
 export async function unsubscribe(subscription: PushSubscription): Promise<void> {
   // Forget it on the server first: a phone that unsubscribed locally but not there would keep being pinged into the void.
   await post("/unsubscribe", { endpoint: subscription.endpoint });
-  if (!(await subscription.unsubscribe())) throw new Error("端末の通知購読を停止できませんでした。");
+  if (!(await subscription.unsubscribe())) throw new Error(t("端末の通知購読を停止できませんでした。", "Could not stop notifications on this phone."));
   saveExpiresAt(null);
   savePlan(null);
 }
 
 /** Remove an expired or legacy subscription locally; keep its plan when removal fails so a later visit can retry. */
 export async function dropExpired(subscription: PushSubscription): Promise<void> {
-  if (!(await subscription.unsubscribe())) throw new Error("端末の通知購読を停止できませんでした。");
+  if (!(await subscription.unsubscribe())) throw new Error(t("端末の通知購読を停止できませんでした。", "Could not stop notifications on this phone."));
   saveExpiresAt(null);
   savePlan(null);
 }

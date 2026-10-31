@@ -2,7 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import { t } from "@/lib/i18n";
 import type { LogEntry } from "@/lib/ping-log/store";
+import { placeName } from "@/lib/places/names";
 import { PLACES } from "@/lib/places/places";
 import type { TraceScene } from "@/lib/ray/trace-scene";
 
@@ -21,6 +23,12 @@ import { NoteBar } from "./stage";
  */
 
 type Pin = { entry: LogEntry; number: number; checkpointId: string | null };
+
+/** Where a photo was taken, by the name it was chosen with (in English, by its checkpoint). */
+function where(entry: LogEntry): string {
+  const place = entry.record.place;
+  return place ? placeName(place.checkpointId, place.name) : t("場所の記録なし", "No place recorded");
+}
 
 /**
  * `photos`: those whose picture this phone keeps, oldest first. They are read
@@ -98,7 +106,7 @@ export function TraceSection({ photos }: { photos: LogEntry[] }) {
     <section className="keep__trace" aria-labelledby={headId}>
       <p className="mono">Trace</p>
       <h2 className="h3" id={headId}>
-        あなたの軌跡
+        {t("あなたの軌跡", "Your trace")}
       </h2>
 
       {state !== "off" && (
@@ -122,14 +130,14 @@ export function TraceSection({ photos }: { photos: LogEntry[] }) {
             {state === "loading" && <p className="trace__wait mono mono--dim">Loading</p>}
           </div>
           <div className="trace__tools">
-            <span className="mono mono--dim">ドラッグで回転・ピンチで拡大</span>
+            <span className="mono mono--dim">{t("ドラッグで回転・ピンチで拡大", "Drag to turn, pinch to zoom")}</span>
             <button type="button" className="link" disabled={state !== "on"} onClick={() => sceneRef.current?.reset()}>
-              元の向きにもどす
+              {t("元の向きにもどす", "Reset view")}
             </button>
           </div>
         </div>
       )}
-      {state === "off" && <NoteBar text={"この端末では 3D で表示できないので、撮った場所を順に並べています。"} />}
+      {state === "off" && <NoteBar text={t("この端末では 3D で表示できないので、撮った場所を順に並べています。", "This phone cannot show 3D, so the places are listed in order.")} />}
 
       {pick && (
         <div className="trace__pick" aria-live="polite">
@@ -140,13 +148,13 @@ export function TraceSection({ photos }: { photos: LogEntry[] }) {
             ratio={pickMeta && pickMeta.width > 0 && pickMeta.height > 0 ? pickMeta.width / pickMeta.height : 3 / 4}
             small
           />
-          <p className="h3">{pick.entry.record.place?.name ?? "場所の記録なし"}</p>
+          <p className="h3">{where(pick.entry)}</p>
         </div>
       )}
 
       <div className="trace__list">
         <h3 className="h3" id={listId}>
-          撮った場所
+          {t("撮った場所", "Where you took them")}
         </h3>
         <ol aria-labelledby={listId}>
           {pins.map((pin, index) => (
@@ -154,9 +162,9 @@ export function TraceSection({ photos }: { photos: LogEntry[] }) {
               <button type="button" className={`trace__row${chosen === index ? " is-on" : ""}`} aria-pressed={chosen === index} onClick={() => setChosen(chosen === index ? null : index)}>
                 <BlobImage blob={pin.entry.photo as Blob} alt="" className="trace__thumb" />
                 <span className="trace__when mono">
-                  {pin.number}枚目 <span className="latin">{clock(pin.entry.record.takenAt)}</span>
+                  {t(`${pin.number}枚目`, `Photo ${pin.number}`)} <span className="latin">{clock(pin.entry.record.takenAt)}</span>
                 </span>
-                <span className="trace__where">{pin.entry.record.place?.name ?? "場所の記録なし"}</span>
+                <span className="trace__where">{where(pin.entry)}</span>
               </button>
             </li>
           ))}
@@ -164,7 +172,7 @@ export function TraceSection({ photos }: { photos: LogEntry[] }) {
             <div className="trace__row trace__row--end">
               <span className="trace__ring" aria-hidden="true" />
               <span className="trace__when mono">Arrived</span>
-              <span className="trace__where">ShibaLab（教室棟301）</span>
+              <span className="trace__where">{t("ShibaLab（教室棟301）", "ShibaLab (Classroom Building, Room 301)")}</span>
             </div>
           </li>
         </ol>

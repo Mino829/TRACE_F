@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 import { PlacePicker } from "@/components/place-picker/place-picker";
+import { t } from "@/lib/i18n";
 import type { Consent } from "@/lib/ping-log/consent";
 import type { PushSupport } from "@/lib/ping-log/environment";
 import { preparePhoto } from "@/lib/ping-log/photo";
@@ -84,7 +85,7 @@ export function PhotoScreen(props: Props) {
         if (alive) setPhoto(value);
       },
       (problem: unknown) => {
-        if (alive) setError(problem instanceof Error ? problem.message : "写真を読み込めませんでした。");
+        if (alive) setError(problem instanceof Error ? problem.message : t("写真を読み込めませんでした。", "Could not load the photo."));
       },
     );
     return () => {
@@ -102,7 +103,7 @@ export function PhotoScreen(props: Props) {
       // The photo stays on the phone (#54): there is nothing to wait for on the network.
       await props.onSave(await photoEntry(shot, photo, props.consent, place));
     } catch (problem) {
-      setError(problem instanceof Error ? problem.message : "保存できませんでした。");
+      setError(problem instanceof Error ? problem.message : t("保存できませんでした。", "Could not save."));
       setStep("place");
       return;
     }
@@ -144,18 +145,18 @@ export function PhotoScreen(props: Props) {
           <span>
             <button type="button" className="link" onClick={props.onRetake}>
               <Icon name="camera" />
-              撮り直す
+              {t("撮り直す", "Retake")}
             </button>
           </span>
           <span className="mono">Photo</span>
           <span />
         </div>
         <h1 className="h1">
-          <Phrases text="この写真でよろしいですか？" />
+          <Phrases text={t("この写真でよろしいですか？", "Use this photo?")} />
         </h1>
         <div ref={photoRef} className="preview__photo" style={{ ["--ratio" as string]: ratio }}>
           {photo ? (
-            <PrintPhoto source={{ blob: photo.blob }} alt="撮った写真" />
+            <PrintPhoto source={{ blob: photo.blob }} alt={t("撮った写真", "Your photo")} />
           ) : (
             !error && (
               <p className="preview__wait mono mono--dim" role="status">
@@ -171,11 +172,11 @@ export function PhotoScreen(props: Props) {
         <div className="actionbar">
           <NoteBar text={error} alert />
           <button type="button" className="btn btn--line" onClick={() => void go(close)}>
-            やめる
+            {t("やめる", "Cancel")}
           </button>
           <button type="button" className="btn" disabled={!photo} onClick={() => setStep("place")}>
             <Icon name="arrow" />
-            次へ
+            {t("次へ", "Next")}
           </button>
         </div>
       </Screen>
@@ -188,7 +189,7 @@ export function PhotoScreen(props: Props) {
         <span>
           <button type="button" className="link" onClick={() => void go(close)}>
             <Icon name="close" />
-            閉じる
+            {t("閉じる", "Close")}
           </button>
         </span>
         <span className="mono">Clear</span>
@@ -201,23 +202,23 @@ export function PhotoScreen(props: Props) {
         </div>
       )}
       <h1 className="h2 clear__msg" role="status">
-        <Phrases text={`${shot.number}枚目の写真を残しました`} />
+        <Phrases text={t(`${shot.number}枚目の写真を残しました`, `Photo ${shot.number} saved`)} />
       </h1>
       {props.reminderOn && props.nextReminderAt !== null && (
         <p className="small clear__sub">
-          次のリマインダーは <span className="latin">{clock(props.nextReminderAt)}</span> ごろです。
+          {t("次のリマインダーは ", "Next reminder at about ")}<span className="latin">{clock(props.nextReminderAt)}</span>{t(" ごろです。", ".")}
         </p>
       )}
       {offer && (
         <section className="clear__offer bracket" aria-labelledby={labelId}>
           <div className="kv">
             <p className="h3">
-              <span id={labelId}>リマインダー</span>
-              <Info info={reminderInfo} label="リマインダーについて" />
+              <span id={labelId}>{t("リマインダー", "Reminder")}</span>
+              <Info info={reminderInfo} label={t("リマインダーについて", "About the reminder")} />
             </p>
             <Seg on={props.reminderOn} labelledBy={labelId} disabled={props.busy} onToggle={reminder.toggle} />
           </div>
-          <Pop info={reminderInfo} text={`${props.reminderTerms.intervalMinutes}分ごとに撮影を知らせる通知が届きます。`} />
+          <Pop info={reminderInfo} text={t(`${props.reminderTerms.intervalMinutes}分ごとに撮影を知らせる通知が届きます。`, `You get a notification to take a photo every ${props.reminderTerms.intervalMinutes} minutes.`)} />
           {reminder.problem && (
             <p className="problem" role="alert">
               <Sentences text={reminder.problem} />
@@ -228,7 +229,7 @@ export function PhotoScreen(props: Props) {
       {/* After the first photo the way home leads past the reminder's offer, so it stays in its place. */}
       <Dock sticky={!offer}>
         <button type="button" className="btn" onClick={() => void go(close)}>
-          ホームへもどる
+          {t("ホームへもどる", "Back to home")}
         </button>
       </Dock>
     </Screen>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
+import { t } from "@/lib/i18n";
 import { qrReader, type CodeReader, type DetectedCode } from "@/lib/ping-log/qr-reader";
 import { readArrivalQrUrl } from "@/lib/trace-api/arrival-code";
 import {
@@ -259,17 +260,17 @@ function ArrivalConnecting({ inert, failure, onCancel, onScan }: {
         <span>
           <button type="button" className="link" onClick={onCancel}>
             <Icon name="close" />
-            やめる
+            {t("やめる", "Cancel")}
           </button>
         </span>
         <span className="mono">Arrival</span>
         <span className="mono mono--dim">{failure ? "Stopped" : "Connecting"}</span>
       </div>
-      <h1 className="h2 scan__head"><Phrases text={failure ? "到着を送信できませんでした" : "ブースにつないでいます"} /></h1>
-      {failure ? <p className="note-bar" role="alert"><Sentences text={failure.message} /></p> : <p className="h3" role="status">到着を送信しています…</p>}
-      <p className="small"><Sentences text={"QR コードを読み取りました。\nこの画面ではカメラを起動しません。"} /></p>
+      <h1 className="h2 scan__head"><Phrases text={failure ? t("到着を送信できませんでした", "Could not send your arrival") : t("ブースにつないでいます", "Connecting to the booth")} /></h1>
+      {failure ? <p className="note-bar" role="alert"><Sentences text={failure.message} /></p> : <p className="h3" role="status">{t("到着を送信しています…", "Sending your arrival…")}</p>}
+      <p className="small"><Sentences text={t("QR コードを読み取りました。\nこの画面ではカメラを起動しません。", "QR code scanned.\nThis screen does not use the camera.")} /></p>
       {failure && !FINAL_ERRORS.has(failure.code) && (
-        <button type="button" className="btn btn--line" onClick={onScan}>QR コードを読み取る</button>
+        <button type="button" className="btn btn--line" onClick={onScan}>{t("QR コードを読み取る", "Scan the QR code")}</button>
       )}
     </Screen>
   );
@@ -280,13 +281,13 @@ const FINAL_ERRORS = new Set(["UNAUTHORIZED", "NOT_FOUND", "STATE_CONFLICT", "NO
 
 type Camera = "starting" | "on" | "denied" | "missing" | "busy" | "failed" | "unsupported";
 
-const CAMERA_TROUBLE: Record<Exclude<Camera, "starting" | "on">, string> = {
-  denied: "カメラの使用が許可されていません。設定で、このサイトにカメラの使用を許可してから「もう一度試す」を押してください。",
-  missing: "カメラが見つかりませんでした。",
-  busy: "カメラを起動できませんでした。ほかのアプリがカメラを使っていれば、閉じてから「もう一度試す」を押してください。",
-  failed: "カメラを起動できませんでした。「もう一度試す」を押してください。",
-  unsupported: "このブラウザではカメラを使えません。Safari か Chrome で開いてください。",
-};
+const cameraNotes = (): Record<Exclude<Camera, "starting" | "on">, string> => ({
+  denied: t("カメラの使用が許可されていません。設定で、このサイトにカメラの使用を許可してから「もう一度試す」を押してください。", "Camera access is not allowed. Allow this site to use the camera in your settings, then tap “Try again”."),
+  missing: t("カメラが見つかりませんでした。", "No camera was found."),
+  busy: t("カメラを起動できませんでした。ほかのアプリがカメラを使っていれば、閉じてから「もう一度試す」を押してください。", "Could not start the camera. If another app is using it, close that app, then tap “Try again”."),
+  failed: t("カメラを起動できませんでした。「もう一度試す」を押してください。", "Could not start the camera. Tap “Try again”."),
+  unsupported: t("このブラウザではカメラを使えません。Safari か Chrome で開いてください。", "This browser cannot use the camera. Please open the page in Safari or Chrome."),
+});
 
 /** Without a secure page (https) or camera support, there is no getUserMedia at all. */
 function hasCamera(): boolean {
@@ -464,8 +465,8 @@ function CameraScan({
       const result = readArrivalQrUrl(text, window.location.origin);
       if (result.kind !== "arrival") {
         if (text !== noted) setNotice(result.kind === "foreign"
-          ? "この QR コードは別の参加先のものです。この画面から到着は送信していません。参加を始めた画面で、ブースの QR コードを読み直してください。"
-          : "これはこの参加先の到着用 URL ではありません。ASYNC のブースに映っている\nQR コードを読み取ってください。");
+          ? t("この QR コードは別の参加先のものです。この画面から到着は送信していません。参加を始めた画面で、ブースの QR コードを読み直してください。", "This QR code belongs to a different TRACE site. No arrival was sent from this screen. Scan the booth's QR code again from the screen where you joined.")
+          : t("これはこの参加先の到着用 URL ではありません。ASYNC のブースに映っている\nQR コードを読み取ってください。", "This is not an arrival code for this site. Scan the QR code\nshown at the ASYNC booth."));
         noted = text;
         return;
       }
@@ -482,7 +483,7 @@ function CameraScan({
         } catch {
           // The reader could not load (on an iPhone it is fetched on first use), or a frame could not be read.
           if (!reader) {
-            setNotice("QR コードを読み取る準備ができませんでした。電波の良い場所で、少し待ってください。");
+            setNotice(t("QR コードを読み取る準備ができませんでした。電波の良い場所で、少し待ってください。", "Could not get ready to scan the QR code. Move to a place with a better signal and wait a moment."));
             resumeAt = Date.now() + 3000;
           }
         }
@@ -537,7 +538,7 @@ function CameraScan({
     };
   }, [field, fx, tries, ended]);
 
-  const trouble = camera === "starting" || camera === "on" ? null : CAMERA_TROUBLE[camera];
+  const trouble = camera === "starting" || camera === "on" ? null : cameraNotes()[camera];
   const retry = trouble !== null && camera !== "missing" && camera !== "unsupported" && !ended;
 
   return (
@@ -546,24 +547,24 @@ function CameraScan({
         <span>
           <button type="button" className="link" onClick={onCancel}>
             <Icon name="close" />
-            やめる
+            {t("やめる", "Cancel")}
           </button>
         </span>
         <span className="mono">Scan</span>
         <span className="mono mono--dim">Live</span>
       </div>
       <h1 className="h2 scan__head">
-        <Phrases text="展示場の QR コードを読み取ってください" />
+        <Phrases text={t("展示場の QR コードを読み取ってください", "Scan the QR code at the exhibit")} />
       </h1>
       <p className="mono">
-        参加先：{process.env.NEXT_PUBLIC_SITE_ORIGIN ? `${process.env.NEXT_PUBLIC_SITE_ORIGIN}/log` : "/log"}
+        {t("参加先：", "Site: ")}{process.env.NEXT_PUBLIC_SITE_ORIGIN ? `${process.env.NEXT_PUBLIC_SITE_ORIGIN}/log` : "/log"}
       </p>
       <ScanWindow windowRef={windowRef} trackers={trackers} locked={found || sending}>
         <video ref={videoRef} className={`scan__video${field && !field.ok ? " is-shown" : ""}`} muted playsInline autoPlay aria-hidden="true" />
       </ScanWindow>
       <div className="scan__status">
         <p className="h3" role="status">
-          {sending ? "読み取りました" : ended || trouble ? "読み取りを止めています" : camera === "on" ? "読み取っています…" : "カメラを起動しています…"}
+          {sending ? t("読み取りました", "Scanned") : ended || trouble ? t("読み取りを止めています", "Scanning stopped") : camera === "on" ? t("読み取っています…", "Scanning…") : t("カメラを起動しています…", "Starting the camera…")}
         </p>
         <span className="mono">{sending ? "Lock" : ended || trouble ? "Stop" : camera === "on" ? "Searching" : "Camera"}</span>
       </div>
@@ -574,7 +575,7 @@ function CameraScan({
       )}
       {retry && (
         <button type="button" className="btn btn--line" onClick={() => setTries((count) => count + 1)}>
-          もう一度試す
+          {t("もう一度試す", "Try again")}
         </button>
       )}
       {PRETEND && !ended && (
@@ -584,7 +585,7 @@ function CameraScan({
       )}
       {ended && (
         <button type="button" className="btn" onClick={onCancel}>
-          ホームへもどる
+          {t("ホームへもどる", "Back to home")}
         </button>
       )}
     </Screen>
@@ -595,12 +596,12 @@ function CameraScan({
 
 /** What the screen says: while the replay is ahead or playing, and once the light is back or the screen did not play it. */
 function replayText(status: ReplayStatus | null, over: boolean): { title: string; body: string | null } {
-  if (over && status === "completed") return { title: "再生が終わりました", body: null };
+  if (over && status === "completed") return { title: t("再生が終わりました", "The playback has ended"), body: null };
   if (over && status === "skipped") {
-    return { title: "スクリーンでは再生できませんでした", body: "展示の都合で、今回はスクリーンで再生できませんでした。" };
+    return { title: t("スクリーンでは再生できませんでした", "It could not be played on the screen"), body: t("展示の都合で、今回はスクリーンで再生できませんでした。", "Because of the exhibit, it could not be played on the screen this time.") };
   }
-  if (status === "queued" || status === null) return { title: "スクリーンの前でお待ちください", body: null };
-  return { title: "スクリーンを見てください", body: null };
+  if (status === "queued" || status === null) return { title: t("スクリーンの前でお待ちください", "Please wait in front of the screen"), body: null };
+  return { title: t("スクリーンを見てください", "Look at the screen"), body: null };
 }
 
 /** Network failures in a row before the screen says it cannot tell how the replay stands. */
@@ -680,7 +681,7 @@ function Replay({
           return;
         }
         failures += 1;
-        if (alive && failures >= QUIET_FAILURES) setNotice("再生の状態を確かめられません。電波の良い場所で、そのままお待ちください。");
+        if (alive && failures >= QUIET_FAILURES) setNotice(t("再生の状態を確かめられません。電波の良い場所で、そのままお待ちください。", "Cannot check the playback. Stay where the signal is good and keep waiting."));
         wait = failure?.retryAfter ? Math.max(POLL_MS, failure.retryAfter * 1000) : POLL_MS * 2;
       } finally {
         asking = false;
@@ -704,7 +705,7 @@ function Replay({
   return (
     <Screen className={`screen--relay${over ? " is-over" : ""}`} inert={inert}>
       <header className="mast relay__mast">
-        <button type="button" className="icon-btn" aria-label="ホームへもどる" onClick={onLeave}>
+        <button type="button" className="icon-btn" aria-label={t("ホームへもどる", "Back to home")} onClick={onLeave}>
           <Icon name="close" />
         </button>
       </header>
@@ -730,24 +731,24 @@ function Replay({
             <section className="play__next" aria-labelledby="ray-keep">
               <p className="mono">Keepsake</p>
               <h2 className="h3" id="ray-keep">
-                作品を保存できます
+                {t("作品を保存できます", "Save your artwork")}
               </h2>
               <p className="body">
-                <Sentences text={"撮った写真を、一枚の作品にまとめました。持ち帰れるのは、この作品と写真です。"} />
+                <Sentences text={t("撮った写真を、一枚の作品にまとめました。持ち帰れるのは、この作品と写真です。", "Your photos are put together as one artwork. The artwork and your photos are what you take home.")} />
               </p>
               <button type="button" className="btn" onClick={onKeepsake}>
                 <Icon name="arrow" />
-                作品を見る
+                {t("作品を見る", "See your artwork")}
               </button>
             </section>
           )}
           {photos === 0 && (
             <p className="body" style={{ marginTop: 18 }}>
-              <Sentences text={"この端末には写真が残っていないので、作品を作れません。写真を撮ったブラウザで開くと、作品を保存できます。"} />
+              <Sentences text={t("この端末には写真が残っていないので、作品を作れません。写真を撮ったブラウザで開くと、作品を保存できます。", "There are no photos left on this phone, so your artwork cannot be made. Open this page in the browser you took the photos with to save it.")} />
             </p>
           )}
           <button type="button" className={`btn${photos > 0 ? " btn--line" : ""}`} style={{ marginTop: photos > 0 ? 10 : 18 }} onClick={onLeave}>
-            ホームへもどる
+            {t("ホームへもどる", "Back to home")}
           </button>
         </div>
       )}
