@@ -617,13 +617,18 @@ html:has(.dsp) body {
 }
 
 /* Sound (#27): the one click the browser needs before it makes sound, and the ?sound=1 readout. */
-.dsp-sound {
+.dsp .dsp-sound {
   position: absolute;
   left: 40px;
   bottom: 80px;
   z-index: 46;
   color: var(--ink);
   background: var(--paper) !important;
+
+  &:hover:not(:disabled) {
+    color: var(--paper);
+    background: var(--ink) !important;
+  }
 }
 
 .dsp-sound-sources {
