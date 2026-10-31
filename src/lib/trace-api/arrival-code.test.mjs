@@ -85,7 +85,12 @@ test("malformed, unrelated and retired signed payloads are not arrival URLs", ()
   const [payload, mac] = valid.split(".");
   const cases = [
     traceToken({ json: (proof) => JSON.stringify({ ...proof, purpose: "renderer" }) }),
-    traceToken({ json: ({ purpose, keyId, ...proof }) => JSON.stringify(proof) }),
+    traceToken({ json: (proof) => {
+      const retired = { ...proof };
+      delete retired.purpose;
+      delete retired.keyId;
+      return JSON.stringify(retired);
+    } }),
     traceToken({ json: (proof) => JSON.stringify({ ...proof, venue: "" }) }),
     traceToken({ json: (proof) => JSON.stringify({ ...proof, checkpointId: null }) }),
     traceToken({ json: (proof) => JSON.stringify({ ...proof, keyId: 42 }) }),

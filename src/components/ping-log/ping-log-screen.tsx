@@ -577,11 +577,10 @@ export function PingLogScreen() {
   const arrived = memorySessionId !== null && (arrivedIn === memorySessionId || experience?.status === "arrived");
   const maxPhotos = traceConfig?.photo.maxCount ?? MAX_PHOTOS;
 
-  useEffect(() => {
-    if (incomingArrivalToken !== null && (demo !== "home" || !experience || sessionExpired)) {
-      setIncomingArrivalToken(null);
-    }
-  }, [incomingArrivalToken, demo, experience, sessionExpired]);
+  // Discard the proof in the same render that closes or expires its flow.
+  if (incomingArrivalToken !== null && (demo !== "home" || !experience || sessionExpired)) {
+    setIncomingArrivalToken(null);
+  }
 
   // Only this retained participation's photos belong on its home screen.
   // Kept stable through clock ticks so object URLs are not remade every second.
