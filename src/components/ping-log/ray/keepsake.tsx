@@ -194,7 +194,7 @@ export function KeepsakeScreen({
             </button>
             {byHand && <NoteBar text={LONG_PRESS} />}
             <p className="small keep__note">
-              <Sentences text={`この作品で収集された写真は、${day(deleteAfter)}にブラウザ上から消去されます。`} />
+              <Sentences text={`この作品で収集された写真は、${day(deleteAfter)}以降にこのアプリを開いたとき、ブラウザ上から消去されます。アプリを閉じている間の自動消去は保証できません。保存した作品・写真は消えません。`} />
             </p>
             {contact && (
               <p className="small keep__note">

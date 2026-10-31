@@ -1,4 +1,5 @@
 import { test, expect, type Page, type WebSocketRoute } from "@playwright/test";
+import { createHmac } from "node:crypto";
 
 import { RELAY_LANDS_MS } from "../src/lib/display/relay";
 
@@ -268,8 +269,11 @@ test("independent operator login renders a real QR, revokes on logout, and keeps
   });
   await page.route("http://127.0.0.1:8790/arrival-token", async (route) => {
     const authorized = active && route.request().headers().authorization === "Bearer opaque-browser-operator";
+    const issuedAt = Math.floor(Date.now() / 1000);
+    const payload = Buffer.from(JSON.stringify({ purpose: "arrival", keyId: "arrival-test-v1", checkpointId: "shibalab", venue: "test-booth", issuedAt, expiresAt: issuedAt + 25, nonce: Buffer.alloc(32, 7).toString("base64url") })).toString("base64url");
+    const checkpointToken = `${payload}.${createHmac("sha256", "test-arrival-proof-key").update(payload).digest("base64url")}`;
     await route.fulfill(authorized
-      ? { json: { checkpointToken: "signed-arrival-proof.signature", expiresAt: new Date(Date.now() + 25000).toISOString() } }
+      ? { json: { checkpointToken, expiresAt: new Date((issuedAt + 25) * 1000).toISOString() } }
       : { status: 401, json: { error: { code: "UNAUTHORIZED" } } });
   });
   await page.route("http://127.0.0.1:8790/operator/credentials/current", async (route) => {

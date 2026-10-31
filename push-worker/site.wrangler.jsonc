@@ -1,11 +1,11 @@
-// Serves the static export of the web app (../out, from `NEXT_STATIC_EXPORT=1 next build`).
-// Static assets plus same-origin Go API bridge. No cron here, unlike wrangler.jsonc.
+// Legacy trace-log only; never used by production CI or scripts/production.mjs.
+// Manual deployment mutates the existing rehearsal Worker and requires separate authorization.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "trace-production",
+  "name": "trace-log",
   "main": "src/site.ts",
   "compatibility_date": "2026-09-01",
-  // Explicitly none: an earlier mistaken deploy left trace-log, this worker's old name, with a cron.
+  // Static/API bridge only. Keep the legacy Worker free of scheduled triggers.
   "triggers": { "crons": [] },
   "assets": {
     "directory": "../out",

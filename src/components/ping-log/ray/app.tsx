@@ -63,6 +63,8 @@ export type RayAppProps = {
   demo: "home" | "developer" | null;
   /** The retained experience; home's QR button reads the booth's real code. */
   arrival: ArrivalTarget | null;
+  /** A same-origin booth link consumed on entry or hash navigation; retained until this flow closes. */
+  incomingArrivalToken: string | null;
   onArrive: () => void;
   /** TRACE_B has this participation's arrival: home leads to the keepsake. */
   arrived: boolean;
@@ -195,7 +197,9 @@ function Current(
   if (props.demo === "home" && props.arrival && (!props.ended || props.arrived)) {
     return (
       <ArrivalFlow
+        key={props.incomingArrivalToken ?? "camera"}
         target={props.arrival}
+        incomingArrivalToken={props.incomingArrivalToken}
         photos={props.photos}
         contact={props.contact}
         toKeepsake={props.arrived}

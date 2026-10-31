@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test test/*.test.mjs",
     "deploy:site": "node scripts/wrangler.mjs deploy --config site.wrangler.jsonc",
-    "release": "node scripts/release.mjs"
+    "validate:production": "node scripts/production.mjs validate",
+    "deploy:production": "node scripts/production.mjs deploy"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5",

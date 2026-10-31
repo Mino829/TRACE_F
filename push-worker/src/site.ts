@@ -1,8 +1,9 @@
-/** Same-origin API bridge for the static participant site. */
+/** Same-origin API bridges for the static participant site and opt-in operator display. */
 interface SiteEnv {
   ASSETS: Fetcher;
   TRACE_BACKEND_URL: string;
   TRACE_EDGE_SHARED_SECRET: string;
+  TRACE_OPERATOR_ALLOWED_ORIGIN?: string;
 }
 
 interface Fetcher {
@@ -11,7 +12,7 @@ interface Fetcher {
 
 const MAX_JSON_BODY = 16 * 1024;
 /**
- * The participant routes of TRACE_B (internal/api/server.go). Operator and display routes stay closed.
+ * The participant routes of TRACE_B (internal/api/server.go). Operator and display routes stay closed here.
  * New photo bytes never leave the phone; /v2 relays metadata and private stories.
  * Legacy /v1 photo reads/deletes and Live state/stop/delete remain available to their
  * owners until deleteAfter. Legacy uploads and all new GPS writes stay blocked.
@@ -45,10 +46,10 @@ const allowed: Record<string, RegExp[]> = {
 const WITH_BODY = new Set(["POST", "PUT", "PATCH"]);
 
 function failure(code: string, status: number): Response {
-  return Response.json({ error: { code } }, { status, headers: { "Cache-Control": "no-store" } });
+  return Response.json({ error: { code } }, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
 }
 
-async function limitedBody(request: Request, maxBytes = MAX_JSON_BODY): Promise<ArrayBuffer | null> {
+async function limitedBody(request: Request | Response, maxBytes = MAX_JSON_BODY): Promise<ArrayBuffer | null> {
   if (!request.body) return new ArrayBuffer(0);
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -94,12 +95,123 @@ function canonicalClientIP(value: string | null): string | null {
   return value;
 }
 
+// Deliberately not a general operator proxy: display-token and WebSocket access
+// remain direct, authenticated Go endpoints; administrative routes stay closed.
+const operatorRoutes: Record<string, readonly [string, string]> = {
+  "POST /api/operator/operator/credentials": ["POST", "/v1/operator/credentials"],
+  "GET /api/operator/arrival-token": ["POST", "/v1/operator/arrival-proofs"],
+  "DELETE /api/operator/operator/credentials/current": ["DELETE", "/v1/operator/credentials/current"],
+  "DELETE /api/operator/operator/credentials": ["DELETE", "/v1/operator/credentials"],
+};
+
+async function handleOperatorRequest(
+  request: Request,
+  url: URL,
+  env: SiteEnv,
+  upstreamFetch: (request: Request) => Promise<Response>,
+): Promise<Response> {
+  // The binding is an exact HTTPS origin, never a URL prefix or a default.
+  if (url.protocol !== "https:" || env.TRACE_OPERATOR_ALLOWED_ORIGIN !== url.origin) {
+    return failure("NOT_FOUND", 404);
+  }
+  const route = operatorRoutes[`${request.method} ${url.pathname}`];
+  if (!route || request.url.includes("?") || request.url.includes("#")) return failure("NOT_FOUND", 404);
+  const origin = request.headers.get("Origin");
+  if (origin !== url.origin && !(request.method === "GET" && origin === null && request.headers.get("Sec-Fetch-Site") === "same-origin")) {
+    return failure("ORIGIN_NOT_ALLOWED", 403);
+  }
+  const authorization = request.headers.get("Authorization");
+  // Headers combines duplicate values with commas, which this grammar rejects.
+  // Syntax validation is not authentication: Go validates every Google/opaque token.
+  if (!authorization || !/^Bearer [A-Za-z0-9._~-]+$/.test(authorization)) return failure("UNAUTHORIZED", 401);
+  const contentLength = request.headers.get("Content-Length");
+  if (request.headers.has("Transfer-Encoding") || (contentLength !== null && contentLength !== "0")) {
+    return failure("BODY_NOT_ALLOWED", 400);
+  }
+  try {
+    if (await limitedBody(request, 0) === null) return failure("BODY_NOT_ALLOWED", 400);
+  } catch {
+    return failure("INVALID_REQUEST", 400);
+  }
+  let backend: URL;
+  let headers: Headers;
+  try {
+    backend = new URL(env.TRACE_BACKEND_URL);
+    if (backend.protocol !== "https:" ||
+        (env.TRACE_BACKEND_URL !== backend.origin && env.TRACE_BACKEND_URL !== `${backend.origin}/`) ||
+        !env.TRACE_EDGE_SHARED_SECRET) {
+      return failure("BACKEND_UNAVAILABLE", 503);
+    }
+    headers = new Headers({
+      Authorization: authorization,
+      Origin: url.origin,
+      "X-Trace-Edge-Secret": env.TRACE_EDGE_SHARED_SECRET,
+    });
+  } catch {
+    return failure("BACKEND_UNAVAILABLE", 503);
+  }
+  const clientIP = canonicalClientIP(request.headers.get("CF-Connecting-IP"));
+  if (clientIP) headers.set("X-Trace-Client-IP", clientIP);
+  try {
+    const upstream = await upstreamFetch(new Request(new URL(route[1], backend), {
+      method: route[0],
+      headers,
+      redirect: "manual",
+      signal: AbortSignal.timeout(8000),
+    }));
+    if (upstream.status >= 300 && upstream.status < 400) throw new Error("upstream redirect");
+    const responseHeaders = new Headers({ "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+    if (upstream.status >= 400 && upstream.status < 600) {
+      let code = "UPSTREAM_ERROR";
+      try {
+        const bytes = await limitedBody(upstream);
+        const body = bytes === null ? null : JSON.parse(new TextDecoder().decode(bytes));
+        if (typeof body?.error?.code === "string" && /^[A-Z_]{1,80}$/.test(body.error.code)) code = body.error.code;
+      } catch {
+        // Never expose upstream text, credential details or private headers.
+      }
+      const retry = upstream.headers.get("Retry-After");
+      if (retry && /^\d{1,6}$/.test(retry)) responseHeaders.set("Retry-After", retry);
+      return Response.json({ error: { code } }, { status: upstream.status, headers: responseHeaders });
+    }
+    if (route[0] === "DELETE") {
+      if (upstream.status !== 204) throw new Error("invalid revocation response");
+      return new Response(null, { status: 204, headers: responseHeaders });
+    }
+    if (upstream.status !== 200) throw new Error("invalid issuance response");
+    const bytes = await limitedBody(upstream);
+    if (bytes === null) throw new Error("upstream body too large");
+    const body = JSON.parse(new TextDecoder().decode(bytes));
+    const expiry = typeof body?.expiresAt === "string" ? Date.parse(body.expiresAt) : NaN;
+    const now = Date.now();
+    if (!Number.isFinite(expiry) || expiry <= now) throw new Error("invalid expiration");
+    if (route[1] === "/v1/operator/arrival-proofs") {
+      if (typeof body.checkpointToken !== "string" || !body.checkpointToken || expiry - now < 5000) {
+        throw new Error("invalid proof");
+      }
+      return Response.json({ checkpointToken: body.checkpointToken, expiresAt: body.expiresAt }, { headers: responseHeaders });
+    }
+    if (typeof body.operatorToken !== "string" || !body.operatorToken ||
+        typeof body.credentialId !== "string" || !body.credentialId || body.role !== "operator") {
+      throw new Error("invalid credential");
+    }
+    return Response.json({
+      operatorToken: body.operatorToken, credentialId: body.credentialId, expiresAt: body.expiresAt, role: "operator",
+    }, { headers: responseHeaders });
+  } catch {
+    return failure("BROKER_UPSTREAM_UNAVAILABLE", 502);
+  }
+}
+
 export async function handleSiteRequest(
   request: Request,
   env: SiteEnv,
   upstreamFetch: (request: Request) => Promise<Response> = fetch,
 ): Promise<Response> {
   const url = new URL(request.url);
+  if (url.pathname === "/api/operator" || url.pathname.startsWith("/api/operator/")) {
+    return handleOperatorRequest(request, url, env, upstreamFetch);
+  }
   if (!url.pathname.startsWith("/api/backend/")) return env.ASSETS.fetch(request);
   if (url.search || url.hash) return failure("NOT_FOUND", 404);
   const path = url.pathname.slice("/api/backend/".length);
