@@ -11,6 +11,7 @@
 
 import type { LogRecord } from "./record";
 import { tellOtherTabs } from "./tabs";
+import { t } from "@/lib/i18n";
 
 export type LogEntry = {
   id: string;
@@ -48,7 +49,7 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME, { keyPath: "id" });
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("IndexedDBを開けませんでした。"));
+    request.onerror = () => reject(request.error ?? new Error(t("IndexedDBを開けませんでした。", "Could not open IndexedDB.")));
   });
 }
 
@@ -59,7 +60,7 @@ export async function listEntries(): Promise<LogEntry[]> {
     request.onsuccess = () => resolve((request.result as LogEntry[])
       .filter((entry) => typeof entry?.record?.takenAt === "string")
       .sort((a, b) => b.record.takenAt.localeCompare(a.record.takenAt)));
-    request.onerror = () => reject(request.error ?? new Error("記録を読み込めませんでした。"));
+    request.onerror = () => reject(request.error ?? new Error(t("記録を読み込めませんでした。", "Could not load your records.")));
   });
 }
 
@@ -72,7 +73,7 @@ export async function putEntry(entry: LogEntry): Promise<void> {
       tellOtherTabs();
       resolve();
     };
-    tx.onerror = () => reject(tx.error ?? new Error("記録を保存できませんでした。"));
+    tx.onerror = () => reject(tx.error ?? new Error(t("記録を保存できませんでした。", "Could not save your records.")));
   });
 }
 
@@ -86,7 +87,7 @@ export async function deleteEntry(id: string): Promise<void> {
       tellOtherTabs();
       resolve();
     };
-    tx.onerror = () => reject(tx.error ?? new Error("写真を削除できませんでした。"));
+    tx.onerror = () => reject(tx.error ?? new Error(t("写真を削除できませんでした。", "Could not delete the photo.")));
   });
 }
 
@@ -99,7 +100,7 @@ export async function clearEntries(): Promise<void> {
       tellOtherTabs();
       resolve();
     };
-    tx.onerror = () => reject(tx.error ?? new Error("記録を削除できませんでした。"));
+    tx.onerror = () => reject(tx.error ?? new Error(t("記録を削除できませんでした。", "Could not delete your records.")));
   });
 }
 
@@ -119,6 +120,6 @@ export async function clearSessionEntries(): Promise<void> {
       tellOtherTabs();
       resolve();
     };
-    tx.onerror = () => reject(tx.error ?? new Error("記録を削除できませんでした。"));
+    tx.onerror = () => reject(tx.error ?? new Error(t("記録を削除できませんでした。", "Could not delete your records.")));
   });
 }

@@ -71,6 +71,7 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
 
 
 const parser = loadDefaultJapaneseParser();
+const JAPANESE = /[぀-ヿ㐀-鿿！-｠]/;
 
 /**
  * The 「」 and （） spans short enough to keep on one line, as the indexes of
@@ -144,12 +145,15 @@ export function Phrases({ text }: { text: string }) {
       {text.split("\n").map((line, row) => (
         <Fragment key={row}>
           {row > 0 && <br />}
-          {phrases(line).map((phrase, index) => (
-            <Fragment key={index}>
-              {index > 0 && <wbr />}
-              {phrase}
-            </Fragment>
-          ))}
+          {/* English wraps at its spaces as it is; phrases would glue each one shut. */}
+          {JAPANESE.test(line)
+            ? phrases(line).map((phrase, index) => (
+                <Fragment key={index}>
+                  {index > 0 && <wbr />}
+                  {phrase}
+                </Fragment>
+              ))
+            : line}
         </Fragment>
       ))}
     </span>

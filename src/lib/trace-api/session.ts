@@ -14,6 +14,7 @@
  * the participation cannot be picked up there.
  */
 
+import { t } from "@/lib/i18n";
 import { withLock } from "@/lib/ping-log/tabs";
 
 import type { ExperienceStatus, MemoryCredential, MemoryStatus } from "./client";
@@ -90,7 +91,7 @@ export function saveTabExperience({ memory, ...info }: TabExperience): void {
 /** Keeps the credential and swaps in what the backend now says about the experience. */
 export function updateTabExperience(experience: TabExperience, update: ExperienceStatus): TabExperience {
   if (experience.memory.memorySessionId !== update.memorySession.sessionId) {
-    throw new Error("参加情報の確認に失敗しました。削除するための情報は、このブラウザに残しています。");
+    throw new Error(t("参加情報の確認に失敗しました。削除するための情報は、このブラウザに残しています。", "Could not check your participation. What is needed to delete it is still kept in this browser."));
   }
   const next = { ...experience, status: update.memorySession.status, memory: {
     ...experience.memory, expiresAt: update.memorySession.expiresAt, deleteAfter: update.memorySession.deleteAfter,

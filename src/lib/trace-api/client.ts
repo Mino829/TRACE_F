@@ -23,6 +23,8 @@ export const TRACE_API_URL = (process.env.NEXT_PUBLIC_TRACE_API_URL || "/api/bac
 const TIMEOUT_MS = 15_000;
 
 import type { MemoryStatus, MemoryState, MemoryStopResult, ReplayStatus } from "@/lib/api";
+import { t } from "@/lib/i18n";
+
 export type { MemoryStatus, ReplayStatus } from "@/lib/api";
 
 /** The photo reminder's terms. The VAPID key is empty while TRACE_B cannot send. */
@@ -94,31 +96,31 @@ export class TraceApiError extends Error {
 function messageFor(code: string, requestId: string | null): string {
   switch (code) {
     case "NETWORK":
-      return "サーバーにつながりませんでした。電波の良い場所で、もう一度試してください。";
+      return t("サーバーにつながりませんでした。電波の良い場所で、もう一度試してください。", "Could not reach the server. Move to a place with a better signal and try again.");
     case "REGISTRATION_CLOSED":
-      return "いまは参加を受け付けていません。";
+      return t("いまは参加を受け付けていません。", "TRACE is not accepting new participants right now.");
     case "CONSENT_VERSION_MISMATCH":
-      return "参加の説明が新しくなりました。もう一度読んで、同意してください。";
+      return t("参加の説明が新しくなりました。もう一度読んで、同意してください。", "The information about taking part has been updated. Please read it again and agree.");
     case "INVALID_CLIENT_TIME":
-      return "スマホの時刻がずれています。時刻を合わせてから、もう一度試してください。";
+      return t("スマホの時刻がずれています。時刻を合わせてから、もう一度試してください。", "Your phone's clock is off. Set the correct time and try again.");
     case "UNAUTHORIZED":
     case "NOT_FOUND":
-      return "参加の記録が見つかりませんでした。期限が切れたか、削除されています。";
+      return t("参加の記録が見つかりませんでした。期限が切れたか、削除されています。", "Your participation record was not found. It has expired or been deleted.");
     case "INVALID_ARRIVAL_PROOF":
     case "INVALID_CHECKPOINT":
-      return "この QR コードでは到着を受け付けられませんでした。\n期限切れ、または参加者ページと展示が別の環境の可能性があります。\n展示に案内されている参加者ページと、いま開いているページが同じか確かめて、\nブースにいま映っている QR コードを読み取ってください。";
+      return t("この QR コードでは到着を受け付けられませんでした。\n期限切れ、または参加者ページと展示が別の環境の可能性があります。\n展示に案内されている参加者ページと、いま開いているページが同じか確かめて、\nブースにいま映っている QR コードを読み取ってください。", "This QR code could not register your arrival.\nIt may have expired, or this page and the exhibit may be on different setups.\nCheck that the page you have open is the participant page shown at the exhibit,\nthen scan the QR code on the booth screen now.");
     case "NOT_AVAILABLE":
-      return "いまは到着を受け付けていません。ASYNC のブースのスタッフに声をかけてください。";
+      return t("いまは到着を受け付けていません。ASYNC のブースのスタッフに声をかけてください。", "Arrivals are not being accepted right now. Please talk to the staff at the ASYNC booth.");
     case "STATE_CONFLICT":
-      return "この参加では、もう受け付けられません。参加の期限が切れたか、削除の途中です。";
+      return t("この参加では、もう受け付けられません。参加の期限が切れたか、削除の途中です。", "This participation can no longer be used. Its period has ended, or it is being deleted.");
     case "RATE_LIMITED":
-      return "短いあいだに何度も送られたため、受け付けを止めています。少し待ってから、もう一度試してください。";
+      return t("短いあいだに何度も送られたため、受け付けを止めています。少し待ってから、もう一度試してください。", "Too many requests in a short time. Please wait a moment and try again.");
     case "PUSH_UNAVAILABLE":
-      return "いまはリマインダーを使えません。";
+      return t("いまはリマインダーを使えません。", "The reminder is not available right now.");
     case "INVALID_SUBSCRIPTION":
-      return "このブラウザでは、リマインダーを受け取れません。";
+      return t("このブラウザでは、リマインダーを受け取れません。", "This browser cannot receive the reminder.");
     default:
-      return `サーバーで問題が起きました。時間をおいて、もう一度試してください。${requestId ? `（問い合わせ番号 ${requestId}）` : ""}`;
+      return t(`サーバーで問題が起きました。時間をおいて、もう一度試してください。${requestId ? `（問い合わせ番号 ${requestId}）` : ""}`, `Something went wrong on the server. Please try again later.${requestId ? ` (Reference: ${requestId})` : ""}`);
   }
 }
 

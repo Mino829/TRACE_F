@@ -4,7 +4,9 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { LONG_PRESS, saveImage } from "@/lib/ping-log/save-image";
+import { lang, t } from "@/lib/i18n";
+import { contactInEnglish } from "@/lib/ping-log/consent";
+import { longPress, saveImage } from "@/lib/ping-log/save-image";
 import type { LogEntry } from "@/lib/ping-log/store";
 import { drawKeepsake, imageName } from "@/lib/ray/keepsake";
 
@@ -23,10 +25,10 @@ import { TraceSection } from "./trace";
  * participant starts.
  */
 
-/** 11月1日 */
+/** 11月1日, or Nov 1 */
 function day(iso: string): string {
   const date = new Date(iso);
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
+  return lang() === "en" ? date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 function photoFile(entry: LogEntry): File | null {
@@ -42,15 +44,15 @@ export function SavePhoto({ entry, number }: { entry: LogEntry; number: number }
     <button
       type="button"
       className="link save-photo"
-      aria-label={`${number}枚目の写真を保存`}
+      aria-label={t(`${number}枚目の写真を保存`, `Save photo ${number}`)}
       onClick={() =>
         void saveImage(file).then((result) => {
-          if (result === "unsupported") toast("画像を長押しして、保存してください。");
+          if (result === "unsupported") toast(t("画像を長押しして、保存してください。", "Press and hold the image to save it."));
         })
       }
     >
       <Icon name="download" />
-      保存
+      {t("保存", "Save")}
     </button>
   );
 }
@@ -60,8 +62,8 @@ export function PhotoActions({ entry, number, onDelete }: { entry: LogEntry; num
   return (
     <div className="print-actions">
       <SavePhoto entry={entry} number={number} />
-      <button type="button" className="link print-actions__del" aria-label={`${number}枚目の写真を削除`} onClick={() => onDelete(entry, number)}>
-        削除
+      <button type="button" className="link print-actions__del" aria-label={t(`${number}枚目の写真を削除`, `Delete photo ${number}`)} onClick={() => onDelete(entry, number)}>
+        {t("削除", "Delete")}
       </button>
     </div>
   );
@@ -109,6 +111,8 @@ export function KeepsakeScreen({
   const artRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
   const workId = useId();
+  // Drawn again in the other language when it is switched.
+  const language = lang();
   const kept = useMemo(() => photos.filter((entry) => entry.photo), [photos]);
   const [art, setArt] = useState<{ file: File; url: string } | null>(null);
   const [problem, setProblem] = useState("");
@@ -131,14 +135,14 @@ export function KeepsakeScreen({
         setArt({ file, url });
       },
       (error: unknown) => {
-        if (alive) setProblem(error instanceof Error ? error.message : "作品を作れませんでした。");
+        if (alive) setProblem(error instanceof Error ? error.message : t("作品を作れませんでした。", "Could not make your artwork."));
       },
     );
     return () => {
       alive = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [kept]);
+  }, [kept, language]);
 
   const save = async () => {
     if (!art) return;
@@ -154,16 +158,16 @@ export function KeepsakeScreen({
             <span className="keep-case">ShibaLab</span> 301
           </span>
         </div>
-        <button type="button" className="icon-btn" aria-label="ホームへもどる" onClick={onLeave}>
+        <button type="button" className="icon-btn" aria-label={t("ホームへもどる", "Back to home")} onClick={onLeave}>
           <Icon name="close" />
         </button>
       </header>
       <h1 className="h1">
-        <Phrases text="ご来場ありがとうございました" />
+        <Phrases text={t("ご来場ありがとうございました", "Thank you for coming")} />
       </h1>
       {!kept.length && (
         <p className="body">
-          <Sentences text={"この端末には写真が残っていないので、作品を作れません。写真を撮ったブラウザで開くと、作品を保存できます。"} />
+          <Sentences text={t("この端末には写真が残っていないので、作品を作れません。写真を撮ったブラウザで開くと、作品を保存できます。", "There are no photos left on this phone, so your artwork cannot be made. Open this page in the browser you took the photos with to save it.")} />
         </p>
       )}
       {kept.length > 0 && (
@@ -174,11 +178,11 @@ export function KeepsakeScreen({
           <section className="keep__work" aria-labelledby={workId}>
             <p className="mono">Keepsake</p>
             <p className="body" id={workId}>
-              あなたの写真を一枚にまとめました。
+              {t("あなたの写真を一枚にまとめました。", "Your photos, put together as one picture.")}
             </p>
             <div ref={artRef} className="keep__art">
               {art ? (
-                <img className="keep__img" src={art.url} alt={`作品。撮った${kept.length}枚の写真を、撮った順に一枚にまとめた画像`} />
+                <img className="keep__img" src={art.url} alt={t(`作品。撮った${kept.length}枚の写真を、撮った順に一枚にまとめた画像`, `Your artwork: the ${kept.length} photos you took, put together in order as one picture`)} />
               ) : (
                 !problem && (
                   <p className="keep__wait mono mono--dim" role="status">
@@ -190,22 +194,22 @@ export function KeepsakeScreen({
             <NoteBar text={problem} alert />
             <button type="button" className="btn keep__save" disabled={!art} onClick={() => void save()}>
               <Icon name="download" />
-              作品を保存する
+              {t("作品を保存する", "Save your artwork")}
             </button>
-            {byHand && <NoteBar text={LONG_PRESS} />}
+            {byHand && <NoteBar text={longPress()} />}
             <p className="small keep__note">
-              <Sentences text={`この作品で収集された写真は、${day(deleteAfter)}以降にこのアプリを開いたとき、ブラウザ上から消去されます。アプリを閉じている間の自動消去は保証できません。保存した作品・写真は消えません。`} />
+              <Sentences text={t(`この作品で収集された写真は、${day(deleteAfter)}以降にこのアプリを開いたとき、ブラウザ上から消去されます。アプリを閉じている間の自動消去は保証できません。保存した作品・写真は消えません。`, `The photos collected for this artwork are erased from the browser when you open this app on or after ${day(deleteAfter)}. They are not guaranteed to be erased while the app is closed. The artwork and photos you have saved stay.`)} />
             </p>
             {contact && (
               <p className="small keep__note">
-                問い合わせ先: <Contact value={contact} />
+                {t("問い合わせ先: ", "Contact: ")}<Contact value={lang() === "en" ? contactInEnglish(contact) : contact} />
               </p>
             )}
           </section>
 
           <section className="keep__photos" aria-labelledby={labelId}>
             <h2 className="h3" id={labelId}>
-              撮った写真
+              {t("撮った写真", "Your photos")}
             </h2>
             <ul>
               {kept.map((entry, index) => {
@@ -227,7 +231,7 @@ export function KeepsakeScreen({
         </>
       )}
       <button type="button" className="btn btn--line keep__home" onClick={onLeave}>
-        ホームへもどる
+        {t("ホームへもどる", "Back to home")}
       </button>
     </Screen>
   );

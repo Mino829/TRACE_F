@@ -1,4 +1,5 @@
 import type { PhotoMeta } from "./record";
+import { t } from "@/lib/i18n";
 
 const MAX_PHOTO_EDGE = 1280;
 
@@ -17,7 +18,7 @@ export async function preparePhoto(file: File): Promise<{ blob: Blob; meta: Phot
   canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   const blob = await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob((value) => (value ? resolve(value) : reject(new Error("写真を変換できませんでした。"))), "image/jpeg", 0.8),
+    canvas.toBlob((value) => (value ? resolve(value) : reject(new Error(t("写真を変換できませんでした。", "Could not convert the photo.")))), "image/jpeg", 0.8),
   );
   return { blob, meta };
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { t } from "@/lib/i18n";
 import type { Consent } from "@/lib/ping-log/consent";
 import { entryCheck, type EntryCheck, type PushSupport } from "@/lib/ping-log/environment";
 import type { Shot } from "@/lib/ping-log/photo-entry";
@@ -98,10 +99,10 @@ export function RayApp(props: RayAppProps) {
   if (title && !props.joined) setTitle(false);
 
   const menuItems: MenuItem[] = [
-    { label: "遊び方", onSelect: () => setOverlay("howto") },
-    ...(props.consent ? [{ label: "同意事項", onSelect: () => setOverlay("consent") }] : []),
-    ...(props.onStop ? [{ label: "記録を残して参加を終了", onSelect: () => setOverlay("stop"), disabled: props.busy }] : []),
-    ...(props.consent || props.joined ? [{ label: "参加をやめる", onSelect: () => setOverlay("withdraw"), disabled: props.busy }] : []),
+    { label: t("遊び方", "How to play"), onSelect: () => setOverlay("howto") },
+    ...(props.consent ? [{ label: t("同意事項", "Consent"), onSelect: () => setOverlay("consent") }] : []),
+    ...(props.onStop ? [{ label: t("記録を残して参加を終了", "End and keep records"), onSelect: () => setOverlay("stop"), disabled: props.busy }] : []),
+    ...(props.consent || props.joined ? [{ label: t("参加をやめる", "Withdraw"), onSelect: () => setOverlay("withdraw"), disabled: props.busy }] : []),
   ];
 
   const layer = deleting ? (
