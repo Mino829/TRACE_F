@@ -5,6 +5,8 @@
   "name": "trace-production",
   "main": "src/site.ts",
   "compatibility_date": "2026-09-01",
+  // TRACE_BACKEND_URL is a plain variable set on the dashboard for trace-production; without this a deploy deletes it and /api/backend goes 503.
+  "keep_vars": true,
   // Explicitly none: an earlier mistaken deploy left trace-log, this worker's old name, with a cron.
   "triggers": { "crons": [] },
   "assets": {
