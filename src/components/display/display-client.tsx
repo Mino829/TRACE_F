@@ -51,9 +51,9 @@ import type { ArrivalToPlay, LinkState, ReplayResult } from "@/lib/display/rende
  *
  * Sound (issue #27, src/lib/display/sound.ts): music while waiting and while
  * replaying, a cue as a walk starts and one at ShibaLab. The browser needs one
- * click before it makes sound, so 音を出す shows until then (the test buttons
- * count too). ?volume=0.6 sets the level, ?mute=1 silences it, ?sound=1 shows
- * which sounds are the real files and which are still placeholders.
+ * click before it makes sound, so the first page click or key enables it;
+ * 音を出す remains available until then. ?volume=0.6 sets the level,
+ * ?mute=1 silences it, ?sound=1 shows which files are loaded.
  */
 type Screen = "loading" | "top" | "intro" | "playback" | "arrived";
 
@@ -121,6 +121,11 @@ export function DisplayClient() {
     soundRef.current = engine;
     const sync = () => setSound({ unlocked: engine.unlocked, sources: { ...engine.sources } });
     const off = engine.subscribe(sync);
+    const unlock = () => {
+      if (!engine.unlocked) void engine.unlock();
+    };
+    window.addEventListener("click", unlock, true);
+    window.addEventListener("keydown", unlock, true);
     const first = window.setTimeout(() => {
       sync();
       setShowSources(params.get("sound") === "1");
@@ -128,6 +133,8 @@ export function DisplayClient() {
     return () => {
       window.clearTimeout(first);
       off();
+      window.removeEventListener("click", unlock, true);
+      window.removeEventListener("keydown", unlock, true);
       engine.dispose();
       soundRef.current = null;
     };
