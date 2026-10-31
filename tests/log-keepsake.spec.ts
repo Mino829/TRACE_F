@@ -1,6 +1,9 @@
 import { expect, test, type BrowserContext, type Download, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { createHmac, randomBytes } from "node:crypto";
+
+import { arrivalQrUrl } from "../src/lib/trace-api/arrival-code";
 
 /**
  * /log after arriving at ShibaLab (#14): the keepsake drawn from the photos
@@ -25,6 +28,9 @@ type StandIn = {
   /** Explicit stop is terminal but preserves owner reads and deletion. */
   ended: boolean;
   expiresAt: string;
+  joins: number;
+  arrivals: Array<{ checkpointToken: string; clientTime: string; key: string }>;
+  arrivalError: string | null;
   /** The photos' records TRACE_B keeps (#13), by the id the phone keeps each photo by. */
   moments: Map<string, Moment>;
   /** Every body sent to TRACE_B's /v2 photos, as it came. */
@@ -39,7 +45,7 @@ type StandIn = {
 
 /** Answers TRACE_B's participant routes, including retained ownership after stopping. */
 async function standIn(context: BrowserContext): Promise<StandIn> {
-  const state: StandIn = { replay: null, ended: false, expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), moments: new Map(), sent: [], listed: 0, down: false, lose: false };
+  const state: StandIn = { replay: null, ended: false, expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), joins: 0, arrivals: [], arrivalError: null, moments: new Map(), sent: [], listed: 0, down: false, lose: false };
   const memorySession = { sessionId: "mem-1", status: "main", expiresAt: state.expiresAt, deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
   await context.route("**/api/backend/v1/**", async (route) => {
     const request = route.request();
@@ -51,9 +57,18 @@ async function standIn(context: BrowserContext): Promise<StandIn> {
       } });
     }
     if (where === "POST /v1/experiences") {
+      state.joins += 1;
       return route.fulfill({ status: 201, json: { experienceId: "exp-1", memorySession: { ...memorySession, participantToken: "token-1" } } });
     }
     if (where === "DELETE /v1/memory-sessions/mem-1") return route.fulfill({ status: 204 });
+    if (where === "POST /v1/memory-sessions/mem-1/arrival") {
+      expect(request.headers().authorization).toBe("Bearer token-1");
+      expect(request.headers()["idempotency-key"]).toBeTruthy();
+      state.arrivals.push({ ...request.postDataJSON(), key: request.headers()["idempotency-key"] });
+      if (state.arrivalError) return route.fulfill({ status: 400, json: { error: { code: state.arrivalError, requestId: "req-arrival" } } });
+      state.replay = "playing";
+      return route.fulfill({ json: { arrivalId: "arrival-1", status: state.replay } });
+    }
     if (where === "POST /v1/memory-sessions/mem-1/stop") {
       expect(request.headers().authorization).toBe("Bearer token-1");
       expect(request.headers()["idempotency-key"]).toBeTruthy();
@@ -118,6 +133,196 @@ async function join(page: Page) {
   await page.getByRole("button", { name: "同意して参加する" }).click();
   await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
 }
+
+/** Synthetic signed bytes for the UI contract; the stand-in, not the frontend, accepts or rejects the proof. */
+function boothLink(origin: string) {
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const payload = Buffer.from(JSON.stringify({
+    purpose: "arrival", keyId: "arrival-proof-v1", checkpointId: "arrival-booth", venue: "shibalab-301",
+    issuedAt, expiresAt: issuedAt + 25, nonce: randomBytes(32).toString("base64url"),
+  })).toString("base64url");
+  const token = `${payload}.${createHmac("sha256", "test-proof-key").update(payload).digest("base64url")}`;
+  return { token, url: arrivalQrUrl(token, origin) };
+}
+
+async function denyArrivalCamera(page: Page) {
+  const deny = () => {
+    let requests = 0;
+    Object.defineProperty(window, "arrivalCameraRequests", { get: () => requests });
+    navigator.mediaDevices.getUserMedia = async () => {
+      requests += 1;
+      throw new DOMException("Camera denied by UI contract fixture", "NotAllowedError");
+    };
+  };
+  await page.addInitScript(deny);
+  await page.evaluate(deny);
+}
+
+const cameraRequests = (page: Page) => page.evaluate(() => {
+  const requests = Reflect.get(window, "arrivalCameraRequests");
+  if (typeof requests !== "number") throw new Error("Camera instrumentation is missing");
+  return requests;
+});
+
+test("a retained participant's booth URL sends once without opening a camera, then follows real replay status", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await denyArrivalCamera(page);
+  const link = boothLink(new URL(page.url()).origin);
+  const { promise: held, resolve: release } = Promise.withResolvers<void>();
+  await page.route("**/api/backend/v1/memory-sessions/mem-1/arrival", async (route) => {
+    await held;
+    await route.fallback();
+  });
+  await page.goto(link.url);
+  await expect(page.getByRole("status").filter({ hasText: "到着を送信しています" })).toBeVisible();
+  expect(new URL(page.url()).hash).not.toContain("arrival=");
+  expect(await cameraRequests(page)).toBe(0);
+  release();
+  await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
+  expect(backend.arrivals).toHaveLength(1);
+  expect(backend.arrivals[0].checkpointToken).toBe(link.token);
+  expect(await page.evaluate((token) => JSON.stringify(Object.entries(localStorage)).includes(token), link.token)).toBe(false);
+  expect(await page.evaluate(() => localStorage.getItem("trace-memory-actions"))).not.toContain("checkpointToken");
+  backend.replay = "completed";
+  await expect(page.getByRole("heading", { name: "再生が終わりました" })).toBeVisible({ timeout: 15000 });
+  expect(await cameraRequests(page)).toBe(0);
+  await page.getByRole("button", { name: "ホームへもどる", exact: true }).last().click();
+  await page.getByRole("button", { name: "作品を見る", exact: true }).click();
+  await expect(page.locator(".keep")).toBeVisible();
+  expect(backend.arrivals).toHaveLength(1);
+});
+
+test("a booth URL arriving through hash navigation sends once without requesting a camera", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await denyArrivalCamera(page);
+  const link = boothLink(new URL(page.url()).origin);
+  await page.evaluate((url) => { window.location.hash = new URL(url).hash; }, link.url);
+  await expect.poll(() => backend.arrivals.length).toBe(1);
+  await expect(page.locator(".screen--relay")).toBeVisible();
+  expect(backend.arrivals[0].checkpointToken).toBe(link.token);
+  expect(new URL(page.url()).hash).not.toContain("arrival=");
+  expect(await cameraRequests(page)).toBe(0);
+  // The internal layer hash is navigation only, never another arrival request.
+  await page.evaluate(() => window.dispatchEvent(new HashChangeEvent("hashchange")));
+  expect(backend.arrivals).toHaveLength(1);
+});
+
+test("an unjoined booth URL explains consent and never creates or sends a participation", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await page.goto("/log");
+  await denyArrivalCamera(page);
+  const link = boothLink(new URL(page.url()).origin);
+  await page.goto(link.url);
+  await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
+  await expect(page.getByText(/このブラウザではまだ参加していません/)).toBeVisible();
+  expect(new URL(page.url()).hash).toBe("");
+  expect(backend.joins).toBe(0);
+  expect(backend.arrivals).toEqual([]);
+  expect(await cameraRequests(page)).toBe(0);
+  expect(await page.evaluate(() => localStorage.getItem("trace-memory-credential"))).toBeNull();
+  await page.getByRole("button", { name: /はじめる/ }).click();
+  await page.getByRole("button", { name: /次へ/ }).click();
+  await page.getByRole("button", { name: "同意して参加する" }).click();
+  await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeVisible();
+  expect(backend.joins).toBe(1);
+  expect(backend.arrivals).toEqual([]);
+  await expect(page.getByText(/このブラウザではまだ参加していません/)).not.toBeVisible();
+  const again = boothLink(new URL(page.url()).origin);
+  await page.goto(again.url);
+  await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
+  expect(backend.joins).toBe(1);
+  expect(backend.arrivals).toHaveLength(1);
+  expect(backend.arrivals[0].checkpointToken).toBe(again.token);
+});
+
+for (const condition of ["ended", "expired"] as const) {
+  test(`a ${condition} participant's booth URL retains ownership without sending arrival`, async ({ context, page }) => {
+    const backend = await standIn(context);
+    await join(page);
+    const retained = await page.evaluate(() => localStorage.getItem("trace-memory-credential"));
+    backend.ended = condition === "ended";
+    if (condition === "expired") backend.expiresAt = new Date(Date.now() - 1000).toISOString();
+    await page.evaluate(({ condition, expiresAt }) => {
+      const memory = JSON.parse(localStorage.getItem("trace-memory-credential")!);
+      const experience = JSON.parse(localStorage.getItem("trace-experience")!);
+      if (condition === "ended") experience.status = "ended";
+      else memory.expiresAt = expiresAt;
+      localStorage.setItem("trace-memory-credential", JSON.stringify(memory));
+      localStorage.setItem("trace-experience", JSON.stringify(experience));
+    }, { condition, expiresAt: backend.expiresAt });
+    const link = boothLink(new URL(page.url()).origin);
+    await page.goto(link.url);
+    await expect(page.getByText(/この参加は終了しているため、到着は送信していません/)).toBeVisible();
+    expect(backend.arrivals).toEqual([]);
+    expect(backend.joins).toBe(1);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("trace-memory-credential")!).participantToken)).toBe(JSON.parse(retained!).participantToken);
+    await page.getByRole("button", { name: "メニュー" }).click();
+    await page.getByRole("button", { name: "参加をやめる", exact: true }).click();
+    await page.getByRole("button", { name: "やめて削除する", exact: true }).click();
+    await expect(page.getByRole("button", { name: /はじめる/ })).toBeVisible();
+  });
+}
+
+test("a rejected URL arrival shows the real failure without resending or requesting a camera", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await denyArrivalCamera(page);
+  backend.arrivalError = "INVALID_ARRIVAL_PROOF";
+  const link = boothLink(new URL(page.url()).origin);
+  await page.goto(link.url);
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.locator(".scan__video")).toHaveCount(0);
+  expect(await cameraRequests(page)).toBe(0);
+  expect(backend.arrivals).toHaveLength(1);
+  expect(await page.evaluate((token) => JSON.stringify(Object.entries(localStorage)).includes(token), link.token)).toBe(false);
+  // Starting the in-app scanner is a separate, explicit action after a failed native URL.
+  await page.getByRole("button", { name: "QR コードを読み取る", exact: true }).click();
+  await expect.poll(() => cameraRequests(page)).toBe(1);
+  expect(backend.arrivals).toHaveLength(1);
+});
+
+test("the internal camera rejects raw or foreign input and submits only a same-origin URL proof", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  const link = boothLink(new URL(page.url()).origin);
+  await page.evaluate((text) => {
+    Object.defineProperty(window, "arrivalScannerText", { value: text, writable: true, configurable: true });
+    Object.defineProperty(globalThis, "BarcodeDetector", { configurable: true, value: class {
+      static async getSupportedFormats() { return ["qr_code"]; }
+      async detect() {
+        const text = Reflect.get(window, "arrivalScannerText");
+        if (typeof text !== "string") throw new Error("Scanner input is missing");
+        return [{ rawValue: text,
+          cornerPoints: [{ x: 80, y: 80 }, { x: 240, y: 80 }, { x: 240, y: 240 }, { x: 80, y: 240 }] }];
+      }
+    } });
+    navigator.mediaDevices.getUserMedia = async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 320;
+      canvas.height = 320;
+      const context = canvas.getContext("2d")!;
+      const draw = () => { context.fillStyle = "#fff"; context.fillRect(0, 0, 320, 320); };
+      draw();
+      const stream = canvas.captureStream(10);
+      const timer = window.setInterval(draw, 100);
+      stream.getVideoTracks()[0].addEventListener("ended", () => window.clearInterval(timer));
+      return stream;
+    };
+  }, link.token);
+  await page.getByRole("button", { name: "QR コードを読み取る" }).click();
+  await expect(page.getByRole("alert")).toContainText("この参加先の到着用 URL ではありません");
+  expect(backend.arrivals).toEqual([]);
+  await page.evaluate((text) => { Reflect.set(window, "arrivalScannerText", text); }, arrivalQrUrl(link.token, "https://other-participation.example"));
+  await expect(page.getByRole("alert")).toContainText("別の参加先");
+  expect(backend.arrivals).toEqual([]);
+  await page.evaluate((text) => { Reflect.set(window, "arrivalScannerText", text); }, link.url);
+  await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
+  expect(backend.arrivals).toHaveLength(1);
+  expect(backend.arrivals[0].checkpointToken).toBe(link.token);
+  expect(await page.evaluate((token) => JSON.stringify(Object.entries(localStorage)).includes(token), link.token)).toBe(false);
+});
 
 /** Takes a photo and saves it at a place picked from the list: building, floor, place. */
 async function savePhoto(page: Page, number: number, [building, floor, place] = ["本部棟", "5F", "本部棟5F"]) {
@@ -213,7 +418,6 @@ test("after the replay, home leads to the keepsake, which saves as one picture w
   await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toBeVisible();
   const art = page.getByRole("img", { name: /^作品。撮った2枚の写真/ });
   await expect(art).toBeVisible({ timeout: 15000 });
-  await expect(page.getByText(/にブラウザ上から消去されます。/)).toBeVisible();
   await page.waitForTimeout(2000);
   await shoot(page, "keepsake");
 

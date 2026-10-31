@@ -106,7 +106,7 @@ function messageFor(code: string, requestId: string | null): string {
       return "参加の記録が見つかりませんでした。期限が切れたか、削除されています。";
     case "INVALID_ARRIVAL_PROOF":
     case "INVALID_CHECKPOINT":
-      return "この QR コードでは到着を受け付けられませんでした。期限が切れたか、到着用の QR コードではありません。ブースにいま映っている QR コードを読み取ってください。";
+      return "この QR コードでは到着を受け付けられませんでした。\n期限切れ、または参加者ページと展示が別の環境の可能性があります。\n展示に案内されている参加者ページと、いま開いているページが同じか確かめて、\nブースにいま映っている QR コードを読み取ってください。";
     case "NOT_AVAILABLE":
       return "いまは到着を受け付けていません。ASYNC のブースのスタッフに声をかけてください。";
     case "STATE_CONFLICT":

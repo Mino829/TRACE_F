@@ -1,0 +1,10 @@
+{
+  "worker": "trace-production",
+  "origin": "https://trace-production.async5855.workers.dev",
+  "backendUrl": "https://trace-backend-350621330046.asia-northeast1.run.app",
+  "googleClientId": "350621330046-569iatoam7raqp3llq6p0pi98udgd4e2.apps.googleusercontent.com",
+  "operatorBrokerUrl": "/api/operator",
+  "cloudflareAccountId": "297be09d2f1bfb28bb483bd6e6daae9d",
+  "cloudflareAccountName": "Async5855@gmail.com's Account",
+  "workersDevSubdomain": "async5855"
+}

@@ -446,11 +446,18 @@ export function DisplayClient() {
               <h1 className="dsp-title">TRACE</h1>
               <p className="dsp-catch">あなたの歩いた一日を、光でたどる。</p>
               <p className="dsp-text">
-                スマホの TRACE で「QR コードを読み取る」を押して、
+                スマホの標準カメラ、または TRACE の「QR コードを読み取る」で、
                 <br />
-                この QR コードを枠に入れてください。
+                この QR コードを読み取ってください。
                 <br />
-                あなたの歩いてきた軌跡が、このスクリーンに映ります。
+                参加済みの方は、参加したブラウザ・アプリから読み取ってください。
+              </p>
+              <p className="dsp-mono">
+                参加・撮影は、この展示と同じ参加者ページから
+                <br />
+                <a href="/log" target="_blank" rel="noreferrer">
+                  {process.env.NEXT_PUBLIC_SITE_ORIGIN ? `${process.env.NEXT_PUBLIC_SITE_ORIGIN}/log` : "/log"}
+                </a>
               </p>
               <ol className="dsp-steps">
                 <li>

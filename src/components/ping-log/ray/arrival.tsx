@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-import { isArrivalCode, qrReader, type CodeReader, type DetectedCode } from "@/lib/ping-log/qr-reader";
-import { arrivalTokenFor } from "@/lib/trace-api/arrival-code";
+import { qrReader, type CodeReader, type DetectedCode } from "@/lib/ping-log/qr-reader";
+import { readArrivalQrUrl } from "@/lib/trace-api/arrival-code";
 import {
   TraceApiError,
   arrivalAttempt,
@@ -65,6 +65,7 @@ type ReadAnswer = { ok: true } | { ok: false; code: string; message: string; ret
  */
 export function ArrivalFlow({
   target,
+  incomingArrivalToken,
   photos,
   contact,
   toKeepsake,
@@ -77,6 +78,7 @@ export function ArrivalFlow({
   onDelete,
 }: {
   target: ArrivalTarget;
+  incomingArrivalToken: string | null;
   /** This participation's photos, oldest first. */
   photos: LogEntry[];
   /** Where to ask about the data, shown with the keepsake. */
@@ -94,8 +96,11 @@ export function ArrivalFlow({
   onDelete: (entry: LogEntry, number: number) => void;
 }) {
   const { go } = useRay();
-  const [step, setStep] = useState<"scan" | "replay" | "keepsake">(ended ? "keepsake" : "scan");
+  const [step, setStep] = useState<"connecting" | "scan" | "replay" | "keepsake">(ended ? "keepsake" : incomingArrivalToken ? "connecting" : "scan");
   const [status, setStatus] = useState<ReplayStatus | null>(null);
+  const [incomingFailure, setIncomingFailure] = useState<Extract<ReadAnswer, { ok: false }> | null>(null);
+  // StrictMode's effect replay observes the same send instead of sending the proof twice.
+  const incomingRead = useRef<Promise<ReadAnswer> | null>(null);
   const close = useLayer("#arrival", onClose);
   const leave = useCallback(() => void go(close), [go, close]);
   const title = useCallback(
@@ -111,6 +116,13 @@ export function ArrivalFlow({
   const reading = useRef(false);
   const arrived = useRef(false);
   const endedRef = useRef(ended);
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
   useEffect(() => {
     endedRef.current = ended;
   }, [ended]);
@@ -159,9 +171,12 @@ export function ArrivalFlow({
       try {
         // The room's screen draws the way from the places TRACE_B has when the arrival comes.
         await beforeArrivalRef.current();
-        const result = await sendMemoryAction(memory.memorySessionId, "arrival", current, (key) => {
+        // sendMemoryAction persists its input for idempotency; retain only a fingerprint, never the booth proof.
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(current)));
+        const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+        const result = await sendMemoryAction(memory.memorySessionId, "arrival", fingerprint, (key) => {
           const stored = loadTabExperience();
-          if (endedRef.current || Date.parse(memory.expiresAt) <= Date.now() ||
+          if (!active.current || endedRef.current || Date.parse(memory.expiresAt) <= Date.now() ||
             (stored && (stored.status === "ended" || stored.memory.memorySessionId !== memory.memorySessionId))) {
             throw new TraceApiError(409, "STATE_CONFLICT", null);
           }
@@ -180,9 +195,28 @@ export function ArrivalFlow({
     },
     [memory],
   );
-  const visibleStep = ended && (step === "scan" || step === "replay") ? "keepsake" : step;
+  useEffect(() => {
+    if (!incomingArrivalToken || ended) return;
+    let alive = true;
+    incomingRead.current ??= read(incomingArrivalToken);
+    void incomingRead.current.then((answer) => {
+      if (!alive) return;
+      if (answer.ok) {
+        setStep("replay");
+      } else {
+        setIncomingFailure(answer);
+        setStep("connecting");
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [incomingArrivalToken, ended, read]);
 
-  if (visibleStep === "scan") return <CameraScan inert={inert} onCancel={leave} onRead={read} onArrived={() => setStep("replay")} />;
+  const visibleStep = ended && (step === "connecting" || step === "scan" || step === "replay") ? "keepsake" : step;
+
+  if (visibleStep === "connecting") return <ArrivalConnecting inert={inert} failure={incomingFailure} onCancel={leave} onScan={() => setStep("scan")} />;
+  if (visibleStep === "scan") return <CameraScan inert={inert} initialFailure={incomingFailure} onCancel={leave} onRead={read} onArrived={() => setStep("replay")} />;
   if (visibleStep === "keepsake") {
     return (
       <KeepsakeScreen
@@ -210,6 +244,36 @@ export function ArrivalFlow({
 }
 
 /* ------------------------------------------------------------------- scan */
+
+/** A phone camera already opened the booth URL: no in-app camera is needed to send it. */
+function ArrivalConnecting({ inert, failure, onCancel, onScan }: {
+  inert: boolean;
+  failure: Extract<ReadAnswer, { ok: false }> | null;
+  onCancel: () => void;
+  onScan: () => void;
+}) {
+  useField("day", { scene: 2, splitOn: 0, invert: 0, imgBg: 1, gain: 1.15, bias: -0.04 }, "scan");
+  return (
+    <Screen className="scan" inert={inert}>
+      <div className="topbar">
+        <span>
+          <button type="button" className="link" onClick={onCancel}>
+            <Icon name="close" />
+            やめる
+          </button>
+        </span>
+        <span className="mono">Arrival</span>
+        <span className="mono mono--dim">{failure ? "Stopped" : "Connecting"}</span>
+      </div>
+      <h1 className="h2 scan__head"><Phrases text={failure ? "到着を送信できませんでした" : "ブースにつないでいます"} /></h1>
+      {failure ? <p className="note-bar" role="alert"><Sentences text={failure.message} /></p> : <p className="h3" role="status">到着を送信しています…</p>}
+      <p className="small"><Sentences text={"QR コードを読み取りました。\nこの画面ではカメラを起動しません。"} /></p>
+      {failure && !FINAL_ERRORS.has(failure.code) && (
+        <button type="button" className="btn btn--line" onClick={onScan}>QR コードを読み取る</button>
+      )}
+    </Screen>
+  );
+}
 
 /** Errors that reading again cannot mend: the participation is over, or the booth is not taking arrivals. */
 const FINAL_ERRORS = new Set(["UNAUTHORIZED", "NOT_FOUND", "STATE_CONFLICT", "NOT_AVAILABLE"]);
@@ -245,11 +309,13 @@ function cameraTrouble(error: unknown): Camera {
  */
 function CameraScan({
   inert,
+  initialFailure,
   onCancel,
   onRead,
   onArrived,
 }: {
   inert: boolean;
+  initialFailure: Extract<ReadAnswer, { ok: false }> | null;
   onCancel: () => void;
   onRead: (code: string) => Promise<ReadAnswer>;
   onArrived: () => void;
@@ -263,9 +329,9 @@ function CameraScan({
   const [tries, setTries] = useState(0);
   const [found, setFound] = useState(false);
   const [sending, setSending] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(initialFailure?.message ?? "");
   // A final error: nothing more to read.
-  const [ended, setEnded] = useState(false);
+  const [ended, setEnded] = useState(initialFailure !== null && FINAL_ERRORS.has(initialFailure.code));
   const pretend = useRef<(() => void) | null>(null);
   useField("day", { scene: 2, splitOn: 0, invert: 0, imgBg: 1, gain: 1.15, bias: -0.04 }, "scan");
 
@@ -376,7 +442,7 @@ function CameraScan({
         setEnded(true);
         return;
       }
-      if (answer.code === "INVALID_CHECKPOINT") refused.add(code);
+      if (answer.code === "INVALID_CHECKPOINT" || answer.code === "INVALID_ARRIVAL_PROOF") refused.add(code);
       resumeAt = Date.now() + Math.max(RETRY_AFTER_MS, (answer.retryAfter ?? 0) * 1000);
       busy = false;
       // The page was hidden while the code was on its way.
@@ -394,15 +460,16 @@ function CameraScan({
       }
       seenAt = Date.now();
       showCorners(code);
-      const text = code.rawValue.trim();
-      if (!isArrivalCode(text)) {
-        if (text !== noted) setNotice("これは到着用の QR コードではありません。展示場の QR コードを読み取ってください。");
+      const text = code.rawValue;
+      const result = readArrivalQrUrl(text, window.location.origin);
+      if (result.kind !== "arrival") {
+        if (text !== noted) setNotice(result.kind === "foreign"
+          ? "この QR コードは別の参加先のものです。この画面から到着は送信していません。参加を始めた画面で、ブースの QR コードを読み直してください。"
+          : "これはこの参加先の到着用 URL ではありません。ASYNC のブースに映っている\nQR コードを読み取ってください。");
         noted = text;
         return;
       }
-      // The booth packs TRACE_B's token; what goes out is the token itself.
-      const token = arrivalTokenFor(text);
-      if (!refused.has(token)) void send(token);
+      if (!refused.has(result.checkpointToken)) void send(result.checkpointToken);
     };
 
     const scan = async () => {
@@ -488,6 +555,9 @@ function CameraScan({
       <h1 className="h2 scan__head">
         <Phrases text="展示場の QR コードを読み取ってください" />
       </h1>
+      <p className="mono">
+        参加先：{process.env.NEXT_PUBLIC_SITE_ORIGIN ? `${process.env.NEXT_PUBLIC_SITE_ORIGIN}/log` : "/log"}
+      </p>
       <ScanWindow windowRef={windowRef} trackers={trackers} locked={found || sending}>
         <video ref={videoRef} className={`scan__video${field && !field.ok ? " is-shown" : ""}`} muted playsInline autoPlay aria-hidden="true" />
       </ScanWindow>
@@ -499,7 +569,7 @@ function CameraScan({
       </div>
       {(trouble || notice) && (
         <p className="note-bar" role="alert" style={{ marginTop: 12 }}>
-          <Sentences text={trouble ?? notice} />
+          <Sentences text={[notice, trouble].filter(Boolean).join("\n")} />
         </p>
       )}
       {retry && (

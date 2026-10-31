@@ -1,11 +1,4 @@
-name: Deploy to Cloudflare
-
-# Runs push-worker's release (D1 migrations, trace-push, static export, trace-log)
-# after "Verify frontend and Workers" passes on a push to main.
-# Repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
-# Optional repository variables, written to push-worker/.env only when set:
-# PUSH_API_URL, TRACE_API_URL, ARRIVAL_VENUE, ARRIVAL_CHECKPOINT_ID,
-# ARRIVAL_PROOF_KEY_ID, ARRIVAL_ISSUER_URL, DISPLAY_API_URL, GOOGLE_CLIENT_ID.
+name: Deploy production to Cloudflare
 
 on:
   workflow_run:
@@ -13,19 +6,50 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Explicit commit SHA, branch, or tag to validate/deploy
+        required: true
+        type: string
+      deploy:
+        description: Publish trace-production after validation (false only validates)
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
 
 concurrency:
-  group: cloudflare-deploy
+  group: cloudflare-production
   cancel-in-progress: false
 
 jobs:
-  release:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+  production:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    environment: Production
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ref }}
+          persist-credentials: false
+      - name: Confirm selected commit
+        env:
+          VERIFIED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          selected_sha="$(git rev-parse HEAD)"
+          if [ -n "$VERIFIED_SHA" ] && [ "$selected_sha" != "$VERIFIED_SHA" ]; then
+            echo 'Checkout does not match the commit selected for this workflow run.' >&2
+            exit 1
+          fi
+          printf 'Selected production commit: %s\n' "$selected_sha"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -36,22 +60,14 @@ jobs:
       - run: npm ci
       - run: npm ci
         working-directory: push-worker
-      - name: Write push-worker/.env
-        working-directory: push-worker
+      - name: Build isolated production snapshot without credentials
+        run: npm run build:production -- --config "$GITHUB_WORKSPACE/push-worker/production.public.json"
+      - name: Validate existing production account and Edge binding (read-only)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          PUSH_API_URL: ${{ vars.PUSH_API_URL }}
-          TRACE_API_URL: ${{ vars.TRACE_API_URL }}
-          ARRIVAL_VENUE: ${{ vars.ARRIVAL_VENUE }}
-          ARRIVAL_CHECKPOINT_ID: ${{ vars.ARRIVAL_CHECKPOINT_ID }}
-          ARRIVAL_PROOF_KEY_ID: ${{ vars.ARRIVAL_PROOF_KEY_ID }}
-          ARRIVAL_ISSUER_URL: ${{ vars.ARRIVAL_ISSUER_URL }}
-          DISPLAY_API_URL: ${{ vars.DISPLAY_API_URL }}
-          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
-        run: |
-          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PUSH_API_URL TRACE_API_URL ARRIVAL_VENUE ARRIVAL_CHECKPOINT_ID ARRIVAL_PROOF_KEY_ID ARRIVAL_ISSUER_URL DISPLAY_API_URL GOOGLE_CLIENT_ID; do
-            if [ -n "${!name}" ]; then echo "$name=${!name}" >> .env; fi
-          done
-      - run: npm run release
-        working-directory: push-worker
+        run: npm --prefix push-worker run validate:production -- --config "$GITHUB_WORKSPACE/push-worker/production.public.json"
+      - name: Deploy only trace-production
+        if: github.event_name == 'workflow_run' || inputs.deploy == true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm --prefix push-worker run deploy:production -- --config "$GITHUB_WORKSPACE/push-worker/production.public.json"

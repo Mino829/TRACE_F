@@ -25,6 +25,7 @@ import { MAX_PHOTOS, purposeOf } from "@/lib/ping-log/record";
 import { dropPromptFromUrl } from "@/lib/ping-log/url";
 import { clearEntries, clearSessionEntries, deleteEntry, listEntries, putEntry, type LogEntry, type SaveOutcome } from "@/lib/ping-log/store";
 import { LockTimeout, onOtherTabs, withLock } from "@/lib/ping-log/tabs";
+import { readArrivalQrUrl } from "@/lib/trace-api/arrival-code";
 import {
   TraceApiError,
   createExperience,
@@ -232,6 +233,9 @@ export function PingLogScreen() {
   const [skipped, setSkipped] = useState<string | null>(null);
   // The arrival demo, and where it was opened from.
   const [demo, setDemo] = useState<"home" | "developer" | null>(null);
+  // A booth link is consumed on entry or hash navigation; its proof stays in memory until the arrival request.
+  const [incomingArrivalToken, setIncomingArrivalToken] = useState<string | null>(null);
+  const [arrivalLinkNote, setArrivalLinkNote] = useState("");
   const [now, setNow] = useState(() => Date.now());
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [permission, setPermission] = useState(notificationState);
@@ -277,6 +281,41 @@ export function PingLogScreen() {
   const [placesRetryAt, setPlacesRetryAt] = useState<number | null>(null);
   // Photos whose checkpoint TRACE_B did not know: asked about again only when the page opens next, so they cannot use up its rate limit.
   const checkpointRefused = useRef(new Set<string>());
+
+  useEffect(() => {
+    const consumeArrivalLink = () => {
+      // #arrival without a value belongs to the open scanner's navigation layer.
+      if (window.location.hash === "#arrival" ||
+        !new URLSearchParams(window.location.hash.slice(1)).has("arrival")) return;
+      const result = readArrivalQrUrl(window.location.href, window.location.origin);
+      // Strip even a refused proof before another layer or a later reload can reuse it.
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+      setView("participant");
+      if (result.kind !== "arrival") {
+        setArrivalLinkNote(result.kind === "foreign"
+          ? "この QR コードは別の参加先のものです。この画面から到着は送信していません。参加を始めた画面で、ブースの QR コードを読み直してください。"
+          : "到着用の URL を読み取れませんでした。ASYNC のブースに映っている QR コードを、もう一度読み取ってください。");
+        return;
+      }
+      const retained = loadTabExperience();
+      if (!retained) {
+        setArrivalLinkNote("到着用の QR コードを開きました。このブラウザではまだ参加していません。「はじめる」から内容を確認して参加し、写真を撮ってから、ブースの QR コードをもう一度読み取ってください。到着はまだ送信していません。");
+        return;
+      }
+      if (retained.status === "ended" || Date.parse(retained.memory.expiresAt) <= Date.now()) {
+        setArrivalLinkNote("この参加は終了しているため、到着は送信していません。残っている記録の閲覧・削除は、この画面から行えます。");
+        return;
+      }
+      setArrivalLinkNote("");
+      experienceRef.current = retained;
+      setExperience(retained);
+      setIncomingArrivalToken(result.checkpointToken);
+      setDemo("home");
+    };
+    window.addEventListener("hashchange", consumeArrivalLink);
+    consumeArrivalLink();
+    return () => window.removeEventListener("hashchange", consumeArrivalLink);
+  }, []);
 
   useEffect(() => {
     viewRef.current = view;
@@ -509,7 +548,10 @@ export function PingLogScreen() {
         const next = loadTabExperience();
         setExperience(next);
         // Joined there: the note about the old participation no longer applies here.
-        if (next) setLostNote("");
+        if (next) {
+          setLostNote("");
+          setArrivalLinkNote("");
+        }
         listEntries().then(setEntries, () => undefined);
       }),
     [],
@@ -534,6 +576,11 @@ export function PingLogScreen() {
   const memorySessionId = experience?.memory.memorySessionId ?? null;
   const arrived = memorySessionId !== null && (arrivedIn === memorySessionId || experience?.status === "arrived");
   const maxPhotos = traceConfig?.photo.maxCount ?? MAX_PHOTOS;
+
+  // Discard the proof in the same render that closes or expires its flow.
+  if (incomingArrivalToken !== null && (demo !== "home" || !experience || sessionExpired)) {
+    setIncomingArrivalToken(null);
+  }
 
   // Only this retained participation's photos belong on its home screen.
   // Kept stable through clock ticks so object URLs are not remade every second.
@@ -593,6 +640,7 @@ export function PingLogScreen() {
       experienceRef.current = tab;
       setExperience(tab);
       setConsent(saveConsent(traceConfig.consent));
+      setArrivalLinkNote("");
       // Retire the old worker's photo reminder; new reminders belong to TRACE_B.
       if (subscription && subscribed && plan.purpose === "photo") {
         void unsubscribe(subscription)
@@ -831,6 +879,7 @@ export function PingLogScreen() {
     const notes = [
       ...(!joined && lostNote ? [lostNote] : []),
       ...(message ? [message] : []),
+      ...(arrivalLinkNote ? [arrivalLinkNote] : []),
     ];
     return (
       <>
@@ -874,12 +923,16 @@ export function PingLogScreen() {
           demo={demo}
           // Participant arrival always reads the booth's authenticated QR.
           arrival={experience}
+          incomingArrivalToken={incomingArrivalToken}
           onArrive={() => setDemo("home")}
           arrived={arrived}
           onBeforeArrival={placesBeforeArrival}
           // TRACE_B dropped the reminder's subscription on arrival: the switch stays off from now on.
           onArrived={arrive}
-          onCloseDemo={() => setDemo(null)}
+          onCloseDemo={() => {
+            setIncomingArrivalToken(null);
+            setDemo(null);
+          }}
           onTakePhoto={() => openCamera(pendingAt)}
           onSkip={skipReminder}
           onDeletePhoto={deletePhoto}

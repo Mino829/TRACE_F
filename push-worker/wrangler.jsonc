@@ -27,7 +27,7 @@
 		}
 	],
 	"vars": {
-		// Origins the web app is opened from; add the deployed one here.
+		// Legacy origins only; trace-production does not use this push Worker.
 		"ALLOWED_ORIGINS": "http://localhost:3000,https://trace-log.async5855.workers.dev"
 	},
 	// VAPID_PUBLIC_KEY, VAPID_PRIVATE_JWK and VAPID_SUBJECT are secrets: `npm run wrangler -- secret put <NAME>`.

@@ -1,29 +1,14 @@
 /**
- * The booth's arrival QR in fewer modules.
+ * Arrival QR URLs carry TRACE_B's signed proof only in the fragment.
  *
- * TRACE_B signs a token (internal/api/arrivals.go): base64url JSON of purpose,
- * keyId, checkpointId, venue, issuedAt, expiresAt and a 32-byte nonce, a dot,
- * and the base64url HMAC-SHA256 of that first part. The purpose, public key ID,
- * and the checkpoint are the same in every token and the JSON's shape is fixed,
- * so the display packs only issuedAt, the lifetime, the nonce and the MAC, 69
- * bytes, as base32, which a QR holds in its alphanumeric mode: 33×33 modules at
- * error correction L instead of 61×61 at M. The phone rebuilds the very string
- * TRACE_B signed and sends that, so TRACE_B sees no difference.
- *
- * The venue, checkpoint and public key ID come from NEXT_PUBLIC_ARRIVAL_VENUE,
- * NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID and NEXT_PUBLIC_ARRIVAL_PROOF_KEY_ID
- * (default arrival-proof-v1). They must match TRACE_B. A token that does not
- * rebuild exactly goes on the QR whole. T1 codes from the retired unsigned-
- * purpose format are not reconstructed.
+ * T2 packs the issuedAt, lifetime, nonce and HMAC into base32. The public
+ * venue, checkpoint and key ID travel alongside it, taken from the actual
+ * signed payload rather than deployment settings. Packing is used only when
+ * rebuilding reproduces the exact signed bytes; other valid proofs travel
+ * whole. Only TRACE_B verifies the HMAC.
  */
 
 export type ArrivalPlace = { venue: string; checkpointId: string; keyId: string };
-
-const VENUE = process.env.NEXT_PUBLIC_ARRIVAL_VENUE ?? "";
-const CHECKPOINT_ID = process.env.NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID ?? "";
-const KEY_ID = process.env.NEXT_PUBLIC_ARRIVAL_PROOF_KEY_ID ?? "arrival-proof-v1";
-
-export const ARRIVAL_PLACE: ArrivalPlace | null = VENUE && CHECKPOINT_ID && KEY_ID ? { venue: VENUE, checkpointId: CHECKPOINT_ID, keyId: KEY_ID } : null;
 
 /** T2 binds the reconstructed signed purpose and key ID as well as the venue. */
 const PREFIX = "T2";
@@ -89,9 +74,10 @@ function payloadFor(place: ArrivalPlace, issuedAt: number, expiresAt: number, no
 }
 
 /** A packed code back into TRACE_B's token, or null when the text is not one. */
-export function unpackArrivalCode(code: string, place: ArrivalPlace | null = ARRIVAL_PLACE): string | null {
-  if (!place || !PACKED.test(code)) return null;
+export function unpackArrivalCode(code: string, place: ArrivalPlace): string | null {
+  if (!PACKED.test(code)) return null;
   const bytes = fromBase32(code.slice(PREFIX.length));
+  if (toBase32(bytes) !== code.slice(PREFIX.length)) return null;
   const issuedAt = bytes[0] * 2 ** 24 + ((bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
   const nonce = bytes.subarray(5, 5 + NONCE_BYTES);
   const mac = bytes.subarray(5 + NONCE_BYTES, PACKED_BYTES);
@@ -99,19 +85,20 @@ export function unpackArrivalCode(code: string, place: ArrivalPlace | null = ARR
 }
 
 /** TRACE_B's token packed, or null when it would not rebuild to the same string. */
-export function packArrivalToken(token: string, place: ArrivalPlace | null = ARRIVAL_PLACE): string | null {
+export function packArrivalToken(token: string, place: ArrivalPlace): string | null {
   const [payload, mac, ...rest] = token.split(".");
-  if (!place || rest.length > 0 || !payload || !mac) return null;
+  if (rest.length > 0 || !payload || !mac) return null;
   const json = fromBase64Url(payload);
   const macBytes = fromBase64Url(mac);
   if (!json || macBytes?.length !== MAC_BYTES) return null;
-  let proof: { issuedAt?: unknown; expiresAt?: unknown; nonce?: unknown };
+  let proof: unknown;
   try {
-    proof = JSON.parse(new TextDecoder().decode(json));
+    proof = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(json));
   } catch {
     return null;
   }
-  const { issuedAt, expiresAt, nonce } = proof;
+  if (!proof || typeof proof !== "object" || Array.isArray(proof)) return null;
+  const { issuedAt, expiresAt, nonce } = proof as Record<string, unknown>;
   if (typeof issuedAt !== "number" || typeof expiresAt !== "number" || typeof nonce !== "string") return null;
   const lifetime = expiresAt - issuedAt;
   const nonceBytes = fromBase64Url(nonce);
@@ -126,17 +113,88 @@ export function packArrivalToken(token: string, place: ArrivalPlace | null = ARR
   return unpackArrivalCode(code, place) === token ? code : null;
 }
 
-/** Whether a read text is a packed arrival code (it may still fail to rebuild without the settings). */
-export function isPackedArrivalCode(text: string): boolean {
-  return PACKED.test(text);
+type ArrivalProof = ArrivalPlace & { issuedAt: number; expiresAt: number; nonce: string; purpose: "arrival" };
+
+export type ArrivalQrRead = { kind: "arrival"; checkpointToken: string } | { kind: "foreign" } | { kind: "invalid" };
+
+/** Structural checks only: an authentic, current signature is the server's decision. */
+function readProof(token: string): ArrivalProof | null {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const payload = fromBase64Url(parts[0]);
+  const mac = fromBase64Url(parts[1]);
+  if (!payload || mac?.length !== MAC_BYTES || toBase64Url(payload) !== parts[0] || toBase64Url(mac) !== parts[1]) return null;
+  let proof: unknown;
+  try {
+    proof = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(payload));
+  } catch {
+    return null;
+  }
+  if (!proof || typeof proof !== "object" || Array.isArray(proof)) return null;
+  const { purpose, keyId, checkpointId, venue, issuedAt, expiresAt, nonce } = proof as Record<string, unknown>;
+  if (purpose !== "arrival" || typeof keyId !== "string" || !keyId || typeof checkpointId !== "string" || !checkpointId || typeof venue !== "string" || !venue) return null;
+  if (typeof issuedAt !== "number" || !Number.isSafeInteger(issuedAt) || issuedAt < 0 || typeof expiresAt !== "number" || !Number.isSafeInteger(expiresAt) || expiresAt < issuedAt) return null;
+  if (typeof nonce !== "string") return null;
+  const nonceBytes = fromBase64Url(nonce);
+  if (nonceBytes?.length !== NONCE_BYTES || toBase64Url(nonceBytes) !== nonce) return null;
+  return { purpose, keyId, checkpointId, venue, issuedAt, expiresAt, nonce };
 }
 
-/** What the booth's QR shows for a token: packed when it rebuilds exactly, the token itself otherwise. */
-export function arrivalQrText(token: string, place: ArrivalPlace | null = ARRIVAL_PLACE): string {
-  return packArrivalToken(token, place) ?? token;
+function siteOrigin(origin: string): string {
+  const url = new URL(origin);
+  if (!(url.protocol === "https:" || (url.protocol === "http:" && (url.hostname === "localhost" || url.hostname === "127.0.0.1"))) || url.username || url.password || url.pathname !== "/" || url.search || url.hash || (origin !== url.origin && origin !== `${url.origin}/`)) throw new Error("Invalid arrival site origin");
+  return url.origin;
 }
 
-/** The token to send for a read arrival code: rebuilt from a packed code, or the text as it was read. */
-export function arrivalTokenFor(text: string, place: ArrivalPlace | null = ARRIVAL_PLACE): string {
-  return unpackArrivalCode(text, place) ?? text;
+/** Encode a real signed proof for the normal-camera /log entry point. */
+export function arrivalQrUrl(checkpointToken: string, origin: string): string {
+  const proof = readProof(checkpointToken);
+  if (!proof) throw new Error("Invalid arrival proof");
+  const packed = packArrivalToken(checkpointToken, proof);
+  const fragment = new URLSearchParams({ arrival: packed ?? checkpointToken });
+  if (packed) {
+    fragment.set("venue", proof.venue);
+    fragment.set("checkpointId", proof.checkpointId);
+    fragment.set("keyId", proof.keyId);
+  }
+  return `${siteOrigin(origin)}/log#${fragment}`;
+}
+
+/** Public scanned input is URL-only; foreign proofs are never returned for sending. */
+export function readArrivalQrUrl(value: string, origin: string): ArrivalQrRead {
+  try {
+    if (/[\u0000-\u0020\u007f\\]/.test(value)) return { kind: "invalid" };
+    const url = new URL(value);
+    const localOrigin = siteOrigin(origin);
+    siteOrigin(url.origin);
+    // Exact spelling also rejects URL-normalized dot paths, empty queries and userinfo.
+    if (url.username || url.password || url.pathname !== "/log" || url.search || value.slice(0, value.indexOf("#")) !== `${url.origin}/log`) return { kind: "invalid" };
+    const fragment = url.hash.slice(1);
+    if (!fragment || /%(?![0-9a-f]{2})/i.test(fragment)) return { kind: "invalid" };
+    decodeURIComponent(fragment); // URLSearchParams alone tolerates malformed UTF-8.
+    const params = new URLSearchParams(fragment);
+    const keys = new Set<string>();
+    for (const [key] of params) {
+      if (keys.has(key) || !["arrival", "venue", "checkpointId", "keyId"].includes(key)) return { kind: "invalid" };
+      keys.add(key);
+    }
+    if (fragment.split("&").some((part) => !part.includes("="))) return { kind: "invalid" };
+    const arrival = params.get("arrival");
+    if (!arrival) return { kind: "invalid" };
+    let checkpointToken: string | null;
+    if (PACKED.test(arrival)) {
+      const venue = params.get("venue");
+      const checkpointId = params.get("checkpointId");
+      const keyId = params.get("keyId");
+      if (keys.size !== 4 || !venue || !checkpointId || !keyId) return { kind: "invalid" };
+      checkpointToken = unpackArrivalCode(arrival, { venue, checkpointId, keyId });
+    } else {
+      if (keys.size !== 1) return { kind: "invalid" };
+      checkpointToken = arrival;
+    }
+    if (!checkpointToken || !readProof(checkpointToken)) return { kind: "invalid" };
+    return url.origin === localOrigin ? { kind: "arrival", checkpointToken } : { kind: "foreign" };
+  } catch {
+    return { kind: "invalid" };
+  }
 }

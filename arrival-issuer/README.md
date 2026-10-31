@@ -1,17 +1,35 @@
 # 展示 PC の運営認証ブローカー（arrival-issuer）
 
-`/display` から TRACE_B の運営 API を呼ぶ、127.0.0.1 専用のローカルプログラムです。バックグラウンドで QR を発行せず、認証なしの QR 配布・共有キャッシュもありません。ブラウザは Google 本人確認から独立した2分間の **operator credential** を取得し、その資格だけで到着 QR を発行します。描画用 displayToken、参加者トークン、Google ID token 自体は QR 発行の資格ではありません。
+既存リハーサルの `/display` から TRACE_B の運営 API を呼ぶ、127.0.0.1 専用のローカルプログラムです。waysui本番はこのプログラムを使わず、以下の同一originブリッジを使用します。どちらもブラウザは Google 本人確認から独立した2分間の **operator credential** を取得し、その資格だけで到着 QR を発行します。描画用 displayToken、参加者トークン、Google ID token 自体は QR 発行の資格ではありません。認証なしの QR 配布・共有キャッシュもありません。
 
-Edge secret はこのプロセスだけに設定します。ブラウザ、QR、公開環境変数、ログへ渡しません。追加パッケージは不要、Node.js 22 以上を使用します。
+既存リハーサルでは Edge secret はこのプロセスだけに設定します。ブラウザ、QR、公開環境変数、ログへ渡しません。追加パッケージは不要、Node.js 22 以上を使用します。
 
-## 設定
+## waysui本番（既存リハーサルとは別）
+
+メンバーの展示PCでは `https://trace-production.async5855.workers.dev/display` を開き、既存の **waysui00babe@gmail.com のみ**でGoogleログインします。新しいGoogleアカウントや許可ユーザーの追加は不要です。PCへのNode.js・gcloudの導入、ローカルブローカーの起動、ローカルネットワークアクセス許可は不要です。Google OAuthは外部Testing・同アカウントだけをテストユーザーに登録しています。参加者の通常参加にはGoogleログインを要求しません。
+
+本番公開設定の `operatorBrokerUrl` と `NEXT_PUBLIC_ARRIVAL_ISSUER_URL` は `/api/operator` 固定です。同じ本番Workerが資格発行・到着proof・本人資格失効だけをGoへ中継し、Edge secretをサーバー内で付与します。Google ID tokenは資格発行だけ、QR発行・失効はopaque operator tokenだけを使用します。ブラウザへEdge secretを渡しません。描画資格発行とWSSは引き続きGoへ直接接続します。
+
+切替配備後は、開いている展示 `/display` と参加者 `/log` の**両画面を再読み込み**してください。DevToolsで運営通信が同じ本番originの `/api/operator/operator/credentials`、`/api/operator/arrival-token` へ向かい、loopback要求がないことを確認します。旧本番ローカル起動用の `start:production` は廃止しました。既存リハーサルの8790と以下の手動設定は変更しません。
+
+配備は [本番CI手順](../push-worker/README.md#独立本番配信trace-production) のみを使います。公開値は固定 `production.public.json`、GitHubは `Production` environment、Cloudflare認証は `CLOUDFLARE_API_TOKEN` です。既存WorkerのEdge bindingをメタデータで検証して保持するため、展示PCにもGitHubにもGo Edge secretを複製せず、deploy時のstdinも不要です。手動CIは明示refのbuild/検証が既定、公開は `deploy=true` の明示が必要です。今回の統合CI・token権限と統合版ブラウザsmokeは別途確認対象で、以下の過去の実機記録が新CI成功を意味するものではありません。
+
+共有アカウントでも運営資格はタブごとです。終了・交代時は「ログアウト・現在の運営資格を失効」を使い、Googleアカウントを共有PCに残さないようGoogle側もログアウトします。「自分の全運営資格を失効」は同じwaysuiアカウントの**他PC・他タブの運営資格も失効**させるため、運用中は担当者間で調整してください。描画の主担当は同時に1台だけで、他PCの待機表示は正常です。新PCでログインしても自動で主描画権を奪いません。
+
+本番は参加案内`2026-10-31-v1`で参加・写真metadata・到着をON、任意30分PushをONにしています。問い合わせ先は「教室棟301のASYNCブースのスタッフ」、保持6時間＋24時間・既存同意記録を維持します（venue=`shibalab-301`、checkpoint=`shibalab`、key ID=`arrival-production-v1`、Go revision=`trace-backend-00006-9x9`）。画像upload/GPSはOFFです。
+参加者は必ず`https://trace-production.async5855.workers.dev/log`を使用します。旧`trace-log`の参加から新本番QRを読むと別の署名鍵で拒否され、旧資格・写真は移行できません。従来の実UIでは参加→写真/地点登録→実QRの仮想カメラ読取→到着200→展示再生完了→本人削除204/404/端末写真0を確認済みです。この記録は同一originブリッジ切替後の動作確認を兼ねません。実スマートフォン・投影機材・実30分Push配信と正式公開受入は別です。
+
+同一originブリッジ切替後は、実Chromeでローカルネットワークを拒否し、本番8792プロセスも停止して、実Google資格発行200・QR取得/周期更新200・loopback要求0件を確認しました。そのQRから写真0枚の実参加で到着200→展示完了、本人削除204/照会404、現在運営資格の失効204→同資格のQR取得401まで確認しています。別メンバーの物理PC・会場機材・長時間稼働は未確認です。
+
+
+## 既存リハーサルの手動設定
 
 このフォルダの `.env`（git 管理対象外）に設定します。
 
 ```dotenv
 TRACE_API_ORIGIN=https://YOUR-TRACE-B-OPERATOR-ORIGIN
 TRACE_EDGE_SHARED_SECRET=SERVER-SIDE-ONLY
-DISPLAY_ORIGINS=https://trace-log.async5855.workers.dev,http://localhost:3000
+DISPLAY_ORIGINS=https://trace-production.async5855.workers.dev,http://localhost:3000
 ISSUER_PORT=8790
 ```
 
@@ -23,14 +41,11 @@ ISSUER_PORT=8790
 NEXT_PUBLIC_DISPLAY_API_URL=https://YOUR-TRACE-B-RENDERER-ORIGIN
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=768829535838-9v4875nkjopo91uobrmggneqodmvec85.apps.googleusercontent.com
 NEXT_PUBLIC_ARRIVAL_ISSUER_URL=http://127.0.0.1:8790
-NEXT_PUBLIC_ARRIVAL_VENUE=GO-CONFIGURED-VENUE
-NEXT_PUBLIC_ARRIVAL_CHECKPOINT_ID=GO-CONFIGURED-CHECKPOINT
-NEXT_PUBLIC_ARRIVAL_PROOF_KEY_ID=arrival-proof-v1
 ```
 
-Google の Client ID は本人確認の公開設定で、本人確認を共有しても描画権限と運営権限は共有しません。Go の operator 機能・独立 allowlist を明示的に有効化し、初期の許可アカウントは **async5855@gmail.com のみ**です。描画だけ許可されたアカウントは描画を続けられますが、運営認証エラーが表示され、到着 QR は出ません。ブローカー未設定時も偽の DEMO QR は出ません。
+Google の Client ID は本人確認の公開設定で、本人確認を共有しても描画権限と運営権限は共有しません。Go の operator 機能・独立 allowlist を明示的に有効化します。既存リハーサルの初期許可者は **async5855@gmail.com のみ**、上記の独立した新本番は **waysui00babe@gmail.com のみ**です。描画だけ許可されたアカウントは描画を続けられますが、運営認証エラーが表示され、到着 QR は出ません。ブローカー未設定時も偽の DEMO QR は出ません。
 
-会場・チェックポイント・公開 key ID は Go と `/display`・`/log` で揃えます。完全に同じ署名済み文字列へ復元できるときだけ短い QR 形式を使用し、それ以外は署名済みトークン全体を使用します。key ID は署名鍵そのものではありません。
+到着QRは、展示と同じoriginの`/log` URLです。短命の署名proofはfragmentだけに入れ、Goが署名した公開contextもQRから復元するため、Frontendのvenue/checkpoint/key ID環境変数は不要です。標準カメラから開いた既参加者は実到着処理へ進み、未参加者は通常の同意・参加画面へ進みます。別環境のQRはAPI送信せず案内を表示します。本人資格をURLへ含めたり、別環境へ移行したりしません。
 
 ### Go と描画ブラウザの接続条件
 
@@ -54,7 +69,7 @@ TRACE_THREE_D_MAP_VERSION=toyosu-3dmap-2026-10-30
 
 ブラウザはこの同梱グラフの版と `schemaVersion: 1` を WS の初回認証と後続メッセージに付けます。不一致は Go が close code `4409` で拒否します。版の文字列だけを変更して異なるグラフを接続しないでください。
 
-## 起動と UI スモーク
+## 既存リハーサルの起動と UI スモーク
 
 ```sh
 node arrival-issuer/issuer.mjs

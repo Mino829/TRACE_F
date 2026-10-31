@@ -6,7 +6,7 @@ import { DisplayClient } from "@/components/display/display-client";
 import "./display.css";
 
 /** RAY, as on the phone screens of /log: Noto Sans JP for Japanese, Geist for Latin, Geist Mono for readouts. */
-const rayJp = Noto_Sans_JP({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-ray-jp", display: "swap", preload: false });
+const rayJp = Noto_Sans_JP({ subsets: ["latin"], variable: "--font-ray-jp", display: "swap", preload: false });
 const rayLatin = Geist({ subsets: ["latin"], variable: "--font-ray-latin", display: "swap" });
 const rayMono = Geist_Mono({ subsets: ["latin"], variable: "--font-ray-mono", display: "swap" });
 

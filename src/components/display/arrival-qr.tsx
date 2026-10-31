@@ -2,7 +2,7 @@
 
 import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
-import { arrivalQrText } from "@/lib/trace-api/arrival-code";
+import { arrivalQrUrl } from "@/lib/trace-api/arrival-code";
 import type { ArrivalProof, OperatorSession } from "@/lib/display/operator-session";
 
 const REFRESH_MS = 15_000;
@@ -53,13 +53,18 @@ export function ArrivalQr({ session, authorized, dev }: { session: OperatorSessi
     }
     // Render off-screen first: a stale async render cannot resurrect a revoked QR.
     const scratch = document.createElement("canvas");
-    QRCode.toCanvas(scratch, arrivalQrText(text), { errorCorrectionLevel: "L", margin: 0, width: 360, color: { dark: "#0c0c0dff", light: "#00000000" } })
-      .then(() => {
+    const render = async () => {
+      try {
+        await QRCode.toCanvas(scratch, arrivalQrUrl(text, window.location.origin), { errorCorrectionLevel: "L", margin: 0, width: 360, color: { dark: "#0c0c0dff", light: "#00000000" } });
         if (stopped) return;
         canvas.width = scratch.width;
         canvas.height = scratch.height;
         canvas.getContext("2d")?.drawImage(scratch, 0, 0);
-      }).catch(() => {});
+      } catch {
+        if (!stopped) canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+    void render();
     return () => { stopped = true; };
   }, [text]);
 
