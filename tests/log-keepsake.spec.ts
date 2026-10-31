@@ -158,7 +158,11 @@ async function denyArrivalCamera(page: Page) {
   await page.evaluate(deny);
 }
 
-const cameraRequests = (page: Page) => page.evaluate(() => (window as Window & { arrivalCameraRequests: number }).arrivalCameraRequests);
+const cameraRequests = (page: Page) => page.evaluate(() => {
+  const requests = Reflect.get(window, "arrivalCameraRequests");
+  if (typeof requests !== "number") throw new Error("Camera instrumentation is missing");
+  return requests;
+});
 
 test("a retained participant's booth URL sends once without opening a camera, then follows real replay status", async ({ context, page }) => {
   const backend = await standIn(context);
@@ -288,7 +292,9 @@ test("the internal camera rejects raw or foreign input and submits only a same-o
     Object.defineProperty(globalThis, "BarcodeDetector", { configurable: true, value: class {
       static async getSupportedFormats() { return ["qr_code"]; }
       async detect() {
-        return [{ rawValue: (window as Window & { arrivalScannerText: string }).arrivalScannerText,
+        const text = Reflect.get(window, "arrivalScannerText");
+        if (typeof text !== "string") throw new Error("Scanner input is missing");
+        return [{ rawValue: text,
           cornerPoints: [{ x: 80, y: 80 }, { x: 240, y: 80 }, { x: 240, y: 240 }, { x: 80, y: 240 }] }];
       }
     } });
@@ -308,10 +314,10 @@ test("the internal camera rejects raw or foreign input and submits only a same-o
   await page.getByRole("button", { name: "QR コードを読み取る" }).click();
   await expect(page.getByRole("alert")).toContainText("この参加先の到着用 URL ではありません");
   expect(backend.arrivals).toEqual([]);
-  await page.evaluate((text) => { (window as Window & { arrivalScannerText: string }).arrivalScannerText = text; }, arrivalQrUrl(link.token, "https://other-participation.example"));
+  await page.evaluate((text) => { Reflect.set(window, "arrivalScannerText", text); }, arrivalQrUrl(link.token, "https://other-participation.example"));
   await expect(page.getByRole("alert")).toContainText("別の参加先");
   expect(backend.arrivals).toEqual([]);
-  await page.evaluate((text) => { (window as Window & { arrivalScannerText: string }).arrivalScannerText = text; }, link.url);
+  await page.evaluate((text) => { Reflect.set(window, "arrivalScannerText", text); }, link.url);
   await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
   expect(backend.arrivals).toHaveLength(1);
   expect(backend.arrivals[0].checkpointToken).toBe(link.token);

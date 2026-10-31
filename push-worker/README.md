@@ -1,6 +1,6 @@
 # push-worker
 
-`/log`（写真メモリーと精度テスト）のための Cloudflare Worker です。
+本番サイトと旧通知Workerのコードを管理するフォルダです。本番 `trace-production` は画像を端末だけに保存し、通知はGoで処理します。以下冒頭のD1/KV・精度テストの説明は旧 `trace-push` 用です。本番の配備は「独立本番配信」の節に従ってください。
 
 - 登録したスマホへ、登録の目的に合った間隔で Web Push の通知を送ります。参加者向けの撮影のリマインダーは15分か30分ごと、開発者向けの精度テストの通知は10分ごとです。通知の登録は、登録した日の24時（日本時間）に自動で切れます。
 - スマホから送られた記録を D1 に、写真を KV に保存します。参加者の記録は写真1枚と撮影したときの位置です。精度テストの記録は、測位の連続値と、開発者が指した場所と階です。
@@ -34,7 +34,7 @@ Actions の「Deploy production to Cloudflare」は明示的な `ref` を必須�
 
 ### 必須の公開設定
 
-リポジトリ内の `push-worker/production.public.json` が公開設定の唯一の入力です。次の9項目すべてが必須で、追加項目（secretを含む）・空値・別configパスは拒否します。設定JSONは公開情報だけで、`.env`形式ではありません。
+リポジトリ内の `push-worker/production.public.json` が公開設定の唯一の入力です。次の8項目すべてが必須で、追加項目（secretを含む）・空値・別configパスは拒否します。設定JSONは公開情報だけで、`.env`形式ではありません。
 
 配備担当者が確認した本番OAuth client ID、Cloudflare account/subdomain、originを収めています。リポジトリルートで `PRODUCTION_PUBLIC_CONFIG="$PWD/push-worker/production.public.json"` と指定します。任意の別JSONによる配備先変更はできません。公開値の変更はコードレビュー対象です。
 
@@ -83,7 +83,7 @@ gh workflow run deploy.yml --ref fix/production-ci-pr86-20261031 \
   -f ref=fix/production-ci-pr86-20261031 -f deploy=true
 ```
 
-手動refは選択したcommitをbuild/検証しますが、それ自体ではVerify suite合格を意味しません。通常のmain配備は同repository・mainへのpushによるVerify成功だけを受け付け、その `head_sha` をcheckoutして一致を確認します。checkoutのcredential永続化を無効化し、GitHub権限は `contents: read` のみ、concurrencyはproduction専用です。依存installとbuildへCloudflare credentialを渡さず、メタデータ検証/配備stepだけに渡します。`.env`ファイルや秘密artifactを生成しません。
+手動の `ref` は、`--ref` で実行したworkflowと同じcommitを指す必要があります。checkoutしたSHAとの不一致はcredentialを渡す前に拒否します。手動実行自体はVerify suite合格を意味しません。通常のmain配備は同repository・mainへのpushによるVerify成功だけを受け付け、その `head_sha` をcheckoutして一致を確認します。checkoutのcredential永続化を無効化し、GitHub権限は `contents: read` のみ、concurrencyはproduction専用です。依存installとbuildへCloudflare credentialを渡さず、メタデータ検証/配備stepだけに渡します。`.env`ファイルや秘密artifactを生成しません。
 
 ### ローカル検証・配備（Edgeの入力不要）
 
