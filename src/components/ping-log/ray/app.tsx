@@ -179,6 +179,7 @@ function Current(
 ) {
   const { go, field, fx } = useRay();
   const { inert } = props;
+  const [arrivalIntent, setArrivalIntent] = useState<"keepsake" | "scan">("keepsake");
   const full = props.photos.length >= props.maxPhotos;
   const onMenu = () => props.openOverlay("menu");
   const onInstall = () => props.openOverlay("install");
@@ -203,7 +204,7 @@ function Current(
         incomingArrivalToken={props.incomingArrivalToken}
         photos={props.photos}
         contact={props.contact}
-        intent={props.incomingArrivalToken || !props.arrived ? "scan" : "keepsake"}
+        intent={props.incomingArrivalToken || !props.arrived ? "scan" : arrivalIntent}
         ended={props.ended}
         inert={inert}
         onClose={props.onCloseDemo}
@@ -323,7 +324,14 @@ function Current(
       onReminderInterval={props.onReminderInterval}
       arrived={props.arrived}
       onDelete={props.askDelete}
-      onArrive={() => void go(props.onArrive)}
+      onArrive={() => void go(() => {
+        setArrivalIntent("keepsake");
+        props.onArrive();
+      })}
+      onScan={() => void go(() => {
+        setArrivalIntent("scan");
+        props.onArrive();
+      })}
       onDeveloper={props.onDeveloper}
       onMenu={onMenu}
       onInstall={onInstall}

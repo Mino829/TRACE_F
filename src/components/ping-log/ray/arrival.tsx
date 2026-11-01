@@ -98,7 +98,8 @@ export function ArrivalFlow({
   onDelete: (entry: LogEntry, number: number) => void;
 }) {
   const { go } = useRay();
-  const [step, setStep] = useState<"connecting" | "scan" | "replay" | "keepsake">(ended ? "keepsake" : incomingArrivalToken ? "connecting" : "scan");
+  // Restoring artwork must not start the camera before the owner status arrives.
+  const [step, setStep] = useState<"connecting" | "scan" | "replay" | "keepsake">(ended ? "keepsake" : incomingArrivalToken ? "connecting" : intent === "keepsake" ? "replay" : "scan");
   const [status, setStatus] = useState<ReplayStatus | null>(null);
   const [incomingFailure, setIncomingFailure] = useState<Extract<ReadAnswer, { ok: false }> | null>(null);
   // StrictMode's effect replay observes the same send instead of sending the proof twice.

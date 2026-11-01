@@ -283,6 +283,45 @@ test("fresh external scans repeat a completed viewing without replacing particip
   expect(await cameraRequests(page)).toBe(0);
 });
 
+test("completed home offers artwork and a fresh QR scan while keeping photos and participation", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page, 1);
+  backend.replay = "completed";
+  await page.reload();
+  await denyArrivalCamera(page);
+  const retained = await page.evaluate(() => localStorage.getItem("trace-memory-credential"));
+  const moments = [...backend.moments.values()];
+  const home = page.locator(".home__lab");
+  await expect(home.getByRole("button", { name: "QR コードを読み取る", exact: true })).toBeVisible();
+  await home.getByRole("button", { name: "作品を見る", exact: true }).click();
+  await expect(page.getByRole("img", { name: /^作品。撮った1枚の写真/ })).toBeVisible();
+  expect(await cameraRequests(page)).toBe(0);
+  expect(backend.replays).toHaveLength(0);
+  await page.getByRole("button", { name: "ホームへもどる", exact: true }).last().click();
+  await home.getByRole("button", { name: "QR コードを読み取る", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "展示場の QR コードを読み取ってください", exact: true })).toBeVisible();
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
+  expect(backend.replays).toHaveLength(0);
+  const fresh = boothLink(new URL(page.url()).origin);
+  await page.evaluate((url) => { window.location.hash = new URL(url).hash; }, fresh.url);
+  await expect(page.getByRole("heading", { name: "スクリーンの前でお待ちください" })).toBeVisible();
+  expect(backend.arrivals).toHaveLength(0);
+  expect(backend.replayEnqueues).toBe(1);
+  expect(backend.joins).toBe(1);
+  expect(await kept(page)).toBe(1);
+  expect([...backend.moments.values()]).toEqual(moments);
+  expect(await page.evaluate(() => localStorage.getItem("trace-memory-credential"))).toBe(retained);
+
+  backend.ended = true;
+  await page.reload();
+  await expect(home.getByRole("button", { name: "作品を見る", exact: true })).toBeVisible();
+  await expect(home.getByRole("button", { name: "QR コードを読み取る", exact: true })).toHaveCount(0);
+  await home.getByRole("button", { name: "作品を見る", exact: true }).click();
+  await expect(page.getByRole("img", { name: /^作品。撮った1枚の写真/ })).toBeVisible();
+  expect(backend.replayEnqueues).toBe(1);
+});
+
 test("an external replay conflict joins the viewing already queued by another tab", async ({ context, page }) => {
   const backend = await standIn(context);
   await join(page);

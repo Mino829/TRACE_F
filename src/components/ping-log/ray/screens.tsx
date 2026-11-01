@@ -386,6 +386,7 @@ type HomeProps = {
   /** Asks before deleting a photo (#51). */
   onDelete: (entry: LogEntry, number: number) => void;
   onArrive: () => void;
+  onScan: () => void;
   onDeveloper: () => void;
   onMenu: () => void;
   onInstall: () => void;
@@ -559,6 +560,12 @@ export function HomeScreen(props: HomeProps) {
               <Icon name="arrow" />
               {t("作品を見る", "See your artwork")}
             </button>
+            {!props.ended && (
+              <button type="button" className="btn btn--line" style={{ marginTop: 10 }} onClick={props.onScan}>
+                <Icon name="qr" />
+                {t("QR コードを読み取る", "Scan the QR code")}
+              </button>
+            )}
           </>
         ) : (
           <>
