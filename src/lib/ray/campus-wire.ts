@@ -75,11 +75,19 @@ function loopLines(loops: PlacePoint[][], z: number, out: number[]) {
 /**
  * Draws on a canvas inside `host`, in the host's text colour, which also
  * takes the drag. Throws when there is no WebGL; `onLost` is called if the
- * context goes later.
+ * context goes later. `strength` scales how strongly the lines show and
+ * `weight` how wide they are in CSS px (the projector, on paper, needs them
+ * darker and wider than the phone does on ink).
  */
-export function createCampusWire(host: HTMLElement, canvas: HTMLCanvasElement, { onLost }: { onLost: () => void }): { dispose: () => void } {
+export function createCampusWire(
+  host: HTMLElement,
+  canvas: HTMLCanvasElement,
+  { onLost, strength = 1, weight = 1 }: { onLost: () => void; strength?: number; weight?: number },
+): { dispose: () => void } {
   const gl = getContext(canvas);
   if (!gl) throw new Error("WebGL を使えません。");
+  // WebGL draws lines one pixel wide: a wider one is drawn again a pixel aside, and MAX keeps the overlaps from darkening.
+  const minmax = weight > 1 ? gl.getExtension("EXT_blend_minmax") : null;
   const color = colorOf(getComputedStyle(host).color);
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -108,7 +116,7 @@ export function createCampusWire(host: HTMLElement, canvas: HTMLCanvasElement, {
     buffers.push(made);
     return { buffer: made, count: values.length / 3, opacity };
   };
-  const layers = [layer(floors, 0.2), layer(edges, 0.34)];
+  const layers = [layer(floors, Math.min(1, 0.2 * strength)), layer(edges, Math.min(1, 0.34 * strength))];
 
   // Turned round the middle of the buildings; how far off depends on the room's shape.
   const all = [...floors, ...edges];
@@ -148,15 +156,28 @@ export function createCampusWire(host: HTMLElement, canvas: HTMLCanvasElement, {
     if (height >= MIN_HEIGHT) {
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      const steps = minmax ? Math.max(1, Math.round(weight * dpr)) : 1;
+      if (minmax && steps > 1) gl.blendEquation(minmax.MAX_EXT);
       gl.useProgram(program);
-      gl.uniformMatrix4fv(mvpAt, false, viewMatrix(target, dist, yaw, width / height));
       gl.uniform3f(offAt, 0, 0, 0);
       gl.enableVertexAttribArray(0);
-      for (const { buffer, count, opacity } of layers) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
-        gl.uniform4f(colorAt, color[0], color[1], color[2], opacity);
-        gl.drawArrays(gl.LINES, 0, count);
+      const base = viewMatrix(target, dist, yaw, width / height);
+      for (let i = 0; i < steps; i++) for (let j = 0; j < steps; j++) {
+        // Moved i, j device pixels in clip space: x' = x + dx·w.
+        const dx = (2 * (i - (steps - 1) / 2)) / canvas.width;
+        const dy = (2 * (j - (steps - 1) / 2)) / canvas.height;
+        const m = new Float32Array(base);
+        for (let c = 0; c < 4; c++) {
+          m[c * 4 + 0] += dx * base[c * 4 + 3];
+          m[c * 4 + 1] += dy * base[c * 4 + 3];
+        }
+        gl.uniformMatrix4fv(mvpAt, false, m);
+        for (const { buffer, count, opacity } of layers) {
+          gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+          gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+          gl.uniform4f(colorAt, color[0], color[1], color[2], opacity);
+          gl.drawArrays(gl.LINES, 0, count);
+        }
       }
     }
     if (!still) request();

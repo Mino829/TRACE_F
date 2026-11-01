@@ -5,9 +5,10 @@ import { useEffect, useRef, useState } from "react";
 /**
  * The campus as wire only, turning in the room the title leaves between the
  * steps and the button (lib/ray/campus-wire.ts). It is only a picture: where
- * WebGL is not, the room stays dark.
+ * WebGL is not, the room stays dark. /display's top screen shows it too, under
+ * its own class.
  */
-export function CampusWire() {
+export function CampusWire({ className = "wire", strength, weight }: { className?: string; strength?: number; weight?: number }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [off, setOff] = useState(false);
@@ -22,7 +23,7 @@ export function CampusWire() {
         const canvas = canvasRef.current;
         if (!alive || !host || !canvas) return;
         try {
-          wire = createCampusWire(host, canvas, { onLost: () => setOff(true) });
+          wire = createCampusWire(host, canvas, { onLost: () => setOff(true), strength, weight });
         } catch {
           setOff(true);
         }
@@ -33,10 +34,10 @@ export function CampusWire() {
       alive = false;
       wire?.dispose();
     };
-  }, []);
+  }, [strength, weight]);
 
   return (
-    <div ref={hostRef} className="wire" aria-hidden="true">
+    <div ref={hostRef} className={className} aria-hidden="true">
       {!off && <canvas ref={canvasRef} />}
     </div>
   );

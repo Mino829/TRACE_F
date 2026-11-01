@@ -7,6 +7,8 @@ import { createRelay, type Point, type Relay } from "@/lib/display/relay";
 import type { RoutePath } from "@/lib/display/route-path";
 import { createSound, type Cue, type SoundEngine } from "@/lib/display/sound";
 
+import { CampusWire } from "@/components/ping-log/ray/wire";
+
 import { ArrivalQr } from "./arrival-qr";
 import { GoogleSignIn } from "./google-sign-in";
 import { useRendererLink, type DisplayLink } from "./use-renderer-link";
@@ -451,32 +453,7 @@ export function DisplayClient() {
           <div className="dsp-top__body">
             <div className="dsp-top__lead">
               <h1 className="dsp-title">TRACE</h1>
-              <p className="dsp-catch">あなたの歩いた一日を、光でたどる。</p>
-              <p className="dsp-text">
-                スマホの標準カメラ、または TRACE の「QR コードを読み取る」で、
-                <br />
-                この QR コードを読み取ってください。
-                <br />
-                参加済みの方は、参加したブラウザ・アプリから読み取ってください。
-              </p>
-              <p className="dsp-mono">
-                参加・撮影は、この展示と同じ参加者ページから
-                <br />
-                <a href="/log" target="_blank" rel="noreferrer">
-                  {process.env.NEXT_PUBLIC_SITE_ORIGIN ? `${process.env.NEXT_PUBLIC_SITE_ORIGIN}/log` : "/log"}
-                </a>
-              </p>
-              <ol className="dsp-steps">
-                <li>
-                  <span className="dsp-mono">1</span>TRACE を開く
-                </li>
-                <li>
-                  <span className="dsp-mono">2</span>QR コードを読み取る
-                </li>
-                <li>
-                  <span className="dsp-mono">3</span>スクリーンを見る
-                </li>
-              </ol>
+              <CampusWire className="dsp-wire" strength={2.4} weight={2} />
               {error ? (
                 <p className="dsp-error">展示を始められませんでした：{error}</p>
               ) : screen === "loading" ? (
