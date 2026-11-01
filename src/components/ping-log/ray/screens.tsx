@@ -381,7 +381,7 @@ type HomeProps = {
   onReminder: (on: boolean) => Promise<string | null>;
   /** Resolves to an error message, or null once the interval is changed. */
   onReminderInterval: (minutes: number) => Promise<string | null>;
-  /** TRACE_B has the arrival: the foot leads to the keepsake instead of the QR code. */
+  /** TRACE_B has the arrival; only the exhibition invitation depends on it. */
   arrived: boolean;
   /** Asks before deleting a photo (#51). */
   onDelete: (entry: LogEntry, number: number) => void;
@@ -549,30 +549,23 @@ export function HomeScreen(props: HomeProps) {
           <span className="mono keep-case">ShibaLab</span>
           <span className="mono">Room 301</span>
         </div>
-        {props.ended && !props.arrived ? (
-          <p className="body">{t("参加は終了しました。残した写真はこの画面で確認できます。", "Your participation has ended. You can see your photos on this screen.")}</p>
-        ) : props.arrived ? (
+        <p className="body">
+          <Sentences text={props.ended
+            ? t("参加は終了しました。残した写真を作品にして確認・保存できます。", "Your participation has ended. You can view and save your photos as an artwork.")
+            : t("撮った写真とその軌跡を、いつでも作品として確認・保存できます。展示場の QR コードを読み取らなくても見られます。", "View and save your photos and their path as an artwork at any time, without scanning the exhibit's QR code.")} />
+        </p>
+        <button type="button" className="btn" onClick={props.onArrive}>
+          <Icon name="arrow" />
+          {t("作品を見る", "See your artwork")}
+        </button>
+        {!props.ended && (
           <>
-            <p className="body">
-              <Sentences text={props.ended ? t("参加は終了しました。残した写真を確認できます。", "Your participation has ended. You can see your photos.") : t("再生が終わったら、撮った写真を一枚の作品にして保存できます。", "After the playback, you can save your photos as one artwork.")} />
-            </p>
-            <button type="button" className="btn" onClick={props.onArrive}>
-              <Icon name="arrow" />
-              {t("作品を見る", "See your artwork")}
-            </button>
-            {!props.ended && (
-              <button type="button" className="btn btn--line" style={{ marginTop: 10 }} onClick={props.onScan}>
-                <Icon name="qr" />
-                {t("QR コードを読み取る", "Scan the QR code")}
-              </button>
+            {!props.arrived && (
+              <p className="body" style={{ marginTop: 16 }}>
+                <Sentences text={t("ShibaLab（教室棟301）では、展示場の QR コードを読み取るとスクリーンであなたの軌跡を再生できます。", "At ShibaLab (Classroom Building, Room 301), scan the exhibit's QR code to play your path on the screen.")} />
+              </p>
             )}
-          </>
-        ) : (
-          <>
-            <p className="body">
-              <Sentences text={t("お帰りの前に、ぜひ ShibaLab（教室棟301）にご来場ください。展示場にある QR コードを読み取ると、あなたの今日の一日を振り返れます。", "Before you leave, please visit ShibaLab (Classroom Building, Room 301). Scan the QR code at the exhibit to look back on your day.")} />
-            </p>
-            <button type="button" className="btn" onClick={props.onArrive}>
+            <button type="button" className="btn btn--line" style={{ marginTop: 10 }} onClick={props.onScan}>
               <Icon name="qr" />
               {t("QR コードを読み取る", "Scan the QR code")}
             </button>

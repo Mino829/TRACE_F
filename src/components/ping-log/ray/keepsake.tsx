@@ -16,8 +16,8 @@ import { Icon, NoteBar, Phrases, ROOM, Screen, Sentences, TitleMark, useField, u
 import { TraceSection } from "./trace";
 
 /**
- * The keepsake (作品, #14), after the replay: first the way the photos were
- * taken (振り返り3D, #50, trace.tsx), then the photos taken before arriving,
+ * The local keepsake (作品, #14), available before or after arrival: first the way
+ * the photos were taken (振り返り3D, #50, trace.tsx), then the photos,
  * drawn as one picture (lib/ray/keepsake.ts) that the participant saves to
  * the phone. It is the one thing they take home. Each photo can be saved on
  * its own too, or deleted (#51), which draws the keepsake and the way again.
@@ -163,7 +163,7 @@ export function KeepsakeScreen({
         </button>
       </header>
       <h1 className="h1">
-        <Phrases text={t("ご来場ありがとうございました", "Thank you for coming")} />
+        <Phrases text={t("あなたの作品", "Your artwork")} />
       </h1>
       {!kept.length && (
         <p className="body">

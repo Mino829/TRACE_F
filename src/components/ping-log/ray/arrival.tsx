@@ -29,8 +29,8 @@ import { Icon, Phrases, Screen, Sentences, SWAP, useField, useRay } from "./stag
  * Arriving at ShibaLab: the phone's rear camera reads the QR code in the
  * booth's projected picture, the arrival goes to TRACE_B, and the phone
  * follows the replay on the room's screen until it has played or been skipped.
- * Then the photos taken before arriving become the keepsake (keepsake.tsx),
- * shown under the way between their places, 振り返り3D (trace.tsx).
+ * The local keepsake (keepsake.tsx) can also open directly, before arrival,
+ * with no camera, arrival request or dependency on the room's playback.
  *
  * As in the demo, the phone shows no queue, no wait and no symbol. The camera
  * picture never leaves the phone: only the code read from it is sent.
@@ -63,7 +63,7 @@ type ReadAnswer = { ok: true } | { ok: false; code: string; message: string; ret
 
 /**
  * onArrived: TRACE_B has the arrival, now or from before; it ends the photo reminder then.
- * intent: viewing an existing keepsake must not consume a newly scanned booth proof.
+ * intent: local artwork opens without checking or changing arrival/replay state.
  */
 export function ArrivalFlow({
   target,
@@ -98,8 +98,8 @@ export function ArrivalFlow({
   onDelete: (entry: LogEntry, number: number) => void;
 }) {
   const { go } = useRay();
-  // Restoring artwork must not start the camera before the owner status arrives.
-  const [step, setStep] = useState<"connecting" | "scan" | "replay" | "keepsake">(ended ? "keepsake" : incomingArrivalToken ? "connecting" : intent === "keepsake" ? "replay" : "scan");
+  // Local artwork never waits for the exhibition or starts the camera.
+  const [step, setStep] = useState<"connecting" | "scan" | "replay" | "keepsake">(ended || intent === "keepsake" ? "keepsake" : incomingArrivalToken ? "connecting" : "scan");
   const [status, setStatus] = useState<ReplayStatus | null>(null);
   const [incomingFailure, setIncomingFailure] = useState<Extract<ReadAnswer, { ok: false }> | null>(null);
   // StrictMode's effect replay observes the same send instead of sending the proof twice.
@@ -143,13 +143,13 @@ export function ArrivalFlow({
 
   // The places still on their way start for TRACE_B while the camera starts, so reading the code seldom waits for them.
   useEffect(() => {
-    if (!ended) void beforeArrivalRef.current();
-  }, [ended]);
+    if (!ended && intent === "scan") void beforeArrivalRef.current();
+  }, [ended, intent]);
 
   // Restore an existing viewing, but never let an old completed response close an explicit scanner.
   useEffect(() => {
     let alive = true;
-    if (ended) return;
+    if (ended || intent === "keepsake") return;
     const version = restoreVersion.current;
     getExperience(experienceId, memory)
       .then((state) => {
@@ -161,7 +161,7 @@ export function ArrivalFlow({
           if (!alive || version !== restoreVersion.current || reading.current || arrived.current ||
             (known === "completed" && scanIntent.current)) return;
           setStatus(known);
-          setStep(intent === "keepsake" && isFinal(known) ? "keepsake" : "replay");
+          setStep("replay");
         });
       })
       // The camera is starting anyway; sending the code will tell.
