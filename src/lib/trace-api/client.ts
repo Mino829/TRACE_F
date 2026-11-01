@@ -222,9 +222,9 @@ export type ArrivalResult = { arrivalId: string; status: ReplayStatus };
 /**
  * Tells TRACE_B the participant is at the booth. A new arrival with an expired
  * or forged code is INVALID_ARRIVAL_PROOF. An existing arrival returns its current
- * replay state, even when the code has expired. The arrival ID stays the same,
- * so the screen never plays one person twice. /log joins memory-only, with no
- * experience link token to send.
+ * replay state, even when the code has expired. The root arrival ID stays the
+ * same; another viewing is a separate sendArrivalReplay operation. /log joins
+ * memory-only, with no experience link token to send.
  */
 export async function sendArrival(credential: MemoryCredential, attempt: ArrivalAttempt, idempotencyKey: string): Promise<ArrivalResult> {
   const result = await request<ArrivalResult>(`/v1/memory-sessions/${encodeURIComponent(credential.memorySessionId)}/arrival`, {
@@ -234,6 +234,18 @@ export async function sendArrival(credential: MemoryCredential, attempt: Arrival
     idempotencyKey,
   });
   if (!result?.arrivalId || typeof result.status !== "string") throw new TraceApiError(0, "UNKNOWN", null);
+  return result;
+}
+
+/** A fresh booth scan after completion queues another viewing, without changing the original arrival. */
+export async function sendArrivalReplay(credential: MemoryCredential, attempt: ArrivalAttempt, idempotencyKey: string): Promise<ArrivalResult> {
+  const result = await request<ArrivalResult>(`/v1/memory-sessions/${encodeURIComponent(credential.memorySessionId)}/arrival/replay`, {
+    method: "POST",
+    body: { checkpointToken: attempt.checkpointToken, clientTime: attempt.clientTime },
+    token: credential.participantToken,
+    idempotencyKey,
+  });
+  if (!result?.arrivalId || result.status !== "queued") throw new TraceApiError(0, "UNKNOWN", null);
   return result;
 }
 

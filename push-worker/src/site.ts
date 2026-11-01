@@ -29,7 +29,7 @@ const allowed: Record<string, RegExp[]> = {
   POST: [
     /^v1\/experiences$/,
     /^v1\/live-presence-sessions\/live_[A-Za-z0-9_-]+\/(on-site|stop)$/,
-    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(arrival|arrival\/skip|stop)$/,
+    /^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/(arrival|arrival\/replay|arrival\/skip|stop)$/,
     /^v2\/memory-sessions\/mem_[A-Za-z0-9_-]+\/photos$/,
   ],
   PUT: [/^v1\/memory-sessions\/mem_[A-Za-z0-9_-]+\/push-subscription$/],

@@ -10,6 +10,7 @@ import {
   arrivalAttempt,
   getExperience,
   sendArrival,
+  sendArrivalReplay,
   type ArrivalAttempt,
   type MemoryCredential,
   type ReplayStatus,
@@ -61,14 +62,14 @@ type ReadAnswer = { ok: true } | { ok: false; code: string; message: string; ret
 
 /**
  * onArrived: TRACE_B has the arrival, now or from before; it ends the photo reminder then.
- * toKeepsake: opened from home after arriving, so a replay that is over leads straight to the keepsake.
+ * intent: viewing an existing keepsake must not consume a newly scanned booth proof.
  */
 export function ArrivalFlow({
   target,
   incomingArrivalToken,
   photos,
   contact,
-  toKeepsake,
+  intent,
   ended,
   inert,
   onClose,
@@ -83,7 +84,7 @@ export function ArrivalFlow({
   photos: LogEntry[];
   /** Where to ask about the data, shown with the keepsake. */
   contact: string;
-  toKeepsake: boolean;
+  intent: "keepsake" | "scan";
   ended: boolean;
   inert: boolean;
   onClose: () => void;
@@ -111,7 +112,9 @@ export function ArrivalFlow({
       }),
     [go, close, onTitle],
   );
-  const attempt = useRef<ArrivalAttempt | null>(null);
+  const attempt = useRef<{ body: ArrivalAttempt; action: "arrival" | "arrival-replay" | null; key: string | null } | null>(null);
+  const scanIntent = useRef(intent === "scan");
+  const restoreVersion = useRef(0);
   // A code is on its way, or has arrived: the check below no longer moves the screen.
   const reading = useRef(false);
   const arrived = useRef(false);
@@ -141,18 +144,22 @@ export function ArrivalFlow({
     if (!ended) void beforeArrivalRef.current();
   }, [ended]);
 
-  // Arrived already (a reload, or the button pressed again): straight to where the replay stands.
+  // Restore an existing viewing, but never let an old completed response close an explicit scanner.
   useEffect(() => {
     let alive = true;
     if (ended) return;
+    const version = restoreVersion.current;
     getExperience(experienceId, memory)
       .then((state) => {
         const known = replayStatus(state.replayStatus);
-        if (!alive || !known || reading.current || arrived.current) return;
+        if (!alive || version !== restoreVersion.current || reading.current || arrived.current ||
+          !known || (known === "completed" && scanIntent.current)) return;
         onArrivedRef.current(memory.memorySessionId);
         void go(() => {
+          if (!alive || version !== restoreVersion.current || reading.current || arrived.current ||
+            (known === "completed" && scanIntent.current)) return;
           setStatus(known);
-          setStep(toKeepsake && isFinal(known) ? "keepsake" : "replay");
+          setStep(intent === "keepsake" && isFinal(known) ? "keepsake" : "replay");
         });
       })
       // The camera is starting anyway; sending the code will tell.
@@ -160,40 +167,81 @@ export function ArrivalFlow({
     return () => {
       alive = false;
     };
-  }, [go, experienceId, memory, toKeepsake, ended]);
+  }, [go, experienceId, memory, intent, ended]);
 
   const read = useCallback(
     async (code: string): Promise<ReadAnswer> => {
       reading.current = true;
-      // Retry the same request with its stable key; every reply reflects the current replay state.
-      if (attempt.current?.checkpointToken !== code) attempt.current = arrivalAttempt(code);
+      restoreVersion.current += 1;
+      if (attempt.current?.body.checkpointToken !== code) {
+        attempt.current = { body: arrivalAttempt(code), action: null, key: null };
+      }
       const current = attempt.current;
-      try {
-        // The room's screen draws the way from the places TRACE_B has when the arrival comes.
-        await beforeArrivalRef.current();
-        // sendMemoryAction persists its input for idempotency; retain only a fingerprint, never the booth proof.
-        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(current)));
-        const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-        const result = await sendMemoryAction(memory.memorySessionId, "arrival", fingerprint, (key) => {
-          const stored = loadTabExperience();
-          if (!active.current || endedRef.current || Date.parse(memory.expiresAt) <= Date.now() ||
-            (stored && (stored.status === "ended" || stored.memory.memorySessionId !== memory.memorySessionId))) {
-            throw new TraceApiError(409, "STATE_CONFLICT", null);
-          }
-          return sendArrival(memory, current, key);
-        });
+      const ensureActive = () => {
+        const stored = loadTabExperience();
+        if (!active.current || endedRef.current || Date.parse(memory.expiresAt) <= Date.now() ||
+          (stored && (stored.status === "ended" || stored.memory.memorySessionId !== memory.memorySessionId))) {
+          throw new TraceApiError(409, "STATE_CONFLICT", null);
+        }
+      };
+      const accept = (next: ReplayStatus) => {
+        ensureActive();
         arrived.current = true;
         onArrivedRef.current(memory.memorySessionId);
-        setStatus(replayStatus(result.status) ?? "queued");
+        setStatus(next);
+      };
+      try {
+        ensureActive();
+        // Choose once, before the first send. A lost reply must not turn its retry into a new operation.
+        if (!current.action) {
+          const state = await getExperience(experienceId, memory);
+          ensureActive();
+          if (state.memorySession.status === "ended" || Date.parse(state.memorySession.expiresAt) <= Date.now()) {
+            throw new TraceApiError(409, "STATE_CONFLICT", null);
+          }
+          const known = replayStatus(state.replayStatus);
+          if (known === "queued" || known === "playing" || known === "skipped") {
+            accept(known);
+            return { ok: true };
+          }
+          current.action = known === "completed" ? "arrival-replay" : "arrival";
+        }
+        await beforeArrivalRef.current();
+        // Persist only the body fingerprint. The proof and selected request live in memory, never storage.
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(current.body)));
+        const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+        const result = await sendMemoryAction(memory.memorySessionId, current.action, fingerprint, (key) => {
+          ensureActive();
+          current.key ??= key;
+          return current.action === "arrival-replay"
+            ? sendArrivalReplay(memory, current.body, current.key)
+            : sendArrival(memory, current.body, current.key);
+        });
+        accept(replayStatus(result.status) ?? "queued");
         return { ok: true };
       } catch (error) {
         const failure = error instanceof TraceApiError ? error : new TraceApiError(0, "UNKNOWN", null);
+        // Another tab may have queued this participant after our read. Join it; never add or interrupt a viewing.
+        if (failure.code === "STATE_CONFLICT") {
+          try {
+            const state = await getExperience(experienceId, memory);
+            ensureActive();
+            const known = replayStatus(state.replayStatus);
+            if (state.memorySession.status !== "ended" && Date.parse(state.memorySession.expiresAt) > Date.now() &&
+              (known === "queued" || known === "playing")) {
+              accept(known);
+              return { ok: true };
+            }
+          } catch {
+            // Keep the original conflict when state cannot safely be restored.
+          }
+        }
         return { ok: false, code: failure.code, message: failure.message, retryAfter: failure.retryAfter };
       } finally {
         reading.current = false;
       }
     },
-    [memory],
+    [experienceId, memory],
   );
   useEffect(() => {
     if (!incomingArrivalToken || ended) return;
@@ -213,6 +261,14 @@ export function ArrivalFlow({
     };
   }, [incomingArrivalToken, ended, read]);
 
+  const scanAgain = () => {
+    restoreVersion.current += 1;
+    scanIntent.current = true;
+    arrived.current = false;
+    attempt.current = null;
+    setIncomingFailure(null);
+    void go(() => setStep("scan"));
+  };
   const visibleStep = ended && (step === "connecting" || step === "scan" || step === "replay") ? "keepsake" : step;
 
   if (visibleStep === "connecting") return <ArrivalConnecting inert={inert} failure={incomingFailure} onCancel={leave} onScan={() => setStep("scan")} />;
@@ -235,6 +291,8 @@ export function ArrivalFlow({
       target={target}
       status={status}
       photos={photos.length}
+      canScanAgain={!ended}
+      onScanAgain={scanAgain}
       inert={inert}
       onStatus={setStatus}
       onKeepsake={() => void go(() => setStep("keepsake"))}
@@ -623,6 +681,8 @@ function Replay({
   target,
   status,
   photos,
+  canScanAgain,
+  onScanAgain,
   inert,
   onStatus,
   onKeepsake,
@@ -632,6 +692,8 @@ function Replay({
   status: ReplayStatus | null;
   /** How many photos this phone keeps for the participation. */
   photos: number;
+  canScanAgain: boolean;
+  onScanAgain: () => void;
   inert: boolean;
   onStatus: (status: ReplayStatus) => void;
   onKeepsake: () => void;
@@ -650,12 +712,6 @@ function Replay({
     playing.current = status === "playing";
   }, [status]);
 
-  const ask = useCallback(async () => {
-    const state = await getExperience(experienceId, memory);
-    const next = replayStatus(state.replayStatus);
-    if (next) onStatus(next);
-  }, [experienceId, memory, onStatus]);
-
   useEffect(() => {
     if (final) return;
     let alive = true;
@@ -669,7 +725,10 @@ function Replay({
       asking = true;
       let wait = POLL_MS;
       try {
-        await ask();
+        const state = await getExperience(experienceId, memory);
+        if (!alive) return;
+        const next = replayStatus(state.replayStatus);
+        if (next) onStatus(next);
         failures = 0;
         if (alive) setNotice("");
         if (playing.current) wait = PLAYING_POLL_MS;
@@ -697,7 +756,7 @@ function Replay({
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [final, ask]);
+  }, [final, experienceId, memory, onStatus]);
 
   const text = replayText(status, over);
 
@@ -745,6 +804,11 @@ function Replay({
             <p className="body" style={{ marginTop: 18 }}>
               <Sentences text={"この端末には写真が残っていないので、作品を作れません。写真を撮ったブラウザで開くと、作品を保存できます。"} />
             </p>
+          )}
+          {status === "completed" && canScanAgain && (
+            <button type="button" className="btn btn--line" style={{ marginTop: 10 }} onClick={onScanAgain}>
+              もう一度 QR コードを読み取る
+            </button>
           )}
           <button type="button" className={`btn${photos > 0 ? " btn--line" : ""}`} style={{ marginTop: photos > 0 ? 10 : 18 }} onClick={onLeave}>
             ホームへもどる
