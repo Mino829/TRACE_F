@@ -56,7 +56,13 @@ cd push-worker && npm test && npm run typecheck
 
 本番の運営 API は同一originの `/api/operator` ブリッジ経由で呼び、Edge secret は本番Worker内だけで付与します。既存リハーサルのみ展示PCのloopbackブローカーを使います。[環境別の手順](arrival-issuer/README.md)を参照してください。到着QRは展示と同じoriginの`/log` URLで、短命proofはfragmentにだけ含めます。標準カメラで正しい参加者ページを開き、参加済みなら実到着処理へ、未参加なら通常の同意・参加画面へ進みます。アプリ内スキャナーも同じURLだけを読み取り、別originへ本人資格を送信しません。T2はURL内の内部圧縮にだけ使い、公開contextは署名payloadから導出してビルド環境へ依存させません。
 
-既に開いている`/log`へのURL遷移も処理し、参加前に読んだproofは参加後へ持ち越しません。参加・展示のQR形式を同時に切り替えたため、配備後は両画面を再読み込みしてください。到着の冪等性記録には入力のSHA-256 fingerprintだけを保持し、proof本文をlocalStorageへ残しません。
+既に開いている`/log`へのURL遷移も処理し、参加前に読んだproofは参加後へ持ち越しません。参加・展示のQR形式を同時に切り替えたため、配備後は両画面を再読み込みしてください。到着・再視聴の冪等性記録は別scopeで入力のSHA-256 fingerprintだけを保持し、proof本文をlocalStorageへ残しません。同じ画面内の通信再送はendpoint・時刻・keyを固定します。proofを保存しないため、再読み込みをまたぐ同一bodyの復元はせず、同じproofの再受理防止はBackendのMemoryごとの消費記録が担います。
+
+再生完了後、有効な参加なら「もう一度 QR コードを読み取る」からアプリ内スキャンを開くか、展示の新しいQRを標準カメラで読み取ると、同じ参加・写真・作品のまま展示の待ち列末尾へ再度並びます。初回は`POST /v1/memory-sessions/{id}/arrival`、完了後の新しい本人操作だけは`POST /v1/memory-sessions/{id}/arrival/replay`を使います。待機中・再生中は既存状態へ戻り、追加予約や割込みはしません。既存作品を開く操作では再予約せず、スキップ後・本人停止後・期限後は再視聴しません。外部QRの送信失敗でもカメラを自動起動しません。
+
+`tests/log-keepsake.spec.ts`は参加・端末写真を維持した外部hash遷移とアプリ内再スキャン、応答喪失時の同一再送、競合時の既存再生への合流をstand-inで確認します。`tests/display-link.spec.ts`はmetadataを持つ新公開再生IDでの2回目の実描画遷移と、重複requestedからの二重再生抑止を対象にします。これらは実Goのproof消費・receipt・FIFOの検証とは別です。
+
+`/log` は端末言語に応じて日本語・英語で表示し、画面上部の `English` / `日本語` で切り替えられます。切替は参加資格や端末写真を作り直さず、完了後の再スキャンは英語でも `Scan the QR code again` から同じ再視聴処理へ進みます。同意はBackendの日本語本文を正本とし、対応する版だけ参考英訳を併記します。`tests/log-keepsake.spec.ts` の言語切替ケースは、英語での参加、切替後の写真保存、初回QR・完了・英語ボタンからの再スキャン、新しいQRでの再視聴、資格・写真の維持を対象にします。
 
 waysui本番は`trace-fes-2026`と`https://trace-production.async5855.workers.dev`へ独立配備済みです。参加は必ず同じ本番の`/log`、展示は`/display`を使い、旧`trace-log`の参加から新本番QRを読みません。参加案内は`2026-10-31-v1`、問い合わせ先は「教室棟301のASYNCブースのスタッフ」。参加・metadata・到着・任意30分PushをON、画像upload/GPSをOFFにし、保持6時間＋24時間と既存同意記録を維持しています。実UIで参加→端末写真/地点登録→実QRの仮想カメラ読取→到着200→展示完了→本人削除204/照会404・端末写真0枚まで確認済みです。実スマホ・投影機材・実Push配信と正式公開受入は別です。[本番配備](push-worker/README.md)と[展示ログイン](arrival-issuer/README.md)を参照してください。旧参加データ・鍵は移行しません。
 
