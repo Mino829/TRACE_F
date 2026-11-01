@@ -67,7 +67,7 @@ export type RayAppProps = {
   /** A same-origin booth link consumed on entry or hash navigation; retained until this flow closes. */
   incomingArrivalToken: string | null;
   onArrive: () => void;
-  /** TRACE_B has this participation's arrival: home leads to the keepsake. */
+  /** TRACE_B has this participation's arrival; QR viewing stays separate from local artwork. */
   arrived: boolean;
   /** Runs before the arrival goes: the photos' places still on their way get a moment to reach TRACE_B (#13). */
   onBeforeArrival: () => Promise<void>;
@@ -78,7 +78,7 @@ export type RayAppProps = {
   onSkip: () => void;
   /** Deletes one photo (#51): resolves to an error message, or null once it is gone. */
   onDeletePhoto: (entry: LogEntry) => Promise<string | null>;
-  /** Where to ask about the data (TRACE_B's public config), shown after arriving. */
+  /** Where to ask about the data (TRACE_B's public config), shown with local artwork. */
   contact: string;
   onWithdraw: () => Promise<void>;
   onDeveloper: () => void;
@@ -196,7 +196,7 @@ function Current(
     props.onSkip();
   };
 
-  if (props.demo === "home" && props.arrival && (!props.ended || props.arrived)) {
+  if (props.demo === "home" && props.arrival) {
     return (
       <ArrivalFlow
         key={props.incomingArrivalToken ?? "camera"}
@@ -204,7 +204,7 @@ function Current(
         incomingArrivalToken={props.incomingArrivalToken}
         photos={props.photos}
         contact={props.contact}
-        intent={props.incomingArrivalToken || !props.arrived ? "scan" : arrivalIntent}
+        intent={props.incomingArrivalToken ? "scan" : arrivalIntent}
         ended={props.ended}
         inert={inert}
         onClose={props.onCloseDemo}

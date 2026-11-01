@@ -247,7 +247,10 @@ test("terminal stop keeps photos and owner rights across tabs and reload, separa
   await page.reload();
   await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeDisabled();
   await expect(page.getByRole("button", { name: "QR コードを読み取る" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "作品を見る" })).toHaveCount(0);
+  await page.getByRole("button", { name: "作品を見る" }).click();
+  await expect(page.locator(".keep")).toBeVisible();
+  await expect(page.getByRole("img", { name: /^作品。撮った1枚の写真/ })).toBeVisible();
+  await page.getByRole("button", { name: "ホームへもどる", exact: true }).last().click();
   await expect(page.getByRole("button", { name: "1枚目の写真を保存" })).toBeVisible();
   await page.getByRole("button", { name: "メニュー" }).click();
   await expect(page.getByRole("button", { name: "記録を残して参加を終了", exact: true })).toHaveCount(0);

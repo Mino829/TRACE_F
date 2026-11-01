@@ -6,7 +6,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { arrivalQrUrl } from "../src/lib/trace-api/arrival-code";
 
 /**
- * /log after arriving at ShibaLab (#14): the keepsake drawn from the photos
+ * /log's local keepsake (#14), available before and after arrival, drawn from photos
  * kept on the phone, each photo saved or deleted (#51) on its own, and
  * 振り返り3D (#50) above it on the same screen; and what of each photo goes to TRACE_B
  * on the way there (#13). Like log-tabs.spec.ts, a stand-in answers for
@@ -196,6 +196,35 @@ const cameraRequests = (page: Page) => page.evaluate(() => {
   const requests = Reflect.get(window, "arrivalCameraRequests");
   if (typeof requests !== "number") throw new Error("Camera instrumentation is missing");
   return requests;
+});
+
+test("artwork opens before arrival even when owner reads fail, without a camera or ending participation", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page, 1);
+  await expect.poll(() => backend.moments.size).toBe(1);
+  const credential = await page.evaluate(() => localStorage.getItem("trace-memory-credential"));
+  await denyArrivalCamera(page);
+  await page.route("**/api/backend/v1/experiences/exp-1", (route) => route.abort("internetdisconnected"));
+  await page.getByRole("button", { name: "作品を見る", exact: true }).click();
+  await expect(page.getByRole("img", { name: /^作品。撮った1枚の写真/ })).toBeVisible();
+  await expect(page.locator(".trace__list .trace__where").first()).toHaveText("本部棟5F");
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "作品を保存する", exact: true }).click(),
+  ]);
+  expect(await jpeg(download)).toEqual({ name: expect.stringMatching(/^TRACE_\d{4}-\d{2}-\d{2}\.jpg$/), width: 1440, height: 2560, exif: false });
+  expect(await cameraRequests(page)).toBe(0);
+  expect(backend.arrivals).toEqual([]);
+  expect(backend.replays).toEqual([]);
+  expect(backend.replay).toBeNull();
+  expect(backend.ended).toBe(false);
+  expect(await page.evaluate(() => localStorage.getItem("trace-memory-credential"))).toBe(credential);
+  await page.getByRole("button", { name: "ホームへもどる", exact: true }).last().click();
+  await expect(page.getByRole("button", { name: "写真を撮る" }).first()).toBeEnabled();
+  await savePhoto(page, 2);
+  expect(await kept(page)).toBe(2);
+  expect(backend.joins).toBe(1);
 });
 
 test("language switching keeps participation and photos through English arrival and another viewing", async ({ context, page }) => {
@@ -620,7 +649,7 @@ async function jpeg(download: Download) {
   return { name: download.suggestedFilename(), width, height, exif };
 }
 
-test("after the replay, home leads to the keepsake, which saves as one picture without metadata; each photo saves too", async ({ context, page }) => {
+test("home opens local artwork during exhibition playback; the artwork and each photo save without metadata", async ({ context, page }) => {
   const backend = await standIn(context);
   await join(page);
   await savePhoto(page, 1);
@@ -632,16 +661,11 @@ test("after the replay, home leads to the keepsake, which saves as one picture w
   expect(photo.name).toMatch(/^TRACE_\d{4}-\d{2}-\d{2}_\d{4}\.jpg$/);
   expect(photo.exif).toBe(false);
 
-  // TRACE_B has the arrival: home leads on to the replay, which leads to the keepsake once it is over.
+  // Local artwork is available even while the exhibition is still playing.
   backend.replay = "playing";
   await page.reload();
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
-  backend.replay = "completed";
-  await expect(page.getByRole("heading", { name: "作品を保存できます" })).toBeVisible({ timeout: 15000 });
-  await shoot(page, "replay-done");
-  await page.getByRole("button", { name: "作品を見る" }).click();
-  await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toBeVisible();
+  await expect(page.locator(".keep")).toBeVisible();
   const art = page.getByRole("img", { name: /^作品。撮った2枚の写真/ });
   await expect(art).toBeVisible({ timeout: 15000 });
   await page.waitForTimeout(2000);
@@ -677,9 +701,9 @@ test("the TRACE mark leads to the title, which leads home without joining again;
   backend.replay = "completed";
   await page.reload();
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toBeVisible();
+  await expect(page.locator(".keep")).toBeVisible();
   await page.getByRole("button", { name: "TRACE（タイトルへ）" }).click();
-  await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toHaveCount(0);
+  await expect(page.locator(".keep")).toHaveCount(0);
   await page.getByRole("button", { name: "ホームへもどる" }).click();
   await expect(page.getByRole("button", { name: "作品を見る" })).toBeVisible();
   expect(joins).toBe(1);
@@ -694,7 +718,7 @@ test("a browser without the photos says the keepsake cannot be made here", async
   backend.replay = "completed";
   await page.reload();
   await page.getByRole("button", { name: "作品を見る" }).click();
-  await expect(page.getByRole("heading", { name: "ご来場ありがとうございました" })).toBeVisible();
+  await expect(page.locator(".keep")).toBeVisible();
   await expect(page.getByText(/この端末には写真が残っていないので/)).toBeVisible();
   await expect(page.getByRole("button", { name: "作品を保存する" })).toHaveCount(0);
   await shoot(page, "keepsake-empty");
