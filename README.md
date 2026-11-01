@@ -62,6 +62,8 @@ cd push-worker && npm test && npm run typecheck
 
 `tests/log-keepsake.spec.ts`は参加・端末写真を維持した外部hash遷移とアプリ内再スキャン、応答喪失時の同一再送、競合時の既存再生への合流をstand-inで確認します。`tests/display-link.spec.ts`はmetadataを持つ新公開再生IDでの2回目の実描画遷移と、重複requestedからの二重再生抑止を対象にします。これらは実Goのproof消費・receipt・FIFOの検証とは別です。
 
+`/log` は端末言語に応じて日本語・英語で表示し、画面上部の `English` / `日本語` で切り替えられます。切替は参加資格や端末写真を作り直さず、完了後の再スキャンは英語でも `Scan the QR code again` から同じ再視聴処理へ進みます。同意はBackendの日本語本文を正本とし、対応する版だけ参考英訳を併記します。`tests/log-keepsake.spec.ts` の言語切替ケースは、英語での参加、切替後の写真保存、初回QR・完了・英語ボタンからの再スキャン、新しいQRでの再視聴、資格・写真の維持を対象にします。
+
 waysui本番は`trace-fes-2026`と`https://trace-production.async5855.workers.dev`へ独立配備済みです。参加は必ず同じ本番の`/log`、展示は`/display`を使い、旧`trace-log`の参加から新本番QRを読みません。参加案内は`2026-10-31-v1`、問い合わせ先は「教室棟301のASYNCブースのスタッフ」。参加・metadata・到着・任意30分PushをON、画像upload/GPSをOFFにし、保持6時間＋24時間と既存同意記録を維持しています。実UIで参加→端末写真/地点登録→実QRの仮想カメラ読取→到着200→展示完了→本人削除204/照会404・端末写真0枚まで確認済みです。実スマホ・投影機材・実Push配信と正式公開受入は別です。[本番配備](push-worker/README.md)と[展示ログイン](arrival-issuer/README.md)を参照してください。旧参加データ・鍵は移行しません。
 
 本番の展示PCは上記 `/display` をブラウザで開き、既存の **waysui00babe@gmail.com のみ**でログインします。Node.js・gcloud・ローカルブローカー・ローカルネットワークアクセス許可は不要です。ブリッジ切替の配備後は `/display` と `/log` の両画面を再読み込みします。共有PCを離れる際は現在の運営資格を失効し、Googleからもログアウトしてください。「自分の全運営資格を失効」は同アカウントの他PC・タブにも作用します。描画の主担当は同時に1台だけで、他PCは待機になります。従来の実UI確認記録は、このブリッジ切替後の検証結果ではありません。

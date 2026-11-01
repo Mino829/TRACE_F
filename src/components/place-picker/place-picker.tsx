@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BlobImage } from "@/components/ping-log/blob-image";
 import { Icon, NoteBar, Phrases, Screen, useRay } from "@/components/ping-log/ray/stage";
+import { t } from "@/lib/i18n";
+import { buildingLabel, floorLabel, placeName } from "@/lib/places/names";
 import { buildingName, buildingsWithPlaces, checkpointsOn, findCheckpoint, floorsOf, placeOf } from "@/lib/places/select";
 import type { BuildingId, Checkpoint, PhotoPlace, PlacesData } from "@/lib/places/types";
 
@@ -53,9 +55,10 @@ type Props = {
 
 /** "研究棟9F" already says where it is; "大階段の下" needs the building and floor in front of it. */
 function placeLabel(data: PlacesData, point: Checkpoint): string {
-  if (point.building === "outdoor") return point.name;
-  const building = buildingName(data, point.building);
-  return point.name.includes(building) ? point.name : `${building} ${point.floor} ・ ${point.name}`;
+  const name = placeName(point.id, point.name);
+  if (point.building === "outdoor") return name;
+  const building = buildingLabel(point.building, buildingName(data, point.building));
+  return name.includes(building) ? name : `${building} ${floorLabel(point.floor)} ・ ${name}`;
 }
 
 function tick(): void {
@@ -115,7 +118,7 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
     if (selected && !saving) onConfirm(placeOf(data, selected));
   };
 
-  const hint = selected ? placeLabel(data, selected) : "撮影した場所を選択してください。";
+  const hint = selected ? placeLabel(data, selected) : t("撮影した場所を選択してください。", "Choose where you took the photo.");
 
   return (
     <Screen key="place" className="screen--flex pp" inert={inert}>
@@ -123,7 +126,7 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
         <span>
           <button type="button" className="link" disabled={saving} onClick={() => void go(onBack)}>
             <Icon name="back" />
-            写真にもどる
+            {t("写真にもどる", "Back to photo")}
           </button>
         </span>
         <span className="mono">
@@ -134,10 +137,10 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
 
       <header className="pp-head">
         <h1 className="h2">
-          <Phrases text="どこで撮りましたか？" />
+          <Phrases text={t("どこで撮りましたか？", "Where did you take it?")} />
         </h1>
         {photo && (
-          <button type="button" className="pp-thumb" aria-label="写真を大きく表示" onClick={() => setZoom(true)}>
+          <button type="button" className="pp-thumb" aria-label={t("写真を大きく表示", "Show the photo large")} onClick={() => setZoom(true)}>
             <BlobImage blob={photo} alt="" />
           </button>
         )}
@@ -145,7 +148,7 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
       {zoom && photo && <PhotoZoom photo={photo} onClose={() => setZoom(false)} />}
 
       {showList ? (
-        <ListPicker data={data} selectedId={selectedId} onPick={choosePoint} note={mapOff ? "地図を表示できないので、一覧から選びます。" : null} />
+        <ListPicker data={data} selectedId={selectedId} onPick={choosePoint} note={mapOff ? t("地図を表示できないので、一覧から選びます。", "The map cannot be shown, so choose from the list.") : null} />
       ) : (
         <div className="pp-map">
           <CampusMap
@@ -170,23 +173,23 @@ export function PlacePicker({ data, photo, last, number, maxPhotos, saving, erro
           </p>
           {!mapOff && (
             <button type="button" className="pp-mode mono" onClick={() => setListMode((value) => !value)}>
-              {listMode ? "地図で選ぶ" : "一覧で選ぶ"}
+              {listMode ? t("地図で選ぶ", "Use map") : t("一覧で選ぶ", "Use list")}
             </button>
           )}
         </div>
         {lastPoint && lastPoint.id !== selectedId && (
           <button type="button" className="pp-again" onClick={() => choosePoint(lastPoint.id)}>
-            <span className="mono">前回の場所</span>
+            <span className="mono">{t("前回の場所", "Last place")}</span>
             <span className="pp-again__name">{placeLabel(data, lastPoint)}</span>
           </button>
         )}
         <button type="button" className="btn" disabled={!selected || saving} onClick={confirm}>
           {saving ? (
-            "保存しています…"
+            t("保存しています…", "Saving…")
           ) : (
             <>
               <Icon name="check" />
-              ここで保存
+              {t("ここで保存", "Save here")}
             </>
           )}
         </button>
@@ -211,11 +214,11 @@ function PhotoZoom({ photo, onClose }: { photo: Blob; onClose: () => void }) {
     };
   }, [onClose]);
   return (
-    <div className="pp-zoom" role="dialog" aria-modal="true" aria-label="撮った写真" onClick={onClose}>
-      <BlobImage blob={photo} alt="撮った写真" className="pp-zoom__img" />
+    <div className="pp-zoom" role="dialog" aria-modal="true" aria-label={t("撮った写真", "Your photo")} onClick={onClose}>
+      <BlobImage blob={photo} alt={t("撮った写真", "Your photo")} className="pp-zoom__img" />
       <button ref={closeRef} type="button" className="link pp-zoom__close" onClick={onClose}>
         <Icon name="close" />
-        閉じる
+        {t("閉じる", "Close")}
       </button>
     </div>
   );
@@ -239,21 +242,21 @@ function ListPicker({ data, selectedId, onPick, note }: { data: PlacesData; sele
   return (
     <div className="pp-list">
       {note && <p className="pp-list__note small">{note}</p>}
-      <Rail label="建物">
+      <Rail label={t("建物", "Building")}>
         {buildings.map((item) => (
           <Chip key={item.id} active={item.id === building} onPick={() => chooseBuilding(item.id)}>
-            {item.name}
+            {buildingLabel(item.id, item.name)}
           </Chip>
         ))}
       </Rail>
-      <Rail label="階">
+      <Rail label={t("階", "Floor")}>
         {floors.map((item) => (
           <Chip key={item.label} active={item.label === floor} onPick={() => setFloor(item.label)} mono>
-            {item.label}
+            {floorLabel(item.label)}
           </Chip>
         ))}
       </Rail>
-      <ul className="pp-points" role="radiogroup" aria-label="場所">
+      <ul className="pp-points" role="radiogroup" aria-label={t("場所", "Place")}>
         {points.map((point) => (
           <PointRow key={point.id} point={point} data={data} active={point.id === selectedId} onPick={() => onPick(point.id)} />
         ))}
@@ -293,8 +296,8 @@ function PointRow({ point, data, active, onPick }: { point: Checkpoint; data: Pl
     <li>
       <button type="button" role="radio" aria-checked={active} className="pp-point" onClick={onPick}>
         <span className="pp-point__mark" aria-hidden="true" />
-        <span className="pp-point__name">{point.name}</span>
-        {point.joins && <span className="pp-point__tag mono">{buildingName(data, point.joins)}へ</span>}
+        <span className="pp-point__name">{placeName(point.id, point.name)}</span>
+        {point.joins && <span className="pp-point__tag mono">{t(`${buildingName(data, point.joins)}へ`, `to ${buildingLabel(point.joins, buildingName(data, point.joins))}`)}</span>}
       </button>
     </li>
   );

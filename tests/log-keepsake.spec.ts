@@ -198,6 +198,52 @@ const cameraRequests = (page: Page) => page.evaluate(() => {
   return requests;
 });
 
+test("language switching keeps participation and photos through English arrival and another viewing", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await page.goto("/log");
+  await page.getByRole("button", { name: "English", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page.getByRole("button", { name: "Agree and join", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Take a photo" }).first()).toBeVisible();
+  const retained = await page.evaluate(() => localStorage.getItem("trace-memory-credential"));
+
+  await page.getByRole("button", { name: "日本語", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+  await savePhoto(page, 1);
+  await page.getByRole("button", { name: "English", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /^Your photos/ })).toBeVisible();
+  await denyArrivalCamera(page);
+  const first = boothLink(new URL(page.url()).origin);
+  await page.evaluate((url) => { window.location.hash = new URL(url).hash; }, first.url);
+  await expect(page.getByRole("heading", { name: "Look at the screen", exact: true })).toBeVisible();
+  const moments = [...backend.moments.values()];
+  backend.replay = "completed";
+  const scanAgain = page.getByRole("button", { name: "Scan the QR code again", exact: true });
+  await expect(scanAgain).toBeVisible({ timeout: 15000 });
+  await scanAgain.click();
+  await expect(page.getByRole("heading", { name: "Scan the QR code at the exhibit", exact: true })).toBeVisible();
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
+  expect(backend.replays).toHaveLength(0);
+
+  // A fresh booth URL also works after opening the translated in-app scanner.
+  const fresh = boothLink(new URL(page.url()).origin);
+  await page.goto(fresh.url);
+  await expect(page.getByRole("heading", { name: "Please wait in front of the screen", exact: true })).toBeVisible();
+  expect(backend.arrivals).toHaveLength(1);
+  expect(backend.replays).toHaveLength(1);
+  expect(backend.replays[0].key).not.toBe(backend.arrivals[0].key);
+  expect(await page.evaluate(() => localStorage.getItem("trace-memory-credential"))).toBe(retained);
+  expect(await kept(page)).toBe(1);
+  expect([...backend.moments.values()]).toEqual(moments);
+  expect(backend.joins).toBe(1);
+  await page.getByRole("button", { name: "Back to home", exact: true }).click();
+  await page.getByRole("button", { name: "日本語", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /^撮った写真/ })).toBeVisible();
+  expect(await kept(page)).toBe(1);
+});
+
 test("fresh external scans repeat a completed viewing without replacing participation, photos or keepsake", async ({ context, page }) => {
   const backend = await standIn(context);
   await join(page);

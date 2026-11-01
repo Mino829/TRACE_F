@@ -485,7 +485,7 @@ html:has(.ray) body {
     display: flex;
     align-items: center;
   }
-  & .mast__dev {
+  & :is(.mast__dev, .mast__lang) {
     font-size: 13.5px;
     color: var(--fg-2);
     padding: 0 10px;
@@ -571,7 +571,7 @@ html:has(.ray) body {
   & .btns--2 {
     grid-template-columns: 1fr 1fr;
   }
-  & :is(.btn, .icon-btn, .seg, .info, .link, .mast__dev, .strip, .menu-list button):focus-visible {
+  & :is(.btn, .icon-btn, .seg, .info, .link, .mast__dev, .mast__lang, .strip, .menu-list button):focus-visible {
     outline: 2px solid var(--fg);
     outline-offset: 3px;
   }
@@ -916,7 +916,7 @@ html:has(.ray) body {
     font-weight: 500;
     color: #b4b6b9;
   }
-  & .title :is(.btn, .icon-btn, .info, .link, .mast__dev):focus-visible {
+  & .title :is(.btn, .icon-btn, .info, .link, .mast__dev, .mast__lang):focus-visible {
     outline-color: var(--paper);
   }
 

@@ -70,6 +70,39 @@ export const CONSENT_SECTIONS: { title: string; items: string[] }[] = [
   },
 ];
 
+/**
+ * English translations of TRACE_B's consent text, by version, for reading
+ * only: the Japanese text is what is agreed to. A new version in TRACE_B
+ * needs its own entry here, or English shows that there is none yet.
+ */
+const CONSENT_EN: Record<string, string> = {
+  "2026-10-31-v1": `TRACE is an artwork that traces your day as a path of light, based on the photos you take at the festival and the places you choose. Taking part is optional. You can see the exhibit without taking part.
+
+[Photos and records]
+Photo images are kept only in this phone's browser and are not sent to the server. The server keeps each photo's ID, the time it was taken, the place you chose, the estimated route, and the state of your arrival and playback. GPS is not used. When you scan the QR code at the booth, the route estimated from the places you chose is played on the exhibit screen. It is not a record of how you actually moved. Please do not use photos that show other people's faces or personal information, or anything that must not be photographed.
+
+[Storage and deletion]
+Your participation is valid for 6 hours from when you join. Participation and photo records on the server are cleared regularly, with a deletion deadline of 30 hours after you join. You can also stop taking part or delete your data yourself on the screen. Stopping is not deleting: until the deadline, you can still view and delete your data. Deletion may be delayed by outages and the like, and audit logs, delivery events and backups may keep records for a set period.
+Images cannot be moved to another device automatically, and may be lost when browser data is cleared or storage runs low. Photos are not guaranteed to be deleted automatically while the page stays closed on your phone. Save the photos you want to keep yourself, and delete the ones you do not need from your phone.
+
+[Optional reminder]
+Only if you would like a prompt to take a photo every 30 minutes, turn on the reminder and allow browser notifications. Without them you can still take part, take photos, play your route at the exhibit and delete your data. For notifications, the subscription address and notification keys are encrypted and stored on the server, and your phone's push delivery service is used. Notifications do not contain photos, place names, routes or participation IDs. Depending on the OS, browser and connection, notifications may be delayed, not arrive, or arrive twice.
+Registering a photo postpones the next reminder. Reminders stop at the earliest of: your arrival, stopping your participation, turning notifications off, deleting your data, or the end of your participation period. To stop them, turn the reminder off. On iPhone, notifications work in the web app added to the home screen.
+
+[External services and contact]
+Cloudflare and Google Cloud are used for communication and processing, and not all processing is guaranteed to take place in Tokyo. Connection and security logs are kept according to each service's settings.
+For questions, please ask the staff at the ASYNC booth in Classroom Building, Room 301.`,
+};
+
+export function consentInEnglish(version: string): string | null {
+  return CONSENT_EN[version] ?? null;
+}
+
+/** TRACE_B's contact, which is Japanese; the one in use has an English name. */
+export function contactInEnglish(contact: string): string {
+  return contact === "教室棟301のASYNCブースのスタッフ" ? "The staff at the ASYNC booth, Classroom Building, Room 301" : contact;
+}
+
 const CONSENT_KEY = "trace-consent";
 
 export type Consent = { version: string; at: string; body?: string; language?: string };

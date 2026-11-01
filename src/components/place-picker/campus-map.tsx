@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { lang, t } from "@/lib/i18n";
+import { buildingLabel, floorLabel, placeName } from "@/lib/places/names";
 import type { Building, BuildingId, Checkpoint, Landmark, PlacePoint, PlacesData } from "@/lib/places/types";
 import { LINE_FRAGMENT, LINE_VERTEX, POINT_FRAGMENT, POINT_VERTEX, compileProgram, getContext } from "@/lib/places/webgl";
 
@@ -181,22 +183,22 @@ export function CampusMap(props: CampusMapProps) {
 
   return (
     <div className={`cm${className ? ` ${className}` : ""}`}>
-      <div ref={stageRef} className="cm__stage" role="group" aria-label="キャンパスの地図" />
+      <div ref={stageRef} className="cm__stage" role="group" aria-label={t("キャンパスの地図", "Campus map")} />
       {open && (
-        <nav className="cm__crumbs" aria-label="地図の段階">
+        <nav className="cm__crumbs" aria-label={t("地図の段階", "Map level")}>
           <button type="button" className="cm__crumb" onClick={() => onBuilding(null)}>
-            キャンパス
+            {t("キャンパス", "Campus")}
           </button>
           <span className="cm__sep" aria-hidden="true">
             ›
           </span>
           {floor ? (
             <button type="button" className="cm__crumb" onClick={() => onBuilding(open.id)}>
-              {open.name}
+              {buildingLabel(open.id, open.name)}
             </button>
           ) : (
             <span className="cm__here" aria-current="location">
-              {open.name}
+              {buildingLabel(open.id, open.name)}
             </span>
           )}
           {floor && (
@@ -205,7 +207,7 @@ export function CampusMap(props: CampusMapProps) {
                 ›
               </span>
               <span className="cm__here mono" aria-current="location">
-                {floor}
+                {floorLabel(floor)}
               </span>
             </>
           )}
@@ -214,7 +216,7 @@ export function CampusMap(props: CampusMapProps) {
       {open && (
         <FloorRail
           key={open.id}
-          building={open.name}
+          building={buildingLabel(open.id, open.name)}
           floors={floors}
           current={floor}
           marked={marked}
@@ -289,7 +291,7 @@ function FloorRail({
       }}
       onPointerCancel={() => hold(null)}
     >
-      <ol ref={listRef} className="cm__floors" aria-label={`${building}の階`} style={{ ["--floors" as string]: floors.length }}>
+      <ol ref={listRef} className="cm__floors" aria-label={t(`${building}の階`, `Floors of the ${building}`)} style={{ ["--floors" as string]: floors.length }}>
         {floors.map((label) => (
           <li key={label}>
             <button
@@ -434,10 +436,24 @@ function insideLoops(p: PlacePoint, loops: PlacePoint[][]): boolean {
  */
 function floorName(data: PlacesData, point: Checkpoint, open: BuildingId): string {
   const own = data.buildings.find((b) => b.id === point.building)?.name ?? "";
+  if (lang() === "en") return floorNameInEnglish(point, open, buildingLabel(point.building, own));
   let name = point.name.replace(`${own}${point.floor}`, point.building === open ? "" : `${own} `);
   if (name.endsWith(` ${point.floor}`)) name = name.slice(0, -point.floor.length - 1);
   name = name.replace(/（\s+/g, "（").replace(/\s{2,}/g, " ").trim();
   return name.length > 0 && name !== own ? name : point.name;
+}
+
+/**
+ * The same in English: "Classroom Building 3F, escalator" is "Escalator" on that floor, and
+ * "ShibaLab (Classroom Building 3F, Room 301)" is "ShibaLab (Room 301)".
+ */
+function floorNameInEnglish(point: Checkpoint, open: BuildingId, own: string): string {
+  const whole = placeName(point.id, point.name);
+  const prefix = `${own} ${point.floor}, `;
+  if (point.building !== open) return whole;
+  if (!whole.startsWith(prefix)) return whole.replace(prefix, "");
+  const name = whole.slice(prefix.length);
+  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 /** An escalator as lines: both handrails, the line between its two lanes, and a few steps across. */
@@ -615,13 +631,13 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
     loopSegments(b.footprint.length > 0 ? b.footprint : (storeys[0]?.loops ?? []), 0, base);
     const tag = button(overlay, "cm__building", "", () => getProps().onBuilding(b.id));
     const name = document.createElement("span");
-    name.textContent = b.name;
+    name.textContent = buildingLabel(b.id, b.name);
     const chevron = document.createElement("span");
     chevron.className = "cm__chevron";
     chevron.textContent = "›";
     chevron.setAttribute("aria-hidden", "true");
     tag.append(name, chevron);
-    tag.setAttribute("aria-label", `${b.name}を開く`);
+    tag.setAttribute("aria-label", t(`${b.name}を開く`, `Open the ${buildingLabel(b.id, b.name)}`));
     const cue = document.createElement("span");
     cue.className = "cm__cue";
     cue.setAttribute("aria-hidden", "true");
@@ -1066,13 +1082,14 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
         const r = project(at(q.data.labelAt[0], q.data.labelAt[1], 0));
         if (!r.ok) continue;
         const inFrame = r.x > area.x0 && r.x < area.x1 && r.y > area.y0 && r.y < area.y1;
-        let text = q.data.name;
+        const label = buildingLabel(q.data.id, q.data.name);
+        let text = label;
         if (!inFrame) {
           const cx = (area.x0 + area.x1) / 2;
           const cy = (area.y0 + area.y1) / 2;
           const octant = Math.round(Math.atan2(r.y - cy, r.x - cx) / (Math.PI / 4));
           const arrow = ARROWS[(octant + 8) % 8];
-          text = r.x < cx - 1 ? `${arrow} ${q.data.name}` : `${q.data.name} ${arrow}`;
+          text = r.x < cx - 1 ? `${arrow} ${label}` : `${label} ${arrow}`;
         }
         setText(q.cue, text);
         const size = sizeOf(q.cue);
@@ -1230,7 +1247,7 @@ function createEngine(host: HTMLDivElement, data: PlacesData, getProps: () => Ca
       if (!tag) continue;
       tag.setAttribute("aria-pressed", String(item.checkpoint.id === p.selectedId));
       tag.dataset.floor = String(part !== undefined);
-      setText(tag, part ? floorName(data, item.checkpoint, part.data.id) : item.checkpoint.name);
+      setText(tag, part ? floorName(data, item.checkpoint, part.data.id) : placeName(item.checkpoint.id, item.checkpoint.name));
     }
 
     // The chosen checkpoint, where it is in view.

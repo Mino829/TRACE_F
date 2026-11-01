@@ -5,12 +5,14 @@
  * photos lets the others know (tellOtherTabs, onOtherTabs).
  */
 
+import { t } from "@/lib/i18n";
+
 const CHANNEL = "trace-log";
 
 /** Another tab held the lock for longer than the caller would wait. */
 export class LockTimeout extends Error {
   constructor() {
-    super("別のタブで送信しています。少し待ってから、もう一度試してください。");
+    super(t("別のタブで送信しています。少し待ってから、もう一度試してください。", "Another tab is sending. Please wait a moment and try again."));
     this.name = "LockTimeout";
   }
 }

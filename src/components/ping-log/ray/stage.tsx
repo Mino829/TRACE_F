@@ -16,6 +16,7 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 
+import { lang, setLang, t } from "@/lib/i18n";
 import { RayField, type FieldProps } from "@/lib/ray/field";
 import { RayFX, reducedMotion } from "@/lib/ray/fx";
 
@@ -551,23 +552,30 @@ export function Mast({ extra, onTitle, onDeveloper, onMenu }: { extra?: ReactNod
 /** The wordmark: back to the title, as a site's name leads to its top page. */
 export function TitleMark({ onTitle }: { onTitle: () => void }) {
   return (
-    <button type="button" className="wordmark" aria-label="TRACE（タイトルへ）" onClick={onTitle}>
+    <button type="button" className="wordmark" aria-label={t("TRACE（タイトルへ）", "TRACE (to the title)")} onClick={onTitle}>
       TRACE
     </button>
   );
 }
 
-/** The developer screen is the team's: its button shows only while ?dev is on the URL. */
+/**
+ * The developer screen is the team's: its button shows only while ?dev is on
+ * the URL. The language button names the other language in that language.
+ */
 export function MastButtons({ onDeveloper, onMenu }: { onDeveloper: () => void; onMenu: () => void }) {
   const [developer] = useState(() => new URLSearchParams(window.location.search).has("dev"));
+  const other = lang() === "ja" ? "en" : "ja";
   return (
     <div className="mast__right">
       {developer && (
         <button type="button" className="mast__dev" onClick={onDeveloper}>
-          開発者
+          {t("開発者", "Developer")}
         </button>
       )}
-      <button type="button" className="icon-btn" aria-label="メニュー" aria-haspopup="dialog" onClick={onMenu}>
+      <button type="button" className="mast__lang" lang={other} onClick={() => setLang(other)}>
+        {other === "en" ? "English" : "日本語"}
+      </button>
+      <button type="button" className="icon-btn" aria-label={t("メニュー", "Menu")} aria-haspopup="dialog" onClick={onMenu}>
         <Icon name="menu" />
       </button>
     </div>

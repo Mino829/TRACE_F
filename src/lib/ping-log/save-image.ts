@@ -1,4 +1,5 @@
 import { isIos } from "./environment";
+import { t } from "@/lib/i18n";
 
 /**
  * Saving an image from /log to the phone (#14). An iPhone or iPad saves
@@ -33,4 +34,4 @@ export async function saveImage(file: File): Promise<SaveResult> {
 }
 
 /** What to say when the file could not be handed over: the picture on the screen can still be saved by hand. */
-export const LONG_PRESS = "この端末では、ボタンから保存できませんでした。画像を長押しすると出るメニューから保存してください。";
+export const longPress = () => t("この端末では、ボタンから保存できませんでした。画像を長押しすると出るメニューから保存してください。", "The button could not save it on this phone. Press and hold the image and save it from the menu that appears.");
