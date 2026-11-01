@@ -155,49 +155,26 @@ html:has(.dsp) body {
   line-height: 0.82;
 }
 
-.dsp-catch {
-  margin: 0 0 0.8em;
-  font-weight: 800;
-  font-size: clamp(26px, 2.6vw, 52px);
-  letter-spacing: 0.01em;
-  line-height: 1.3;
+/* The title over the campus in wire, turning in the rest of the column (components/ping-log/ray/wire.tsx). */
+.dsp-top__lead {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.dsp-text {
-  margin: 0 0 1.6em;
-  font-weight: 500;
-  font-size: clamp(16px, 1.35vw, 26px);
-  line-height: 1.85;
-  color: var(--fg-2);
-}
+.dsp-wire {
+  flex: 1 1 0;
+  min-height: 0;
+  position: relative;
+  color: var(--ink);
 
-.dsp-steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  max-width: 760px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border: 1px solid var(--fg);
-
-  & li {
-    display: grid;
-    gap: 2px;
-    padding: 12px 16px 14px;
-    font-weight: 700;
-    font-size: clamp(15px, 1.2vw, 22px);
-  }
-  & li + li {
-    border-left: 1px solid var(--fg);
-  }
-  /* The step this screen is for. */
-  & li:nth-child(2) {
-    color: var(--paper);
-    background: var(--ink);
-
-    & .dsp-mono {
-      color: #a2a4a7;
-    }
+  & canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
   }
 }
 

@@ -3,9 +3,10 @@
  * credential. The browser's push subscription is made with TRACE_B's VAPID
  * key and registered to the memory session with PUT; changing the interval is
  * a PATCH, and switching off is a DELETE, which leaves nothing of the
- * subscription on TRACE_B. TRACE_B ends it by itself on arrival (a later PUT or
- * PATCH answers 409), on deletion and at the session's expiry; the
- * notification's text is TRACE_B's own.
+ * subscription on TRACE_B. Arrival does not end it: the participant may keep
+ * taking photos for the next replay. TRACE_B ends it by itself when the
+ * participation is stopped or deleted and at the session's expiry (a later PUT
+ * or PATCH answers 409); the notification's text is TRACE_B's own.
  *
  * What the phone remembers about it sits in localStorage, since the browser's
  * subscription is shared by every tab: the memory session it was registered
@@ -37,15 +38,14 @@ export type ActiveReminder = { endpoint: string; expiresAt: string; nextSendAt: 
 export type TraceReminder = {
   memorySessionId: string;
   intervalMinutes: number;
-  /** TRACE_B stopped it for good when the participant arrived. */
-  ended: boolean;
   /** While TRACE_B sends to this browser. */
   active: ActiveReminder | null;
 };
 
 /**
- * A refusal in the reminder's own words. ended: TRACE_B stopped it for good
- * (arrival). gone: TRACE_B no longer holds it, and switching on again works.
+ * A refusal in the reminder's own words. ended: TRACE_B refuses it in this
+ * participation's state (stopped, deleting or expired). gone: TRACE_B no
+ * longer holds it, and switching on again works.
  */
 export class ReminderError extends Error {
   constructor(
@@ -57,7 +57,7 @@ export class ReminderError extends Error {
   }
 }
 
-export const endedMessage = () => t("ShibaLab に着いたあとは、リマインダーを使えません。", "The reminder cannot be used after you arrive at ShibaLab.");
+export const endedMessage = () => t("この参加は終了しているため、リマインダーを使えません。", "This participation has ended, so the reminder cannot be used.");
 
 function explain(error: unknown): Error {
   if (error instanceof TraceApiError && error.code === "STATE_CONFLICT") return new ReminderError(endedMessage(), "ended");
@@ -85,11 +85,11 @@ export function saveTraceReminder(value: TraceReminder | null): void {
   }
 }
 
-/** On arrival TRACE_B drops the subscription and refuses another; returns the record to keep, if it changed. */
+/** When the participation ends TRACE_B drops the subscription; returns the record to keep, if it changed. */
 export function markTraceReminderEnded(memorySessionId: string): TraceReminder | null {
   const stored = loadTraceReminder();
-  if (stored?.memorySessionId !== memorySessionId || stored.ended) return null;
-  const ended = { ...stored, ended: true, active: null };
+  if (stored?.memorySessionId !== memorySessionId || !stored.active) return null;
+  const ended = { ...stored, active: null };
   saveTraceReminder(ended);
   return ended;
 }

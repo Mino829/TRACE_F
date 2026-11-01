@@ -266,12 +266,11 @@ export function PingLogScreen() {
   // While this tab holds a TRACE_B memory credential, the photo reminder is TRACE_B's (#17).
   const trace = useTraceReminder({ experience, config: traceConfig, setConfig: setTraceConfig, subscription, setSubscription,
     setWorkerExpiresAt: setExpiresAt, registration: registrationRef, now });
-  const { noteArrival } = trace;
-  // The memory session TRACE_B has the arrival of: home then leads to the keepsake (#14).
+  const { noteEnded } = trace;
+  // The memory session TRACE_B has the arrival of: home then leads to the keepsake (#14). The reminder goes on.
   const [arrivedIn, setArrivedIn] = useState<string | null>(null);
   const arrive = useCallback(
     (memorySessionId: string) => {
-      noteArrival(memorySessionId);
       setExperience((current) => {
         if (!current || current.memory.memorySessionId !== memorySessionId || current.status === "ended") return current;
         const next = { ...current, status: "arrived" as const };
@@ -280,7 +279,7 @@ export function PingLogScreen() {
       });
       setArrivedIn(memorySessionId);
     },
-    [noteArrival],
+    [],
   );
   // TRACE_B asked to wait before the next photo's place (RATE_LIMITED): none is sent before then.
   const placesHeldUntil = useRef(0);
@@ -532,7 +531,7 @@ export function PingLogScreen() {
           return updateTabExperience(current, status);
         });
         if (status.replayStatus !== null) arrive(stored.memory.memorySessionId);
-        if (status.memorySession.status === "ended") noteArrival(stored.memory.memorySessionId);
+        if (status.memorySession.status === "ended") noteEnded(stored.memory.memorySessionId);
       })
       .catch((error: unknown) => {
         // The backend itself says it no longer knows the credential (deleted, or past its period): forget it here too.
@@ -544,7 +543,7 @@ export function PingLogScreen() {
         // Any other failure does not prove deletion; keep the credential and its delete key.
         setMessage(error instanceof Error ? error.message : t("参加状態を取得できませんでした。", "Could not get the state of your participation."));
       });
-  }, [arrive, noteArrival]);
+  }, [arrive, noteEnded]);
 
   // Another tab joined, withdrew, or saved or sent a photo: this one shows the same participation.
   useEffect(
@@ -777,7 +776,7 @@ export function PingLogScreen() {
     saveTabExperience(next);
     experienceRef.current = next;
     setExperience(next);
-    noteArrival(experience.memory.memorySessionId);
+    noteEnded(experience.memory.memorySessionId);
     if (trace.owned) await subscription?.unsubscribe().catch(() => undefined);
     setDemo(null);
     setShot(null);
