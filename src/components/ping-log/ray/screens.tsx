@@ -329,9 +329,10 @@ export function useReminderSwitch(on: boolean, support: PushSupport, onChange: (
 /**
  * How the reminder runs: how often, what else may be chosen while it is on,
  * and when it stops by itself. Through the push worker it is every 30
- * minutes until midnight; through TRACE_B, as its config allows, until arrival.
+ * minutes until midnight; through TRACE_B, as its config allows, until the
+ * participation ends (arrival does not stop it).
  */
-export type ReminderTerms = { intervalMinutes: number; choices: number[]; stops: "midnight" | "arrival" };
+export type ReminderTerms = { intervalMinutes: number; choices: number[]; stops: "midnight" | "period" };
 
 export const WORKER_REMINDER: ReminderTerms = { intervalMinutes: REMINDER_PLAN.intervalMinutes, choices: [], stops: "midnight" };
 
@@ -339,7 +340,7 @@ export function reminderNote({ intervalMinutes, stops }: ReminderTerms): string 
   const often = t(`オンにすると、${intervalMinutes}分ごとに撮影のリマインダーが届きます。`, `When it is on, you get a reminder to take a photo every ${intervalMinutes} minutes. `);
   return stops === "midnight"
     ? `${often}${t("リマインダーは、オンにした日の24時に止まります。", "It stops at midnight on the day you turned it on.")}`
-    : `${often}${t("リマインダーは、ShibaLab で QR コードを読み取ったときか、参加の期限が来たときに止まります。", "It stops when you scan the QR code at ShibaLab, or when your participation period ends.")}`;
+    : `${often}${t("ShibaLab で QR コードを読み取ったあとも届きます。参加を終了したときか、参加の期限が来たときに止まります。", "It keeps coming after you scan the QR code at ShibaLab. It stops when you end your participation, or when your participation period ends.")}`;
 }
 
 /** The interval, among what TRACE_B allows: the chosen one inverts, as on the switch. */

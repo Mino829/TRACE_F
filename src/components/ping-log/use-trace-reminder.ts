@@ -52,13 +52,14 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
   const owned = subscription !== null && ((key !== "" && madeWith(subscription, key) === true) || subscription.endpoint === stored?.active?.endpoint);
 
   const record = experience && stored?.memorySessionId === experience.memory.memorySessionId ? stored : null;
-  const ended = experience !== null && (experience.status !== "main" || Date.parse(experience.memory.expiresAt) <= now);
+  // Arrival does not end it: photos taken after the replay join the next one.
+  const ended = experience !== null && (experience.status === "ended" || Date.parse(experience.memory.expiresAt) <= now);
   const active =
     !ended && record?.active && subscription?.endpoint === record.active.endpoint && Date.parse(record.active.expiresAt) > now ? record.active : null;
   const terms: ReminderTerms = {
     intervalMinutes: record?.intervalMinutes ?? startingInterval(config?.notification),
     choices: config?.notification?.allowedIntervalsMinutes ?? [],
-    stops: "arrival",
+    stops: "period",
   };
   const reminder = experience ? { on: active !== null, nextAt: active && nextTraceReminderAt(active, terms.intervalMinutes, now), terms } : null;
 
@@ -69,13 +70,13 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
 
   /**
    * After a refusal meaning TRACE_B no longer sends to this browser, the phone
-   * lets go of the subscription too, and after arrival the switch stays off.
-   * Then the browser's subscription is read again.
+   * lets go of the subscription too. Then the browser's subscription is read
+   * again.
    */
   const lose = async (current: TraceReminder, error: unknown) => {
     if (error instanceof ReminderError && error.reason !== "other") {
       if (active) await subscription?.unsubscribe().catch(() => undefined);
-      keep({ ...current, ended: current.ended || error.reason === "ended", active: null });
+      keep({ ...current, active: null });
     }
     const held = await registration.current?.pushManager?.getSubscription().catch(() => null);
     if (held !== undefined) setSubscription(held);
@@ -85,7 +86,7 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
   const switchTo = async (on: boolean, askPermission: () => Promise<void>) => {
     if (!experience) return;
     const memory = experience.memory;
-    const current: TraceReminder = record ?? { memorySessionId: memory.memorySessionId, intervalMinutes: terms.intervalMinutes, ended: false, active: null };
+    const current: TraceReminder = record ?? { memorySessionId: memory.memorySessionId, intervalMinutes: terms.intervalMinutes, active: null };
     if (!on) {
       await switchOffTraceReminder(memory, active ? subscription : null);
       if (active) setSubscription(null);
@@ -93,7 +94,7 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
       return;
     }
     try {
-      if (current.ended || ended) throw new ReminderError(endedMessage(), "ended");
+      if (ended) throw new ReminderError(endedMessage(), "ended");
       await askPermission();
       const latest = config ?? (await fetchPublicConfig());
       setConfig(latest);
@@ -124,8 +125,8 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
     }
   };
 
-  /** TRACE_B ended the reminder when the participant arrived (a later PUT or PATCH answers 409). */
-  const noteArrival = useCallback((memorySessionId: string) => {
+  /** TRACE_B ended the reminder with the participation (a later PUT or PATCH answers 409). */
+  const noteEnded = useCallback((memorySessionId: string) => {
     const ended = markTraceReminderEnded(memorySessionId);
     if (ended) setStored(ended);
   }, []);
@@ -133,5 +134,5 @@ export function useTraceReminder({ experience, config, setConfig, subscription, 
   /** On withdrawing: TRACE_B's subscription went with the memory session. */
   const forget = () => keep(null);
 
-  return { owned, reminder, switchTo, changeInterval, noteArrival, forget };
+  return { owned, reminder, switchTo, changeInterval, noteEnded, forget };
 }
