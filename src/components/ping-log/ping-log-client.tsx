@@ -1,6 +1,7 @@
 "use client";
 
 import "@/lib/random-uuid";
+import "@/lib/translate-guard";
 
 import dynamic from "next/dynamic";
 
