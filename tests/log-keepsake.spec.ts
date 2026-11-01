@@ -24,12 +24,15 @@ type Moment = { photoMomentId: string; clientPhotoId: string; checkpointId: stri
 
 type StandIn = {
   /** Where the arrival's replay stands, once there is one. */
-  replay: "playing" | "completed" | null;
+  replay: "queued" | "playing" | "completed" | "skipped" | null;
   /** Explicit stop is terminal but preserves owner reads and deletion. */
   ended: boolean;
   expiresAt: string;
   joins: number;
   arrivals: Array<{ checkpointToken: string; clientTime: string; key: string }>;
+  replays: Array<{ checkpointToken: string; clientTime: string; key: string }>;
+  replayEnqueues: number;
+  loseReplayReply: boolean;
   arrivalError: string | null;
   /** The photos' records TRACE_B keeps (#13), by the id the phone keeps each photo by. */
   moments: Map<string, Moment>;
@@ -45,7 +48,9 @@ type StandIn = {
 
 /** Answers TRACE_B's participant routes, including retained ownership after stopping. */
 async function standIn(context: BrowserContext): Promise<StandIn> {
-  const state: StandIn = { replay: null, ended: false, expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), joins: 0, arrivals: [], arrivalError: null, moments: new Map(), sent: [], listed: 0, down: false, lose: false };
+  const state: StandIn = { replay: null, ended: false, expiresAt: new Date(Date.now() + 6 * HOUR).toISOString(), joins: 0, arrivals: [], replays: [], replayEnqueues: 0, loseReplayReply: false, arrivalError: null, moments: new Map(), sent: [], listed: 0, down: false, lose: false };
+  const usedProofs = new Set<string>();
+  const replayReceipts = new Map<string, { body: string; arrivalId: string }>();
   const memorySession = { sessionId: "mem-1", status: "main", expiresAt: state.expiresAt, deleteAfter: new Date(Date.now() + 30 * HOUR).toISOString() };
   await context.route("**/api/backend/v1/**", async (route) => {
     const request = route.request();
@@ -66,8 +71,37 @@ async function standIn(context: BrowserContext): Promise<StandIn> {
       expect(request.headers()["idempotency-key"]).toBeTruthy();
       state.arrivals.push({ ...request.postDataJSON(), key: request.headers()["idempotency-key"] });
       if (state.arrivalError) return route.fulfill({ status: 400, json: { error: { code: state.arrivalError, requestId: "req-arrival" } } });
-      state.replay = "playing";
+      if (state.replay === null) {
+        state.replay = "playing";
+        usedProofs.add(request.postDataJSON().checkpointToken);
+      }
       return route.fulfill({ json: { arrivalId: "arrival-1", status: state.replay } });
+    }
+    if (where === "POST /v1/memory-sessions/mem-1/arrival/replay") {
+      expect(request.headers().authorization).toBe("Bearer token-1");
+      const key = request.headers()["idempotency-key"];
+      expect(key).toBeTruthy();
+      const body = request.postDataJSON() as { checkpointToken: string; clientTime: string };
+      state.replays.push({ ...body, key });
+      const known = replayReceipts.get(key);
+      if (known) {
+        if (known.body !== JSON.stringify(body)) return route.fulfill({ status: 409, json: { error: { code: "IDEMPOTENCY_CONFLICT" } } });
+        return route.fulfill({ json: { arrivalId: known.arrivalId, status: "queued" } });
+      }
+      if (state.ended || Date.parse(state.expiresAt) <= Date.now() || state.replay !== "completed") {
+        return route.fulfill({ status: 409, json: { error: { code: "STATE_CONFLICT" } } });
+      }
+      if (usedProofs.has(body.checkpointToken)) return route.fulfill({ status: 400, json: { error: { code: "INVALID_ARRIVAL_PROOF" } } });
+      usedProofs.add(body.checkpointToken);
+      state.replayEnqueues += 1;
+      const arrivalId = `arrival-replay-${state.replayEnqueues}`;
+      replayReceipts.set(key, { body: JSON.stringify(body), arrivalId });
+      state.replay = "queued";
+      if (state.loseReplayReply) {
+        state.loseReplayReply = false;
+        return route.abort("connectionreset");
+      }
+      return route.fulfill({ json: { arrivalId, status: "queued" } });
     }
     if (where === "POST /v1/memory-sessions/mem-1/stop") {
       expect(request.headers().authorization).toBe("Bearer token-1");
@@ -162,6 +196,87 @@ const cameraRequests = (page: Page) => page.evaluate(() => {
   const requests = Reflect.get(window, "arrivalCameraRequests");
   if (typeof requests !== "number") throw new Error("Camera instrumentation is missing");
   return requests;
+});
+
+test("fresh external scans repeat a completed viewing without replacing participation, photos or keepsake", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await savePhoto(page, 1);
+  await denyArrivalCamera(page);
+  const retained = await page.evaluate(() => localStorage.getItem("trace-memory-credential"));
+  const first = boothLink(new URL(page.url()).origin);
+  await page.evaluate((url) => { window.location.hash = new URL(url).hash; }, first.url);
+  await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
+  backend.replay = "completed";
+  await expect(page.getByRole("button", { name: "もう一度 QR コードを読み取る" })).toBeVisible({ timeout: 15000 });
+  const moments = [...backend.moments.values()];
+  const fresh = boothLink(new URL(page.url()).origin);
+  await page.evaluate((url) => { window.location.hash = new URL(url).hash; }, fresh.url);
+  await expect(page.getByRole("heading", { name: "スクリーンの前でお待ちください" })).toBeVisible();
+  expect(backend.replayEnqueues).toBe(1);
+  expect(backend.arrivals).toHaveLength(1);
+  expect(backend.replays).toHaveLength(1);
+  expect(backend.replays[0].key).not.toBe(backend.arrivals[0].key);
+  expect(await cameraRequests(page)).toBe(0);
+  expect(await page.evaluate(() => localStorage.getItem("trace-memory-credential"))).toBe(retained);
+  expect(await kept(page)).toBe(1);
+  expect([...backend.moments.values()]).toEqual(moments);
+  expect(backend.joins).toBe(1);
+  expect(await page.evaluate((token) => JSON.stringify(Object.entries(localStorage)).includes(token), fresh.token)).toBe(false);
+  for (const status of ["queued", "playing"] as const) {
+    backend.replay = status;
+    const busy = boothLink(new URL(page.url()).origin);
+    await page.evaluate((url) => { window.location.hash = new URL(url).hash; }, busy.url);
+    await expect(page.getByRole("heading", { name: status === "queued" ? "スクリーンの前でお待ちください" : "スクリーンを見てください" })).toBeVisible();
+    expect(backend.replays).toHaveLength(1);
+  }
+  backend.replay = "completed";
+  await expect(page.getByRole("heading", { name: "再生が終わりました" })).toBeVisible({ timeout: 15000 });
+  await page.getByRole("button", { name: "作品を見る", exact: true }).click();
+  await expect(page.getByRole("img", { name: /^作品。撮った1枚の写真/ })).toBeVisible({ timeout: 15000 });
+  expect(await cameraRequests(page)).toBe(0);
+});
+
+test("an external replay conflict joins the viewing already queued by another tab", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  backend.replay = "completed";
+  await denyArrivalCamera(page);
+  await page.route("**/api/backend/v1/memory-sessions/mem-1/arrival/replay", async (route) => {
+    backend.replay = "playing";
+    await route.fulfill({ status: 409, json: { error: { code: "STATE_CONFLICT" } } });
+  });
+  await page.goto(boothLink(new URL(page.url()).origin).url);
+  await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
+  expect(backend.replayEnqueues).toBe(0);
+  expect(backend.arrivals).toHaveLength(0);
+  expect(await cameraRequests(page)).toBe(0);
+});
+
+test("a failed owner read never guesses the first-arrival endpoint or opens a camera", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  backend.replay = "completed";
+  await denyArrivalCamera(page);
+  await page.route("**/api/backend/v1/experiences/exp-1", (route) => route.abort("internetdisconnected"));
+  await page.goto(boothLink(new URL(page.url()).origin).url);
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
+  expect(backend.arrivals).toHaveLength(0);
+  expect(backend.replays).toHaveLength(0);
+  expect(await cameraRequests(page)).toBe(0);
+});
+
+test("a skipped viewing is restored but never offers or queues participant replay", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  backend.replay = "skipped";
+  await denyArrivalCamera(page);
+  await page.goto(boothLink(new URL(page.url()).origin).url);
+  await expect(page.getByRole("heading", { name: "スクリーンでは再生できませんでした" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "もう一度 QR コードを読み取る" })).toHaveCount(0);
+  expect(backend.arrivals).toHaveLength(0);
+  expect(backend.replays).toHaveLength(0);
+  expect(await cameraRequests(page)).toBe(0);
 });
 
 test("a retained participant's booth URL sends once without opening a camera, then follows real replay status", async ({ context, page }) => {
@@ -272,14 +387,15 @@ test("a rejected URL arrival shows the real failure without resending or request
   backend.arrivalError = "INVALID_ARRIVAL_PROOF";
   const link = boothLink(new URL(page.url()).origin);
   await page.goto(link.url);
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
   await expect(page.locator(".scan__video")).toHaveCount(0);
   expect(await cameraRequests(page)).toBe(0);
   expect(backend.arrivals).toHaveLength(1);
   expect(await page.evaluate((token) => JSON.stringify(Object.entries(localStorage)).includes(token), link.token)).toBe(false);
   // Starting the in-app scanner is a separate, explicit action after a failed native URL.
   await page.getByRole("button", { name: "QR コードを読み取る", exact: true }).click();
-  await expect.poll(() => cameraRequests(page)).toBe(1);
+  await expect(page.locator(".scan__video")).toBeVisible();
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
   expect(backend.arrivals).toHaveLength(1);
 });
 
@@ -288,12 +404,15 @@ test("the internal camera rejects raw or foreign input and submits only a same-o
   await join(page);
   const link = boothLink(new URL(page.url()).origin);
   await page.evaluate((text) => {
+    const scanned: string[] = [];
+    Object.defineProperty(window, "arrivalScannerReads", { value: scanned, configurable: true });
     Object.defineProperty(window, "arrivalScannerText", { value: text, writable: true, configurable: true });
     Object.defineProperty(globalThis, "BarcodeDetector", { configurable: true, value: class {
       static async getSupportedFormats() { return ["qr_code"]; }
       async detect() {
         const text = Reflect.get(window, "arrivalScannerText");
         if (typeof text !== "string") throw new Error("Scanner input is missing");
+        scanned.push(text);
         return [{ rawValue: text,
           cornerPoints: [{ x: 80, y: 80 }, { x: 240, y: 80 }, { x: 240, y: 240 }, { x: 80, y: 240 }] }];
       }
@@ -312,16 +431,38 @@ test("the internal camera rejects raw or foreign input and submits only a same-o
     };
   }, link.token);
   await page.getByRole("button", { name: "QR コードを読み取る" }).click();
-  await expect(page.getByRole("alert")).toContainText("この参加先の到着用 URL ではありません");
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
   expect(backend.arrivals).toEqual([]);
-  await page.evaluate((text) => { Reflect.set(window, "arrivalScannerText", text); }, arrivalQrUrl(link.token, "https://other-participation.example"));
-  await expect(page.getByRole("alert")).toContainText("別の参加先");
+  const foreignUrl = arrivalQrUrl(link.token, "https://other-participation.example");
+  await page.evaluate((text) => { Reflect.set(window, "arrivalScannerText", text); }, foreignUrl);
+  await expect.poll(() => page.evaluate((text) => (Reflect.get(window, "arrivalScannerReads") as string[]).includes(text), foreignUrl)).toBe(true);
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
   expect(backend.arrivals).toEqual([]);
   await page.evaluate((text) => { Reflect.set(window, "arrivalScannerText", text); }, link.url);
   await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
   expect(backend.arrivals).toHaveLength(1);
   expect(backend.arrivals[0].checkpointToken).toBe(link.token);
   expect(await page.evaluate((token) => JSON.stringify(Object.entries(localStorage)).includes(token), link.token)).toBe(false);
+  backend.replay = "completed";
+  await expect(page.getByRole("button", { name: "もう一度 QR コードを読み取る" })).toBeVisible({ timeout: 15000 });
+  // Keep a non-URL visible until the new scanner is up: a completed restore must not close it.
+  await page.evaluate(() => { Reflect.set(window, "arrivalScannerText", "waiting for a fresh QR"); });
+  await page.getByRole("button", { name: "もう一度 QR コードを読み取る" }).click();
+  await expect(page.locator(".scan__video")).toHaveCount(1);
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
+  const fresh = boothLink(new URL(page.url()).origin);
+  backend.loseReplayReply = true;
+  await page.evaluate((text) => { Reflect.set(window, "arrivalScannerText", text); }, fresh.url);
+  // The first success was lost; automatic camera retry must keep the replay endpoint, body and key.
+  await expect(page.getByRole("heading", { name: "スクリーンの前でお待ちください" })).toBeVisible({ timeout: 15000 });
+  expect(backend.replayEnqueues).toBe(1);
+  expect(backend.replays).toHaveLength(2);
+  expect(backend.replays[1]).toEqual(backend.replays[0]);
+  expect(backend.arrivals).toHaveLength(1);
+  backend.replay = "playing";
+  await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible({ timeout: 15000 });
+  backend.replay = "completed";
+  await expect(page.getByRole("heading", { name: "再生が終わりました" })).toBeVisible({ timeout: 15000 });
 });
 
 /** Takes a photo and saves it at a place picked from the list: building, floor, place. */
@@ -704,4 +845,23 @@ test("without WebGL, 振り返り3D says so and still lists the places", async (
   await expect(page.locator(".trace__canvas")).toHaveCount(0);
   await expect(page.locator(".trace__list li")).toHaveCount(2);
   await shoot(page, "trace-off");
+});
+
+test("the QR consumed by the first arrival cannot start another viewing after a reload", async ({ context, page }) => {
+  const backend = await standIn(context);
+  await join(page);
+  await denyArrivalCamera(page);
+  const first = boothLink(new URL(page.url()).origin);
+  await page.goto(first.url);
+  await expect(page.getByRole("heading", { name: "スクリーンを見てください" })).toBeVisible();
+  backend.replay = "completed";
+  await expect(page.getByRole("heading", { name: "再生が終わりました" })).toBeVisible({ timeout: 15000 });
+  await page.goto(first.url);
+  await expect(page.locator(".scan").getByRole("alert")).toBeVisible();
+  expect(backend.replays).toHaveLength(1);
+  expect(backend.replays[0].key).not.toBe(backend.arrivals[0].key);
+  expect(backend.replayEnqueues).toBe(0);
+  expect(backend.replay).toBe("completed");
+  expect(backend.joins).toBe(1);
+  expect(await cameraRequests(page)).toBe(0);
 });

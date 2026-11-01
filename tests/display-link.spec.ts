@@ -133,6 +133,30 @@ test("signs in with Google, authenticates by the first message, and plays an arr
   expect(errors).toEqual([]);
 });
 
+test("the same participant plays again under a new public ID with route metadata, once per viewing", async ({ page }) => {
+  const b = await backend(page);
+  const errors = await signIn(page);
+  const photoCheckpoints = [{ checkpointId: ROUTE[0], capturedAt: "2026-11-01T03:00:00Z" }];
+  const project = (arrivalId: string, eventId: string) => {
+    b.send("participant.arrived", { arrivalId, replayStatus: "queued", pathNodeIds: ROUTE, photoCheckpoints, replayDurationSeconds: 3 }, eventId);
+    b.send("arrival.replay.requested", { arrivalId }, `${eventId}-requested`);
+    b.send("arrival.replay.requested", { arrivalId }, `${eventId}-requested-again`);
+  };
+  project("arrival-original", "original");
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback", WALK_STARTS);
+  await expect.poll(() => b.of("arrival.replay.completed").map((message) => message.arrivalId), { timeout: 15000 }).toEqual(["arrival-original"]);
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "top", { timeout: 10000 });
+  // The backend's new participant projection carries the same route and metadata, not a new participant.
+  project("arrival-next-viewing", "replay");
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "playback", WALK_STARTS);
+  expect(b.of("arrival.replay.started").map((message) => message.arrivalId)).toEqual(["arrival-original", "arrival-next-viewing"]);
+  await expect.poll(() => b.of("arrival.replay.completed").map((message) => message.arrivalId), { timeout: 15000 }).toEqual(["arrival-original", "arrival-next-viewing"]);
+  await expect(page.locator(".dsp")).toHaveAttribute("data-screen", "top", { timeout: 10000 });
+  expect(b.of("arrival.replay.started").map((message) => message.arrivalId)).toEqual(["arrival-original", "arrival-next-viewing"]);
+  expect(b.of("arrival.replay.failed")).toHaveLength(0);
+  expect(errors).toEqual([]);
+});
+
 test("the next visitor waits for the previous card, and a visitor without a route gets the card alone", async ({ page }) => {
   const b = await backend(page);
   const errors = await signIn(page);

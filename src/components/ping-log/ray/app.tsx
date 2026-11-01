@@ -202,7 +202,7 @@ function Current(
         incomingArrivalToken={props.incomingArrivalToken}
         photos={props.photos}
         contact={props.contact}
-        toKeepsake={props.arrived}
+        intent={props.incomingArrivalToken || !props.arrived ? "scan" : "keepsake"}
         ended={props.ended}
         inert={inert}
         onClose={props.onCloseDemo}
