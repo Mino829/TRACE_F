@@ -2,6 +2,15 @@
 
 `/`は旧参加者の状態確認・停止・削除画面、`/log`は写真ごとに参加者がチェックポイントを選ぶ画面です。どちらも新しいGPS取得・送信は行いません。`/log`の写真は端末内だけに保存し、どこにも送信しません。撮影リマインダーのWeb Pushは、TRACE_Bの参加資格情報を持つタブではTRACE_Bが、それ以外では`push-worker/`の`trace-push` Workerが送ります。
 
+## 会期終了後の状態（2026-11-02）
+
+文化祭の会期（2026-10-31〜11-01）は終了しました（ユーザー確認）。以下の本番URL・展示PC・会場案内は会期中構成の記録です。現在のサイト稼働、新規受付、通知配信、展示の状態は未確認であり、会期終了を受付・通知停止やクラウド停止の実施済みとは扱いません。本更新ではコード・クラウド設定の変更、停止操作、データ削除を行っていません。
+
+- `/`の本人状態確認・停止・削除と、`/log`の作品閲覧・本人削除を会期終了だけで撤去しません。Backendの既存`expiresAt` / `deleteAfter`と本人の閲覧・削除期限は変更しません。写真は端末内のみで、会期終了やサーバー側の期限清掃だけで端末写真が削除されたとはみなしません。
+- 終了後の受付停止・全通知停止、期限清掃とクラウド停止の判断はBackend READMEの「会期終了後の管理」に従い、本人操作を妨げる一括停止を先行させないでください。
+- main push後の本番自動配備経路は引き続き存在します。会期終了を理由にCIが無効化されたとは扱わず、文書のみの変更でも下記の配備条件と公開範囲を確認してください。既存の開発・再配備手順は保守用として残します。
+- 旧問い合わせ先「教室棟301のASYNCブースのスタッフ」は会期中の案内です。終了後の常設窓口として利用できるかは未確認であり、継続窓口とは断定しません。
+
 ## ローカルで参加者画面を試す
 
 Node.js 22以降、Go 1.25以降、PostgreSQL 17のコマンドを用意します。
@@ -19,7 +28,7 @@ npm run dev:local
 
 ## Cloudflareでの参加者画面
 
-本番 `https://trace-production.async5855.workers.dev` は、固定公開設定 `push-worker/production.public.json` から生成する専用Worker設定で配信します。`push-worker/src/site.ts` が `/api/backend/*` と `/api/operator/*` をGoへ中継します。ブラウザの参加トークンは同一originのAPIパスへヘッダーで送り、公開URLやビルド時の環境変数には入れません。運営資格と描画用接続の境界は [環境別手順](arrival-issuer/README.md) を参照してください。
+会期中の本番URLは `https://trace-production.async5855.workers.dev` です（現在の稼働・受付状態は未確認）。固定公開設定 `push-worker/production.public.json` から生成する専用Worker設定で配信する構成です。`push-worker/src/site.ts` が `/api/backend/*` と `/api/operator/*` をGoへ中継します。ブラウザの参加トークンは同一originのAPIパスへヘッダーで送り、公開URLやビルド時の環境変数には入れません。運営資格と描画用接続の境界は [環境別手順](arrival-issuer/README.md) を参照してください。
 
 main pushの「Verify frontend and Workers」成功後は、`Production` environmentでその検証済みSHAだけをcheckoutし、本番専用build・既存account/subdomain/Edge bindingの検証・`trace-production`だけの配備を行います。手動「Deploy production to Cloudflare」は明示 `ref` が必須、既定は検証のみで、公開は `deploy=true` の明示が必要です。詳細なGitHub設定・token権限・コマンドは [push-worker/README.md](push-worker/README.md#独立本番配信trace-production) を参照してください。
 
@@ -66,9 +75,9 @@ cd push-worker && npm test && npm run typecheck
 
 `/log` は端末言語に応じて日本語・英語で表示し、画面上部の `English` / `日本語` で切り替えられます。切替は参加資格や端末写真を作り直さず、完了後の再スキャンは英語でも `Scan the QR code again` から同じ再視聴処理へ進みます。同意はBackendの日本語本文を正本とし、対応する版だけ参考英訳を併記します。`tests/log-keepsake.spec.ts` の言語切替ケースは、英語での参加、切替後の写真保存、初回QR・完了・英語ボタンからの再スキャン、新しいQRでの再視聴、資格・写真の維持を対象にします。
 
-waysui本番は`trace-fes-2026`と`https://trace-production.async5855.workers.dev`へ独立配備済みです。参加は必ず同じ本番の`/log`、展示は`/display`を使い、旧`trace-log`の参加から新本番QRを読みません。参加案内は`2026-10-31-v1`、問い合わせ先は「教室棟301のASYNCブースのスタッフ」。参加・metadata・到着・任意30分PushをON、画像upload/GPSをOFFにし、保持6時間＋24時間と既存同意記録を維持しています。実UIで参加→端末写真/地点登録→実QRの仮想カメラ読取→到着200→展示完了→本人削除204/照会404・端末写真0枚まで確認済みです。実スマホ・投影機材・実Push配信と正式公開受入は別です。[本番配備](push-worker/README.md)と[展示ログイン](arrival-issuer/README.md)を参照してください。旧参加データ・鍵は移行しません。
+**会期中の配備・確認記録（現在の状態確認ではありません）:** waysui本番は`trace-fes-2026`と`https://trace-production.async5855.workers.dev`へ独立配備された記録があります。同構成では参加に同じ本番の`/log`、展示に`/display`を使い、旧`trace-log`の参加から新本番QRを読みません。参加案内は`2026-10-31-v1`、当時の問い合わせ先は「教室棟301のASYNCブースのスタッフ」でした。参加・metadata・到着・任意30分PushをON、画像upload/GPSをOFFにし、保持6時間＋24時間と既存同意記録を維持した構成の記録です。当時の実UIで参加→端末写真/地点登録→実QRの仮想カメラ読取→到着200→展示完了→本人削除204/照会404・端末写真0枚まで確認した記録であり、現在の疎通・全参加データの清掃完了を証明しません。実スマホ・投影機材・実Push配信と正式公開受入は別です。[本番配備](push-worker/README.md)と[展示ログイン](arrival-issuer/README.md)を参照してください。旧参加データ・鍵は移行しません。
 
-本番の展示PCは上記 `/display` をブラウザで開き、既存の **waysui00babe@gmail.com のみ**でログインします。Node.js・gcloud・ローカルブローカー・ローカルネットワークアクセス許可は不要です。ブリッジ切替の配備後は `/display` と `/log` の両画面を再読み込みします。共有PCを離れる際は現在の運営資格を失効し、Googleからもログアウトしてください。「自分の全運営資格を失効」は同アカウントの他PC・タブにも作用します。描画の主担当は同時に1台だけで、他PCは待機になります。従来の実UI確認記録は、このブリッジ切替後の検証結果ではありません。
+会期中構成の展示PCを保守・再配備する場合は、上記 `/display` をブラウザで開き、既存の **waysui00babe@gmail.com のみ**でログインします（現在のアカウント許可状態は未確認）。Node.js・gcloud・ローカルブローカー・ローカルネットワークアクセス許可は不要です。ブリッジ切替の配備後は `/display` と `/log` の両画面を再読み込みします。共有PCを離れる際は現在の運営資格を失効し、Googleからもログアウトしてください。「自分の全運営資格を失効」は同アカウントの他PC・タブにも作用します。描画の主担当は同時に1台だけで、他PCは待機になります。従来の実UI確認記録は、このブリッジ切替後の検証結果ではありません。
 
 同梱 bundle は `coordinateVersion=toyosu-2026-08-28.1`、`campusGraphVersion=toyosu-graph-2026-10-29.1.draft`、`threeDMapVersion=toyosu-3dmap-2026-10-30` です（Frontend #81・Backend #50）。Go も同一の Graph 本体と3つの版に揃え、旧 bundle の Session は書き換えません。14ルートの描画確認は [docs/display/README.md](docs/display/README.md) を参照してください。
 
