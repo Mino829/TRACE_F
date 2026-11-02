@@ -800,18 +800,24 @@ export function PingLogScreen() {
       experienceRef.current = null;
       setExperience(null);
     }
-    // TRACE_B's subscription went with the memory session; only the push worker's own is sent to the push worker.
-    if (subscription && trace.owned) await subscription.unsubscribe().catch(() => undefined);
-    else if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
-    trace.forget();
-    if (PUSH_API_URL) await forgetMe();
+    // Erase local photos even when the separate legacy worker is unavailable.
     // A place already on its way finishes first, so it cannot put its photo back.
     await withLock(SEND_LOCK, clearEntries, { waitMs: SEND_WAIT_MS }).catch(() => clearEntries());
+    setEntries([]);
+    trace.forget();
+    try {
+      // TRACE_B's subscription went with the memory session; only the push worker's own is sent to the push worker.
+      if (subscription && trace.owned) await subscription.unsubscribe().catch(() => undefined);
+      else if (subscription) await unsubscribe(subscription).catch(() => subscription.unsubscribe());
+      if (PUSH_API_URL) await forgetMe();
+    } catch (error) {
+      // Keep consent and the worker's device id: the menu can retry after a reload.
+      throw new Error(`${removed}${t("ただし、通知サーバー側の停止・削除は完了を確認できませんでした。メニューの「参加をやめる」から、もう一度削除してください。", " However, stopping notifications and deleting records on the notification server could not be confirmed. Open “Withdraw” in the menu to try deleting again.")}${error instanceof Error ? ` ${error.message}` : ""}`);
+    }
     clearConsent();
     prompt(null);
     setSubscription(null);
     setExpiresAt(null);
-    setEntries([]);
     setConsent(null);
     setMessage(`${t("参加をやめました。", "You have withdrawn. ")}${removed}`);
   });
